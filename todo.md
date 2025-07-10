@@ -1,0 +1,6 @@
+- [ ] Define project scope
+- [ ] Identify useful APIs
+  - [ ] and document their usage a little bit!
+- [ ] VsCode / copilot set up
+- [ ] AWS account linked
+- [ ] System arch diagrams / docs

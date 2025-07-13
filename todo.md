@@ -1,9 +1,0 @@
-- [ ] Define project scope
-  - [ ] document this in the main repo's `meta/` folder'
-- [ ] Review ~similar previous effort at https://github.com/efischer19/fhoopz
-- [ ] VsCode / copilot set up
-- [ ] Identify/research useful APIs
-  - [ ] and document their usage a little bit!
-- [ ] Copilot Spaces seeded with a few key ADRs
-- [ ] AWS account linked
-  - [ ] TLD registered

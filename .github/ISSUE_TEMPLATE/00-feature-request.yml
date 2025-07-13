@@ -2,7 +2,7 @@ name: "✨ Feature Request"
 description: "Propose a new feature or enhancement for the project."
 title: "feat: [Brief description of the feature]"
 labels: ["enhancement", "new-feature"]
-assignees: ''
+assignees: []
 body:
   - type: markdown
     attributes:

@@ -8,18 +8,35 @@ packages = [{include = "app"}]
 
 [tool.poetry.dependencies]
 python = "^3.12"
+pydantic = "^2.10.3"
+pydantic-settings = "^2.7.1"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^8.4.1"
 ruff = "^0.12.3"
 black = "^25.1.0"
 pytest-cov = "^6.2.1"
+poethepoetry = "^0.29.0"
+pre-commit = "^4.0.1"
+bandit = "^1.7.9"
+safety = "^3.2.11"
 
 [tool.poetry.scripts]
 start = "app.main:main"
-test = "app.scripts:test"
-lint = "app.scripts:lint"
-format = "app.scripts:format_code"
+
+[tool.poe.tasks]
+test = "pytest --cov=app --cov-report=term-missing"
+lint = "ruff check ."
+format = "black ."
+format-check = "black --check ."
+format-diff = "black --diff ."
+type-check = "echo 'Type checking not configured yet'"
+security-deps = "safety check --json"
+security-code = "bandit -r app/ -f json"
+security = ["security-deps", "security-code"]
+pre-commit = ["format", "lint", "test"]
+setup-dev = ["_setup-pre-commit"]
+_setup-pre-commit = "pre-commit install"
 
 [build-system]
 requires = ["poetry-core"]

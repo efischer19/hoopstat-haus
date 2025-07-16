@@ -5,12 +5,16 @@ This is the standard Python application template for Hoopstat Haus projects. It 
 ## Features
 
 - **Python 3.12+** runtime
-- **Poetry** for dependency management  
-- **pytest** for testing
-- **Ruff** for linting
-- **Black** for code formatting
+- **Poetry** for dependency management with **poethepoetry** for task running
+- **pytest** with coverage for testing
+- **Ruff** for linting and **Black** for code formatting
+- **Pre-commit hooks** for code quality enforcement
+- **Security scanning** with bandit and safety
+- **Structured JSON logging** with configurable formats
+- **Environment-based configuration** with pydantic-settings
 - **Docker** with multi-stage builds
-- Standard project scripts
+- **Makefile** for common development tasks
+- **Health check endpoints** for monitoring
 
 ## Quick Start
 
@@ -19,6 +23,7 @@ This is the standard Python application template for Hoopstat Haus projects. It 
 - Python 3.12+
 - Poetry
 - Docker (optional)
+- Make (optional, for convenience commands)
 
 ### Setup
 
@@ -27,6 +32,85 @@ This is the standard Python application template for Hoopstat Haus projects. It 
    cp -r templates/python-app-template apps/your-new-app
    cd apps/your-new-app
    ```
+
+2. Set up the development environment:
+   ```bash
+   # Using Make (recommended)
+   make dev-setup
+   
+   # Or manually
+   poetry install
+   poetry run poe setup-dev
+   ```
+
+3. Configure your environment:
+   ```bash
+   cp .env.example .env
+   # Edit .env with your specific configuration
+   ```
+
+## Development Workflow
+
+### Available Commands
+
+Using Make (recommended):
+```bash
+make help           # Show all available commands
+make test           # Run tests with coverage
+make lint           # Run linting
+make format         # Format code
+make security       # Run security scans
+make ci             # Run all CI checks locally
+make clean          # Clean up temporary files
+```
+
+Using Poetry and poethepoetry directly:
+```bash
+poetry run poe test          # Run tests with coverage
+poetry run poe lint          # Run linting  
+poetry run poe format        # Format code
+poetry run poe format-check  # Check formatting
+poetry run poe security      # Run security scans
+poetry run poe pre-commit    # Run pre-commit checks
+```
+
+### Pre-commit Hooks
+
+Pre-commit hooks are automatically installed during setup and will run:
+- Code formatting (Black)
+- Linting (Ruff)
+- Security scanning (Bandit) 
+- Tests (pytest)
+- YAML/TOML validation
+
+### Configuration Management
+
+The application uses environment-based configuration with type safety:
+
+- Copy `.env.example` to `.env` for local development
+- Configuration is loaded automatically from environment variables
+- All settings are validated using Pydantic
+- See `app/config.py` for available settings
+
+### Logging
+
+The application supports structured JSON logging:
+
+- Set `LOG_FORMAT=json` for structured logging (recommended for production)
+- Set `LOG_FORMAT=text` for human-readable logging (good for development)
+- Log level can be configured with `LOG_LEVEL` (DEBUG, INFO, WARNING, ERROR, CRITICAL)
+
+Example structured log output:
+```json
+{
+  "timestamp": "2025-01-27T14:30:45.123Z",
+  "level": "INFO", 
+  "message": "Application starting",
+  "logger": "app.main",
+  "app_name": "your-app-name",
+  "app_version": "1.0.0"
+}
+```
 
 2. Update project details in `pyproject.toml`:
    - Change `name` from "python-app-template" to your app name

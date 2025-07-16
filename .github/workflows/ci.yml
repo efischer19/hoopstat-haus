@@ -95,7 +95,7 @@ jobs:
 
       - name: Format check
         working-directory: apps/${{ matrix.app }}
-        run: poetry run poe format --check
+        run: poetry run poe format-check
 
       - name: Lint
         working-directory: apps/${{ matrix.app }}
@@ -104,6 +104,24 @@ jobs:
       - name: Test
         working-directory: apps/${{ matrix.app }}
         run: poetry run poe test
+
+      - name: Security - Dependency scan
+        working-directory: apps/${{ matrix.app }}
+        run: |
+          # Install safety for dependency scanning
+          poetry run pip install safety
+          # Export requirements and scan for vulnerabilities
+          poetry export --format=requirements.txt --output=requirements-check.txt --without-hashes
+          poetry run safety check --file=requirements-check.txt --json || true
+          rm requirements-check.txt
+
+      - name: Security - Scan Python code with bandit
+        working-directory: apps/${{ matrix.app }}
+        run: |
+          # Install bandit for code security scanning
+          poetry run pip install bandit
+          # Scan for security issues in Python code
+          poetry run bandit -r app/ -f json || true
 
       - name: Build Docker image
         working-directory: apps/${{ matrix.app }}
@@ -114,4 +132,17 @@ jobs:
           else
             echo "⚠️  No Dockerfile found for ${{ matrix.app }}, skipping"
             exit 1
+          fi
+
+      - name: Security - Container scan
+        working-directory: apps/${{ matrix.app }}
+        run: |
+          if [ -f "Dockerfile" ]; then
+            # Use Trivy for container vulnerability scanning
+            docker run --rm -v /var/run/docker.sock:/var/run/docker.sock \
+              -v $PWD:/workspace aquasec/trivy:latest image \
+              --format json --exit-code 0 ${{ matrix.app }}:ci || true
+            echo "✅ Container security scan completed for ${{ matrix.app }}"
+          else
+            echo "⚠️  No Dockerfile found for ${{ matrix.app }}, skipping container scan"
           fi

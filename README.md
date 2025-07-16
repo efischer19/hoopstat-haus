@@ -28,6 +28,29 @@ The repository has been seeded with foundational documents and architectural pri
 
 The project is **not operational** at this time.
 
+## Project Structure
+
+This is a monorepo containing multiple applications and shared libraries:
+
+### Applications (`apps/`)
+- Production applications following the Python app template
+- Each app has its own `pyproject.toml` and dependencies
+
+### Shared Libraries (`libs/`)
+- **`hoopstat-common`** - Common utilities shared across Python applications
+  - Performance monitoring and structured logging utilities
+  - Follows ADR-015 logging strategy and ADR-016 shared library strategy
+
+### Templates (`templates/`)
+- **`python-app-template`** - Standard template for new Python applications
+- Includes examples of using shared libraries and best practices
+
+### Documentation (`meta/`)
+- Architecture Decision Records (ADRs)
+- Development philosophy and contribution guidelines
+
+For new Python applications, copy the template and add shared library dependencies as needed.
+
 ## Contributing
 
 While the core infrastructure is being established, contributions are welcome in the form of ideas, feature requests, and bug reports. Please see our **[Contributing Guidelines](.github/CONTRIBUTING.md)** for more details on how you can help shape the future of Hoopstat Haus.

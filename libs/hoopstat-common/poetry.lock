@@ -154,20 +154,6 @@ files = [
 toml = ["tomli ; python_full_version <= \"3.11.0a6\""]
 
 [[package]]
-name = "hoopstat-common"
-version = "0.1.0"
-description = "Shared utilities for Hoopstat Haus Python applications"
-optional = false
-python-versions = "^3.12"
-groups = ["main"]
-files = []
-develop = true
-
-[package.source]
-type = "directory"
-url = "../../libs/hoopstat-common"
-
-[[package]]
 name = "iniconfig"
 version = "2.1.0"
 description = "brain-dead simple config-ini parsing"
@@ -336,4 +322,4 @@ files = [
 [metadata]
 lock-version = "2.1"
 python-versions = "^3.12"
-content-hash = "55a649e13cc17eee4bdbd999aa6f398deed4e124530a2fd41213e004e88601c5"
+content-hash = "a63e6ab5e3a860df855015bdfb2efbb51e1e8783a69af80e1bf362f2afb72de0"

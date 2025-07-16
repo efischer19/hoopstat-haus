@@ -1,26 +1,19 @@
 [tool.poetry]
-name = "python-app-template"
+name = "hoopstat-common"
 version = "0.1.0"
-description = "A template Python application for Hoopstat Haus projects"
+description = "Shared utilities for Hoopstat Haus Python applications"
 authors = ["Hoopstat Haus Team"]
 readme = "README.md"
-packages = [{include = "app"}]
+packages = [{include = "hoopstat_common"}]
 
 [tool.poetry.dependencies]
 python = "^3.12"
-hoopstat-common = {path = "../../libs/hoopstat-common", develop = true}
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^8.4.1"
 ruff = "^0.12.3"
 black = "^25.1.0"
 pytest-cov = "^6.2.1"
-
-[tool.poetry.scripts]
-start = "app.main:main"
-test = "app.scripts:test"
-lint = "app.scripts:lint"
-format = "app.scripts:format_code"
 
 [build-system]
 requires = ["poetry-core"]
@@ -57,7 +50,7 @@ python_functions = ["test_*"]
 addopts = "--strict-markers --disable-warnings"
 
 [tool.coverage.run]
-source = ["app"]
+source = ["hoopstat_common"]
 omit = ["tests/*"]
 
 [tool.coverage.report]
@@ -67,4 +60,3 @@ exclude_lines = [
     "raise AssertionError",
     "raise NotImplementedError",
 ]
-

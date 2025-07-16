@@ -150,14 +150,14 @@ pytest is configured with:
 
 ## Performance Monitoring
 
-This template includes built-in performance monitoring utilities for data pipeline instrumentation, following the Hoopstat Haus Logging Strategy (ADR-015).
+This template uses the shared `hoopstat-common` library for performance monitoring utilities, following the Hoopstat Haus Logging Strategy (ADR-015) and Shared Library Strategy (ADR-016).
 
 ### Using the Performance Monitor Decorator
 
 The `@performance_monitor` decorator automatically logs execution time and record count:
 
 ```python
-from app.performance import performance_monitor
+from hoopstat_common.performance import performance_monitor
 
 @performance_monitor(job_name="user_data_sync")
 def sync_users():
@@ -175,7 +175,7 @@ def process_records():
 For more dynamic scenarios, use the context manager:
 
 ```python
-from app.performance import performance_context
+from hoopstat_common.performance import performance_context
 
 with performance_context("data_export") as ctx:
     for batch in get_data_batches():

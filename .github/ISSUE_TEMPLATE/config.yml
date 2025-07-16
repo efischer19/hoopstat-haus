@@ -8,7 +8,3 @@ contact_links:
   - name: "📖 Review Project Documentation"
     url: https://github.com/efischer19/hoopstat-haus/tree/main/meta
     about: "Check our development philosophy, ADRs, and ethics policies first."
-
-  - name: "🛡️ Report a Security Vulnerability"
-    url: https://github.com/efischer19/hoopstat-haus/security/policy
-    about: "Please review our security policy to report vulnerabilities."

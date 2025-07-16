@@ -1,6 +1,5 @@
 """Tests for the main module."""
 
-
 from app.main import greet, main
 
 

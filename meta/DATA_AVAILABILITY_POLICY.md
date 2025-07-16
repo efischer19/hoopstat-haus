@@ -57,5 +57,5 @@ This policy may evolve as the project grows and as we establish partnerships wit
 
 ---
 
-*Last updated: 2024*  
+*Last updated: 2025*  
 *For questions about this policy, please open an issue in the GitHub repository.*

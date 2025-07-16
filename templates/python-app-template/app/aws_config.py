@@ -10,7 +10,7 @@ See ADR-017 for the configuration strategy.
 import os
 from typing import Optional, Dict, Any
 import boto3
-from pydantic_settings import BaseSettings
+from pydantic_settings import BaseSettings, SettingsConfigDict
 from pydantic import Field
 
 
@@ -22,20 +22,21 @@ class AWSConfig(BaseSettings):
     and provides a structured way to access AWS resource information.
     """
     
-    # AWS Region
-    aws_region: str = Field(default="us-east-1", env="AWS_REGION")
+    model_config = SettingsConfigDict(
+        env_file=".env",
+        env_file_encoding="utf-8"
+    )
     
-    # S3 Bucket configurations
-    s3_bucket_raw_data: str = Field(env="AWS_S3_BUCKET_RAW_DATA")
-    s3_bucket_processed_data: str = Field(env="AWS_S3_BUCKET_PROCESSED_DATA")
-    s3_bucket_backup: str = Field(env="AWS_S3_BUCKET_BACKUP")
+    # AWS Region
+    aws_region: str = Field(default="us-east-1", alias="AWS_REGION")
+    
+    # S3 Bucket configurations  
+    s3_bucket_raw_data: str = Field(alias="AWS_S3_BUCKET_RAW_DATA")
+    s3_bucket_processed_data: str = Field(alias="AWS_S3_BUCKET_PROCESSED_DATA")
+    s3_bucket_backup: str = Field(alias="AWS_S3_BUCKET_BACKUP")
     
     # ECR Repository
-    ecr_repository: Optional[str] = Field(default=None, env="AWS_ECR_REPOSITORY")
-    
-    class Config:
-        env_file = ".env"
-        case_sensitive = False
+    ecr_repository: Optional[str] = Field(default=None, alias="AWS_ECR_REPOSITORY")
 
 
 class AWSClientManager:

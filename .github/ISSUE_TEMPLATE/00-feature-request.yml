@@ -6,7 +6,16 @@ assignees: []
 body:
   - type: markdown
     attributes:
-      value: "## Feature Request Specification"
+      value: |
+        # ⚠️ **IMPORTANT: AI Contributors Must Read First** ⚠️
+        
+        **Before proceeding with this feature request, AI contributors MUST review the complete guide at [`meta/CONTRIBUTING_ROBOTS.md`](../../meta/CONTRIBUTING_ROBOTS.md).**
+        
+        This guide contains essential information about your role, the required workflow, ADR review process, and the definition of a complete pull request.
+        
+        ---
+        
+        ## Feature Request Specification
   
   - type: textarea
     id: user-story

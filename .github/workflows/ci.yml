@@ -95,15 +95,15 @@ jobs:
 
       - name: Format check
         working-directory: apps/${{ matrix.app }}
-        run: poetry run poe format-check
+        run: poetry run format-check
 
       - name: Lint
         working-directory: apps/${{ matrix.app }}
-        run: poetry run poe lint
+        run: poetry run lint
 
       - name: Test
         working-directory: apps/${{ matrix.app }}
-        run: poetry run poe test
+        run: poetry run test
 
       - name: Security - Dependency scan
         working-directory: apps/${{ matrix.app }}

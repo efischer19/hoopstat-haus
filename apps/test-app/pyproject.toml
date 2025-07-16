@@ -1,7 +1,7 @@
 [tool.poetry]
-name = "python-app-template"
+name = "test-app"
 version = "0.1.0"
-description = "A template Python application for Hoopstat Haus projects"
+description = "A test application to validate the Python template"
 authors = ["Hoopstat Haus Team"]
 readme = "README.md"
 packages = [{include = "app"}]
@@ -22,12 +22,6 @@ safety = "^3.0.0"
 
 [tool.poetry.scripts]
 start = "app.main:main"
-test = "pytest --cov=app --cov-report=term-missing"
-lint = "ruff check ."
-format = "black ."
-format-check = "black --check ."
-security-deps = "safety check --json"
-security-code = "bandit -r app/ -f json"
 
 [build-system]
 requires = ["poetry-core"]

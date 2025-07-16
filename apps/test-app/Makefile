@@ -43,10 +43,10 @@ clean: ## Clean up temporary files
 	find . -type d -name "htmlcov" -exec rm -rf {} +
 
 docker-build: ## Build Docker image
-	docker build -t python-app-template:latest .
+	docker build -t test-app:latest .
 
 docker-run: docker-build ## Build and run Docker container
-	docker run --rm -it python-app-template:latest
+	docker run --rm -it test-app:latest
 
 # Development workflow targets
 dev: dev-setup test ## Quick development setup and test

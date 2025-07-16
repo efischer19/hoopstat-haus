@@ -16,7 +16,7 @@ class Settings(BaseSettings):
     """Application settings loaded from environment variables and .env files."""
 
     # Application Info
-    app_name: str = Field(default="python-app-template", description="Application name")
+    app_name: str = Field(default="test-app", description="Application name")
     app_version: str = Field(default="0.1.0", description="Application version")
     app_environment: Literal["development", "staging", "production"] = Field(
         default="development", description="Application environment"

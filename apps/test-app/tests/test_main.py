@@ -1,9 +1,8 @@
 """Tests for the main module."""
 
-import json
 from unittest.mock import patch
 
-from app.main import greet, main, get_health_status
+from app.main import get_health_status, greet, main
 
 
 def test_greet_default():

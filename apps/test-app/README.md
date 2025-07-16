@@ -5,7 +5,7 @@ This is the standard Python application template for Hoopstat Haus projects. It 
 ## Features
 
 - **Python 3.12+** runtime
-- **Poetry** for dependency management with **Poetry scripts** for task running
+- **Poetry** for dependency management with **poethepoetry** for task running
 - **pytest** with coverage for testing
 - **Ruff** for linting and **Black** for code formatting
 - **Pre-commit hooks** for code quality enforcement
@@ -64,14 +64,14 @@ make ci             # Run all CI checks locally
 make clean          # Clean up temporary files
 ```
 
-Using Poetry scripts directly:
+Using Poetry and poethepoetry directly:
 ```bash
-poetry run test          # Run tests with coverage
-poetry run lint          # Run linting  
-poetry run format        # Format code
-poetry run format-check  # Check formatting
-poetry run security-deps # Check dependency vulnerabilities
-poetry run security-code # Scan code for security issues
+poetry run poe test          # Run tests with coverage
+poetry run poe lint          # Run linting  
+poetry run poe format        # Format code
+poetry run poe format-check  # Check formatting
+poetry run poe security      # Run security scans
+poetry run poe pre-commit    # Run pre-commit checks
 ```
 
 ### Pre-commit Hooks

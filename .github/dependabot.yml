@@ -5,10 +5,24 @@ updates:
     directory: "/templates/python-app-template"
     schedule:
       interval: "weekly"
-    # Enable both security and version updates
     open-pull-requests-limit: 10
-    # Group related updates together
     groups:
       pip:
         patterns:
           - "*"
+
+  # NOTE: When adding new Python applications to /apps/, 
+  # add a new entry following this pattern:
+  #
+  # - package-ecosystem: "pip"
+  #   directory: "/apps/your-app-name"
+  #   schedule:
+  #     interval: "weekly"
+  #   open-pull-requests-limit: 10
+  #   groups:
+  #     pip:
+  #       patterns:
+  #         - "*"
+  #
+  # Unfortunately, Dependabot doesn't support wildcard directories,
+  # so each new app directory must be explicitly configured here.

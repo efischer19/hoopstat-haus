@@ -105,10 +105,13 @@ docker run your-app:prod
 your-app/
 ├── app/                    # Application source code
 │   ├── __init__.py
-│   └── main.py            # Main application entry point
+│   ├── main.py            # Main application entry point
+│   ├── performance.py     # Performance monitoring utilities
+│   └── scripts.py         # Development scripts
 ├── tests/                 # Test files
 │   ├── __init__.py
-│   └── test_main.py
+│   ├── test_main.py
+│   └── test_performance.py
 ├── Dockerfile             # Multi-stage Docker configuration
 ├── pyproject.toml         # Poetry configuration and dependencies
 └── README.md             # This file
@@ -145,6 +148,65 @@ pytest is configured with:
 - Coverage reporting support
 - Strict marker checking
 
+## Performance Monitoring
+
+This template includes built-in performance monitoring utilities for data pipeline instrumentation, following the Hoopstat Haus Logging Strategy (ADR-015).
+
+### Using the Performance Monitor Decorator
+
+The `@performance_monitor` decorator automatically logs execution time and record count:
+
+```python
+from app.performance import performance_monitor
+
+@performance_monitor(job_name="user_data_sync")
+def sync_users():
+    # Process data...
+    return {"records_processed": 1500, "status": "success"}
+
+@performance_monitor()  # Uses function name as job_name
+def process_records():
+    # Process data...
+    return 250  # Return record count directly
+```
+
+### Using the Performance Context Manager
+
+For more dynamic scenarios, use the context manager:
+
+```python
+from app.performance import performance_context
+
+with performance_context("data_export") as ctx:
+    for batch in get_data_batches():
+        process_batch(batch)
+        ctx["records_processed"] += len(batch)
+```
+
+### Log Output Format
+
+Both utilities log structured JSON following ADR-015 requirements:
+
+```json
+{
+  "timestamp": "2025-01-27T14:30:45.123Z",
+  "level": "INFO",
+  "message": "Data pipeline job completed successfully",
+  "job_name": "user_data_sync", 
+  "duration_in_seconds": 45.67,
+  "records_processed": 1500,
+  "status": "success"
+}
+```
+
+### Supported Return Types
+
+The decorator can extract record counts from:
+- Integer return values: `return 250`
+- Dict with `records_processed` key: `return {"records_processed": 250}`
+- Dict with custom key: Use `records_processed_key` parameter
+- Objects with `records_processed` attribute
+
 ## Best Practices
 
 1. **Follow the standard scripts**: Always use `poetry run start`, `poetry run test`, etc.
@@ -153,6 +215,7 @@ pytest is configured with:
 4. **Use type hints**: Add type hints to function signatures
 5. **Document functions**: Add docstrings to public functions and classes
 6. **Keep it simple**: Follow the project's development philosophy of simplicity
+7. **Monitor data pipelines**: Use performance monitoring utilities for all data processing jobs
 
 ## Integration with CI/CD
 

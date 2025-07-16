@@ -1,0 +1,14 @@
+version: 2
+updates:
+  # Monitor pip dependencies in the Python app template
+  - package-ecosystem: "pip"
+    directory: "/templates/python-app-template"
+    schedule:
+      interval: "weekly"
+    # Enable both security and version updates
+    open-pull-requests-limit: 10
+    # Group related updates together
+    groups:
+      pip:
+        patterns:
+          - "*"

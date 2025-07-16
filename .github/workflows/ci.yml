@@ -1,0 +1,117 @@
+---
+name: CI
+
+"on":
+  pull_request:
+    branches: [main]
+    paths:
+      - 'apps/**'
+      - '.github/workflows/ci.yml'
+
+jobs:
+  detect-changes:
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.changes.outputs.matrix }}
+      has-changes: ${{ steps.changes.outputs.has-changes }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Detect changed apps
+        id: changes
+        run: |
+          # Get list of changed files in apps directory
+          changed_files=$(git diff --name-only origin/main...HEAD | \
+            grep '^apps/' | cut -d'/' -f2 | sort -u)
+
+          if [ -z "$changed_files" ]; then
+            echo "has-changes=false" >> $GITHUB_OUTPUT
+            echo "matrix={\"include\":[]}" >> $GITHUB_OUTPUT
+            echo "No changes detected in apps directory"
+          else
+            echo "has-changes=true" >> $GITHUB_OUTPUT
+
+            # Build matrix of changed apps
+            matrix_items=""
+            for app in $changed_files; do
+              if [ -f "apps/$app/pyproject.toml" ]; then
+                if [ -n "$matrix_items" ]; then
+                  matrix_items="$matrix_items,"
+                fi
+                matrix_items="$matrix_items{\"app\":\"$app\"}"
+              fi
+            done
+
+            if [ -n "$matrix_items" ]; then
+              echo "matrix={\"include\":[$matrix_items]}" >> $GITHUB_OUTPUT
+              echo "Found Python apps with changes: $changed_files"
+            else
+              echo "has-changes=false" >> $GITHUB_OUTPUT
+              echo "matrix={\"include\":[]}" >> $GITHUB_OUTPUT
+              echo "No Python apps with pyproject.toml found in changed dirs"
+            fi
+          fi
+
+  ci:
+    needs: detect-changes
+    if: needs.detect-changes.outputs.has-changes == 'true'
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJson(needs.detect-changes.outputs.matrix) }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: Install Poetry
+        uses: snok/install-poetry@v1
+        with:
+          version: latest
+          virtualenvs-create: true
+          virtualenvs-in-project: true
+
+      - name: Cache Poetry dependencies
+        uses: actions/cache@v3
+        with:
+          path: apps/${{ matrix.app }}/.venv
+          key: >-
+            poetry-${{ matrix.app }}-${{ runner.os }}-
+            ${{ hashFiles('apps/${{ matrix.app }}/poetry.lock') }}
+          restore-keys: |
+            poetry-${{ matrix.app }}-${{ runner.os }}-
+
+      - name: Install dependencies
+        working-directory: apps/${{ matrix.app }}
+        run: poetry install
+
+      - name: Format check
+        working-directory: apps/${{ matrix.app }}
+        run: poetry run poe format --check
+
+      - name: Lint
+        working-directory: apps/${{ matrix.app }}
+        run: poetry run poe lint
+
+      - name: Test
+        working-directory: apps/${{ matrix.app }}
+        run: poetry run poe test
+
+      - name: Build Docker image
+        working-directory: apps/${{ matrix.app }}
+        run: |
+          if [ -f "Dockerfile" ]; then
+            docker build -t ${{ matrix.app }}:ci .
+            echo "✅ Docker build successful for ${{ matrix.app }}"
+          else
+            echo "⚠️  No Dockerfile found for ${{ matrix.app }}, skipping"
+            exit 1
+          fi

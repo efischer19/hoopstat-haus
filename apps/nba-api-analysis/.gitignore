@@ -12,3 +12,6 @@ pip-delete-this-directory.txt
 .pytest_cache/
 .ruff_cache/
 htmlcov/
+
+# Analysis reports (keep summary docs but ignore generated reports)
+reports/nba_api_analysis_*.md

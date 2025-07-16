@@ -1,0 +1,183 @@
+---
+name: Validate Dependabot Configuration
+
+on:
+  schedule:
+    # Run weekly on Mondays at 9 AM UTC (matches dependabot schedule timing)
+    - cron: '0 9 * * 1'
+  workflow_dispatch: # Allow manual triggering
+  pull_request:
+    paths:
+      - '.github/dependabot.yml'
+      - 'apps/**'
+      - '.github/workflows/validate-dependabot.yml'
+
+jobs:
+  validate-dependabot:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Find Python apps in /apps directory
+        id: find-apps
+        run: |
+          echo "Scanning /apps directory for Python projects..."
+          
+          # Find all directories in /apps that contain pyproject.toml
+          apps_with_pyproject=""
+          if [ -d "apps" ]; then
+            for app_dir in apps/*/; do
+              if [ -f "${app_dir}pyproject.toml" ]; then
+                app_name=$(basename "$app_dir")
+                if [ -n "$apps_with_pyproject" ]; then
+                  apps_with_pyproject="$apps_with_pyproject $app_name"
+                else
+                  apps_with_pyproject="$app_name"
+                fi
+                echo "Found Python app: $app_name"
+              fi
+            done
+          fi
+          
+          if [ -z "$apps_with_pyproject" ]; then
+            echo "No Python apps found in /apps directory"
+            echo "apps=" >> $GITHUB_OUTPUT
+          else
+            echo "Found Python apps: $apps_with_pyproject"
+            echo "apps=$apps_with_pyproject" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Extract apps from dependabot.yml
+        id: dependabot-apps
+        run: |
+          echo "Parsing .github/dependabot.yml for configured apps..."
+          
+          # Extract directory paths from dependabot.yml that start with /apps/
+          configured_apps=""
+          if [ -f ".github/dependabot.yml" ]; then
+            # Use grep and sed to extract directory paths starting with /apps/
+            app_dirs=$(grep -E '^\s*directory:\s*"/apps/' .github/dependabot.yml | \
+                      sed 's/.*directory:[[:space:]]*"\/apps\/\([^"]*\)".*/\1/' | \
+                      sort -u)
+            
+            for app in $app_dirs; do
+              if [ -n "$configured_apps" ]; then
+                configured_apps="$configured_apps $app"
+              else
+                configured_apps="$app"
+              fi
+              echo "Dependabot configured for app: $app"
+            done
+          fi
+          
+          if [ -z "$configured_apps" ]; then
+            echo "No apps configured in dependabot.yml"
+            echo "configured=" >> $GITHUB_OUTPUT
+          else
+            echo "Configured apps: $configured_apps"
+            echo "configured=$configured_apps" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Compare and validate
+        run: |
+          found_apps="${{ steps.find-apps.outputs.apps }}"
+          configured_apps="${{ steps.dependabot-apps.outputs.configured }}"
+          
+          echo "=== Dependabot Configuration Validation ==="
+          echo "Apps found in /apps directory: ${found_apps:-"(none)"}"
+          echo "Apps configured in dependabot.yml: ${configured_apps:-"(none)"}"
+          echo ""
+          
+          # Convert space-separated strings to arrays
+          if [ -n "$found_apps" ]; then
+            found_array=($found_apps)
+          else
+            found_array=()
+          fi
+          
+          if [ -n "$configured_apps" ]; then
+            configured_array=($configured_apps)
+          else
+            configured_array=()
+          fi
+          
+          # Check for missing apps in dependabot.yml
+          missing_apps=()
+          for app in "${found_array[@]}"; do
+            found_in_config=false
+            for configured in "${configured_array[@]}"; do
+              if [ "$app" = "$configured" ]; then
+                found_in_config=true
+                break
+              fi
+            done
+            if [ "$found_in_config" = false ]; then
+              missing_apps+=("$app")
+            fi
+          done
+          
+          # Check for extra apps in dependabot.yml (apps that don't exist)
+          extra_apps=()
+          for configured in "${configured_array[@]}"; do
+            found_in_apps=false
+            for app in "${found_array[@]}"; do
+              if [ "$configured" = "$app" ]; then
+                found_in_apps=true
+                break
+              fi
+            done
+            if [ "$found_in_apps" = false ]; then
+              extra_apps+=("$configured")
+            fi
+          done
+          
+          # Report results
+          validation_failed=false
+          
+          if [ ${#missing_apps[@]} -gt 0 ]; then
+            echo "❌ ERROR: Apps found in /apps but NOT configured in dependabot.yml:"
+            for app in "${missing_apps[@]}"; do
+              echo "  - $app"
+            done
+            echo ""
+            echo "To fix this, add the following to .github/dependabot.yml:"
+            for app in "${missing_apps[@]}"; do
+              echo "  - package-ecosystem: \"pip\""
+              echo "    directory: \"/apps/$app\""
+              echo "    schedule:"
+              echo "      interval: \"weekly\""
+              echo "    open-pull-requests-limit: 10"
+              echo "    groups:"
+              echo "      pip:"
+              echo "        patterns:"
+              echo "          - \"*\""
+              echo ""
+            done
+            validation_failed=true
+          fi
+          
+          if [ ${#extra_apps[@]} -gt 0 ]; then
+            echo "⚠️  WARNING: Apps configured in dependabot.yml but NOT found in /apps:"
+            for app in "${extra_apps[@]}"; do
+              echo "  - $app"
+            done
+            echo ""
+            echo "These entries should be removed from .github/dependabot.yml"
+            echo ""
+          fi
+          
+          if [ ${#missing_apps[@]} -eq 0 ] && [ ${#extra_apps[@]} -eq 0 ]; then
+            if [ ${#found_array[@]} -eq 0 ]; then
+              echo "✅ VALIDATION PASSED: No apps found in /apps directory, dependabot.yml is correctly configured"
+            else
+              echo "✅ VALIDATION PASSED: All apps in /apps directory are properly configured in dependabot.yml"
+            fi
+          fi
+          
+          # Fail the job if there are missing apps
+          if [ "$validation_failed" = true ]; then
+            echo ""
+            echo "💡 TIP: Dependabot cannot use wildcards, so each new app directory must be explicitly added to the configuration."
+            exit 1
+          fi

@@ -1,0 +1,40 @@
+name: "🔬 Planning & Discovery Request"
+description: "Request a technical plan for a large or complex feature."
+title: "plan: [High-level feature name]"
+labels: ["planning", "discovery"]
+assignees: []
+body:
+  - type: markdown
+    attributes:
+      value: "## Planning & Discovery"
+
+  - type: textarea
+    id: feature-idea
+    attributes:
+      label: "High-Level Feature Idea"
+      description: "Describe your large or complex feature idea. Focus on the 'what' and 'why'. Don't worry about the specific 'how' just yet."
+      placeholder: "e.g., I want to add full support for WNBA stats, including ingestion, processing, and API endpoints."
+    validations:
+      required: true
+
+  - type: textarea
+    id: goals
+    attributes:
+      label: "Goals & Business Value"
+      description: "What is the primary goal of this feature? What value does it add to the project?"
+      placeholder: "e.g., To make Hoopstat Haus the most comprehensive data source for both NBA and WNBA stats."
+    validations:
+      required: true
+
+  - type: textarea
+    id: plan-deliverables
+    attributes:
+      label: "Requested Plan Deliverables"
+      description: "This is the 'Acceptance Criteria' for the plan itself. The AI's response should deliver these items."
+      value: |
+        - [ ] **Epic Breakdown:** Break down the high-level feature into a list of smaller, implementable User Stories.
+        - [ ] **Required ADRs:** Identify a list of new ADRs that need to be proposed to support this feature (e.g., new data sources, new architectural components).
+        - [ ] **Technical Outline:** Provide a high-level technical plan or sequence of steps for implementation.
+        - [ ] **Risks & Open Questions:** List potential risks, challenges, or open questions that need to be addressed.
+    validations:
+      required: true

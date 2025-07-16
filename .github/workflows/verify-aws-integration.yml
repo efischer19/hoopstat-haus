@@ -1,0 +1,434 @@
+---
+name: Verify AWS Integration
+
+on:
+  schedule:
+    # Run weekly verification on Mondays at 8 AM UTC
+    - cron: '0 8 * * 1'
+  workflow_dispatch:
+    # Allow manual triggering for testing
+  push:
+    paths:
+      # Run when AWS-related configurations change
+      - '.github/workflows/verify-aws-integration.yml'
+      - 'terraform/**'
+      - '**/aws-config.yml'
+
+env:
+  AWS_REGION: us-east-1
+
+jobs:
+  verify-authentication:
+    name: "🔐 Verify GitHub OIDC → AWS Authentication"
+    runs-on: ubuntu-latest
+    
+    # Permissions required for OIDC token
+    permissions:
+      id-token: write
+      contents: read
+    
+    outputs:
+      auth-success: ${{ steps.auth-test.outputs.success }}
+      aws-account-id: ${{ steps.auth-test.outputs.account-id }}
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Configure AWS credentials via OIDC
+        uses: aws-actions/configure-aws-credentials@v4
+        id: aws-creds
+        with:
+          role-to-assume: ${{ vars.AWS_GITHUB_ACTIONS_ROLE_ARN }}
+          role-session-name: GitHubActions-VerifyIntegration
+          aws-region: ${{ env.AWS_REGION }}
+          
+      - name: Test AWS authentication and permissions
+        id: auth-test
+        run: |
+          echo "🔍 Testing AWS authentication..."
+          
+          # Verify we can assume the role and get caller identity
+          aws sts get-caller-identity
+          
+          # Extract account ID for verification
+          ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
+          echo "account-id=${ACCOUNT_ID}" >> $GITHUB_OUTPUT
+          
+          # Test basic permissions
+          echo "✅ AWS authentication successful"
+          echo "📋 Account ID: ${ACCOUNT_ID}"
+          echo "🏷️  Assumed Role: $(aws sts get-caller-identity --query Arn --output text)"
+          
+          echo "success=true" >> $GITHUB_OUTPUT
+
+  verify-infrastructure:
+    name: "🏗️ Verify AWS Infrastructure"
+    runs-on: ubuntu-latest
+    needs: verify-authentication
+    if: needs.verify-authentication.outputs.auth-success == 'true'
+    
+    permissions:
+      id-token: write
+      contents: read
+    
+    outputs:
+      s3-accessible: ${{ steps.s3-test.outputs.accessible }}
+      ecr-accessible: ${{ steps.ecr-test.outputs.accessible }}
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ vars.AWS_GITHUB_ACTIONS_ROLE_ARN }}
+          role-session-name: GitHubActions-VerifyInfra
+          aws-region: ${{ env.AWS_REGION }}
+      
+      - name: Test S3 bucket access
+        id: s3-test
+        run: |
+          echo "🪣 Testing S3 bucket access..."
+          
+          # Test each configured S3 bucket
+          BUCKETS=(
+            "${AWS_S3_BUCKET_RAW_DATA:-hoopstat-haus-raw-data-prod}"
+            "${AWS_S3_BUCKET_PROCESSED_DATA:-hoopstat-haus-processed-data-prod}"
+            "${AWS_S3_BUCKET_BACKUP:-hoopstat-haus-backup-prod}"
+          )
+          
+          for BUCKET in "${BUCKETS[@]}"; do
+            echo "🔍 Testing bucket: ${BUCKET}"
+            
+            # Test bucket existence and permissions
+            if aws s3 ls "s3://${BUCKET}/" > /dev/null 2>&1; then
+              echo "✅ Can list bucket: ${BUCKET}"
+            else
+              echo "❌ Cannot access bucket: ${BUCKET}"
+              echo "accessible=false" >> $GITHUB_OUTPUT
+              exit 1
+            fi
+            
+            # Test write permissions with a test file
+            TEST_KEY="integration-test/$(date +%s).txt"
+            echo "Testing S3 integration" | aws s3 cp - "s3://${BUCKET}/${TEST_KEY}"
+            echo "✅ Can write to bucket: ${BUCKET}"
+            
+            # Test read permissions
+            aws s3 cp "s3://${BUCKET}/${TEST_KEY}" - > /dev/null
+            echo "✅ Can read from bucket: ${BUCKET}"
+            
+            # Cleanup test file
+            aws s3 rm "s3://${BUCKET}/${TEST_KEY}"
+            echo "🧹 Cleaned up test file from: ${BUCKET}"
+          done
+          
+          echo "accessible=true" >> $GITHUB_OUTPUT
+      
+      - name: Test ECR repository access
+        id: ecr-test
+        run: |
+          echo "📦 Testing ECR repository access..."
+          
+          # Get ECR registry URI
+          REGISTRY_URI=$(aws sts get-caller-identity --query Account --output text).dkr.ecr.${AWS_REGION}.amazonaws.com
+          echo "🏷️  Registry URI: ${REGISTRY_URI}"
+          
+          # Test ECR authentication
+          aws ecr get-login-password --region ${AWS_REGION} | docker login --username AWS --password-stdin ${REGISTRY_URI}
+          echo "✅ ECR authentication successful"
+          
+          # Test repository access (attempt to create if doesn't exist)
+          REPO_NAME="hoopstat-haus/integration-test"
+          if ! aws ecr describe-repositories --repository-names "${REPO_NAME}" --region ${AWS_REGION} > /dev/null 2>&1; then
+            echo "🆕 Creating test repository: ${REPO_NAME}"
+            aws ecr create-repository --repository-name "${REPO_NAME}" --region ${AWS_REGION}
+          fi
+          
+          # Build and push a test image
+          echo "🔨 Building test image..."
+          echo "FROM alpine:latest" > Dockerfile.test
+          echo "RUN echo 'AWS Integration Test'" >> Dockerfile.test
+          
+          docker build -f Dockerfile.test -t "${REGISTRY_URI}/${REPO_NAME}:integration-test" .
+          docker push "${REGISTRY_URI}/${REPO_NAME}:integration-test"
+          echo "✅ Successfully pushed test image to ECR"
+          
+          # Cleanup test image
+          aws ecr batch-delete-image --repository-name "${REPO_NAME}" --image-ids imageTag=integration-test --region ${AWS_REGION}
+          rm Dockerfile.test
+          echo "🧹 Cleaned up test image"
+          
+          echo "accessible=true" >> $GITHUB_OUTPUT
+
+  verify-application-integration:
+    name: "🐍 Verify Python Application Integration"
+    runs-on: ubuntu-latest
+    needs: [verify-authentication, verify-infrastructure]
+    if: needs.verify-infrastructure.outputs.s3-accessible == 'true'
+    
+    permissions:
+      id-token: write
+      contents: read
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.12'
+      
+      - name: Install test dependencies
+        run: |
+          pip install boto3 pytest
+      
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ vars.AWS_GITHUB_ACTIONS_ROLE_ARN }}
+          role-session-name: GitHubActions-VerifyAppIntegration
+          aws-region: ${{ env.AWS_REGION }}
+      
+      - name: Create and run integration tests
+        run: |
+          cat > test_aws_integration.py << 'EOF'
+          import boto3
+          import os
+          import pytest
+          from datetime import datetime
+          
+          def test_aws_configuration():
+              """Test that AWS configuration is properly loaded"""
+              assert os.getenv('AWS_REGION') is not None
+              assert os.getenv('AWS_DEFAULT_REGION') is not None
+              
+          def test_s3_operations():
+              """Test basic S3 operations"""
+              s3_client = boto3.client('s3')
+              
+              # Use the raw data bucket for testing
+              bucket_name = os.getenv('AWS_S3_BUCKET_RAW_DATA', 'hoopstat-haus-raw-data-prod')
+              test_key = f'integration-test/python-{datetime.now().isoformat()}.json'
+              test_content = '{"test": "data", "timestamp": "' + datetime.now().isoformat() + '"}'
+              
+              # Test upload
+              s3_client.put_object(
+                  Bucket=bucket_name,
+                  Key=test_key,
+                  Body=test_content,
+                  ContentType='application/json'
+              )
+              
+              # Test download
+              response = s3_client.get_object(Bucket=bucket_name, Key=test_key)
+              downloaded_content = response['Body'].read().decode('utf-8')
+              assert downloaded_content == test_content
+              
+              # Test list
+              objects = s3_client.list_objects_v2(
+                  Bucket=bucket_name,
+                  Prefix='integration-test/'
+              )
+              assert 'Contents' in objects
+              
+              # Cleanup
+              s3_client.delete_object(Bucket=bucket_name, Key=test_key)
+              
+          def test_ecr_integration():
+              """Test ECR integration"""
+              ecr_client = boto3.client('ecr')
+              
+              # Test getting authorization token
+              response = ecr_client.get_authorization_token()
+              assert 'authorizationData' in response
+              assert len(response['authorizationData']) > 0
+              
+          if __name__ == '__main__':
+              pytest.main([__file__, '-v'])
+          EOF
+          
+          # Set test environment variables
+          export AWS_S3_BUCKET_RAW_DATA="${AWS_S3_BUCKET_RAW_DATA:-hoopstat-haus-raw-data-prod}"
+          export AWS_S3_BUCKET_PROCESSED_DATA="${AWS_S3_BUCKET_PROCESSED_DATA:-hoopstat-haus-processed-data-prod}"
+          export AWS_S3_BUCKET_BACKUP="${AWS_S3_BUCKET_BACKUP:-hoopstat-haus-backup-prod}"
+          
+          # Run the integration tests
+          echo "🧪 Running Python AWS integration tests..."
+          python test_aws_integration.py
+
+  verify-end-to-end:
+    name: "🚀 End-to-End Workflow Verification"
+    runs-on: ubuntu-latest
+    needs: [verify-authentication, verify-infrastructure, verify-application-integration]
+    if: |
+      needs.verify-authentication.outputs.auth-success == 'true' &&
+      needs.verify-infrastructure.outputs.s3-accessible == 'true' &&
+      needs.verify-infrastructure.outputs.ecr-accessible == 'true'
+    
+    permissions:
+      id-token: write
+      contents: read
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ vars.AWS_GITHUB_ACTIONS_ROLE_ARN }}
+          role-session-name: GitHubActions-VerifyE2E
+          aws-region: ${{ env.AWS_REGION }}
+      
+      - name: Simulate complete application deployment
+        run: |
+          echo "🚀 Simulating end-to-end application deployment..."
+          
+          # Create a minimal Python app for testing
+          mkdir -p test-app
+          cat > test-app/app.py << 'EOF'
+          import boto3
+          import json
+          from datetime import datetime
+          import os
+          
+          def main():
+              print("🐍 Starting Hoopstat Haus test application...")
+              
+              # Test configuration loading
+              s3_bucket = os.getenv('AWS_S3_BUCKET_RAW_DATA', 'hoopstat-haus-raw-data-prod')
+              aws_region = os.getenv('AWS_REGION', 'us-east-1')
+              
+              print(f"📍 AWS Region: {aws_region}")
+              print(f"🪣 S3 Bucket: {s3_bucket}")
+              
+              # Test S3 operations
+              s3_client = boto3.client('s3')
+              test_data = {
+                  'application': 'hoopstat-haus-test',
+                  'timestamp': datetime.now().isoformat(),
+                  'status': 'healthy'
+              }
+              
+              key = f'health-check/{datetime.now().strftime("%Y-%m-%d")}/app-status.json'
+              s3_client.put_object(
+                  Bucket=s3_bucket,
+                  Key=key,
+                  Body=json.dumps(test_data),
+                  ContentType='application/json'
+              )
+              
+              print(f"✅ Successfully wrote health check to s3://{s3_bucket}/{key}")
+              
+              # Verify the data was written
+              response = s3_client.get_object(Bucket=s3_bucket, Key=key)
+              stored_data = json.loads(response['Body'].read().decode('utf-8'))
+              assert stored_data['application'] == 'hoopstat-haus-test'
+              
+              print("✅ End-to-end verification completed successfully!")
+              
+          if __name__ == '__main__':
+              main()
+          EOF
+          
+          cat > test-app/Dockerfile << 'EOF'
+          FROM python:3.12-slim
+          
+          RUN pip install boto3
+          
+          WORKDIR /app
+          COPY app.py .
+          
+          CMD ["python", "app.py"]
+          EOF
+          
+          # Set environment variables
+          export AWS_S3_BUCKET_RAW_DATA="${AWS_S3_BUCKET_RAW_DATA:-hoopstat-haus-raw-data-prod}"
+          
+          # Build and run the test application
+          cd test-app
+          docker build -t hoopstat-haus-test .
+          
+          # Run the application with AWS credentials
+          docker run --rm \
+            -e AWS_REGION="${AWS_REGION}" \
+            -e AWS_DEFAULT_REGION="${AWS_REGION}" \
+            -e AWS_S3_BUCKET_RAW_DATA="${AWS_S3_BUCKET_RAW_DATA}" \
+            -e AWS_ACCESS_KEY_ID="${AWS_ACCESS_KEY_ID}" \
+            -e AWS_SECRET_ACCESS_KEY="${AWS_SECRET_ACCESS_KEY}" \
+            -e AWS_SESSION_TOKEN="${AWS_SESSION_TOKEN}" \
+            hoopstat-haus-test
+          
+          echo "🎉 End-to-end verification completed successfully!"
+
+  report-results:
+    name: "📊 Report Verification Results"
+    runs-on: ubuntu-latest
+    needs: [verify-authentication, verify-infrastructure, verify-application-integration, verify-end-to-end]
+    if: always()
+    
+    steps:
+      - name: Generate verification report
+        run: |
+          echo "# 🔍 AWS Integration Verification Report" > verification-report.md
+          echo "" >> verification-report.md
+          echo "**Verification Date:** $(date -u '+%Y-%m-%d %H:%M:%S UTC')" >> verification-report.md
+          echo "**Workflow Run:** ${{ github.run_id }}" >> verification-report.md
+          echo "" >> verification-report.md
+          
+          echo "## 📋 Test Results" >> verification-report.md
+          echo "" >> verification-report.md
+          
+          # Authentication results
+          if [[ "${{ needs.verify-authentication.result }}" == "success" ]]; then
+            echo "✅ **Authentication:** GitHub OIDC → AWS authentication successful" >> verification-report.md
+            echo "   - Account ID: ${{ needs.verify-authentication.outputs.aws-account-id }}" >> verification-report.md
+          else
+            echo "❌ **Authentication:** Failed to authenticate with AWS" >> verification-report.md
+          fi
+          
+          # Infrastructure results
+          if [[ "${{ needs.verify-infrastructure.result }}" == "success" ]]; then
+            echo "✅ **Infrastructure:** AWS resources accessible" >> verification-report.md
+            echo "   - S3 Buckets: Accessible" >> verification-report.md
+            echo "   - ECR Registry: Accessible" >> verification-report.md
+          else
+            echo "❌ **Infrastructure:** AWS resources not accessible" >> verification-report.md
+          fi
+          
+          # Application integration results
+          if [[ "${{ needs.verify-application-integration.result }}" == "success" ]]; then
+            echo "✅ **Application Integration:** Python apps can interact with AWS" >> verification-report.md
+          else
+            echo "❌ **Application Integration:** Python apps cannot interact with AWS" >> verification-report.md
+          fi
+          
+          # End-to-end results
+          if [[ "${{ needs.verify-end-to-end.result }}" == "success" ]]; then
+            echo "✅ **End-to-End:** Complete deployment workflow functional" >> verification-report.md
+          else
+            echo "❌ **End-to-End:** Deployment workflow has issues" >> verification-report.md
+          fi
+          
+          echo "" >> verification-report.md
+          echo "## 🎯 Overall Status" >> verification-report.md
+          
+          if [[ "${{ needs.verify-authentication.result }}" == "success" && \
+                "${{ needs.verify-infrastructure.result }}" == "success" && \
+                "${{ needs.verify-application-integration.result }}" == "success" && \
+                "${{ needs.verify-end-to-end.result }}" == "success" ]]; then
+            echo "🎉 **All verification tests passed!** AWS integration is fully functional." >> verification-report.md
+          else
+            echo "⚠️ **Some verification tests failed.** Please review the results above." >> verification-report.md
+          fi
+          
+          # Output the report
+          cat verification-report.md
+          
+          # Create a summary for the job
+          echo "## AWS Integration Verification" >> $GITHUB_STEP_SUMMARY
+          cat verification-report.md >> $GITHUB_STEP_SUMMARY

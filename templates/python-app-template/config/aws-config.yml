@@ -1,0 +1,65 @@
+# Example configuration file for AWS resources
+# This file shows how applications can optionally supplement
+# environment variables with structured configuration
+
+aws:
+  region: ${AWS_REGION}
+  
+  # S3 bucket configuration
+  s3:
+    buckets:
+      raw_data: ${AWS_S3_BUCKET_RAW_DATA}
+      processed_data: ${AWS_S3_BUCKET_PROCESSED_DATA}
+      backup: ${AWS_S3_BUCKET_BACKUP}
+    
+    # S3 operation settings
+    settings:
+      multipart_threshold: 8388608  # 8MB
+      max_concurrency: 10
+      use_ssl: true
+
+  # ECR configuration
+  ecr:
+    repository: ${AWS_ECR_REPOSITORY}
+    
+  # Application-specific configuration
+  data_pipeline:
+    # Data ingestion settings
+    batch_size: 1000
+    retry_attempts: 3
+    timeout_seconds: 300
+    
+    # File naming patterns
+    raw_data_prefix: "nba-api/raw"
+    processed_data_prefix: "processed/games"
+    backup_prefix: "backups"
+    
+    # Data processing settings
+    max_memory_usage: "2GB"
+    parallel_processing: true
+
+# Logging configuration
+logging:
+  level: INFO
+  format: json
+  handlers:
+    - console
+    - cloudwatch  # Future integration
+  
+  # Structured logging fields
+  fields:
+    application: "${APP_NAME}"
+    environment: "${ENVIRONMENT}"
+    version: "${APP_VERSION}"
+
+# Monitoring and health check configuration
+monitoring:
+  health_check:
+    enabled: true
+    interval_seconds: 30
+    timeout_seconds: 5
+    
+  metrics:
+    enabled: true
+    provider: cloudwatch  # Future integration
+    namespace: "HoopstatHaus"

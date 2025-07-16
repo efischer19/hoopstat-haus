@@ -1,0 +1,142 @@
+name: Accept Proposed ADRs
+
+on:
+  workflow_dispatch:
+    inputs:
+      pull_request_number:
+        description: 'Pull request number containing proposed ADRs'
+        required: true
+        type: string
+
+permissions:
+  contents: write
+
+jobs:
+  accept-adrs:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Get repository owner
+        id: repo-info
+        run: |
+          # Extract owner from repository name
+          REPO_OWNER="${{ github.repository_owner }}"
+          echo "owner=$REPO_OWNER" >> $GITHUB_OUTPUT
+          echo "Repository owner: $REPO_OWNER"
+
+      - name: Check if user is repository owner
+        run: |
+          if [ "${{ github.actor }}" != "${{ steps.repo-info.outputs.owner }}" ]; then
+            echo "Error: Only the repository owner (${{ steps.repo-info.outputs.owner }}) can accept ADRs. Current actor: ${{ github.actor }}"
+            exit 1
+          fi
+          echo "User ${{ github.actor }} is authorized to accept ADRs"
+
+      - name: Get PR information and checkout PR branch
+        id: pr-info
+        run: |
+          # Get PR information
+          PR_INFO=$(gh pr view ${{ inputs.pull_request_number }} --json headRefName,baseRefName,headRepository)
+          HEAD_REF=$(echo "$PR_INFO" | jq -r '.headRefName')
+          BASE_REF=$(echo "$PR_INFO" | jq -r '.baseRefName')
+          HEAD_REPO=$(echo "$PR_INFO" | jq -r '.headRepository.name')
+          
+          echo "head_ref=$HEAD_REF" >> $GITHUB_OUTPUT
+          echo "base_ref=$BASE_REF" >> $GITHUB_OUTPUT
+          echo "head_repo=$HEAD_REPO" >> $GITHUB_OUTPUT
+          
+          echo "PR Head Branch: $HEAD_REF"
+          echo "PR Base Branch: $BASE_REF"
+          echo "PR Head Repository: $HEAD_REPO"
+          
+          # Checkout the PR branch
+          git fetch origin $HEAD_REF
+          git checkout $HEAD_REF
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Find and process ADR files
+        run: |
+          # Get list of changed files in the PR that are in the /meta/adr/ directory
+          echo "Finding changed files in PR #${{ inputs.pull_request_number }}..."
+          
+          # Get the list of changed files in the PR
+          CHANGED_FILES=$(gh pr diff ${{ inputs.pull_request_number }} --name-only)
+          echo "All changed files:"
+          echo "$CHANGED_FILES"
+          
+          # Filter for files in the /meta/adr/ directory
+          ADR_FILES=$(echo "$CHANGED_FILES" | grep "^meta/adr/" | grep "\.md$" || true)
+          
+          if [ -z "$ADR_FILES" ]; then
+            echo "No ADR files found in the PR changes."
+            exit 0
+          fi
+          
+          echo "ADR files to process:"
+          echo "$ADR_FILES"
+          
+          # Get current date in YYYY-MM-DD format
+          CURRENT_DATE=$(date +%Y-%m-%d)
+          echo "Current date: $CURRENT_DATE"
+          
+          # Process each ADR file
+          CHANGES_MADE=false
+          while IFS= read -r file; do
+            if [ -f "$file" ]; then
+              echo "Processing file: $file"
+              
+              # Check if file contains 'status: "Proposed"'
+              if grep -q 'status: "Proposed"' "$file"; then
+                echo "  - Updating status from Proposed to Accepted"
+                sed -i 's/status: "Proposed"/status: "Accepted"/g' "$file"
+                CHANGES_MADE=true
+              fi
+              
+              # Update the date field with current date
+              if grep -q '^date: ' "$file"; then
+                echo "  - Updating date to $CURRENT_DATE"
+                sed -i "s/^date: .*/date: \"$CURRENT_DATE\"/g" "$file"
+                CHANGES_MADE=true
+              fi
+              
+              echo "  - File processed successfully"
+            else
+              echo "Warning: File $file not found"
+            fi
+          done <<< "$ADR_FILES"
+          
+          # Set output for next step
+          echo "changes_made=$CHANGES_MADE" >> $GITHUB_ENV
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Commit and push changes
+        run: |
+          if [ "$changes_made" = "true" ]; then
+            # Configure git
+            git config --local user.email "action@github.com"
+            git config --local user.name "GitHub Action"
+            
+            # Add changed files
+            git add meta/adr/
+            
+            # Check if there are changes to commit
+            if git diff --cached --quiet; then
+              echo "No changes to commit"
+            else
+              # Commit changes
+              git commit -m "chore: Accept proposed ADRs"
+              
+              # Push changes
+              git push origin ${{ steps.pr-info.outputs.head_ref }}
+              
+              echo "Changes committed and pushed successfully"
+            fi
+          else
+            echo "No changes were made to ADR files"
+          fi

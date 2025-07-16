@@ -38,6 +38,112 @@ For now, I'm handling the code generation and merging myself as part of the expe
 
 As the project matures, this process will likely evolve. Thank you for your understanding!
 
+## Python Development Environment
+
+### Setting Up a New Python Project
+
+All Python applications in Hoopstat Haus follow a standard structure and tooling approach. To create a new Python project:
+
+1. **Copy the template:**
+   ```bash
+   cp -r templates/python-app-template apps/your-new-app
+   cd apps/your-new-app
+   ```
+
+2. **Update project configuration:**
+   Edit `pyproject.toml` to update:
+   - Project name (change from "python-app-template")
+   - Description and authors
+   - Package name in the `packages` field
+
+3. **Install dependencies:**
+   ```bash
+   poetry install
+   ```
+
+4. **Verify setup:**
+   ```bash
+   poetry run start    # Should run the hello world app
+   poetry run test     # Should run and pass all tests
+   poetry run lint     # Should show no linting errors
+   poetry run format   # Should format the code
+   ```
+
+### Development Workflow for Python Projects
+
+All Python projects use the same standard commands:
+
+#### Standard Scripts
+- `poetry run start` - Run the application
+- `poetry run test` - Run tests with pytest
+- `poetry run lint` - Run linting with Ruff
+- `poetry run format` - Format code with Black
+
+#### Development Commands
+```bash
+# Install/update dependencies
+poetry install
+poetry add package-name              # Add runtime dependency
+poetry add --group dev package-name  # Add development dependency
+
+# Run application directly
+poetry run python -m app.main
+
+# Test with coverage
+poetry run pytest --cov=app
+
+# Fix linting issues automatically
+poetry run ruff check --fix .
+
+# Check formatting without changing files
+poetry run black --check .
+```
+
+#### Docker Usage
+```bash
+# Build development image
+docker build --target development -t your-app:dev .
+
+# Build production image  
+docker build --target production -t your-app:prod .
+
+# Run containers
+docker run -it your-app:dev      # Development
+docker run your-app:prod         # Production
+```
+
+### Code Quality Standards
+
+Before committing any Python code:
+
+1. **Run all checks:**
+   ```bash
+   poetry run format   # Format code
+   poetry run lint     # Check for issues
+   poetry run test     # Run tests
+   ```
+
+2. **Follow the patterns:**
+   - Use type hints on function signatures
+   - Add docstrings to public functions and classes
+   - Write tests for new functionality
+   - Keep functions simple and focused
+
+3. **Project structure:**
+   ```
+   your-app/
+   ├── app/              # Application source code
+   │   ├── __init__.py
+   │   ├── main.py       # Entry point
+   │   └── scripts.py    # Development scripts
+   ├── tests/            # Test files
+   │   ├── __init__.py
+   │   └── test_*.py
+   ├── Dockerfile        # Multi-stage Docker build
+   ├── pyproject.toml    # Poetry configuration
+   └── README.md
+   ```
+
 ## Code of Conduct
 
 Finally, all participants are expected to follow our [Code of Conduct](./CODE_OF_CONDUCT.md). Please be respectful and considerate in all your interactions.

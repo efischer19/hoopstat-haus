@@ -1,18 +1,18 @@
-name: "🔬 Planning & Discovery Request"
-description: "Request a technical plan for a large or complex feature."
+name: "🔬 Strategic Plan & Discovery Request"
+description: "Request a technical plan or research report. Output is documentation ONLY."
 title: "plan: [High-level feature name]"
-labels: ["planning", "discovery"]
+labels: ["planning", "discovery", "documentation"]
 assignees: []
 body:
   - type: markdown
     attributes:
-      value: "## Planning & Discovery"
+      value: "## Strategic Planning Request"
 
   - type: textarea
     id: feature-idea
     attributes:
       label: "High-Level Feature Idea"
-      description: "Describe your large or complex feature idea. Focus on the 'what' and 'why'. Don't worry about the specific 'how' just yet."
+      description: "Describe your large or complex feature idea. Focus on the 'what' and 'why'."
       placeholder: "e.g., I want to add full support for WNBA stats, including ingestion, processing, and API endpoints."
     validations:
       required: true
@@ -29,12 +29,23 @@ body:
   - type: textarea
     id: plan-deliverables
     attributes:
-      label: "Requested Plan Deliverables"
-      description: "This is the 'Acceptance Criteria' for the plan itself. The AI's response should deliver these items."
+      label: "Requested Plan Deliverables (Documentation Only)"
+      description: "The AI's response must be a document that delivers these items."
       value: |
-        - [ ] **Epic Breakdown:** Break down the high-level feature into a list of smaller, implementable User Stories.
-        - [ ] **Required ADRs:** Identify a list of new ADRs that need to be proposed to support this feature (e.g., new data sources, new architectural components).
-        - [ ] **Technical Outline:** Provide a high-level technical plan or sequence of steps for implementation.
-        - [ ] **Risks & Open Questions:** List potential risks, challenges, or open questions that need to be addressed.
+        - [ ] A new Markdown file created in the `meta/plans/` directory containing the full analysis.
+        - [ ] **Epic Breakdown:** A list of smaller, implementable User Stories derived from the high-level idea.
+        - [ ] **Required ADRs:** A list of new ADRs that need to be proposed to support this feature.
+        - [ ] **High-Level Implementation Strategy:** A description of the proposed technical approach, *without writing code*.
+        - [ ] **Risks & Open Questions:** A list of potential risks, challenges, or open questions.
     validations:
       required: true
+
+  - type: markdown
+    attributes:
+      value: |
+        ---
+        ## ❗ Scope and Constraints
+        **IMPORTANT:** The deliverable for this planning request is **documentation ONLY**.
+        - **DO NOT** write or modify any application code in the `/apps` directory.
+        - **DO NOT** implement CI/CD workflows in the `.github/workflows` directory.
+        - The goal of this task is to produce the *plan* that will be used as the input for a future 'Feature Request'. Implementation will happen in a separate pull request.

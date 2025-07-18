@@ -7,7 +7,7 @@
 
 ## Executive Summary
 
-This plan outlines the technical architecture for implementing a Model Context Protocol (MCP) server that will serve as the AI-Native Access Layer for the Hoopstat Haus project. The MCP server will expose our processed basketball statistics stored as Parquet files in the Gold layer on S3, making this data accessible to AI agents and Large Language Models through a standardized protocol.
+This plan outlines the technical architecture for implementing a Model Context Protocol (MCP) server that will serve as the AI-Native Access Layer for the Hoopstat Haus project. The MCP server will expose our processed basketball statistics stored as Parquet files in the Gold layer on S3, making this data accessible to AI agents and Large Language Models through a standardized protocol. This approach aligns with AWS best practices for [implementing conversational AI for S3 tables using Model Context Protocol](https://aws.amazon.com/blogs/storage/implementing-conversational-ai-for-s3-tables-using-model-context-protocol-mcp/).
 
 The solution will be implemented as a serverless Python application running on AWS Lambda, fronted by Amazon API Gateway, and secured with API key authentication. The initial implementation will focus on providing player season statistics, with the architecture designed to easily accommodate additional data endpoints as the system matures.
 

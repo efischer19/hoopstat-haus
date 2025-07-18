@@ -1,27 +1,19 @@
 [tool.poetry]
-name = "python-app-template"
+name = "example-math-utils"
 version = "0.1.0"
-description = "A template Python application for Hoopstat Haus projects"
+description = "Example math utilities library for demonstrating local development workflow"
 authors = ["Hoopstat Haus Team"]
 readme = "README.md"
-packages = [{include = "app"}]
+packages = [{include = "example_math_utils"}]
 
 [tool.poetry.dependencies]
 python = "^3.12"
-# Example of local shared library dependency (uncomment and adjust as needed):
-# example-shared-lib = {path = "../../libs/example-shared-lib", develop = true}
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^8.4.1"
 ruff = "^0.12.3"
 black = "^25.1.0"
 pytest-cov = "^6.2.1"
-
-[tool.poetry.scripts]
-start = "app.main:main"
-test = "app.scripts:test"
-lint = "app.scripts:lint"
-format = "app.scripts:format_code"
 
 [build-system]
 requires = ["poetry-core"]
@@ -31,6 +23,8 @@ build-backend = "poetry.core.masonry.api"
 [tool.ruff]
 target-version = "py312"
 line-length = 88
+
+[tool.ruff.lint]
 select = [
     "E",  # pycodestyle errors
     "W",  # pycodestyle warnings
@@ -42,7 +36,7 @@ select = [
 ]
 ignore = []
 
-[tool.ruff.mccabe]
+[tool.ruff.lint.mccabe]
 max-complexity = 10
 
 # Black configuration
@@ -58,7 +52,7 @@ python_functions = ["test_*"]
 addopts = "--strict-markers --disable-warnings"
 
 [tool.coverage.run]
-source = ["app"]
+source = ["example_math_utils"]
 omit = ["tests/*"]
 
 [tool.coverage.report]
@@ -68,4 +62,3 @@ exclude_lines = [
     "raise AssertionError",
     "raise NotImplementedError",
 ]
-

@@ -1,15 +1,14 @@
 [tool.poetry]
-name = "python-app-template"
+name = "example-calculator-app"
 version = "0.1.0"
-description = "A template Python application for Hoopstat Haus projects"
+description = "Example calculator application demonstrating local dependency management"
 authors = ["Hoopstat Haus Team"]
 readme = "README.md"
 packages = [{include = "app"}]
 
 [tool.poetry.dependencies]
 python = "^3.12"
-# Example of local shared library dependency (uncomment and adjust as needed):
-# example-shared-lib = {path = "../../libs/example-shared-lib", develop = true}
+example-math-utils = {path = "../../libs/example-math-utils", develop = true}
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^8.4.1"

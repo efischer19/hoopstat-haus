@@ -7,11 +7,11 @@
 
 ## Executive Summary
 
-This plan outlines the design and implementation strategy for creating a "thin client" frontend application that will serve as the primary user interface for the Hoopstat Haus project. The frontend will feature a simple text input interface where users can ask natural language questions about basketball statistics, orchestrating seamless communication between users, Amazon Bedrock (for AI/LLM capabilities), and our backend MCP server (for data access).
+This plan outlines the design and implementation strategy for creating a simple "thin client" frontend application that will serve as the primary user interface for the Hoopstat Haus project. The frontend will feature a simple text input interface where users can ask natural language questions about basketball statistics, starting with anonymous access and a single query type to minimize complexity.
 
-The solution will be implemented as a modern, static web application using contemporary frontend technologies, designed for optimal user experience across devices while maintaining minimal complexity. The architecture emphasizes the "thin client" approach with minimal client-side logic, leveraging cloud services for heavy computation and data processing.
+The solution will be implemented as a minimal, static web application using contemporary frontend technologies, designed for optimal user experience across devices while maintaining minimal complexity. The architecture emphasizes the "thin client" approach with no client-side state management, leveraging cloud services for heavy computation and data processing.
 
-This frontend represents the primary user-facing demonstration of the Hoopstat Haus value proposition - making advanced basketball analytics accessible to non-technical users through natural language interactions, showcasing the power of our AI-native data platform.
+This frontend represents the MVP demonstration of the Hoopstat Haus value proposition - making basketball analytics accessible through natural language interactions with a simple "enter question, get results" interface.
 
 ## High-Level Feature Idea
 
@@ -44,15 +44,15 @@ Create a simple, elegant, and responsive web application that provides a convers
 - Consider build-time optimization and deployment efficiency
 - Ensure compatibility with modern web standards and accessibility requirements
 
-**Authentication & Session Management:**
-- Implement client-side authentication flow compatible with backend APIs
-- Design secure token storage and refresh mechanisms
-- Support both anonymous and authenticated user experiences
-- Integrate with existing API key management for MCP server access
+**Anonymous Access Strategy:**
+- Design for anonymous user access with no authentication required
+- Implement global rate limiting for cost control and abuse prevention
+- Simple request-response pattern without session management
+- Focus on minimal client-side complexity
 
 **AI Integration Pattern:**
-- Design conversational UI patterns optimized for basketball analytics
-- Implement streaming response handling for real-time AI interactions
+- Design simple request-response UI pattern for basketball analytics
+- Start with single query type, expand capabilities later
 - Create fallback mechanisms for service availability and error handling
 - Design response caching strategies for common queries
 
@@ -71,16 +71,15 @@ Create a simple, elegant, and responsive web application that provides a convers
 - Intuitive error messaging and recovery options
 
 **Response Presentation:**
-- Structured layout for statistical data (tables, charts, summaries)
-- Responsive design adapting to data complexity and screen size
-- Export capabilities for data and visualizations
-- Social sharing features for interesting insights
+- Simple text-based responses from AI processing
+- Clean, readable formatting for basketball insights
+- Progressive enhancement for future data visualization
+- Mobile-optimized text display and readability
 
 **Navigation & Discovery:**
-- Example query gallery for user onboarding
-- Query history and favorites functionality
-- Browse capabilities for exploring available data dimensions
-- Help and documentation integration
+- Example query gallery for user onboarding  
+- Simple interface focused on "enter question, get results"
+- Help and documentation integration for supported query types
 
 ### Integration Architecture
 
@@ -97,21 +96,21 @@ Create a simple, elegant, and responsive web application that provides a convers
          └────────────────────────┼───────────────────────┘
                                   │
                         ┌──────────────────┐
-                        │   Authentication │
+                        │   Rate Limiting  │
                         │   & API Mgmt     │
                         │                  │
                         │ - API Gateway    │
-                        │ - Auth Service   │
-                        │ - Rate Limiting  │
+                        │ - Cost Controls  │
+                        │ - Abuse Prevention│
                         └──────────────────┘
 ```
 
 ### Deployment & Hosting Strategy
 
-**Static Hosting Options:**
+**Frontend Static Hosting Options:**
 - Leverage AWS S3 + CloudFront for optimal integration with existing infrastructure
 - Consider modern static hosting platforms (Vercel, Netlify) for enhanced developer experience
-- Implement automated deployment pipeline from repository changes
+- Implement automated deployment pipeline from repository changes (separate from Python app deployments)
 - Configure custom domain with SSL/TLS and CDN optimization
 
 **Performance Optimization:**
@@ -135,27 +134,15 @@ The following Architecture Decision Records need to be proposed to formalize the
   - Bundle size optimization and loading performance
   - TypeScript support and type safety requirements
 
-### ADR: Authentication and Session Management Strategy
-- **Decision Needed:** Client-side authentication approach and session handling
-- **Context:** Need secure authentication that integrates with backend APIs while maintaining static hosting
+### ADR: API Communication Architecture
+- **Decision Needed:** Pattern for managing API calls and error handling without client-side state
+- **Context:** Need efficient communication with multiple APIs (Bedrock, MCP server) with stateless design
 - **Key Considerations:**
-  - JWT vs. session-based authentication patterns
-  - Token storage security (localStorage vs. secure cookies vs. memory)
-  - Integration with AWS Cognito, Auth0, or custom auth service
-  - Anonymous user experience vs. required authentication
-  - Session refresh and expiration handling
-  - Cross-device session synchronization
-
-### ADR: API Communication and State Management Architecture
-- **Decision Needed:** Pattern for managing API calls, caching, and application state
-- **Context:** Need efficient communication with multiple APIs (Bedrock, MCP server) with proper error handling
-- **Key Considerations:**
-  - State management library selection (Redux, Zustand, built-in framework state)
-  - API client abstraction and error handling patterns
+  - Stateless API client architecture and error handling patterns
   - Caching strategies for expensive AI and data queries
-  - Offline capability and progressive web app features
-  - Real-time features and WebSocket integration
   - Request deduplication and race condition handling
+  - Simple request-response pattern without session management
+  - Rate limiting integration for cost control
 
 ### ADR: Styling and Component Library Approach
 - **Decision Needed:** CSS framework, design system, and component architecture
@@ -168,23 +155,12 @@ The following Architecture Decision Records need to be proposed to formalize the
   - Dark mode and theme customization support
   - Mobile-first responsive design patterns
 
-### ADR: Data Visualization and Chart Library Selection
-- **Decision Needed:** Approach for displaying basketball statistics and visualizations
-- **Context:** Need flexible, accessible data visualization that works across devices and screen sizes
-- **Key Considerations:**
-  - Chart library selection (D3.js, Chart.js, Recharts, custom SVG)
-  - Responsive chart behavior and mobile optimization
-  - Accessibility features for data visualization
-  - Interactive features and drill-down capabilities
-  - Export functionality for charts and data
-  - Integration with overall design system
-
-### ADR: Deployment Pipeline and Hosting Infrastructure
-- **Decision Needed:** Hosting platform and deployment automation strategy
-- **Context:** Need reliable, performant hosting that integrates with development workflow
+### ADR: Frontend Deployment Pipeline and Hosting Infrastructure
+- **Decision Needed:** Frontend hosting platform and deployment automation strategy (separate from Python app deployments)
+- **Context:** Need reliable, performant static hosting that integrates with development workflow
 - **Key Considerations:**
   - Static hosting platform selection (AWS S3+CloudFront, Vercel, Netlify)
-  - CI/CD integration with GitHub Actions
+  - CI/CD integration with GitHub Actions for frontend builds
   - Branch-based preview deployments and testing
   - Custom domain configuration and SSL management
   - CDN configuration and cache optimization
@@ -195,9 +171,8 @@ The following Architecture Decision Records need to be proposed to formalize the
 - **Context:** Need graceful handling of API failures and clear communication of system status
 - **Key Considerations:**
   - Error boundary implementation and fallback UI patterns
-  - Loading state management for different query types
-  - Offline detection and graceful degradation
-  - User notification system (toasts, alerts, inline messages)
+  - Loading state management for AI query processing
+  - User notification system (alerts, inline messages)
   - Error logging and analytics integration
   - Recovery mechanisms and retry strategies
 
@@ -210,20 +185,20 @@ The following Architecture Decision Records need to be proposed to formalize the
 - **Impact:** Could delay implementation or make the service financially unsustainable
 - **Mitigation:** Research Bedrock API patterns thoroughly, implement query optimization and caching, set up cost monitoring and usage limits, design fallback mechanisms for AI service failures
 
-#### Risk: User Experience Expectations vs. AI Capabilities
-- **Description:** Users may expect conversational AI capabilities that exceed current LLM limitations for basketball analytics
-- **Impact:** Poor user experience and adoption if AI responses are inadequate or misleading
-- **Mitigation:** Design clear capability communication, implement query suggestion systems, provide fallback to structured data browsing, extensive testing with basketball domain experts
+#### Risk: Anonymous Access and Cost Control
+- **Description:** Anonymous access without authentication requires robust rate limiting to prevent cost escalation and service abuse
+- **Impact:** Could make the service financially unsustainable or unavailable due to abuse
+- **Mitigation:** Implement global system rate limits at API Gateway and Bedrock layers, set up cost monitoring and usage alerts, design query complexity limits
+
+#### Risk: Simple User Interface Expectations
+- **Description:** Users may initially expect more complex conversational capabilities than a simple "enter question, get results" interface provides
+- **Impact:** Poor user experience if expectations aren't properly set
+- **Mitigation:** Design clear interface messaging about capabilities, provide example queries, focus on single query type initially with clear expansion roadmap
 
 #### Risk: Cross-Origin Resource Sharing (CORS) and API Integration
 - **Description:** Static hosting may face CORS limitations when integrating with multiple APIs (Bedrock, MCP server)
 - **Impact:** Could require proxy services or architecture changes, affecting static hosting benefits
 - **Mitigation:** Design API gateway integration patterns, evaluate proxy service options, implement proper CORS configuration, plan for alternative hosting if needed
-
-#### Risk: Authentication Security in Static Application
-- **Description:** Client-side authentication in static applications presents security challenges for token storage and session management
-- **Impact:** Potential security vulnerabilities or poor user experience from overly restrictive security measures
-- **Mitigation:** Research static app authentication best practices, implement secure token handling, design progressive security based on user needs, plan for token refresh automation
 
 ### Medium Priority Risks
 
@@ -244,44 +219,20 @@ The following Architecture Decision Records need to be proposed to formalize the
 
 ### Open Questions
 
-#### Question: User Authentication Requirements and Anonymity
-- **Question:** Should the application require user authentication, or should it support anonymous usage with limitations?
-- **Impact:** Affects user onboarding flow, privacy considerations, and usage analytics
-- **Investigation Needed:** Analyze user journey requirements, evaluate privacy implications, assess business model needs
+#### Question: Single Query Type Initial Implementation
+- **Question:** Which specific type of basketball query should be the initial focus for MVP implementation?
+- **Impact:** Affects initial development scope and user onboarding strategy
+- **Investigation Needed:** Identify most common/valuable query patterns from basketball analytics use cases
 
-#### Question: Real-Time Features and Live Data Integration
-- **Question:** Should the frontend support real-time features like live game updates or streaming AI responses?
-- **Impact:** Affects architecture complexity, hosting requirements, and user experience expectations
-- **Investigation Needed:** Research real-time requirements, evaluate WebSocket vs. polling strategies, assess infrastructure implications
+#### Question: Response Format and Complexity
+- **Question:** How should text responses be formatted for optimal readability and user experience?
+- **Impact:** Affects user satisfaction and interface design patterns
+- **Investigation Needed:** Test different response formats with target users, evaluate mobile readability
 
-#### Question: Multi-Language and Internationalization Support
-- **Question:** Should the application support multiple languages for global basketball community access?
-- **Impact:** Affects development timeline, content management strategy, and AI integration complexity
-- **Investigation Needed:** Assess target audience geography, evaluate LLM multilingual capabilities, research basketball terminology translation
-
-#### Question: Offline Capability and Progressive Web App Features
-- **Question:** Should the application work offline and support PWA features for mobile app-like experience?
-- **Impact:** Affects architecture complexity, caching strategies, and mobile user experience
-- **Investigation Needed:** Evaluate offline use cases, assess caching requirements, research PWA adoption patterns
-
-#### Question: Custom Basketball Data Visualization Requirements
-- **Question:** Are standard chart libraries sufficient, or do basketball analytics require specialized visualization components?
-- **Impact:** Affects development timeline, library selection, and user experience quality
-- **Investigation Needed:** Research basketball-specific visualization patterns, evaluate existing solutions, consult with basketball analytics experts
-
-### Future Considerations
-
-#### Consideration: Voice Interface Integration
-- **Question:** Should the application support voice input for accessibility and mobile convenience?
-- **Investigation:** Evaluate speech recognition APIs, assess accessibility benefits, research mobile voice interaction patterns
-
-#### Consideration: Collaborative Features and Sharing
-- **Question:** Should users be able to save, share, and collaborate on basketball analysis sessions?
-- **Investigation:** Research collaboration patterns, evaluate social features, assess data privacy implications
-
-#### Consideration: Advanced Analytics and Custom Queries
-- **Question:** Should the application support advanced users who want to write custom queries or analysis scripts?
-- **Investigation:** Evaluate power user requirements, assess query builder interfaces, research progressive disclosure patterns
+#### Question: Rate Limiting Strategy
+- **Question:** What are appropriate rate limits for anonymous access to balance cost control with user experience?
+- **Impact:** Affects service costs and user adoption
+- **Investigation Needed:** Analyze expected usage patterns, benchmark against similar services
 
 ---
 
@@ -337,78 +288,73 @@ Create a comprehensive design system with reusable components that ensure consis
 - Performance optimization for component rendering
 ```
 
-#### Issue 3: Authentication and Session Management Implementation
+#### Issue 3: Simple Static Application Foundation
 ```markdown
 ## Title
-feat: implement secure authentication and session management
+feat: create simple static application foundation without authentication
 
 ## Description
-Develop client-side authentication system that securely integrates with backend APIs while maintaining static hosting compatibility.
+Develop basic static web application foundation focused on anonymous access and minimal complexity.
 
 ## Acceptance Criteria
-- [ ] User authentication flow implemented (login/logout/registration)
-- [ ] Secure token storage and management system
-- [ ] Session refresh automation and expiration handling
-- [ ] Anonymous user experience with feature limitations
-- [ ] Integration with MCP server API authentication
-- [ ] Error handling for authentication failures and network issues
+- [ ] Simple static HTML/CSS/JS foundation without authentication
+- [ ] Basic text input interface for basketball questions
+- [ ] Global rate limiting integration for cost control
+- [ ] Error handling for API failures and network issues
+- [ ] Mobile-responsive design for core interface
 
 ## Technical Requirements
-- JWT or OAuth2 token handling with secure storage
-- API client abstraction with automatic authentication
-- Protected route implementation for authenticated features
-- Session state persistence across browser sessions
-- Integration with planned authentication service (AWS Cognito/Auth0)
+- Stateless application design without client-side session management
+- API client abstraction with rate limiting support
+- Simple UI components focused on text input and display
+- Integration with planned API gateway for backend services
 ```
 
 ### Phase 2: Core Conversational Interface
 
-#### Issue 4: Natural Language Query Input Interface
+#### Issue 4: Basic Natural Language Query Interface
 ```markdown
 ## Title
-feat: develop conversational query input with AI suggestions
+feat: develop simple basketball query input interface
 
 ## Description
-Create the primary conversational interface where users input natural language basketball questions, with intelligent suggestions and query optimization.
+Create basic text input interface for basketball questions with simple suggestions and example queries.
 
 ## Acceptance Criteria
-- [ ] Clean, prominent text input interface with basketball-focused design
-- [ ] Real-time query suggestions based on available data and common patterns
-- [ ] Query history and favorites functionality for user convenience
-- [ ] Input validation and preprocessing for optimal AI processing
-- [ ] Mobile-optimized input experience with virtual keyboard considerations
-- [ ] Accessibility features including screen reader support and keyboard navigation
+- [ ] Clean text input interface with basketball-focused design
+- [ ] Basic query suggestions or example queries for user guidance
+- [ ] Simple input validation and preprocessing
+- [ ] Mobile-optimized input experience
+- [ ] Accessibility features including screen reader support
 
 ## Technical Requirements
-- Debounced input handling for performance optimization
-- Integration with suggestion API or local suggestion database
-- Query sanitization and preprocessing logic
-- Responsive design across all device sizes
-- Voice input capability evaluation and potential implementation
+- Basic input handling without complex suggestion APIs
+- Simple query preprocessing for optimal AI processing
+- Responsive design for mobile devices
+- Initial focus on single query type with clear expansion path
 ```
 
-#### Issue 5: Amazon Bedrock Integration and Response Handling
+#### Issue 5: Amazon Bedrock Integration for Simple Request-Response
 ```markdown
 ## Title
-feat: integrate Amazon Bedrock for AI-powered basketball analytics
+feat: integrate Amazon Bedrock for basketball analytics with simple request-response
 
 ## Description
-Implement seamless integration with Amazon Bedrock to process natural language queries and generate basketball insights using large language models.
+Implement basic integration with Amazon Bedrock for simple request-response pattern without streaming.
 
 ## Acceptance Criteria
 - [ ] Bedrock API client with proper authentication and error handling
-- [ ] Streaming response handling for real-time AI interaction feedback
-- [ ] Query optimization to minimize AI processing costs and latency
-- [ ] Response caching system for common queries and expensive operations
+- [ ] Simple request-response handling for basketball queries
+- [ ] Basic response caching for cost optimization
 - [ ] Fallback mechanisms for AI service unavailability
 - [ ] Usage monitoring and cost tracking integration
 
 ## Technical Requirements
 - AWS SDK integration with Bedrock service
-- Streaming response UI components with loading states
-- Response caching strategy (local storage, CDN, API layer)
+- Simple loading states without streaming UI complexity
+- Basic response caching strategy
 - Error boundary implementation for AI service failures
-- Query rate limiting and cost optimization logic
+- Rate limiting integration for cost control
 ```
 
 #### Issue 6: MCP Server Integration for Basketball Data Access
@@ -437,169 +383,100 @@ Develop the integration layer with the MCP server to fetch basketball statistics
 
 ### Phase 3: Data Presentation and User Experience
 
-#### Issue 7: Dynamic Data Visualization and Statistics Display
+#### Issue 7: Simple Text Response Display
 ```markdown
 ## Title
-feat: implement responsive data visualization for basketball statistics
+feat: implement clean text response display for basketball insights
 
 ## Description
-Create flexible, accessible data visualization components that present basketball statistics in intuitive charts, tables, and interactive formats.
+Create simple, readable text display for AI-generated basketball insights without complex visualizations.
 
 ## Acceptance Criteria
-- [ ] Chart library integration with basketball-optimized visualizations
-- [ ] Responsive table components for detailed statistical data
-- [ ] Interactive features including drill-down and filtering capabilities
-- [ ] Export functionality for data and visualizations (CSV, PNG, PDF)
-- [ ] Accessibility features for data visualization (alt text, keyboard navigation)
-- [ ] Mobile-optimized visualization layouts and interaction patterns
+- [ ] Clean, readable text formatting for AI responses
+- [ ] Mobile-optimized text display with proper typography
+- [ ] Basic loading states during query processing
+- [ ] Simple error display for failed queries
+- [ ] Accessibility features for text content
 
 ## Technical Requirements
-- Chart library selection and integration (D3.js/Chart.js/Recharts)
-- Responsive design system for various screen sizes
-- Data export functionality with multiple format support
-- Accessibility compliance for complex data visualizations
-- Performance optimization for large datasets
+- Responsive text layout for various screen sizes
+- Basic typography and readability optimization
+- Simple loading and error state management
+- Progressive enhancement foundation for future data visualization
 ```
 
-#### Issue 8: Response Layout Engine and Content Organization
+#### Issue 8: Basic Response Layout and Organization
 ```markdown
 ## Title
-feat: develop intelligent response layout system
+feat: develop simple response layout system
 
 ## Description
-Build a flexible layout engine that organizes AI responses and basketball data into coherent, visually appealing presentations based on query type and data complexity.
+Build basic layout system that organizes AI text responses in a clean, readable format.
 
 ## Acceptance Criteria
-- [ ] Dynamic layout system adapting to response content type and complexity
-- [ ] Progressive disclosure for complex statistical responses
-- [ ] Contextual navigation and follow-up question suggestions
-- [ ] Social sharing functionality for interesting insights and statistics
-- [ ] Response comparison features for multiple queries or time periods
-- [ ] Print-friendly layouts for offline reference
+- [ ] Simple layout system for text responses
+- [ ] Clear organization of AI insights and basketball information
+- [ ] Mobile-responsive layout design
+- [ ] Basic progressive enhancement foundation for future features
 
 ## Technical Requirements
-- Flexible grid system with dynamic content arrangement
-- Component-based layout with configurable templates
-- State management for complex multi-part responses
-- Social sharing API integrations (Twitter, LinkedIn, clipboard)
-- Print CSS optimization and layout considerations
+- Simple grid or flex layout system
+- Mobile-first responsive design
+- Clean typography and spacing systems
+- Foundation for future expansion to data visualization
 ```
 
 ### Phase 4: Advanced Features and Optimization
 
-#### Issue 9: Performance Optimization and Caching Strategy
-```markdown
-## Title
-feat: implement comprehensive performance optimization and caching
-
-## Description
-Optimize application performance through intelligent caching, code splitting, and resource optimization to ensure fast loading and responsive user experience.
-
-## Acceptance Criteria
-- [ ] Code splitting implementation for optimal bundle loading
-- [ ] Aggressive caching strategy for static assets and API responses
-- [ ] Image optimization and lazy loading for media content
-- [ ] Progressive loading for enhanced perceived performance
-- [ ] Performance monitoring and optimization metrics tracking
-- [ ] Offline capability with service worker implementation
-
-## Technical Requirements
-- Bundle analyzer integration and optimization workflow
-- Service worker implementation for caching and offline features
-- CDN optimization and asset preloading strategies
-- Performance budgets and automated performance testing
-- Real user monitoring (RUM) integration for performance insights
-```
-
-#### Issue 10: Analytics, Monitoring, and User Feedback System
-```markdown
-## Title
-feat: implement user analytics and feedback collection system
-
-## Description
-Establish comprehensive analytics and feedback systems to understand user behavior, identify popular features, and continuously improve the basketball analytics experience.
-
-## Acceptance Criteria
-- [ ] User behavior analytics tracking with privacy compliance
-- [ ] Error tracking and automated issue reporting system
-- [ ] User feedback collection interface and management
-- [ ] A/B testing framework for feature optimization
-- [ ] Performance monitoring with real-time alerting
-- [ ] Usage pattern analysis for feature prioritization and cost optimization
-
-## Technical Requirements
-- Analytics platform integration (Google Analytics, Mixpanel, custom)
-- Error tracking service integration (Sentry, Bugsnag)
-- Privacy-compliant user tracking with consent management
-- A/B testing infrastructure with statistical significance tracking
-- Custom analytics for basketball-specific user interactions
-```
-
 ## Phase-Based Implementation Roadmap
 
-### Phase 1: Foundation and Infrastructure (Weeks 1-3)
-**Goal:** Establish solid technical foundation and development workflow
+### Phase 1: Foundation and Core Infrastructure (Weeks 1-2)
+**Goal:** Establish basic technical foundation without authentication complexity
 
 **Key Deliverables:**
 - Frontend framework setup with development environment
-- Design system and component library foundation
-- Authentication and session management implementation
-- CI/CD pipeline configuration for automated deployment
+- Design system and component library foundation  
+- Simple static application foundation without authentication
+- CI/CD pipeline configuration for frontend deployments (separate from Python apps)
 - Basic hosting and domain configuration
 
 **Success Metrics:**
-- Development environment functional for all team members
+- Development environment functional for team members
 - Component library documented with usage examples
-- Authentication flow working end-to-end
-- Automated deployment pipeline operational
+- Anonymous access working end-to-end
+- Automated frontend deployment pipeline operational
 
-### Phase 2: Core Conversational Interface (Weeks 4-6)
-**Goal:** Implement primary user interaction patterns and AI integration
+### Phase 2: MVP Query Interface (Weeks 3-4)
+**Goal:** Implement basic "enter question, get results" functionality
 
 **Key Deliverables:**
-- Natural language query input interface with suggestions
-- Amazon Bedrock integration with streaming responses
+- Basic natural language query input interface
+- Amazon Bedrock integration with simple request-response
 - MCP server integration for basketball data access
-- Basic response presentation and layout system
-- Error handling and loading state management
+- Simple text response display and layout system
+- Rate limiting and error handling
 
 **Success Metrics:**
-- Users can successfully ask basketball questions and receive AI responses
+- Users can ask simple basketball questions and receive text responses
 - Integration with both Bedrock and MCP server functional
-- Response times under 3 seconds for cached queries
-- Error handling gracefully manages service failures
+- Response times reasonable for basic queries
+- Rate limiting prevents cost escalation
 
-### Phase 3: Enhanced User Experience (Weeks 7-9)
-**Goal:** Implement rich data presentation and interactive features
+### Phase 3: Enhancement and Optimization (Weeks 5-6)
+**Goal:** Polish user experience and prepare for expansion
 
 **Key Deliverables:**
-- Dynamic data visualization and statistics display
-- Intelligent response layout engine with progressive disclosure
-- Social sharing and export functionality
 - Mobile optimization and responsive design refinement
-- User onboarding and help system
+- Performance optimization and basic caching
+- User feedback collection system
+- Documentation and help system
+- Foundation for future data visualization
 
 **Success Metrics:**
-- Complex statistical data presented clearly across all device sizes
-- Users successfully share and export basketball insights
-- Mobile experience rated positively by test users
-- Help system reduces support queries by 50%
-
-### Phase 4: Optimization and Advanced Features (Weeks 10-12)
-**Goal:** Optimize performance and implement advanced functionality
-
-**Key Deliverables:**
-- Performance optimization and comprehensive caching
-- Analytics and user feedback collection system
-- Advanced query features and power user tools
-- SEO optimization and content discoverability
-- Comprehensive testing and quality assurance
-
-**Success Metrics:**
-- Page load times under 2 seconds globally
-- User engagement metrics showing repeat usage
-- SEO performance driving organic discovery
-- System reliability above 99.5% uptime
+- Mobile experience tested and optimized
+- Performance meets acceptable standards
+- System reliability above target uptime
+- Clear expansion path established for future features
 
 ---
 
@@ -634,17 +511,16 @@ This thin client frontend implementation is considered successful when it meets 
 ---
 
 **Implementation Timeline Estimate:**
-- Phase 1 (Foundation): 3 weeks
-- Phase 2 (Core Features): 3 weeks  
-- Phase 3 (Enhanced UX): 3 weeks
-- Phase 4 (Optimization): 3 weeks
-- **Total:** 12 weeks for complete implementation
+- Phase 1 (Foundation): 2 weeks
+- Phase 2 (MVP Interface): 2 weeks  
+- Phase 3 (Enhancement): 2 weeks
+- **Total:** 6 weeks for MVP implementation
 
 **Dependencies:**
 - MCP server implementation and API availability
 - Amazon Bedrock access and configuration
-- AWS infrastructure setup and authentication
-- Design system requirements and branding guidelines
-- Basketball data schema and query capabilities definition
+- AWS infrastructure setup and rate limiting
+- Basic design system requirements
+- Basketball data schema and single query type definition
 
-*This plan builds upon existing architectural decisions in ADR-008 (monorepo apps), ADR-009 (AWS cloud), and the MCP server architecture plan, ensuring consistency with established project direction while focusing on user-centric design and accessibility.*
+*This plan builds upon existing architectural decisions in ADR-008 (monorepo apps), ADR-009 (AWS cloud), and the MCP server architecture plan, focusing on minimal viable product with clear expansion path for future features.*

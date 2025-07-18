@@ -87,6 +87,24 @@ Libraries are designed to be imported and used by applications but may also be d
 
 For libraries that require extensive testing or have complex dependencies, consider adding a `pyproject.toml` file to enable independent development and testing.
 
+## Versioning
+
+All shared libraries follow [Semantic Versioning (SemVer)](https://semver.org/) for clear dependency management and stable deployments. See the [Shared Library Versioning Guide](../docs/SHARED_LIBRARY_VERSIONING.md) for detailed information on:
+
+- Version management processes
+- Dependency management between apps and libraries  
+- Breaking change management
+- Best practices and common patterns
+
+### Quick Version Reference
+
+```bash
+# Version bumping commands
+poetry version patch    # Bug fixes (1.0.0 → 1.0.1)
+poetry version minor    # New features (1.0.0 → 1.1.0)  
+poetry version major    # Breaking changes (1.0.0 → 2.0.0)
+```
+
 ## Future Considerations
 
 This structure is designed to grow with the project while maintaining organization and clarity. As the number of libraries increases, we may introduce subcategories or additional organization principles.

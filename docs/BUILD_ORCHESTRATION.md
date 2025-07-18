@@ -97,13 +97,13 @@ my-shared-lib = {path = "../../libs/my-shared-lib", develop = true}
 
 ### Library Failure
 ```
-❌ Library test-utils failed format check
+❌ Library example-math-utils failed format check
 📦 Library is NOT ready for use by applications
 ```
 
 ### Integration Failure
 ```
-❌ Integration testing failed for my-app
+❌ Integration testing failed for example-calculator-app
 🔗 Application does NOT work correctly with updated shared libraries
 ```
 

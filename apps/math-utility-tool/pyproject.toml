@@ -1,19 +1,26 @@
 [tool.poetry]
-name = "test-utils"
+name = "math-utility-tool"
 version = "0.1.0"
-description = "Test utilities for CI validation"
+description = "Simple utility tool demonstrating non-deployable application pattern"
 authors = ["Hoopstat Haus Team"]
 readme = "README.md"
-packages = [{include = "test_utils"}]
+packages = [{include = "app"}]
 
 [tool.poetry.dependencies]
 python = "^3.12"
+example-math-utils = {path = "../../libs/example-math-utils", develop = true}
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^8.4.1"
 ruff = "^0.12.3"
 black = "^25.1.0"
 pytest-cov = "^6.2.1"
+
+[tool.poetry.scripts]
+calculate = "app.main:main"
+test = "app.scripts:test"
+lint = "app.scripts:lint"
+format = "app.scripts:format_code"
 
 [build-system]
 requires = ["poetry-core"]
@@ -52,7 +59,7 @@ python_functions = ["test_*"]
 addopts = "--strict-markers --disable-warnings"
 
 [tool.coverage.run]
-source = ["test_utils"]
+source = ["app"]
 omit = ["tests/*"]
 
 [tool.coverage.report]

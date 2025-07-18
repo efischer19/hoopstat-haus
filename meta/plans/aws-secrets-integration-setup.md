@@ -39,12 +39,12 @@ This plan outlines the technical approach for integrating the Hoopstat Haus repo
 3. **As a data engineer, I want S3 bucket policies** so that access is controlled and auditable.
 
 ### Epic 5: Deployment Infrastructure & Orchestration
-**Goal:** Set up AWS compute resources for running Dockerized applications.
+**Goal:** Set up AWS compute resources for running Dockerized applications with preference for serverless solutions.
 
 **User Stories:**
-1. **As a containerized application, I want to run on ECS Fargate** so that I don't need to manage underlying infrastructure.
-2. **As a CI/CD pipeline, I want to deploy applications automatically** when code is merged to main.
-3. **As an operations engineer, I want deployment rollback capabilities** so that failed deployments can be quickly reverted.
+1. **As a containerized application, I want to run on AWS Lambda** so that I have minimal infrastructure overhead and automatic scaling.
+2. **As a CI/CD pipeline, I want to deploy applications automatically** when code is merged to main using GitHub workflow files that update image tags.
+3. **As an operations engineer, I want simple deployment strategies** that leverage GitHub Actions and serverless infrastructure.
 
 ### Epic 6: Monitoring & Observability Integration
 **Goal:** Extend existing structured logging to work with AWS CloudWatch and monitoring services.
@@ -64,8 +64,8 @@ The following ADRs need to be proposed to support this AWS integration:
 - **Impact:** Affects security posture and operational complexity
 
 ### 2. ADR-XXX: Container Orchestration Platform Selection
-- **Decision:** Choose between ECS Fargate, EKS, EC2 instances, or AWS Lambda for running containers
-- **Context:** Need scalable, cost-effective platform for running Python applications
+- **Decision:** Choose between AWS Lambda, ECS Fargate, or hybrid approaches for running containers
+- **Context:** Need scalable, cost-effective platform for running Python applications with preference for serverless solutions
 - **Impact:** Affects operational complexity, cost, and deployment patterns
 
 ### 3. ADR-XXX: Secrets Management Strategy
@@ -78,17 +78,7 @@ The following ADRs need to be proposed to support this AWS integration:
 - **Context:** Need organized, secure data storage for basketball statistics
 - **Impact:** Affects data architecture and access patterns
 
-### 5. ADR-XXX: Deployment Strategy and Blue/Green Deployment
-- **Decision:** Choose deployment approach (rolling, blue/green, canary)
-- **Context:** Need reliable deployments with minimal downtime
-- **Impact:** Affects deployment complexity and rollback capabilities
-
-### 6. ADR-XXX: Multi-Environment Strategy
-- **Decision:** Define how staging/production environments are managed
-- **Context:** Current single environment strategy may need evolution for AWS
-- **Impact:** Affects infrastructure complexity and development workflow
-
-### 7. ADR-XXX: Cost Management and Resource Tagging Strategy
+### 5. ADR-XXX: Cost Management and Resource Tagging Strategy
 - **Decision:** Define tagging standards and cost monitoring approaches
 - **Context:** Need to track and control AWS costs as usage grows
 - **Impact:** Affects operational visibility and cost optimization
@@ -102,23 +92,23 @@ The following ADRs need to be proposed to support this AWS integration:
 4. **Establish S3 buckets** with proper IAM policies for data storage
 
 ### Phase 2: Application Deployment (Weeks 3-4)
-1. **Deploy ECS cluster and services** using Terraform
+1. **Deploy Lambda functions or simple compute resources** using Terraform
 2. **Implement secrets management** integration in application templates
-3. **Create deployment workflows** that deploy to ECS from ECR images
+3. **Create deployment workflows** using GitHub Actions to update and deploy applications
 4. **Set up CloudWatch logging** integration for structured logs
 
 ### Phase 3: Operationalization (Weeks 5-6)
 1. **Implement monitoring and alerting** with CloudWatch alarms
-2. **Set up deployment pipelines** with blue/green or rolling deployment strategies
+2. **Set up deployment pipelines** with simple GitHub Actions-based deployment strategies
 3. **Create operational runbooks** for common maintenance tasks
-4. **Implement backup and disaster recovery** procedures
+4. **Implement backup procedures** for S3 data
 
 ### Technical Architecture Overview
 
 ```
-GitHub Actions (OIDC) → AWS IAM Role → ECR + ECS + S3 + Secrets Manager
+GitHub Actions (OIDC) → AWS IAM Role → ECR + Lambda + S3 + Secrets Manager
                                     ↓
-                              Application Containers
+                              Application Functions
                                     ↓
                               CloudWatch Logs + Metrics
 ```
@@ -145,11 +135,11 @@ GitHub Actions (OIDC) → AWS IAM Role → ECR + ECS + S3 + Secrets Manager
 
 3. **Deployment Pipeline Complexity**
    - *Risk:* Over-engineered deployment process that's difficult to maintain
-   - *Mitigation:* Start with simple rolling deployments, add complexity incrementally
+   - *Mitigation:* Start with simple GitHub Actions workflows, add complexity incrementally
 
-4. **Multi-Environment Drift**
+4. **Environment Consistency**
    - *Risk:* Development and production environments become inconsistent
-   - *Mitigation:* Use same Terraform modules across environments with parameterization
+   - *Mitigation:* Use same Terraform modules with parameterization, leverage existing single-environment strategy from ADR-012
 
 ### Medium-Risk Items
 
@@ -157,23 +147,13 @@ GitHub Actions (OIDC) → AWS IAM Role → ECR + ECS + S3 + Secrets Manager
    - *Risk:* Vulnerable base images or insecure container configurations
    - *Mitigation:* Implement container scanning in CI/CD pipeline
 
-2. **Network Security**
-   - *Risk:* Overly permissive security groups or public access to internal resources
-   - *Mitigation:* Follow principle of least privilege for all network access
-
-3. **Backup and Recovery**
+2. **Backup and Recovery**
    - *Risk:* Data loss without proper backup strategies
-   - *Mitigation:* Implement automated S3 backups and point-in-time recovery
+   - *Mitigation:* Implement automated S3 backups and versioning
 
 ### Open Questions
 
-1. **Environment Strategy:** Should we maintain the single production environment approach or introduce staging?
-2. **Database Integration:** How will applications connect to databases (RDS, DynamoDB, etc.) if needed?
-3. **CDN and Caching:** Do we need CloudFront for static content or API caching?
-4. **Compliance Requirements:** Are there specific security or compliance standards we need to meet?
-5. **Disaster Recovery:** What's our RTO/RPO requirements for production services?
-6. **Cross-Region Strategy:** Should we plan for multi-region deployment from the start?
-7. **Integration Testing:** How do we test application integration with AWS services in CI/CD?
+1. **Integration Testing:** How do we test application integration with AWS services in CI/CD - specific approach needed for GitHub Actions runners to `tf apply` and access ECR repo?
 
 ### Dependencies and Blockers
 
@@ -196,4 +176,4 @@ This AWS integration is considered successful when:
 
 ---
 
-*This plan follows the architectural decision process outlined in ADR-001 and builds upon existing infrastructure decisions in ADR-008 (monorepo structure) and ADR-010 (Terraform for IaC).*
+*This plan follows the architectural decision process outlined in ADR-001 and builds upon existing infrastructure decisions in ADR-008 (monorepo structure), ADR-010 (Terraform for IaC), and ADR-012 (single environment strategy).*

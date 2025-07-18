@@ -2,6 +2,22 @@
 
 This document defines the data sharing policy for the Hoopstat Haus project, clarifying what data is publicly available and what remains private.
 
+## Upstream Attribution
+
+The Hoopstat Haus project sources its basketball data from the `stats.nba.com` service, accessed through the community-maintained `nba_api` Python library. This data represents publicly available basketball statistics and information that the NBA makes accessible through their official statistics endpoints.
+
+Our use of this data source is documented in [ADR-013](adr/ADR-013-nba_api_data.md), which outlines the decision-making process and considerations for selecting this data provider. We acknowledge and appreciate the NBA's role in making comprehensive basketball statistics publicly accessible.
+
+## Non-Commercial Use
+
+The Hoopstat Haus project and all associated data are intended for **educational and non-commercial purposes only**. This project serves as:
+
+- A learning platform for basketball analytics and data engineering techniques
+- An open-source resource for academic research and educational exploration
+- A demonstration of modern data infrastructure and machine learning applications in sports analytics
+
+Any commercial use of the project's code, data, or derived insights should be pursued with appropriate consideration of underlying data licensing terms and the NBA's usage policies.
+
 ## Platform vs Instance Distinction
 
 **The Platform** refers to the open-source codebase and infrastructure of Hoopstat Haus available on GitHub. This includes all code, documentation, and architectural designs that enable anyone to deploy their own basketball analytics environment.
@@ -12,7 +28,9 @@ This document defines the data sharing policy for the Hoopstat Haus project, cla
 
 Our driving principle for data sharing is simple: **"If I got it for free, I'll share it for free."**
 
-All data that we obtain from publicly available, free sources will be made available to the community under appropriate open licenses. This commitment reflects our belief in contributing back to the basketball analytics ecosystem.
+The data we make publicly available represents a **derived dataset** that we create through processing, cleaning, and enhancing basketball statistics. While the underlying source information consists of **public domain facts** about basketball games and player performance (scores, statistics, game outcomes, etc.), our contribution lies in the curation, processing, and analytical value we add to this foundational data.
+
+All derived datasets that we create from publicly available, free sources will be made available to the community under appropriate open licenses. This commitment reflects our belief in contributing back to the basketball analytics ecosystem while respecting the factual nature of the underlying sports data.
 
 ### Aggregated Data Availability
 

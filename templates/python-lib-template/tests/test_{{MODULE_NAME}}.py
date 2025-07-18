@@ -1,8 +1,8 @@
-"""Tests for the example library utilities module."""
+"""Tests for the {{LIBRARY_NAME}} {{MODULE_NAME}} module."""
 
 import pytest
 
-from example_library.utilities import example_function
+from {{LIBRARY_NAME}}.{{MODULE_NAME}} import example_function
 
 
 class TestExampleFunction:

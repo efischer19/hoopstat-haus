@@ -33,10 +33,15 @@ body:
       description: "The AI's response must be a document that delivers these items."
       value: |
         - [ ] A new Markdown file created in the `meta/plans/` directory containing the full analysis.
-        - [ ] **Epic Breakdown:** A list of smaller, implementable User Stories derived from the high-level idea.
-        - [ ] **Required ADRs:** A list of new ADRs that need to be proposed to support this feature.
         - [ ] **High-Level Implementation Strategy:** A description of the proposed technical approach, *without writing code*.
+        - [ ] **Required ADRs:** A list of new ADRs that need to be proposed to support this feature.
         - [ ] **Risks & Open Questions:** A list of potential risks, challenges, or open questions.
+        - [ ] **🎯 ACTIONABLE FEATURE REQUESTS:** A "Next Steps" section with 5-10 copy-paste ready GitHub issue templates. Each should include:
+          - Descriptive title following conventional commit format
+          - Clear description of the deliverable
+          - Specific acceptance criteria
+          - Ready to copy-paste directly into new GitHub issues
+        - [ ] **Phase-Based Implementation Roadmap:** Organize the feature requests into logical implementation phases (e.g., Phase 1: Foundation, Phase 2: Core Features, Phase 3: Advanced Features).
     validations:
       required: true
 
@@ -48,4 +53,23 @@ body:
         **IMPORTANT:** The deliverable for this planning request is **documentation ONLY**.
         - **DO NOT** write or modify any application code in the `/apps` directory.
         - **DO NOT** implement CI/CD workflows in the `.github/workflows` directory.
-        - The goal of this task is to produce the *plan* that will be used as the input for a future 'Feature Request'. Implementation will happen in a separate pull request.
+        - The goal of this task is to produce the *plan* that will be used as the input for future 'Feature Requests'. 
+        
+        ## 🎯 Expected Output Format
+        The plan should conclude with a **"Next Steps: Feature Requests for Implementation"** section containing copy-paste ready GitHub issue templates. This is the most valuable deliverable - actionable next steps that can be immediately converted to implementation tasks.
+        
+        **Example Format:**
+        ```
+        ### Phase 1: Foundation
+        **1. Create Authentication System**
+        ```
+        Title: Implement OAuth2 authentication with GitHub
+        Description: Set up user authentication using OAuth2 flow with GitHub integration
+        Deliverables: Login/logout functionality, user session management, protected routes
+        ```
+        
+        **2. Set up Database Schema**
+        ...etc
+        ```
+        
+        Implementation will happen in separate pull requests using these feature requests as specifications.

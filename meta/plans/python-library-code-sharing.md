@@ -71,6 +71,10 @@ As project maintainer, I want to share common code between multiple Python appli
   - CI/CD pipeline tests shared libraries independently
   - CI/CD pipeline tests applications with their shared library dependencies
   - Test failures clearly indicate whether issue is in app or shared library
+  - CI/CD pipeline handles Dockerfile requirements appropriately:
+    - Deployable applications require Dockerfiles (current behavior)
+    - Shared libraries and non-deployable utilities can skip Docker build step
+    - Build failures only occur for missing Dockerfiles in deployable apps
 
 #### User Story 2.3: Documentation Generation
 - **As a** developer

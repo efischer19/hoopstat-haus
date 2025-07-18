@@ -89,6 +89,31 @@ To run tests with coverage:
 poetry run pytest --cov={{LIBRARY_NAME}}
 ```
 
+## Versioning
+
+This library follows [Semantic Versioning (SemVer)](https://semver.org/):
+
+- **MAJOR**: Breaking changes that require code changes in consuming applications
+- **MINOR**: New backward-compatible features  
+- **PATCH**: Backward-compatible bug fixes
+
+### Version Management
+
+To update the library version:
+
+```bash
+# For bug fixes
+poetry version patch    # 1.0.0 → 1.0.1
+
+# For new features
+poetry version minor    # 1.0.0 → 1.1.0
+
+# For breaking changes  
+poetry version major    # 1.0.0 → 2.0.0
+```
+
+See [Shared Library Versioning Guide](../../docs/SHARED_LIBRARY_VERSIONING.md) for detailed versioning guidelines and dependency management.
+
 ## Contributing
 
 Please follow the project's development philosophy and guidelines in `meta/DEVELOPMENT_PHILOSOPHY.md`.

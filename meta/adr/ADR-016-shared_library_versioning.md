@@ -1,7 +1,7 @@
 ---
 title: "ADR-016: Shared Library Versioning Strategy"
-status: "Proposed"
-date: "2025-01-20"
+status: "Accepted"
+date: "2025-07-18"
 tags:
   - "versioning"
   - "shared-libraries"

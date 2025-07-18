@@ -6,62 +6,155 @@ name: CI
     branches: [main]
     paths:
       - 'apps/**'
+      - 'libs/**'
       - '.github/workflows/ci.yml'
 
 jobs:
   detect-changes:
     runs-on: ubuntu-latest
     outputs:
-      matrix: ${{ steps.changes.outputs.matrix }}
-      has-changes: ${{ steps.changes.outputs.has-changes }}
+      app-matrix: ${{ steps.changes.outputs.app-matrix }}
+      lib-matrix: ${{ steps.changes.outputs.lib-matrix }}
+      has-app-changes: ${{ steps.changes.outputs.has-app-changes }}
+      has-lib-changes: ${{ steps.changes.outputs.has-lib-changes }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
-      - name: Detect changed apps
+      - name: Detect changed apps and libraries
         id: changes
         run: |
-          # Get list of changed files in apps directory
-          changed_files=$(git diff --name-only origin/main...HEAD | \
+          # Get list of changed files in apps and libs directories
+          changed_app_files=$(git diff --name-only origin/main...HEAD | \
             grep '^apps/' | cut -d'/' -f2 | sort -u)
+          changed_lib_files=$(git diff --name-only origin/main...HEAD | \
+            grep '^libs/' | cut -d'/' -f2 | sort -u)
 
-          if [ -z "$changed_files" ]; then
-            echo "has-changes=false" >> $GITHUB_OUTPUT
-            echo "matrix={\"include\":[]}" >> $GITHUB_OUTPUT
+          # Process apps
+          if [ -z "$changed_app_files" ]; then
+            echo "has-app-changes=false" >> $GITHUB_OUTPUT
+            echo "app-matrix={\"include\":[]}" >> $GITHUB_OUTPUT
             echo "No changes detected in apps directory"
           else
-            echo "has-changes=true" >> $GITHUB_OUTPUT
+            echo "has-app-changes=true" >> $GITHUB_OUTPUT
 
             # Build matrix of changed apps
-            matrix_items=""
-            for app in $changed_files; do
+            app_matrix_items=""
+            for app in $changed_app_files; do
               if [ -f "apps/$app/pyproject.toml" ]; then
-                if [ -n "$matrix_items" ]; then
-                  matrix_items="$matrix_items,"
+                if [ -n "$app_matrix_items" ]; then
+                  app_matrix_items="$app_matrix_items,"
                 fi
-                matrix_items="$matrix_items{\"app\":\"$app\"}"
+                app_matrix_items="$app_matrix_items{\"app\":\"$app\"}"
               fi
             done
 
-            if [ -n "$matrix_items" ]; then
-              echo "matrix={\"include\":[$matrix_items]}" >> $GITHUB_OUTPUT
-              echo "Found Python apps with changes: $changed_files"
+            if [ -n "$app_matrix_items" ]; then
+              echo "app-matrix={\"include\":[$app_matrix_items]}" >> $GITHUB_OUTPUT
+              echo "Found Python apps with changes: $changed_app_files"
             else
-              echo "has-changes=false" >> $GITHUB_OUTPUT
-              echo "matrix={\"include\":[]}" >> $GITHUB_OUTPUT
+              echo "has-app-changes=false" >> $GITHUB_OUTPUT
+              echo "app-matrix={\"include\":[]}" >> $GITHUB_OUTPUT
               echo "No Python apps with pyproject.toml found in changed dirs"
             fi
           fi
 
-  ci:
+          # Process libraries
+          if [ -z "$changed_lib_files" ]; then
+            echo "has-lib-changes=false" >> $GITHUB_OUTPUT
+            echo "lib-matrix={\"include\":[]}" >> $GITHUB_OUTPUT
+            echo "No changes detected in libs directory"
+          else
+            echo "has-lib-changes=true" >> $GITHUB_OUTPUT
+
+            # Build matrix of changed libraries
+            lib_matrix_items=""
+            for lib in $changed_lib_files; do
+              if [ -f "libs/$lib/pyproject.toml" ]; then
+                if [ -n "$lib_matrix_items" ]; then
+                  lib_matrix_items="$lib_matrix_items,"
+                fi
+                lib_matrix_items="$lib_matrix_items{\"lib\":\"$lib\"}"
+              fi
+            done
+
+            if [ -n "$lib_matrix_items" ]; then
+              echo "lib-matrix={\"include\":[$lib_matrix_items]}" >> $GITHUB_OUTPUT
+              echo "Found Python libraries with changes: $changed_lib_files"
+            else
+              echo "has-lib-changes=false" >> $GITHUB_OUTPUT
+              echo "lib-matrix={\"include\":[]}" >> $GITHUB_OUTPUT
+              echo "No Python libraries with pyproject.toml found in changed dirs"
+            fi
+          fi
+
+  test-libraries:
+    name: Test Libraries
     needs: detect-changes
-    if: needs.detect-changes.outputs.has-changes == 'true'
+    if: needs.detect-changes.outputs.has-lib-changes == 'true'
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
-      matrix: ${{ fromJson(needs.detect-changes.outputs.matrix) }}
+      matrix: ${{ fromJson(needs.detect-changes.outputs.lib-matrix) }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.12'
+
+      - name: Install Poetry
+        uses: snok/install-poetry@v1
+        with:
+          version: latest
+          virtualenvs-create: true
+          virtualenvs-in-project: true
+
+      - name: Cache Poetry dependencies
+        uses: actions/cache@v3
+        with:
+          path: libs/${{ matrix.lib }}/.venv
+          key: >-
+            poetry-lib-${{ matrix.lib }}-${{ runner.os }}-
+            ${{ hashFiles('libs/${{ matrix.lib }}/poetry.lock') }}
+          restore-keys: |
+            poetry-lib-${{ matrix.lib }}-${{ runner.os }}-
+
+      - name: Install dependencies
+        working-directory: libs/${{ matrix.lib }}
+        run: poetry install
+
+      - name: Format check
+        working-directory: libs/${{ matrix.lib }}
+        run: poetry run ruff format --check .
+
+      - name: Lint
+        working-directory: libs/${{ matrix.lib }}
+        run: poetry run ruff check .
+
+      - name: Test
+        working-directory: libs/${{ matrix.lib }}
+        run: poetry run pytest
+
+      - name: Library validation
+        working-directory: libs/${{ matrix.lib }}
+        run: |
+          echo "✅ Library ${{ matrix.lib }} passed all tests"
+          echo "📦 Library is ready for use by applications"
+
+  test-applications:
+    name: Test Applications
+    needs: detect-changes
+    if: needs.detect-changes.outputs.has-app-changes == 'true'
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJson(needs.detect-changes.outputs.app-matrix) }}
 
     steps:
       - name: Checkout code
@@ -84,10 +177,10 @@ jobs:
         with:
           path: apps/${{ matrix.app }}/.venv
           key: >-
-            poetry-${{ matrix.app }}-${{ runner.os }}-
+            poetry-app-${{ matrix.app }}-${{ runner.os }}-
             ${{ hashFiles('apps/${{ matrix.app }}/poetry.lock') }}
           restore-keys: |
-            poetry-${{ matrix.app }}-${{ runner.os }}-
+            poetry-app-${{ matrix.app }}-${{ runner.os }}-
 
       - name: Install dependencies
         working-directory: apps/${{ matrix.app }}
@@ -95,23 +188,101 @@ jobs:
 
       - name: Format check
         working-directory: apps/${{ matrix.app }}
-        run: poetry run poe format --check
+        run: poetry run ruff format --check .
 
       - name: Lint
         working-directory: apps/${{ matrix.app }}
-        run: poetry run poe lint
+        run: poetry run ruff check .
 
       - name: Test
         working-directory: apps/${{ matrix.app }}
-        run: poetry run poe test
+        run: poetry run pytest
+
+      - name: Check if app is deployable
+        id: deployment-check
+        working-directory: apps/${{ matrix.app }}
+        run: |
+          # Check if this app is intended for deployment
+          # Deployable apps should have a Dockerfile
+          if [ -f "Dockerfile" ]; then
+            echo "deployable=true" >> $GITHUB_OUTPUT
+            echo "🚢 Application ${{ matrix.app }} is deployable (has Dockerfile)"
+          else
+            # Check pyproject.toml for deployment markers
+            if grep -q "deployable.*true" pyproject.toml 2>/dev/null; then
+              echo "deployable=true" >> $GITHUB_OUTPUT
+              echo "⚠️  Application ${{ matrix.app }} marked as deployable but missing Dockerfile"
+            else
+              echo "deployable=false" >> $GITHUB_OUTPUT
+              echo "🛠️  Application ${{ matrix.app }} is a utility/tool (no Dockerfile required)"
+            fi
+          fi
 
       - name: Build Docker image
+        if: steps.deployment-check.outputs.deployable == 'true'
         working-directory: apps/${{ matrix.app }}
         run: |
           if [ -f "Dockerfile" ]; then
-            docker build -t ${{ matrix.app }}:ci .
+            # Check if app uses local shared libraries
+            if grep -q "path.*\\.\\./\\.\\./libs" pyproject.toml; then
+              echo "📦 Application uses shared libraries, building from repository root"
+              cd ../../
+              docker build -f apps/${{ matrix.app }}/Dockerfile -t ${{ matrix.app }}:ci .
+            else
+              echo "📦 Building standalone application"
+              docker build -t ${{ matrix.app }}:ci .
+            fi
             echo "✅ Docker build successful for ${{ matrix.app }}"
           else
-            echo "⚠️  No Dockerfile found for ${{ matrix.app }}, skipping"
+            echo "❌ Deployable application ${{ matrix.app }} is missing required Dockerfile"
             exit 1
           fi
+
+      - name: Application validation
+        working-directory: apps/${{ matrix.app }}
+        run: |
+          echo "✅ Application ${{ matrix.app }} passed all tests"
+          if [ "${{ steps.deployment-check.outputs.deployable }}" == "true" ]; then
+            echo "🚢 Application is ready for deployment"
+          else
+            echo "🛠️  Utility/tool application validated successfully"
+          fi
+
+  test-integration:
+    name: Test App-Library Integration
+    needs: [detect-changes, test-libraries]
+    if: needs.detect-changes.outputs.has-app-changes == 'true' && needs.detect-changes.outputs.has-lib-changes == 'true'
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJson(needs.detect-changes.outputs.app-matrix) }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.12'
+
+      - name: Install Poetry
+        uses: snok/install-poetry@v1
+        with:
+          version: latest
+          virtualenvs-create: true
+          virtualenvs-in-project: true
+
+      - name: Test app with updated libraries
+        working-directory: apps/${{ matrix.app }}
+        run: |
+          echo "🔗 Testing integration between ${{ matrix.app }} and changed libraries"
+          
+          # Install app dependencies (including any local library dependencies)
+          poetry install
+          
+          # Run tests to validate integration
+          poetry run pytest
+          
+          echo "✅ Integration testing passed for ${{ matrix.app }}"
+          echo "🔗 Application works correctly with updated shared libraries"

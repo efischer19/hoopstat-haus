@@ -3,7 +3,7 @@ Performance monitoring utilities for data pipeline instrumentation.
 
 This module provides decorator and context manager utilities to automatically
 log performance metrics (duration and record count) in structured JSON format
-according to the Hoopstat Haus logging strategy (ADR-015).
+according to the Hoopstat Haus logging strategy (ADR-015-json_logging).
 """
 
 import json

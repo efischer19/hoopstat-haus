@@ -1,6 +1,6 @@
 # Apps Directory
 
-This directory contains all applications in the Hoopstat Haus project, following the monorepo structure defined in ADR-008.
+This directory contains all applications in the Hoopstat Haus project, following the monorepo structure defined in ADR-008-monorepo_apps.
 
 ## Creating New Applications
 

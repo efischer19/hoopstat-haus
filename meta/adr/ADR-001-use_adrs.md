@@ -16,7 +16,7 @@ tags:
 
 We will use **Architecture Decision Records (ADRs)** as the primary method for documenting all significant technical and architectural decisions.
 
-1.  **What is an ADR?** An ADR is a short, text-based document that records a single architectural decision. It includes the context behind the decision, the different options considered, and the consequences of the chosen path. All ADRs will be stored in the `/meta/adr/` directory.
+1.  **What is an ADR?** An ADR is a short, text-based document that records a single architectural decision. It includes the context behind the decision, the different options considered, and the consequences of the chosen path. All ADRs will be stored in the `/meta/adr/` directory with descriptive filenames following the pattern `ADR-XXX-topic_name.md` (e.g., `ADR-001-use_adrs.md`).
 
 2.  **When is an ADR Required?** Our guiding principle is: **a decision without an ADR is just an opinion.** An ADR is required for any "significant decision" to turn that opinion into a documented, agreed-upon standard. This includes, but is not limited to: adding a new service or dependency, choosing a technology or tool (e.g., a database or library), defining a core data model, or establishing a new development process.
 
@@ -38,7 +38,7 @@ We will use **Architecture Decision Records (ADRs)** as the primary method for d
     * Only a human maintainer can formally approve a decision by changing the ADR's status from `Proposed` to `Accepted` and merging it into the `main` branch.
 
 8.  **Superseding a Decision:** If a new ADR replaces a previous one, the author must:
-    * Set the `supersedes: ADR-XXX` field in the new ADR's frontmatter.
+    * Set the `supersedes: ADR-XXX-topic_name` field in the new ADR's frontmatter.
     * After the new ADR is accepted, create a follow-up PR to change the status of the old ADR file to `Superseded`.
 
 9.  **Batching Related Proposals:** It is acceptable and encouraged to propose a set of related, interdependent ADRs within a single Pull Request. This allows for a holistic review of a larger architectural theme (e.g., establishing the initial Python tech stack). Each ADR must still be its own file and focus on a single decision. The acceptance of all proposed ADRs in the PR occurs when the PR is merged.

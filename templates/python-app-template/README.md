@@ -150,7 +150,7 @@ pytest is configured with:
 
 ## Performance Monitoring
 
-This template includes built-in performance monitoring utilities for data pipeline instrumentation, following the Hoopstat Haus Logging Strategy (ADR-015).
+This template includes built-in performance monitoring utilities for data pipeline instrumentation, following the Hoopstat Haus Logging Strategy (ADR-015-json_logging).
 
 ### Using the Performance Monitor Decorator
 
@@ -185,7 +185,7 @@ with performance_context("data_export") as ctx:
 
 ### Log Output Format
 
-Both utilities log structured JSON following ADR-015 requirements:
+Both utilities log structured JSON following ADR-015-json_logging requirements:
 
 ```json
 {

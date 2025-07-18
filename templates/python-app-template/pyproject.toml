@@ -8,6 +8,8 @@ packages = [{include = "app"}]
 
 [tool.poetry.dependencies]
 python = "^3.12"
+# Example of local shared library dependency (uncomment and adjust as needed):
+# example-shared-lib = {path = "../../libs/example-shared-lib", develop = true}
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^8.4.1"

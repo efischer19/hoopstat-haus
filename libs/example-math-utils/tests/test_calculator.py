@@ -2,7 +2,7 @@
 
 import pytest
 
-from example_math_utils.calculator import add, divide, multiply
+from example_math_utils.calculator import add, divide, multiply, subtract
 
 
 class TestCalculator:
@@ -48,14 +48,30 @@ class TestCalculator:
         result = divide(0, 5)
         assert result == 0.0
 
+    def test_subtract_positive_numbers(self):
+        """Test subtracting positive numbers."""
+        result = subtract(10, 3)
+        assert result == 7.0
+
+    def test_subtract_negative_result(self):
+        """Test subtraction that results in negative number."""
+        result = subtract(3, 10)
+        assert result == -7.0
+
+    def test_subtract_same_numbers(self):
+        """Test subtracting same numbers."""
+        result = subtract(5, 5)
+        assert result == 0.0
+
 
 class TestIntegration:
     """Integration tests combining multiple functions."""
 
     def test_complex_calculation(self):
         """Test a complex calculation using multiple functions."""
-        # Calculate: (2 + 3) * 4 / 2 = 10
+        # Calculate: (2 + 3) * 4 / 2 - 1 = 9
         step1 = add(2, 3)  # 5
         step2 = multiply(step1, 4)  # 20
-        result = divide(step2, 2)  # 10
-        assert result == 10.0
+        step3 = divide(step2, 2)  # 10
+        result = subtract(step3, 1)  # 9
+        assert result == 9.0

@@ -1,25 +1,24 @@
-# Historical NBA Data Backfill Strategy
+# NBA 2024-2025 Season Data Backfill Strategy
 
 ## Executive Summary
 
-This plan defines a comprehensive strategy for executing a one-time historical data backfill to populate the Hoopstat Haus data lakehouse with NBA box-score statistics from the 1976-77 season through the present. The backfill will be implemented as a containerized, resumable application that respectfully interacts with the NBA API while building a foundational dataset of approximately 47 seasons of historical data.
+This plan defines a comprehensive strategy for executing a one-time data backfill to populate the Hoopstat Haus data lakehouse with NBA statistics from the 2024-2025 season. The backfill will be implemented as a containerized, resumable application that respectfully interacts with the NBA API while building a foundational dataset for the current season, with architecture designed for future expansion to historical seasons.
 
 The strategy emphasizes reliability, observability, and alignment with our existing architectural decisions including the medallion data architecture, NBA API data source (ADR-013), Parquet storage format (ADR-014), and AWS S3 infrastructure (ADR-009).
 
 ## Scope and Data Coverage
 
-### Historical Range
-- **Start Season**: 1976-77 (first season with comprehensive statistical tracking)
-- **End Season**: Current season (2024-25)
-- **Total Coverage**: ~47 NBA seasons
-- **Estimated Records**: ~60,000 regular season games + ~8,000 playoff games
+### Season Range
+- **Target Season**: 2024-2025 (current season)
+- **Future Expansion**: Architecture designed to support historical seasons 1976-77 through present when needed
+- **Estimated Records**: ~1,300 regular season games + ~80 playoff games
 
 ### Data Types for Backfill
 1. **Game Metadata**: Game dates, teams, venues, officials
 2. **Box Score Statistics**: Traditional and advanced player/team statistics  
-3. **Play-by-Play Data**: Detailed game events (where available)
-4. **Player Information**: Rosters, biographical data, season affiliations
-5. **Team Information**: Team details, relocations, name changes over time
+3. **Play-by-Play Data**: Detailed game events and sequences (confirmed included)
+4. **Player Information**: Current rosters, biographical data, season affiliations
+5. **Team Information**: Current team details and active roster data
 
 ### API Endpoints (nba-api)
 - `leaguegamefinder.LeagueGameFinder()` - Game discovery by season
@@ -52,7 +51,7 @@ The application will accept configuration through environment variables and comm
 ```bash
 # Basic execution
 docker run hoopstat-backfill \
-  --start-season 1976-77 \
+  --start-season 2024-25 \
   --end-season 2024-25 \
   --s3-bucket hoopstat-haus-bronze \
   --state-file-path s3://hoopstat-haus-bronze/backfill-state/ \
@@ -66,8 +65,8 @@ docker run hoopstat-backfill \
 
 ### Execution Modes
 
-1. **Full Backfill Mode**: Process entire historical range
-2. **Incremental Mode**: Process specific season range
+1. **Current Season Mode**: Process 2024-2025 season data
+2. **Incremental Mode**: Process specific date ranges within the season
 3. **Resume Mode**: Continue from last successful checkpoint
 4. **Validation Mode**: Verify data integrity without re-downloading
 5. **Dry Run Mode**: Simulate execution for testing and planning
@@ -75,9 +74,9 @@ docker run hoopstat-backfill \
 ### Resource Requirements
 
 - **Memory**: 2GB minimum, 4GB recommended
-- **Storage**: 10GB local working space for temporary files
+- **Storage**: 2GB local working space for temporary files
 - **Network**: Stable internet connection with 1Mbps+ bandwidth
-- **Runtime**: Estimated 7-10 days for complete backfill
+- **Runtime**: Estimated 2-3 days for complete season backfill
 
 ## State Management & Resumability
 
@@ -87,26 +86,26 @@ The application maintains detailed state information to enable seamless resumpti
 
 ```json
 {
-  "backfill_id": "20241215-historical-backfill",
+  "backfill_id": "20241215-season-2024-25-backfill",
   "start_time": "2024-12-15T10:00:00Z",
   "last_checkpoint": "2024-12-16T14:30:00Z",
-  "current_season": "1985-86",
-  "current_date": "1986-03-15",
-  "completed_seasons": ["1976-77", "1977-78", "..."],
+  "current_season": "2024-25",
+  "current_date": "2024-12-16",
+  "completed_seasons": [],
   "completed_games": {
-    "1985-86": ["0021500001", "0021500002", "..."]
+    "2024-25": ["0022400001", "0022400002", "..."]
   },
   "failed_games": {
-    "0021500123": {
+    "0022400123": {
       "error": "API timeout",
       "retry_count": 2,
       "last_attempt": "2024-12-16T14:25:00Z"
     }
   },
   "statistics": {
-    "total_games_processed": 25847,
-    "total_api_calls": 103388,
-    "total_bytes_stored": "2.4GB",
+    "total_games_processed": 847,
+    "total_api_calls": 3388,
+    "total_bytes_stored": "120MB",
     "average_processing_rate": "120 games/hour"
   }
 }
@@ -322,12 +321,12 @@ def fetch_game_data(game_id):
 Based on this backfill strategy, the following new ADRs should be proposed:
 
 ### ADR-023: Long-Running Batch Job Rate Limiting Policy
-- **Scope**: Standardize rate limiting approach for multi-day API operations
+- **Scope**: Standardize rate limiting approach for extended API operations
 - **Key Decisions**: Base rate limits, adaptive strategies, courtesy protocols
 - **Impact**: Ensures respectful API usage across all batch operations
 - **Dependencies**: ADR-013 (NBA API)
 
-### ADR-024: Historical Data Backfill State Management Pattern
+### ADR-024: Season Data Backfill State Management Pattern
 - **Scope**: Define checkpoint and resumability patterns for large data migrations
 - **Key Decisions**: State storage location, checkpoint frequency, recovery procedures
 - **Impact**: Enables reliable long-running operations with resume capability
@@ -339,8 +338,8 @@ Based on this backfill strategy, the following new ADRs should be proposed:
 - **Impact**: Ensures robust and predictable batch job behavior
 - **Dependencies**: ADR-015 (JSON logging)
 
-### ADR-026: Historical Data Quality Validation and Monitoring
-- **Scope**: Define data quality standards and validation procedures for historical data
+### ADR-026: Season Data Quality Validation and Monitoring
+- **Scope**: Define data quality standards and validation procedures for season data
 - **Key Decisions**: Validation rules, quality scoring, monitoring thresholds
 - **Impact**: Ensures data integrity and reliability for downstream analytics
 - **Dependencies**: ADR-014 (Parquet), ADR-017 (proposed - Silver layer data quality)
@@ -348,12 +347,12 @@ Based on this backfill strategy, the following new ADRs should be proposed:
 ### ADR-027: One-Time Backfill Script Execution Environment
 - **Scope**: Define execution environment and operational approach for long-running one-time backfill operations
 - **Key Decisions**: Local maintainer machine execution over cloud environments (GitHub Actions, Lambda)
-- **Impact**: Enables practical execution of multi-day backfill operations with proper oversight and control
+- **Impact**: Enables practical execution of extended backfill operations with proper oversight and control
 - **Dependencies**: ADR-006 (Docker containers), ADR-024 (proposed - State management)
 
 ## Phase-Based Implementation Roadmap
 
-### Phase 1: Foundation and Core Infrastructure (2-3 weeks)
+### Phase 1: Foundation and Core Infrastructure (1-2 weeks)
 
 **Objectives**: Establish basic backfill capability with essential safety features
 
@@ -365,11 +364,11 @@ Based on this backfill strategy, the following new ADRs should be proposed:
 5. **Basic Error Handling**: Retry logic for transient failures
 
 **Success Criteria**:
-- Successfully backfill 1 complete season (1976-77) with full resumability
+- Successfully backfill 1 complete month of the 2024-25 season with full resumability
 - Zero rate limit violations during test execution
 - All data stored with proper metadata and partitioning
 
-### Phase 2: Production Reliability and Monitoring (2-3 weeks)
+### Phase 2: Production Reliability and Monitoring (1-2 weeks)
 
 **Objectives**: Add production-grade reliability, monitoring, and operational features
 
@@ -381,25 +380,26 @@ Based on this backfill strategy, the following new ADRs should be proposed:
 5. **Operational Tooling**: Administrative commands and status reporting
 
 **Success Criteria**:
-- Complete backfill of 5 seasons with comprehensive monitoring
+- Complete backfill of 2024-25 season through current date with comprehensive monitoring
 - Automated recovery from all transient error types
 - Data quality scores consistently above 95%
 
-### Phase 3: Full-Scale Execution and Optimization (4-6 weeks)
+### Phase 3: Full-Scale Execution and Optimization (1-2 weeks)
 
-**Objectives**: Execute complete historical backfill with performance optimization
+**Objectives**: Execute complete season backfill with performance optimization
 
 **Deliverables**:
-1. **Performance Optimization**: Concurrent processing and upload optimization
-2. **Complete Historical Backfill**: Process all seasons from 1976-77 to present
+1. **Performance Optimization**: Efficient processing and upload optimization
+2. **Complete Season Backfill**: Process all 2024-25 season data with play-by-play
 3. **Data Validation Suite**: Comprehensive validation of complete dataset
 4. **Documentation and Runbooks**: Operational procedures and troubleshooting guides
-5. **Handoff to Regular Pipeline**: Integration with ongoing data ingestion
+5. **Future Expansion Planning**: Architecture documentation for historical seasons
 
 **Success Criteria**:
-- Complete historical dataset covering 47+ NBA seasons
+- Complete current season dataset with all games and play-by-play data
 - Data quality validated and documented
-- Smooth transition to regular data pipeline operations
+- Smooth integration with existing data pipeline operations
+- Foundation established for future historical expansion
 
 ## Actionable Feature Requests
 
@@ -407,18 +407,19 @@ The following GitHub issues can be created to implement this backfill strategy:
 
 ### **Issue 1: Core Backfill Infrastructure**
 ```
-Title: feat: Create containerized NBA historical data backfill application
+Title: feat: Create containerized NBA 2024-25 season data backfill application
 
 Description: 
-Build the core Docker application for historical NBA data backfill with basic NBA API integration, rate limiting, and S3 storage.
+Build the core Docker application for NBA 2024-25 season data backfill with basic NBA API integration, rate limiting, and S3 storage. Architecture designed for future expansion to historical seasons.
 
 Acceptance Criteria:
 - [ ] Docker image that can be configured via environment variables
 - [ ] Integration with nba-api for game discovery and box score retrieval
+- [ ] Play-by-play data collection for complete game sequences
 - [ ] Rate limiting at 1 request per 5 seconds with monitoring
 - [ ] Direct upload to S3 Bronze layer with proper partitioning
 - [ ] Basic logging with structured JSON format
-- [ ] Ability to process a single season end-to-end
+- [ ] Ability to process the 2024-25 season end-to-end
 
 Technical Requirements:
 - Python 3.11 base image
@@ -437,7 +438,7 @@ Add comprehensive state management to enable resumable backfill operations that 
 
 Acceptance Criteria:
 - [ ] JSON-based checkpoint files stored in S3
-- [ ] Track completed seasons, games, and failed operations
+- [ ] Track completed games and failed operations within the season
 - [ ] Resume capability from any checkpoint
 - [ ] Atomic state updates to prevent corruption
 - [ ] Gap detection and intelligent restart logic
@@ -501,13 +502,13 @@ Technical Requirements:
 
 ### **Issue 5: Data Quality Validation and Monitoring**
 ```
-Title: feat: Build data quality validation framework for historical data
+Title: feat: Build data quality validation framework for NBA season data
 
 Description:
-Create comprehensive data quality validation that ensures historical data meets standards for completeness, accuracy, and consistency before being stored in the data lakehouse.
+Create comprehensive data quality validation that ensures 2024-25 season data meets standards for completeness, accuracy, and consistency before being stored in the data lakehouse.
 
 Acceptance Criteria:
-- [ ] Schema validation for all data types
+- [ ] Schema validation for all data types (box scores, play-by-play)
 - [ ] Completeness checks (required fields, expected record counts)
 - [ ] Range validation for statistical values
 - [ ] Referential integrity checks across related data
@@ -552,7 +553,7 @@ Technical Requirements:
 Title: feat: Optimize backfill performance with concurrent processing
 
 Description:
-Implement performance optimizations including concurrent API calls, parallel S3 uploads, and efficient memory management to reduce total backfill execution time.
+Implement performance optimizations including concurrent API calls, parallel S3 uploads, and efficient memory management to reduce total season backfill execution time.
 
 Acceptance Criteria:
 - [ ] Concurrent API requests (with rate limiting compliance)
@@ -571,43 +572,43 @@ Technical Requirements:
 - Graceful degradation under resource constraints
 ```
 
-### **Issue 8: Historical Data Validation and Completeness Audit**
+### **Issue 8: Season Data Validation and Completeness Audit**
 ```
-Title: feat: Create comprehensive validation suite for complete historical dataset
+Title: feat: Create comprehensive validation suite for complete 2024-25 season dataset
 
 Description:
-Build validation tools to audit the complete historical dataset for completeness, accuracy, and consistency across all seasons and data types.
+Build validation tools to audit the complete 2024-25 season dataset for completeness, accuracy, and consistency across all games and data types.
 
 Acceptance Criteria:
 - [ ] Season completeness validation (all expected games present)
-- [ ] Statistical consistency checks across seasons
+- [ ] Statistical consistency checks within the season
 - [ ] Player and team data integrity validation
-- [ ] Historical trend analysis and anomaly detection
-- [ ] Cross-season referential integrity checks
+- [ ] Play-by-play data completeness and accuracy validation
+- [ ] Cross-game referential integrity checks
 - [ ] Comprehensive validation reporting
 
 Technical Requirements:
 - Statistical analysis of data completeness
-- Anomaly detection algorithms
-- Cross-season data consistency checks
+- Anomaly detection algorithms for season data
+- Cross-game data consistency checks
 - Automated validation reporting
 - Integration with data quality framework
-- Performance optimized for large dataset analysis
+- Performance optimized for season-scale dataset analysis
 ```
 
 ### **Issue 9: Operational Documentation and Runbooks**
 ```
-Title: docs: Create operational documentation and runbooks for historical backfill
+Title: docs: Create operational documentation and runbooks for season backfill
 
 Description:
-Develop comprehensive documentation covering backfill operations, troubleshooting procedures, and maintenance tasks for ongoing support.
+Develop comprehensive documentation covering backfill operations, troubleshooting procedures, and maintenance tasks for ongoing support and future expansion.
 
 Acceptance Criteria:
 - [ ] Complete setup and configuration guide
 - [ ] Operational procedures and best practices
 - [ ] Troubleshooting guide with common issues
 - [ ] Performance tuning recommendations
-- [ ] Disaster recovery procedures
+- [ ] Future expansion planning (historical seasons)
 - [ ] Integration guide with existing data pipeline
 
 Technical Requirements:
@@ -616,15 +617,15 @@ Technical Requirements:
 - Performance optimization guidelines
 - Integration documentation with existing systems
 - Maintenance schedules and procedures
-- Emergency contact and escalation procedures
+- Architecture documentation for future expansion
 ```
 
 ### **Issue 10: Integration with Regular Data Pipeline**
 ```
-Title: feat: Integrate historical backfill with ongoing data pipeline operations
+Title: feat: Integrate season backfill with ongoing data pipeline operations
 
 Description:
-Ensure smooth integration between the historical backfill and regular data pipeline operations, including data format compatibility, monitoring integration, and operational procedures.
+Ensure smooth integration between the season backfill and regular data pipeline operations, including data format compatibility, monitoring integration, and operational procedures.
 
 Acceptance Criteria:
 - [ ] Data format compatibility with regular pipeline
@@ -647,8 +648,10 @@ Technical Requirements:
 
 ## Conclusion
 
-This comprehensive strategy provides a robust foundation for executing the historical NBA data backfill while maintaining reliability, observability, and alignment with existing architectural principles. The phased approach ensures incremental progress with validation at each stage, while the detailed feature requests provide clear implementation guidance for development teams.
+This comprehensive strategy provides a robust foundation for executing the NBA 2024-25 season data backfill while maintaining reliability, observability, and alignment with existing architectural principles. The phased approach ensures incremental progress with validation at each stage, while the detailed feature requests provide clear implementation guidance for development teams.
 
-The strategy emphasizes respectful API usage, robust error handling, and comprehensive monitoring to ensure successful completion of this critical data foundation project. Upon completion, the Hoopstat Haus platform will possess a comprehensive historical dataset spanning nearly five decades of NBA statistics, enabling sophisticated analytics and insights for all future applications.
+The strategy emphasizes respectful API usage, robust error handling, comprehensive monitoring, and **complete play-by-play data collection** to ensure successful completion of this critical data foundation project. The architecture is designed for future expansion to historical seasons when needed.
+
+Upon completion, the Hoopstat Haus platform will possess a comprehensive current season dataset including detailed play-by-play data, establishing a solid foundation for analytics and insights while providing the technical framework for future historical data expansion when the scope is ready to be extended.
 
 *Copy any of the above feature request templates to create new GitHub issues for implementing the Historical Data Backfill Strategy.*

@@ -11,6 +11,7 @@ The strategy emphasizes reliability, observability, and alignment with our exist
 ### Season Range
 - **Target Season**: 2024-2025 (current season)
 - **Future Expansion**: Architecture designed to support historical seasons 1976-77 through present when needed
+  - *Note*: Reliable play-by-play data only available after ~1996; pre-1996 seasons limited to box-score statistics
 - **Estimated Records**: ~1,300 regular season games + ~80 playoff games
 
 ### Data Types for Backfill
@@ -36,7 +37,7 @@ The backfill will be implemented as a standalone Docker application optimized fo
 
 ```dockerfile
 # Dockerfile structure
-FROM python:3.11-slim
+FROM python:3.12-slim
 WORKDIR /app
 COPY requirements.txt .
 RUN pip install -r requirements.txt
@@ -159,7 +160,6 @@ class AdaptiveRateLimiter:
 2. **Timeout Handling**: Increase delay by 50% for 3 consecutive timeouts  
 3. **Server Error Handling**: Pause for 30 seconds on 5xx errors
 4. **Success Response**: Gradual return to base rate (5% reduction per success)
-5. **Time-of-Day Awareness**: Reduce rate during peak US hours (9AM-6PM EST)
 
 ### Monitoring and Alerts
 

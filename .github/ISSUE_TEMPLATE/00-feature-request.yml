@@ -42,7 +42,7 @@ body:
     attributes:
       label: "Implementation Details & Constraints"
       description: "Provide direct instructions, constraints, or expert guidance for the AI. Point to relevant ADRs or existing code."
-      placeholder: "This must use the `nba_api` library. Adhere to ADR-004. Do not make external network calls in this module."
+      placeholder: "This must use the `nba_api` library. Adhere to ADR-004-pytest_testing. Do not make external network calls in this module."
     validations:
       required: false
 

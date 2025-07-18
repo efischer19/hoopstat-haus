@@ -40,23 +40,6 @@ This is the standard Python application template for Hoopstat Haus projects. It 
 
 ## Development Workflow
 
-### Local Shared Library Dependencies
-
-For applications that need to use shared libraries from the monorepo, add them as local path dependencies in `pyproject.toml`:
-
-```toml
-[tool.poetry.dependencies]
-python = "^3.12"
-# Add shared libraries as local path dependencies
-your-shared-lib = {path = "../../libs/your-shared-lib", develop = true}
-```
-
-The `develop = true` flag enables hot reloading, meaning changes to the shared library are immediately available without reinstalling. This enables efficient local development workflow:
-
-1. Modify shared library code in `libs/your-shared-lib/`
-2. Run your application immediately with `poetry run start` 
-3. Changes are automatically reflected without reinstalling
-
 ### Standard Scripts
 
 The template provides standard scripts that should be used across all Python projects:

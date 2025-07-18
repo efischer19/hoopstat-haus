@@ -5,7 +5,8 @@ This application demonstrates using shared libraries and is intended
 for deployment (has a Dockerfile).
 """
 
-from test_utils import add_numbers, greet as lib_greet
+from test_utils import add_numbers
+from test_utils import greet as lib_greet
 
 
 def greet(name: str = "World") -> str:
@@ -24,20 +25,16 @@ def greet(name: str = "World") -> str:
 
 def calculate_stats(a: int, b: int) -> dict:
     """Calculate some simple stats using shared utilities.
-    
+
     Args:
         a: First number
         b: Second number
-        
+
     Returns:
         Dictionary with calculated stats
     """
     sum_val = add_numbers(a, b)
-    return {
-        "sum": sum_val,
-        "average": sum_val / 2,
-        "inputs": [a, b]
-    }
+    return {"sum": sum_val, "average": sum_val / 2, "inputs": [a, b]}
 
 
 def main() -> None:
@@ -45,7 +42,7 @@ def main() -> None:
     message = greet()
     print(message)
     print("This is a deployable web application.")
-    
+
     # Use shared library functionality
     stats = calculate_stats(10, 5)
     print(f"Sample calculation: {stats}")

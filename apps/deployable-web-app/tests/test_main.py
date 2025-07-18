@@ -1,6 +1,6 @@
 """Tests for the main module."""
 
-from app.main import greet, main, calculate_stats
+from app.main import calculate_stats, greet, main
 
 
 def test_greet_default():

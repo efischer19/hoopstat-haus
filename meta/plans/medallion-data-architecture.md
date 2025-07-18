@@ -45,9 +45,9 @@ s3://hoopstat-haus-bronze/
 - Compression using Snappy codec for optimal storage/query balance
 
 **Retention Policy:** 
-- Primary data: 7 years (regulatory compliance and historical analysis)
-- Error logs: 1 year (operational debugging)
-- API metadata: 2 years (performance monitoring and optimization)
+- Primary data: 2 years (sufficient for hobby project historical analysis)
+- Error logs: 30 days (operational debugging)
+- API metadata: 90 days (performance monitoring and optimization)
 
 ### Silver Layer (Cleaned/Conformed)
 
@@ -94,13 +94,15 @@ s3://hoopstat-haus-silver/
 - **Uniqueness**: Duplicate detection and resolution with configurable business rules
 
 **Retention Policy:**
-- Primary data: 10 years (extended for historical analytics)
-- Data quality logs: 2 years (trend analysis and process improvement)
-- Quarantined data: 90 days (manual review and potential recovery)
+- Primary data: 3 years (sufficient for hobby project historical analytics)
+- Data quality logs: 90 days (trend analysis and process improvement)
+- Quarantined data: 30 days (manual review and potential recovery)
 
 ### Gold Layer (Business/Analytics-Ready)
 
 **Purpose:** Store aggregated, business-focused datasets optimized for consumption by analytics tools, dashboards, and the MCP server.
+
+**Note:** The exact aggregations, dimensions, and data structures in the Gold layer will be largely driven by the capabilities and requirements of our MCP server.
 
 **Data State:**
 - **Business-Aligned**: Organized by business domains and use cases
@@ -253,248 +255,88 @@ The following ADRs need to be proposed to support the full implementation of thi
 - **Impact**: Enables proactive issue detection and resolution
 - **Dependencies**: ADR-015 (JSON logging), AWS monitoring services
 
-## Implementation Strategy with Current Tech Stack
+## Next Steps: Feature Requests for Implementation
 
-### Phase 1: Foundation and Bronze Layer (Weeks 1-3)
+Based on this Medallion Architecture plan, here are the specific feature requests that can be created as GitHub issues to implement the data platform:
 
-**Terraform Infrastructure (leveraging ADR-010):**
-```hcl
-# S3 buckets with proper lifecycle policies
-# IAM roles for data pipeline access  
-# CloudWatch log groups for monitoring
+### **Phase 1: Foundation & Bronze Layer**
+
+**1. Create S3 Bucket Infrastructure with Terraform**
+```
+Title: Set up S3 buckets for Medallion Architecture (Bronze/Silver/Gold)
+Description: Create three S3 buckets with proper lifecycle policies, IAM roles, and CloudWatch logging.
+Deliverables: Terraform configuration for hoopstat-haus-bronze, hoopstat-haus-silver, hoopstat-haus-gold buckets
 ```
 
-**Python Pipeline Components (leveraging ADR-002, ADR-003):**
-- **Bronze Ingestion Service**: Python application using nba-api for data extraction
-- **Data Validation**: Basic schema validation and error handling
-- **Parquet Conversion**: Raw JSON to Parquet conversion with metadata
+**2. Build Bronze Layer Data Ingestion Pipeline**
+```
+Title: Implement Bronze layer NBA API data ingestion
+Description: Create Python service to ingest raw NBA data from nba-api and store as Parquet in Bronze layer
+Deliverables: Dockerized Python app with scheduled ingestion, error handling, and audit logging
+```
 
-**Docker Containerization (leveraging ADR-006):**
-- Containerized ingestion pipeline for consistent deployment
-- Multi-stage builds for optimized image size
-- Health checks and graceful shutdown handling
+**3. Propose Required ADRs for Data Architecture**
+```
+Title: Create ADR-016 through ADR-022 for data pipeline architecture decisions
+Description: Propose 7 ADRs covering ingestion patterns, data quality, lineage, aggregation, orchestration, security, and monitoring
+Deliverables: 7 new ADR files with Proposed status ready for review
+```
 
-**GitHub Actions Integration (leveraging ADR-007):**
-- Automated pipeline deployment on code changes
-- Scheduled data ingestion jobs
-- Infrastructure deployment workflows
+### **Phase 2: Silver Layer & Data Quality**
 
-### Phase 2: Silver Layer and Data Quality (Weeks 4-6)
+**4. Implement Silver Layer Data Transformation Pipeline**
+```
+Title: Build Silver layer data cleaning and validation framework
+Description: Create transformation pipeline with schema enforcement, deduplication, and data quality validation
+Deliverables: Python transformation service with comprehensive quality checks and quarantine handling
+```
 
-**Data Transformation Pipeline:**
-- **Schema Evolution**: Handle API schema changes gracefully
-- **Data Quality Engine**: Comprehensive validation and quality scoring
-- **Deduplication Service**: Business rule-based duplicate resolution
-- **Reference Data Management**: Maintain standardized lookup tables
+**5. Create Data Quality Monitoring Dashboard**
+```
+Title: Implement data quality metrics and monitoring
+Description: Build dashboard to track completeness, accuracy, timeliness, and consistency across all data layers
+Deliverables: Monitoring dashboard with alerting for quality issues
+```
 
-**Quality Monitoring:**
-- **Data Quality Dashboard**: Real-time visibility into data health
-- **Alerting System**: Proactive notification of quality issues
-- **Quality Metrics**: Track completeness, accuracy, timeliness, and consistency
+### **Phase 3: Gold Layer & MCP Integration**
 
-**Testing Strategy (leveraging ADR-004):**
-- **Unit Tests**: Core transformation logic validation
-- **Integration Tests**: End-to-end pipeline testing
-- **Data Quality Tests**: Validation of business rules and constraints
+**6. Build Gold Layer Aggregation Engine**
+```
+Title: Implement Gold layer pre-computed aggregations for MCP server
+Description: Create aggregation pipeline optimized for MCP server consumption patterns
+Deliverables: Star schema dimensional model with pre-computed metrics and fast lookup tables
+```
 
-### Phase 3: Gold Layer and MCP Integration (Weeks 7-9)
+**7. Optimize Data Pipeline for MCP Server Performance**
+```
+Title: Create MCP-optimized datasets and caching layer
+Description: Build API-ready datasets with sub-second response times for MCP server integration
+Deliverables: Partitioned Gold layer datasets with Redis caching for frequent queries
+```
 
-**Aggregation Engine:**
-- **Dimensional Modeling**: Star schema implementation for analytics
-- **Pre-computation Service**: Calculate common aggregations and metrics
-- **Incremental Processing**: Efficient updates for new data
+### **Infrastructure & Operations**
 
-**MCP Server Optimization:**
-- **API-Ready Datasets**: Pre-structured data for fast API responses
-- **Caching Layer**: Redis/ElastiCache for frequently accessed data
-- **Query Optimization**: Partitioning and indexing for sub-second response
+**8. Set Up Data Pipeline CI/CD**
+```
+Title: Implement automated deployment and testing for data pipelines
+Description: Create GitHub Actions workflows for pipeline deployment, testing, and monitoring
+Deliverables: Complete CI/CD pipeline with automated testing and deployment
+```
 
-**Performance Monitoring:**
-- **Query Performance**: Track response times and optimization opportunities
-- **Cost Monitoring**: S3 storage costs and optimization recommendations
-- **Usage Analytics**: Track MCP server data consumption patterns
+**9. Implement Data Security and Access Controls**
+```
+Title: Set up data security framework with encryption and IAM policies
+Description: Implement least-privilege access, encryption at rest/transit, and audit logging
+Deliverables: Security framework with proper IAM roles and encryption configuration
+```
 
-### Technology Integration Points
-
-**Python Ecosystem:**
-- **pandas/polars**: Data manipulation and transformation
-- **PyArrow**: High-performance Parquet I/O operations
-- **Great Expectations**: Data quality validation framework
-- **Prefect/Airflow**: Pipeline orchestration (to be decided in ADR-020)
-
-**AWS Services Integration:**
-- **S3**: Primary storage layer with lifecycle management
-- **Lambda**: Serverless processing for lightweight transformations
-- **Glue**: ETL jobs for heavy transformations (if needed)
-- **Athena**: Ad-hoc querying and data exploration
-- **CloudWatch**: Monitoring, logging, and alerting
-
-**Docker and CI/CD:**
-- **Multi-stage builds**: Separate images for different pipeline stages
-- **Environment promotion**: Dev → Staging → Production pipeline
-- **Infrastructure as Code**: Terraform for reproducible environments
-
-## Data Governance and Quality Framework
-
-### Data Quality Dimensions
-
-**Completeness:**
-- Required field validation (player names, game dates, scores)
-- Expected record count validation (games per season, players per team)
-- Missing data tracking and reporting
-
-**Accuracy:**
-- Range validation (scores >= 0, game duration within reasonable bounds)
-- Format validation (dates, numeric fields, categorical values)
-- Referential integrity (player-team relationships, game-team consistency)
-
-**Consistency:**
-- Cross-table validation (player statistics sum to team totals)
-- Temporal consistency (no future game dates, logical progression)
-- Business rule enforcement (active roster limits, salary cap rules)
-
-**Timeliness:**
-- Data freshness monitoring (games updated within 2 hours)
-- SLA tracking (Bronze → Silver → Gold processing times)
-- Late data handling and backfill procedures
-
-**Uniqueness:**
-- Duplicate detection across all layers
-- Business key validation (unique game IDs, player-game combinations)
-- Conflict resolution for overlapping data sources
-
-### Metadata Management
-
-**Technical Metadata:**
-- Data lineage tracking from source to consumption
-- Schema evolution history and impact analysis
-- Processing statistics (record counts, processing times)
-
-**Business Metadata:**
-- Data definitions and business glossary
-- Quality metrics and data certification status
-- Usage statistics and access patterns
-
-**Operational Metadata:**
-- Pipeline execution logs and performance metrics
-- Error logs and recovery procedures
-- Data refresh schedules and dependencies
-
-## Performance and Scalability Considerations
-
-### Query Optimization
-
-**Partitioning Strategy:**
-- Time-based partitioning aligns with common query patterns
-- Business domain partitioning optimizes analytical workloads
-- Composite partitioning for complex query requirements
-
-**File Sizing:**
-- Target 100-200MB Parquet files for optimal query performance
-- Batch processing to achieve optimal file sizes
-- Automatic file compaction for small file problems
-
-**Caching Strategy:**
-- MCP server response caching for frequently accessed data
-- Intelligent cache invalidation based on data freshness
-- Multi-tier caching (application, CDN, browser)
-
-### Cost Optimization
-
-**Storage Management:**
-- Intelligent tiering based on access patterns
-- Compression optimization across different data types
-- Archival policies for historical data
-
-**Compute Optimization:**
-- Right-sizing of processing resources
-- Spot instances for non-time-critical processing
-- Serverless-first approach for variable workloads
-
-**Data Transfer:**
-- Minimize cross-region data transfer
-- Optimize API call patterns to reduce costs
-- Batch processing to reduce per-operation costs
-
-## Security and Compliance
-
-### Data Protection
-
-**Encryption:**
-- Encryption at rest using AWS KMS
-- Encryption in transit for all data movement
-- Key rotation and access logging
-
-**Access Control:**
-- Least privilege IAM policies for each layer
-- Role-based access control for different user types
-- Audit logging for all data access
-
-**Privacy:**
-- No PII collection from public NBA data
-- Data anonymization for any future user-generated content
-- Retention policies aligned with business needs
-
-### Compliance Framework
-
-**Audit Trail:**
-- Complete data lineage documentation
-- Change tracking for all data modifications
-- Access logging and compliance reporting
-
-**Data Quality Assurance:**
-- Automated validation and quality scoring
-- Manual review processes for critical data
-- Quality certification workflows
-
-## Success Criteria and Metrics
-
-### Data Quality Metrics
-
-**Completeness Targets:**
-- Bronze Layer: 99.5% of expected API calls successful
-- Silver Layer: 99.9% of bronze data successfully processed
-- Gold Layer: 100% of silver data aggregated within SLA
-
-**Accuracy Targets:**
-- Data validation: <0.1% records failing validation rules
-- Referential integrity: 100% consistency across related tables
-- Business rule compliance: 100% adherence to NBA rule constraints
-
-**Timeliness Targets:**
-- Bronze Layer: Data ingested within 1 hour of game completion
-- Silver Layer: Data processed within 2 hours of bronze ingestion
-- Gold Layer: Aggregations updated within 4 hours of game completion
-
-### Performance Metrics
-
-**Query Performance:**
-- MCP server responses: <500ms for 95th percentile
-- Ad-hoc analytics queries: <5 seconds for common patterns
-- Bulk data exports: <10 minutes for full season datasets
-
-**Cost Efficiency:**
-- Storage costs: <$100/month for full NBA season data
-- Compute costs: <$200/month for all processing
-- Total cost per query: <$0.001 for typical MCP requests
-
-**Operational Metrics:**
-- Pipeline success rate: >99.5% across all layers
-- Mean time to recovery: <30 minutes for production issues
-- Data freshness SLA: >99% of data updated within target timeframes
-
-### Business Value Metrics
-
-**Data Utilization:**
-- MCP server API calls: Track usage growth and user satisfaction
-- Analytics queries: Monitor dashboard and report usage
-- Data discovery: Track catalog usage and data exploration
-
-**Quality Improvements:**
-- Reduction in data quality issues over time
-- Faster time-to-insight for new analytics requirements
-- Improved confidence in data-driven decisions
+**10. Create Data Pipeline Orchestration**
+```
+Title: Implement pipeline scheduling and dependency management
+Description: Set up orchestration system for automated data processing across all layers
+Deliverables: Scheduled pipeline execution with dependency handling and error recovery
+```
 
 ---
 
-*This Medallion Architecture plan aligns with the project's development philosophy of simplicity and maintainability while providing a robust foundation for scalable data processing. It builds upon established architectural decisions including AWS cloud infrastructure (ADR-009), Parquet storage format (ADR-014), and NBA API data sourcing (ADR-013), ensuring consistency with the project's technical direction.*
+*Copy any of the above feature request templates to create new GitHub issues for implementing the Medallion Data Architecture.*

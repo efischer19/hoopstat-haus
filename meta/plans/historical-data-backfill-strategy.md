@@ -345,6 +345,12 @@ Based on this backfill strategy, the following new ADRs should be proposed:
 - **Impact**: Ensures data integrity and reliability for downstream analytics
 - **Dependencies**: ADR-014 (Parquet), ADR-017 (proposed - Silver layer data quality)
 
+### ADR-027: One-Time Backfill Script Execution Environment
+- **Scope**: Define execution environment and operational approach for long-running one-time backfill operations
+- **Key Decisions**: Local maintainer machine execution over cloud environments (GitHub Actions, Lambda)
+- **Impact**: Enables practical execution of multi-day backfill operations with proper oversight and control
+- **Dependencies**: ADR-006 (Docker containers), ADR-024 (proposed - State management)
+
 ## Phase-Based Implementation Roadmap
 
 ### Phase 1: Foundation and Core Infrastructure (2-3 weeks)

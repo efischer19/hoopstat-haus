@@ -3,7 +3,7 @@ import json
 import pytest
 from pathlib import Path
 
-INFRASTRUCTURE_DIR = Path(__file__).parent.parent / "infrastructure"
+INFRASTRUCTURE_DIR = Path(__file__).parent.parent
 
 class TestTerraformInfrastructure:
     """Test suite for Terraform infrastructure including observability."""

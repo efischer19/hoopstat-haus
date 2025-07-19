@@ -6,7 +6,7 @@ set -euo pipefail
 echo "🔍 Running infrastructure validation tests..."
 
 # Change to infrastructure directory
-cd "$(dirname "$0")/../../infrastructure"
+cd "$(dirname "$0")/.."
 
 # Test 1: Check for Terraform syntax errors (basic validation)
 echo "Test 1: Checking Terraform syntax..."

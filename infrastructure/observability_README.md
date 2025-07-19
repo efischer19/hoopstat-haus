@@ -125,7 +125,7 @@ The infrastructure automatically extracts metrics from JSON logs:
 Run the infrastructure tests:
 
 ```bash
-cd tests/infrastructure
+cd infrastructure/tests
 python -m pytest test_observability.py -v
 ```
 

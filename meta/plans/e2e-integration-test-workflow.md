@@ -1,17 +1,28 @@
 # Plan: End-to-End Integration Test Workflow
 
-**Status:** Planning  
-**Date:** 2025-01-18  
+**Status:** Planning (Updated to align with infrastructure deployment workflow ADR-017)  
+**Date:** 2025-01-18 (Updated: 2025-01-19)  
 **Author:** AI Contributor  
-**Scope:** Design and specify a comprehensive end-to-end testing strategy for the complete data pipeline (Bronze → Silver → Gold → MCP) using GitHub Actions
+**Scope:** Design and specify a comprehensive end-to-end testing strategy for the complete data pipeline (Bronze → Silver → Gold → MCP) using GitHub Actions, integrated with established Terraform infrastructure
+
+## 🔄 Recent Updates (January 2025)
+
+This plan has been updated to align with the infrastructure deployment workflow implemented in PR #63, which established:
+
+- **ADR-017**: Infrastructure deployment workflow using Terraform + GitHub Actions
+- **GitHub OIDC Authentication**: Secure keyless authentication with AWS IAM roles
+- **S3 & ECR Infrastructure**: Production-ready storage and container registry setup
+- **Automated Infrastructure Management**: Plan-on-PR, apply-on-merge workflow patterns
+
+The E2E testing strategy now leverages these established patterns rather than creating separate infrastructure, ensuring consistency with production deployment processes and reducing operational complexity.
 
 ## Executive Summary
 
-This plan outlines the comprehensive end-to-end integration testing strategy for the Hoopstat Haus data lakehouse, validating the complete data flow from raw NBA statistics ingestion through the Medallion Architecture layers (Bronze/Silver/Gold) to final consumption via the MCP server. The testing framework will be implemented as a GitHub Actions workflow that uses mock data and isolated infrastructure to ensure our disparately developed components integrate seamlessly into a cohesive system.
+This plan outlines the comprehensive end-to-end integration testing strategy for the Hoopstat Haus data lakehouse, validating the complete data flow from raw NBA statistics ingestion through the Medallion Architecture layers (Bronze/Silver/Gold) to final consumption via the MCP server. The testing framework will be implemented as a GitHub Actions workflow that uses mock data and leverages our established Terraform infrastructure (ADR-017) to ensure our disparately developed components integrate seamlessly into a cohesive system.
 
-The solution leverages ephemeral testing infrastructure (localstack for local S3 simulation and dedicated S3 buckets for integration environments), comprehensive mock data generation, and automated validation at each pipeline stage. This approach ensures data quality, transformation accuracy, and API functionality while maintaining cost-effectiveness and developer productivity.
+The solution builds upon the existing infrastructure deployment workflow, extending the established GitHub OIDC + AWS IAM authentication patterns and S3/ECR resource management to support comprehensive testing scenarios. This approach ensures data quality, transformation accuracy, and API functionality while maintaining cost-effectiveness and developer productivity through infrastructure reuse.
 
-The testing strategy aligns with our development philosophy of "Confidence Through Automated Testing" and provides the foundation for safe, continuous deployment of data pipeline components.
+The testing strategy aligns with our development philosophy of "Confidence Through Automated Testing" and integrates with our established infrastructure patterns to provide the foundation for safe, continuous deployment of data pipeline components.
 
 ## High-Level Implementation Strategy
 
@@ -51,14 +62,16 @@ The end-to-end integration testing framework will validate the complete data pip
 - Docker Compose orchestration for multi-service testing
 
 **Integration Environment:**
-- Dedicated ephemeral S3 buckets created per test run
-- AWS resources provisioned via Terraform with test-specific naming
-- Automatic cleanup mechanisms to prevent resource drift
+- Leverage existing Terraform infrastructure (ADR-017) for test resource provisioning
+- Create test-specific S3 bucket prefixes within existing bucket structure
+- Use established GitHub OIDC + AWS IAM authentication pattern
+- Integrate with existing infrastructure deployment workflow for resource management
 
 **CI/CD Integration:**
-- GitHub Actions workflow triggered on PR creation and main branch pushes
+- Extend existing GitHub Actions infrastructure workflow for testing integration
 - Matrix testing strategy for different data scenarios and pipeline configurations
 - Parallel execution where possible to minimize execution time
+- Leverage established AWS authentication patterns (secrets.AWS_ACCOUNT_ID, OIDC roles)
 
 ### 3. Mock Data Generation Strategy
 
@@ -113,32 +126,32 @@ The end-to-end integration testing framework will validate the complete data pip
 
 ## Required ADRs
 
-The following ADRs need to be proposed to support the comprehensive e2e testing implementation:
+The following ADRs need to be proposed to support the comprehensive e2e testing implementation, building upon the infrastructure decisions in ADR-017:
 
 ### 1. **ADR-XXX: E2E Testing Infrastructure Strategy**
-- **Decision:** Choose between localstack vs. dedicated AWS resources for different testing scenarios
-- **Context:** Need to balance cost, realism, and development velocity in testing environments
-- **Options:** Full localstack, hybrid approach, or dedicated AWS testing environments
+- **Decision:** Extend existing Terraform infrastructure (ADR-017) for testing environments vs. pure localstack approach
+- **Context:** Need to balance cost, realism, and development velocity while leveraging established infrastructure patterns
+- **Options:** Full localstack, hybrid with Terraform test modules, or test prefixes in existing infrastructure
 
-### 2. **ADR-XXX: Mock Data Generation Framework**
+### 2. **ADR-XXX: Testing Resource Management and Cleanup**
+- **Decision:** Strategy for managing test resources within existing S3/ECR infrastructure
+- **Context:** Need isolated test environments without conflicting with production infrastructure deployment workflow
+- **Options:** Test-specific bucket prefixes, separate test buckets, or temporal resource isolation
+
+### 3. **ADR-XXX: Mock Data Generation Framework**
 - **Decision:** Standardize mock data generation tooling and formats
 - **Context:** Need consistent, realistic test data across all pipeline stages
 - **Options:** Custom generators, existing NBA data simulation libraries, or hybrid approach
 
-### 3. **ADR-XXX: Test Data Versioning and Management**
-- **Decision:** Strategy for versioning, storing, and distributing test datasets
+### 4. **ADR-XXX: Test Data Versioning and Management**
+- **Decision:** Strategy for versioning, storing, and distributing test datasets using S3 infrastructure
 - **Context:** Need reproducible tests with evolving data schemas and business rules
-- **Options:** Git LFS, S3-based versioning, or embedded test data
+- **Options:** S3-based versioning in existing bucket, separate test data bucket, or Git LFS
 
-### 4. **ADR-XXX: CI/CD Testing Strategy and Resource Limits**
-- **Decision:** Define resource limits, execution time budgets, and failure handling for CI testing
-- **Context:** Balance comprehensive testing with CI/CD pipeline efficiency and cost
-- **Options:** Different test depths for different triggers, parallel execution strategies
-
-### 5. **ADR-XXX: Test Environment Lifecycle Management**
-- **Decision:** Automated provisioning and cleanup of testing infrastructure
-- **Context:** Ensure proper resource management and cost control for testing environments
-- **Options:** Terraform-managed, CloudFormation, or manual resource management
+### 5. **ADR-XXX: CI/CD Testing Integration Strategy**
+- **Decision:** How E2E testing integrates with existing infrastructure deployment workflow
+- **Context:** Balance comprehensive testing with CI/CD pipeline efficiency while leveraging GitHub OIDC authentication
+- **Options:** Separate workflow, extended infrastructure workflow, or triggered sub-workflows
 
 ### 6. **ADR-XXX: Integration Test Reporting and Monitoring**
 - **Decision:** Standardize test result reporting, metrics collection, and failure alerting
@@ -154,10 +167,10 @@ The following ADRs need to be proposed to support the comprehensive e2e testing 
 - **Mitigation:** Implement test parallelization and selective test execution based on changed components
 - **Open Question:** What is the acceptable maximum execution time for the full e2e test suite?
 
-**2. AWS Resource Costs**
-- **Risk:** Extensive testing with real AWS resources could incur significant costs
-- **Mitigation:** Implement strict resource cleanup, use minimal instance types, and leverage localstack for development
-- **Open Question:** Should we set up dedicated AWS account limits for testing environments?
+**2. AWS Resource Costs and Management**
+- **Risk:** Testing infrastructure costs, even with existing S3/ECR resources
+- **Mitigation:** Use test-specific prefixes in existing buckets, implement strict cleanup, leverage Terraform resource management patterns
+- **Open Question:** Should we create separate test buckets or use prefixes within the existing infrastructure?
 
 **3. Test Data Maintenance Overhead**
 - **Risk:** Mock data may become stale or inconsistent with real NBA API changes
@@ -318,36 +331,36 @@ Implement end-to-end testing for the MCP server that validates data serving accu
 **Estimated Effort:** 2-3 days
 
 **Description:**
-Create a comprehensive GitHub Actions workflow that orchestrates the complete end-to-end testing pipeline for CI/CD integration.
+Extend the existing infrastructure deployment workflow (ADR-017) to include comprehensive end-to-end testing pipeline integration.
 
 **Acceptance Criteria:**
-- [ ] GitHub Actions workflow triggered on PR and main branch pushes
+- [ ] Extend existing `.github/workflows/infrastructure.yml` or create complementary E2E workflow
 - [ ] Matrix testing for different data scenarios and configurations
-- [ ] Parallel execution strategy to minimize total runtime
-- [ ] Proper secret management for AWS credentials (if using real AWS)
+- [ ] Integration with existing GitHub OIDC + AWS IAM authentication
+- [ ] Leverage established AWS resource access patterns (secrets.AWS_ACCOUNT_ID)
 - [ ] Test result reporting and failure notifications
 - [ ] Artifact management for test outputs and debugging
-- [ ] Integration with existing CI workflow for apps/libs
+- [ ] Coordination with infrastructure deployment workflow triggers
 
 **Ready to copy-paste as GitHub issue**
 
 ---
 
-#### 8. feat(testing): ephemeral AWS testing environment provisioning
+#### 8. feat(testing): terraform-based test environment provisioning
 **Priority:** Low  
 **Estimated Effort:** 3-4 days
 
 **Description:**
-Implement automated provisioning of ephemeral AWS resources for integration testing when local simulation is insufficient.
+Create Terraform modules that extend the existing infrastructure (ADR-017) to provision test-specific resources for integration testing.
 
 **Acceptance Criteria:**
-- [ ] Terraform modules for test-specific S3 bucket creation
-- [ ] Automated resource tagging for proper identification
-- [ ] Cleanup automation with verification mechanisms
+- [ ] Terraform modules for test-specific S3 bucket prefixes or dedicated test buckets
+- [ ] Integration with existing Terraform infrastructure patterns
+- [ ] Automated resource tagging for proper identification (extending existing tagging strategy)
+- [ ] Cleanup automation leveraging Terraform state management
 - [ ] Cost monitoring and resource limit enforcement
-- [ ] Network isolation and security group configuration
-- [ ] Integration with GitHub Actions for automated provisioning
-- [ ] Rollback mechanisms for failed cleanup operations
+- [ ] Integration with GitHub OIDC authentication for test resource access
+- [ ] Documentation for extending infrastructure for testing purposes
 
 **Ready to copy-paste as GitHub issue**
 
@@ -378,15 +391,15 @@ Create automated performance testing that detects regressions in data pipeline p
 **Estimated Effort:** 2-3 days
 
 **Description:**
-Implement a system for versioning, storing, and distributing test datasets to ensure reproducible testing across different environments and team members.
+Implement a system for versioning, storing, and distributing test datasets using the existing S3 infrastructure to ensure reproducible testing.
 
 **Acceptance Criteria:**
-- [ ] Test dataset versioning strategy (Git LFS or S3-based)
-- [ ] Automated test data distribution to development environments
+- [ ] Test dataset versioning strategy using existing S3 bucket infrastructure
+- [ ] Automated test data distribution leveraging established AWS access patterns
 - [ ] Schema evolution handling for test datasets
 - [ ] Test data validation and integrity checks
 - [ ] Documentation system for test dataset contents and usage
-- [ ] CLI tools for test data management operations
+- [ ] CLI tools for test data management operations (using existing AWS authentication)
 - [ ] Integration with mock data generation for dataset updates
 
 **Ready to copy-paste as GitHub issue**
@@ -452,7 +465,8 @@ Implement a system for versioning, storing, and distributing test datasets to en
 
 **Dependencies:**
 - Phase 2 completion
-- AWS infrastructure provisioning capabilities
+- Existing Terraform infrastructure setup (ADR-017)
+- GitHub OIDC + AWS IAM authentication patterns
 - Production MCP server deployment
 
 ---

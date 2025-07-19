@@ -21,3 +21,23 @@ variable "github_repo" {
   type        = string
   default     = "efischer19/hoopstat-haus"
 }
+
+variable "log_retention_days" {
+  description = "CloudWatch log retention periods by log type"
+  type = object({
+    applications   = number
+    data_pipeline  = number
+    infrastructure = number
+  })
+  default = {
+    applications   = 30
+    data_pipeline  = 90
+    infrastructure = 14
+  }
+}
+
+variable "alert_email" {
+  description = "Email address for alert notifications"
+  type        = string
+  default     = ""
+}

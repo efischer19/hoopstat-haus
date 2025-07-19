@@ -19,6 +19,8 @@ The infrastructure includes:
 - **ECR Repository**: Container registry for Docker images
 - **IAM Roles**: Least-privilege access roles for different services
 - **OIDC Provider**: GitHub OIDC integration for keyless authentication
+- **CloudWatch Observability** (ADR-018): Log groups, metrics, alarms, and monitoring
+- **SNS Topics**: Alert routing for critical and warning notifications
 
 ## Deployment Workflow
 

@@ -1,0 +1,1096 @@
+{
+  "metadata": {
+    "extraction_date": "2025-01-19",
+    "source_documents": [
+      "meta/plans/thin-client-frontend-design.md",
+      "meta/plans/bronze-to-silver-etl-pipeline.md",
+      "meta/plans/mcp-server-architecture.md",
+      "meta/plans/historical-data-backfill-strategy.md",
+      "meta/plans/aws-secrets-integration-setup.md"
+    ],
+    "extraction_method": "AI-driven analysis",
+    "total_features": 42,
+    "feature_categories": [
+      "frontend",
+      "etl-pipeline", 
+      "mcp-server",
+      "data-backfill",
+      "aws-integration"
+    ]
+  },
+  "feature_requests": [
+    {
+      "id": "frontend-001",
+      "title": "Setup frontend framework and development environment",
+      "category": "frontend",
+      "priority": "high",
+      "complexity": "medium",
+      "epic": "Foundation and Core Infrastructure",
+      "source_document": "meta/plans/thin-client-frontend-design.md",
+      "source_section": "Phase 1: Foundation and Core Infrastructure",
+      "github_labels": ["feature", "frontend", "setup", "high-priority"],
+      "estimated_effort": "1-2 weeks",
+      "description": "Set up the foundational frontend development environment with modern tooling, including framework selection, build configuration, and development workflow automation.",
+      "acceptance_criteria": [
+        "Frontend framework selected and justified (React/Vue/Svelte + static generation)",
+        "Development environment configured with hot reload and debugging support", 
+        "Build system configured for production optimization and static generation",
+        "ESLint, Prettier, and TypeScript configuration established",
+        "Basic project structure following established patterns",
+        "Documentation for local development setup and workflows"
+      ],
+      "technical_requirements": [
+        "Static site generation capability for hosting efficiency",
+        "TypeScript support for maintainable code",
+        "Modern build tooling with optimization features",
+        "Integration with existing project standards (Poetry, Ruff, Black equivalents)",
+        "Automated dependency management and security scanning"
+      ],
+      "definition_of_done": [
+        "Development environment functional for team members",
+        "Component library documented with usage examples",
+        "Anonymous access working end-to-end",
+        "Automated frontend deployment pipeline operational"
+      ]
+    },
+    {
+      "id": "frontend-002", 
+      "title": "Establish design system and core component library",
+      "category": "frontend",
+      "priority": "high",
+      "complexity": "medium",
+      "epic": "Foundation and Core Infrastructure",
+      "source_document": "meta/plans/thin-client-frontend-design.md",
+      "source_section": "Phase 1: Foundation and Core Infrastructure",
+      "github_labels": ["feature", "frontend", "design-system", "high-priority"],
+      "estimated_effort": "1-2 weeks",
+      "description": "Create a comprehensive design system with reusable components that ensure consistency, accessibility, and scalability across the application.",
+      "acceptance_criteria": [
+        "Design token system established (colors, typography, spacing, breakpoints)",
+        "Accessibility-first component library with WCAG 2.1 AA compliance",
+        "Core components implemented (buttons, inputs, layouts, navigation)",
+        "Responsive design system with mobile-first approach",
+        "Dark mode support and theme customization capabilities",
+        "Component documentation and usage examples"
+      ],
+      "technical_requirements": [
+        "CSS framework decision implemented (Tailwind/Styled Components/CSS Modules)",
+        "Component testing setup with accessibility testing",
+        "Storybook or equivalent for component documentation",
+        "Design system tokens that align with basketball/sports branding",
+        "Performance optimization for component rendering"
+      ]
+    },
+    {
+      "id": "frontend-003",
+      "title": "Create simple static application foundation without authentication",
+      "category": "frontend", 
+      "priority": "high",
+      "complexity": "low",
+      "epic": "Foundation and Core Infrastructure",
+      "source_document": "meta/plans/thin-client-frontend-design.md",
+      "source_section": "Phase 1: Foundation and Core Infrastructure",
+      "github_labels": ["feature", "frontend", "mvp", "high-priority"],
+      "estimated_effort": "1 week",
+      "description": "Develop basic static web application foundation focused on anonymous access and minimal complexity.",
+      "acceptance_criteria": [
+        "Simple static HTML/CSS/JS foundation without authentication",
+        "Basic text input interface for basketball questions",
+        "Global rate limiting integration for cost control",
+        "Error handling for API failures and network issues",
+        "Mobile-responsive design for core interface"
+      ],
+      "technical_requirements": [
+        "Stateless application design without client-side session management",
+        "API client abstraction with rate limiting support",
+        "Simple UI components focused on text input and display",
+        "Integration with planned API gateway for backend services"
+      ]
+    },
+    {
+      "id": "frontend-004",
+      "title": "Develop simple basketball query input interface",
+      "category": "frontend",
+      "priority": "medium",
+      "complexity": "low", 
+      "epic": "Core Conversational Interface",
+      "source_document": "meta/plans/thin-client-frontend-design.md",
+      "source_section": "Phase 2: Core Conversational Interface",
+      "github_labels": ["feature", "frontend", "user-interface"],
+      "estimated_effort": "1 week",
+      "description": "Create basic text input interface for basketball questions with simple suggestions and example queries.",
+      "acceptance_criteria": [
+        "Clean text input interface with basketball-focused design",
+        "Basic query suggestions or example queries for user guidance",
+        "Simple input validation and preprocessing",
+        "Mobile-optimized input experience",
+        "Accessibility features including screen reader support"
+      ],
+      "technical_requirements": [
+        "Basic input handling without complex suggestion APIs",
+        "Simple query preprocessing for optimal AI processing",
+        "Responsive design for mobile devices",
+        "Initial focus on single query type with clear expansion path"
+      ]
+    },
+    {
+      "id": "frontend-005",
+      "title": "Integrate Amazon Bedrock for basketball analytics with simple request-response",
+      "category": "frontend",
+      "priority": "high",
+      "complexity": "high",
+      "epic": "Core Conversational Interface", 
+      "source_document": "meta/plans/thin-client-frontend-design.md",
+      "source_section": "Phase 2: Core Conversational Interface",
+      "github_labels": ["feature", "frontend", "ai-integration", "high-priority"],
+      "estimated_effort": "2 weeks",
+      "description": "Implement basic integration with Amazon Bedrock for simple request-response pattern without streaming.",
+      "acceptance_criteria": [
+        "Bedrock API client with proper authentication and error handling",
+        "Simple request-response handling for basketball queries",
+        "Basic response caching for cost optimization",
+        "Fallback mechanisms for AI service unavailability",
+        "Usage monitoring and cost tracking integration"
+      ],
+      "technical_requirements": [
+        "AWS SDK integration with Bedrock service",
+        "Simple loading states without streaming UI complexity",
+        "Basic response caching strategy",
+        "Error boundary implementation for AI service failures",
+        "Rate limiting integration for cost control"
+      ]
+    },
+    {
+      "id": "frontend-006",
+      "title": "Implement MCP server integration for basketball statistics", 
+      "category": "frontend",
+      "priority": "high",
+      "complexity": "high",
+      "epic": "Core Conversational Interface",
+      "source_document": "meta/plans/thin-client-frontend-design.md",
+      "source_section": "Phase 2: Core Conversational Interface",
+      "github_labels": ["feature", "frontend", "mcp-integration", "high-priority"],
+      "estimated_effort": "2 weeks",
+      "description": "Develop the integration layer with the MCP server to fetch basketball statistics and data in response to AI-generated queries.",
+      "acceptance_criteria": [
+        "MCP protocol client implementation with full specification compliance",
+        "Basketball data query interface supporting player, team, and game statistics",
+        "Response transformation from MCP format to UI-friendly structures",
+        "Caching strategy for expensive data operations",
+        "Error handling for data unavailability and server issues",
+        "Performance optimization for large dataset queries"
+      ],
+      "technical_requirements": [
+        "MCP client library implementation or integration",
+        "Data transformation pipeline from raw stats to presentation format", 
+        "Efficient caching layer with configurable TTL policies",
+        "Request deduplication for simultaneous identical queries",
+        "Integration testing with actual MCP server endpoints"
+      ]
+    },
+    {
+      "id": "frontend-007",
+      "title": "Implement clean text response display for basketball insights",
+      "category": "frontend",
+      "priority": "medium",
+      "complexity": "low",
+      "epic": "Data Presentation and User Experience",
+      "source_document": "meta/plans/thin-client-frontend-design.md",
+      "source_section": "Phase 3: Data Presentation and User Experience",
+      "github_labels": ["feature", "frontend", "ui-display"],
+      "estimated_effort": "1 week", 
+      "description": "Create simple, readable text display for AI-generated basketball insights without complex visualizations.",
+      "acceptance_criteria": [
+        "Clean, readable text formatting for AI responses",
+        "Mobile-optimized text display with proper typography",
+        "Basic loading states during query processing",
+        "Simple error display for failed queries",
+        "Accessibility features for text content"
+      ],
+      "technical_requirements": [
+        "Responsive text layout for various screen sizes",
+        "Basic typography and readability optimization",
+        "Simple loading and error state management",
+        "Progressive enhancement foundation for future data visualization"
+      ]
+    },
+    {
+      "id": "frontend-008",
+      "title": "Develop simple response layout system",
+      "category": "frontend",
+      "priority": "medium", 
+      "complexity": "low",
+      "epic": "Data Presentation and User Experience",
+      "source_document": "meta/plans/thin-client-frontend-design.md",
+      "source_section": "Phase 3: Data Presentation and User Experience",
+      "github_labels": ["feature", "frontend", "layout"],
+      "estimated_effort": "1 week",
+      "description": "Build basic layout system that organizes AI text responses in a clean, readable format.",
+      "acceptance_criteria": [
+        "Simple layout system for text responses",
+        "Clear organization of AI insights and basketball information",
+        "Mobile-responsive layout design",
+        "Basic progressive enhancement foundation for future features"
+      ],
+      "technical_requirements": [
+        "Simple grid or flex layout system",
+        "Mobile-first responsive design",
+        "Clean typography and spacing systems",
+        "Foundation for future expansion to data visualization"
+      ]
+    },
+    {
+      "id": "etl-001",
+      "title": "Implement Pydantic schema validation framework for Bronze-to-Silver ETL",
+      "category": "etl-pipeline",
+      "priority": "high",
+      "complexity": "high",
+      "epic": "Foundation and Schema Framework", 
+      "source_document": "meta/plans/bronze-to-silver-etl-pipeline.md",
+      "source_section": "Phase 1: Foundation and Schema Framework",
+      "github_labels": ["feature", "etl", "schema-validation", "high-priority"],
+      "estimated_effort": "2 weeks",
+      "description": "Create a comprehensive schema validation framework using Pydantic models to enforce data quality and consistency in the Bronze-to-Silver ETL pipeline.",
+      "acceptance_criteria": [
+        "Create Pydantic models for all Silver layer entities (players, teams, games, statistics)",
+        "Implement schema versioning and evolution strategy",
+        "Add validation strictness levels (strict/lenient modes)",
+        "Create comprehensive unit tests for all schema models",
+        "Add field-level validation with business rules",
+        "Implement custom validators for NBA-specific data constraints",
+        "Generate JSON schemas for documentation and external validation"
+      ],
+      "technical_requirements": [
+        "Use Pydantic v2 with performance optimizations",
+        "Include data lineage fields in all schemas",
+        "Support for incremental schema evolution",
+        "Comprehensive error messages for validation failures"
+      ],
+      "definition_of_done": [
+        "All schemas pass validation tests with sample NBA data",
+        "Schema documentation generated and reviewed",
+        "Performance benchmarks meet requirements (<100ms per 1000 records)",
+        "Error handling covers all identified edge cases"
+      ]
+    },
+    {
+      "id": "etl-002",
+      "title": "Implement data cleaning and standardization rules for NBA data",
+      "category": "etl-pipeline",
+      "priority": "high",
+      "complexity": "medium", 
+      "epic": "Foundation and Schema Framework",
+      "source_document": "meta/plans/bronze-to-silver-etl-pipeline.md",
+      "source_section": "Phase 1: Foundation and Schema Framework",
+      "github_labels": ["feature", "etl", "data-cleaning", "high-priority"],
+      "estimated_effort": "2 weeks",
+      "description": "Build a configurable rules engine that applies data cleaning, standardization, and conforming transformations to raw NBA data from the Bronze layer.",
+      "acceptance_criteria": [
+        "Implement team name standardization with mapping tables",
+        "Create player position normalization logic",
+        "Add comprehensive null value handling rules",
+        "Implement data type conversion and validation",
+        "Create date/time standardization functions",
+        "Add numeric field cleaning with business rule validation",
+        "Support for fuzzy string matching on player/team names"
+      ],
+      "technical_requirements": [
+        "Rules configurable via YAML/JSON configuration files",
+        "Support for custom business rules per data entity",
+        "Performance optimized for batch processing",
+        "Comprehensive logging of all transformations applied"
+      ],
+      "definition_of_done": [
+        "All cleaning rules tested against historical NBA data samples",
+        "Configuration system allows easy rule updates",
+        "Transformation logging enables full data lineage tracking",
+        "Performance meets requirements (>10,000 records/minute)"
+      ]
+    },
+    {
+      "id": "etl-003",
+      "title": "Implement intelligent deduplication engine for NBA data",
+      "category": "etl-pipeline",
+      "priority": "high",
+      "complexity": "high",
+      "epic": "Core ETL Pipeline",
+      "source_document": "meta/plans/bronze-to-silver-etl-pipeline.md", 
+      "source_section": "Phase 2: Core ETL Pipeline",
+      "github_labels": ["feature", "etl", "deduplication", "high-priority"],
+      "estimated_effort": "2 weeks",
+      "description": "Create a sophisticated deduplication system that identifies and resolves duplicate records using NBA-specific business rules and fuzzy matching algorithms.",
+      "acceptance_criteria": [
+        "Implement exact duplicate detection by primary keys",
+        "Add fuzzy duplicate detection with configurable similarity thresholds",
+        "Create conflict resolution rules for player data merging",
+        "Implement slowly changing dimension (SCD Type 2) support",
+        "Add deduplication metadata tracking for audit purposes",
+        "Create comprehensive test suite with known duplicate scenarios"
+      ],
+      "technical_requirements": [
+        "Support for different deduplication strategies per entity type",
+        "Configurable similarity thresholds and matching algorithms",
+        "Performance optimized for large datasets (>1M records)",
+        "Detailed reporting on deduplication actions taken"
+      ],
+      "definition_of_done": [
+        "Deduplication accuracy >95% on test dataset with known duplicates",
+        "Performance benchmarks met for production data volumes",
+        "All business rules documented and tested",
+        "Audit trail captures all deduplication decisions"
+      ]
+    },
+    {
+      "id": "etl-004",
+      "title": "Build core Bronze-to-Silver transformation pipeline",
+      "category": "etl-pipeline",
+      "priority": "high",
+      "complexity": "high",
+      "epic": "Core ETL Pipeline",
+      "source_document": "meta/plans/bronze-to-silver-etl-pipeline.md",
+      "source_section": "Phase 2: Core ETL Pipeline",
+      "github_labels": ["feature", "etl", "pipeline", "high-priority"],
+      "estimated_effort": "3 weeks",
+      "description": "Create the main ETL pipeline that orchestrates data extraction from Bronze layer, applies transformations, and loads clean data to Silver layer with comprehensive error handling.",
+      "acceptance_criteria": [
+        "Implement incremental processing with change detection",
+        "Add support for full refresh and date-range processing modes",
+        "Create atomic transaction support for data consistency", 
+        "Implement partition-aware processing for performance",
+        "Add comprehensive pipeline metrics and monitoring",
+        "Create data quality scoring and validation checkpoints"
+      ],
+      "technical_requirements": [
+        "Support for parallel processing of independent data partitions",
+        "Idempotent operations that can be safely retried",
+        "Memory-efficient processing for large datasets",
+        "Integration with existing AWS S3 Bronze and Silver buckets"
+      ],
+      "definition_of_done": [
+        "Pipeline successfully processes full historical NBA dataset",
+        "Incremental processing correctly identifies and processes only new data",
+        "All data quality checks pass with >95% success rate",
+        "Performance requirements met (complete daily processing in <2 hours)"
+      ]
+    },
+    {
+      "id": "etl-005",
+      "title": "Implement comprehensive error handling and dead letter queue system",
+      "category": "etl-pipeline",
+      "priority": "medium",
+      "complexity": "medium",
+      "epic": "Error Handling and Quality Assurance",
+      "source_document": "meta/plans/bronze-to-silver-etl-pipeline.md",
+      "source_section": "Phase 3: Error Handling and Quality Assurance",
+      "github_labels": ["feature", "etl", "error-handling"],
+      "estimated_effort": "2 weeks",
+      "description": "Build a robust error handling framework that classifies errors, routes failed records to appropriate dead letter queues, and provides automatic recovery mechanisms.",
+      "acceptance_criteria": [
+        "Implement error classification by severity and category",
+        "Create partitioned dead letter queues in S3",
+        "Add automatic recovery strategies for common error types",
+        "Implement manual review workflow for complex errors",
+        "Create error analytics and reporting dashboard",
+        "Add alerting for critical error conditions"
+      ],
+      "technical_requirements": [
+        "Error classification supports custom business rules",
+        "DLQ partitioning enables efficient error analysis",
+        "Recovery strategies are configurable and extensible",
+        "Integration with monitoring and alerting systems"
+      ],
+      "definition_of_done": [
+        "Error handling covers all identified failure scenarios",
+        "Automatic recovery successfully fixes >80% of recoverable errors",
+        "Manual review workflow provides clear error analysis",
+        "Alerting triggers appropriately for different error severities"
+      ]
+    },
+    {
+      "id": "etl-006",
+      "title": "Build comprehensive data quality monitoring system",
+      "category": "etl-pipeline",
+      "priority": "medium",
+      "complexity": "medium",
+      "epic": "Error Handling and Quality Assurance",
+      "source_document": "meta/plans/bronze-to-silver-etl-pipeline.md",
+      "source_section": "Phase 3: Error Handling and Quality Assurance",
+      "github_labels": ["feature", "etl", "data-quality", "monitoring"],
+      "estimated_effort": "2 weeks",
+      "description": "Create a data quality monitoring framework that tracks pipeline health, data completeness, accuracy, and consistency across all Silver layer datasets.",
+      "acceptance_criteria": [
+        "Implement data quality scoring algorithms",
+        "Create quality trend analysis and reporting",
+        "Add automated quality threshold alerting",
+        "Build quality metrics dashboard",
+        "Implement data freshness monitoring",
+        "Create data lineage tracking and visualization"
+      ],
+      "technical_requirements": [
+        "Quality metrics calculated in real-time during processing",
+        "Historical quality trends stored for analysis",
+        "Configurable quality thresholds per dataset",
+        "Integration with existing monitoring infrastructure"
+      ],
+      "definition_of_done": [
+        "Quality monitoring covers all critical data quality dimensions",
+        "Alerting triggers before quality issues impact downstream systems",
+        "Dashboard provides clear visibility into pipeline health",
+        "Quality metrics demonstrate continuous improvement over time"
+      ]
+    },
+    {
+      "id": "etl-007",
+      "title": "Implement GitHub Actions workflows for ETL pipeline automation",
+      "category": "etl-pipeline",
+      "priority": "medium",
+      "complexity": "medium",
+      "epic": "Automation and Operations",
+      "source_document": "meta/plans/bronze-to-silver-etl-pipeline.md",
+      "source_section": "Phase 4: Automation and Operations",
+      "github_labels": ["feature", "etl", "github-actions", "automation"],
+      "estimated_effort": "1-2 weeks",
+      "description": "Create comprehensive GitHub Actions workflows that automate the Bronze-to-Silver ETL pipeline with proper error handling, retry logic, and notification systems.",
+      "acceptance_criteria": [
+        "Implement scheduled daily ETL workflow execution",
+        "Add support for manual workflow triggers with parameters",
+        "Create workflow for DLQ processing and recovery",
+        "Implement failure notification and escalation",
+        "Add workflow monitoring and health checks",
+        "Create deployment workflow for ETL code updates"
+      ],
+      "technical_requirements": [
+        "Workflows integrate with AWS using OIDC authentication",
+        "Proper artifact management and cleanup",
+        "Configurable retry logic for transient failures",
+        "Integration with existing CI/CD patterns"
+      ],
+      "definition_of_done": [
+        "Daily ETL runs automatically without manual intervention",
+        "Failure notifications provide actionable information",
+        "Manual triggers allow for ad-hoc processing scenarios",
+        "Deployment workflow enables safe ETL code updates"
+      ]
+    },
+    {
+      "id": "etl-008",
+      "title": "Implement comprehensive ETL pipeline observability",
+      "category": "etl-pipeline",
+      "priority": "medium",
+      "complexity": "medium",
+      "epic": "Automation and Operations",
+      "source_document": "meta/plans/bronze-to-silver-etl-pipeline.md",
+      "source_section": "Phase 4: Automation and Operations",
+      "github_labels": ["feature", "etl", "observability", "monitoring"],
+      "estimated_effort": "2 weeks",
+      "description": "Build monitoring, logging, and observability infrastructure that provides full visibility into ETL pipeline performance, health, and data quality trends.",
+      "acceptance_criteria": [
+        "Implement structured logging throughout ETL pipeline",
+        "Create performance metrics collection and analysis",
+        "Add pipeline execution dashboards",
+        "Implement cost monitoring and optimization alerts",
+        "Create data lineage visualization",
+        "Add capacity planning and scaling recommendations"
+      ],
+      "technical_requirements": [
+        "Logging follows established JSON logging standards (ADR-015)",
+        "Metrics integrate with AWS CloudWatch",
+        "Dashboards provide both technical and business views",
+        "Cost monitoring tracks S3 storage and compute usage"
+      ],
+      "definition_of_done": [
+        "Monitoring provides complete visibility into pipeline health",
+        "Performance trends enable proactive optimization",
+        "Cost monitoring prevents budget overruns",
+        "Data lineage supports impact analysis and debugging"
+      ]
+    },
+    {
+      "id": "mcp-001",
+      "title": "Implement MCP protocol foundation and server framework",
+      "category": "mcp-server",
+      "priority": "high",
+      "complexity": "high",
+      "epic": "MCP Protocol Foundation",
+      "source_document": "meta/plans/mcp-server-architecture.md",
+      "source_section": "Epic 1: MCP Protocol Foundation",
+      "github_labels": ["feature", "mcp-server", "protocol", "high-priority"],
+      "estimated_effort": "2-3 weeks",
+      "description": "Implement the core Model Context Protocol specifications and server framework for exposing Gold layer basketball data to AI agents.",
+      "acceptance_criteria": [
+        "Implement MCP resource discovery endpoint",
+        "Return properly formatted resource manifests for available data",
+        "Support MCP protocol versioning and capability negotiation",
+        "Provide clear resource descriptions and schemas",
+        "Create reusable MCP server framework components",
+        "Implement request/response handling according to MCP specification",
+        "Add proper error handling and validation",
+        "Support async processing for large data queries"
+      ],
+      "technical_requirements": [
+        "Strict adherence to Model Context Protocol specifications",
+        "Serverless-first architecture using AWS Lambda",
+        "Efficient Parquet querying with intelligent caching",
+        "Comprehensive authentication and authorization",
+        "Extensive logging and monitoring capabilities"
+      ]
+    },
+    {
+      "id": "mcp-002",
+      "title": "Build AWS infrastructure foundation for MCP server",
+      "category": "mcp-server",
+      "priority": "high",
+      "complexity": "medium",
+      "epic": "AWS Infrastructure Foundation",
+      "source_document": "meta/plans/mcp-server-architecture.md",
+      "source_section": "Epic 2: AWS Infrastructure Foundation",
+      "github_labels": ["feature", "mcp-server", "aws-infrastructure", "high-priority"],
+      "estimated_effort": "1-2 weeks",
+      "description": "Establish the AWS serverless infrastructure for hosting the MCP server including API Gateway, Lambda, and IAM configuration.",
+      "acceptance_criteria": [
+        "Deploy API Gateway with proper routing for MCP endpoints",
+        "Configure CORS for cross-origin access where appropriate",
+        "Implement request/response validation and transformation",
+        "Set up CloudWatch logging for API access patterns",
+        "Configure throttling and rate limiting policies",
+        "Deploy Python Lambda function with optimized resource configuration",
+        "Implement cold start optimization strategies",
+        "Configure appropriate timeout and memory settings",
+        "Create Lambda execution role with minimal required permissions",
+        "Configure S3 access policies for Gold layer data reading"
+      ],
+      "technical_requirements": [
+        "Terraform infrastructure modules for reproducible deployments",
+        "Integration with existing AWS account and OIDC authentication",
+        "Least-privilege IAM policies for security",
+        "Cost optimization through appropriate resource sizing"
+      ]
+    },
+    {
+      "id": "mcp-003",
+      "title": "Implement S3 Parquet data access layer for MCP server",
+      "category": "mcp-server",
+      "priority": "high",
+      "complexity": "medium",
+      "epic": "Data Access Layer Implementation",
+      "source_document": "meta/plans/mcp-server-architecture.md",
+      "source_section": "Epic 3: Data Access Layer Implementation",
+      "github_labels": ["feature", "mcp-server", "data-access", "high-priority"],
+      "estimated_effort": "2 weeks",
+      "description": "Implement efficient querying and processing of Gold layer Parquet data for MCP responses.",
+      "acceptance_criteria": [
+        "Implement AWS Data Wrangler integration for Parquet reading",
+        "Support filtered queries to minimize data transfer",
+        "Cache frequently accessed data appropriately",
+        "Handle partitioned data structures efficiently",
+        "Implement proper error handling for missing or corrupted data",
+        "Use S3 Select for server-side filtering where applicable",
+        "Implement connection pooling for S3 access",
+        "Monitor and optimize data transfer costs"
+      ],
+      "technical_requirements": [
+        "Columnar query strategies for Parquet files",
+        "Intelligent caching with configurable TTL policies",
+        "Performance optimization for Lambda cold starts",
+        "Error handling for data unavailability scenarios"
+      ]
+    },
+    {
+      "id": "mcp-004",
+      "title": "Implement player season statistics MCP endpoint",
+      "category": "mcp-server",
+      "priority": "high",
+      "complexity": "medium",
+      "epic": "Basketball Analytics Endpoints",
+      "source_document": "meta/plans/mcp-server-architecture.md",
+      "source_section": "Epic 4: Basketball Analytics Endpoints",
+      "github_labels": ["feature", "mcp-server", "basketball-analytics", "high-priority"],
+      "estimated_effort": "1-2 weeks",
+      "description": "Implement MCP endpoint for retrieving season statistics for any NBA player with fuzzy matching and comprehensive data.",
+      "acceptance_criteria": [
+        "Implement getPlayerSeasonStats(player_name, season) endpoint",
+        "Support fuzzy player name matching and suggestions",
+        "Return comprehensive season statistics (scoring, rebounds, assists, etc.)",
+        "Include metadata about games played, team affiliations",
+        "Support multiple seasons and career aggregations",
+        "Transform Parquet data into MCP-compliant response formats",
+        "Implement data validation and quality checks",
+        "Support multiple output formats (JSON, structured text)"
+      ],
+      "technical_requirements": [
+        "MCP protocol compliance for all responses",
+        "Efficient data aggregation algorithms",
+        "Player name fuzzy matching using similarity algorithms",
+        "Response caching for popular queries"
+      ]
+    },
+    {
+      "id": "mcp-005",
+      "title": "Implement API key authentication and rate limiting for MCP server",
+      "category": "mcp-server",
+      "priority": "high",
+      "complexity": "medium",
+      "epic": "Security and Authentication",
+      "source_document": "meta/plans/mcp-server-architecture.md",
+      "source_section": "Epic 5: Security and Authentication",
+      "github_labels": ["feature", "mcp-server", "authentication", "security", "high-priority"],
+      "estimated_effort": "1-2 weeks",
+      "description": "Implement robust security measures including API key authentication and rate limiting for the MCP server.",
+      "acceptance_criteria": [
+        "Implement API key generation and management system",
+        "Integrate API key validation with API Gateway",
+        "Support multiple API key tiers (development, production, premium)",
+        "Log API key usage for monitoring and billing",
+        "Provide API key rotation capabilities",
+        "Implement per-API-key rate limiting policies",
+        "Configure burst and sustained rate limits",
+        "Provide clear error messages for rate limit violations",
+        "Implement input validation for all MCP endpoint parameters",
+        "Sanitize user input to prevent injection attacks"
+      ],
+      "technical_requirements": [
+        "API Gateway native authentication integration",
+        "Rate limiting with proper error handling",
+        "Security event logging for monitoring",
+        "Automated abuse detection capabilities"
+      ]
+    },
+    {
+      "id": "mcp-006",
+      "title": "Implement comprehensive MCP server monitoring and observability",
+      "category": "mcp-server",
+      "priority": "medium",
+      "complexity": "medium",
+      "epic": "Monitoring and Observability",
+      "source_document": "meta/plans/mcp-server-architecture.md",
+      "source_section": "Epic 6: Monitoring and Observability",
+      "github_labels": ["feature", "mcp-server", "monitoring", "observability"],
+      "estimated_effort": "1-2 weeks",
+      "description": "Implement comprehensive monitoring and logging for operational visibility into MCP server performance and usage.",
+      "acceptance_criteria": [
+        "Implement CloudWatch metrics for Lambda performance",
+        "Monitor API Gateway request patterns and latencies",
+        "Track data access patterns and S3 costs",
+        "Set up automated alerting for performance degradation",
+        "Create operational dashboards for system health",
+        "Track endpoint usage patterns and popular queries",
+        "Monitor user engagement and API adoption",
+        "Measure data freshness and quality metrics",
+        "Implement structured logging throughout the application",
+        "Track and categorize error types and frequencies"
+      ],
+      "technical_requirements": [
+        "Integration with AWS CloudWatch and monitoring services",
+        "Structured logging following JSON standards",
+        "Business intelligence metrics for usage analysis",
+        "Cost monitoring and optimization alerts"
+      ]
+    },
+    {
+      "id": "backfill-001",
+      "title": "Create containerized NBA 2024-25 season data backfill application",
+      "category": "data-backfill",
+      "priority": "high",
+      "complexity": "medium",
+      "epic": "Historical Data Backfill Foundation",
+      "source_document": "meta/plans/historical-data-backfill-strategy.md",
+      "source_section": "Phase-Based Implementation Roadmap",
+      "github_labels": ["feature", "data-backfill", "containerization", "high-priority"],
+      "estimated_effort": "1-2 weeks",
+      "description": "Build a containerized Python application specifically designed to backfill NBA 2024-25 season data from NBA API to Bronze layer storage.",
+      "acceptance_criteria": [
+        "Containerized Python application with proper dependency management",
+        "Integration with NBA API for 2024-25 season data retrieval",
+        "Configurable data collection parameters (date ranges, data types)",
+        "Proper error handling and logging throughout the process",
+        "Integration with Bronze layer S3 storage for data persistence",
+        "Performance optimization for large-scale data collection"
+      ],
+      "technical_requirements": [
+        "Docker containerization following project standards",
+        "NBA API client with rate limiting and authentication",
+        "AWS S3 integration for Bronze layer data storage",
+        "Comprehensive logging using JSON structured format",
+        "Memory-efficient processing for large datasets"
+      ]
+    },
+    {
+      "id": "backfill-002", 
+      "title": "Implement checkpoint-based state management for backfill resumability",
+      "category": "data-backfill",
+      "priority": "high",
+      "complexity": "medium",
+      "epic": "Backfill State Management",
+      "source_document": "meta/plans/historical-data-backfill-strategy.md",
+      "source_section": "Phase-Based Implementation Roadmap",
+      "github_labels": ["feature", "data-backfill", "state-management"],
+      "estimated_effort": "1 week",
+      "description": "Build checkpoint-based state management system that allows backfill operations to resume from interruption points.",
+      "acceptance_criteria": [
+        "Persistent checkpoint storage for tracking progress",
+        "Automatic resume capability from last successful checkpoint",
+        "Granular checkpointing at game and date levels",
+        "State validation to ensure data consistency",
+        "Recovery mechanisms for corrupted checkpoints",
+        "Progress reporting and status monitoring"
+      ],
+      "technical_requirements": [
+        "Persistent state storage using S3 or DynamoDB",
+        "Atomic checkpoint operations for consistency",
+        "State validation and integrity checking",
+        "Configurable checkpoint frequency"
+      ]
+    },
+    {
+      "id": "backfill-003",
+      "title": "Implement comprehensive error handling with smart retry logic",
+      "category": "data-backfill",
+      "priority": "medium",
+      "complexity": "medium",
+      "epic": "Error Handling and Resilience",
+      "source_document": "meta/plans/historical-data-backfill-strategy.md",
+      "source_section": "Phase-Based Implementation Roadmap",
+      "github_labels": ["feature", "data-backfill", "error-handling"],
+      "estimated_effort": "1 week",
+      "description": "Build robust error handling framework with intelligent retry logic for various failure scenarios.",
+      "acceptance_criteria": [
+        "Categorized error handling for different failure types",
+        "Exponential backoff with jitter for retries",
+        "Configurable retry limits and strategies",
+        "Error logging and metrics collection",
+        "Dead letter queue for unrecoverable failures",
+        "Automatic recovery for transient issues"
+      ],
+      "technical_requirements": [
+        "Error classification and handling strategies",
+        "Retry logic with configurable parameters",
+        "Integration with monitoring and alerting systems",
+        "Persistent error tracking and reporting"
+      ]
+    },
+    {
+      "id": "backfill-004",
+      "title": "Implement adaptive rate limiting with NBA API health monitoring",
+      "category": "data-backfill",
+      "priority": "medium",
+      "complexity": "medium",
+      "epic": "Performance Optimization",
+      "source_document": "meta/plans/historical-data-backfill-strategy.md",
+      "source_section": "Phase-Based Implementation Roadmap",
+      "github_labels": ["feature", "data-backfill", "rate-limiting"],
+      "estimated_effort": "1 week",
+      "description": "Create adaptive rate limiting system that monitors NBA API health and adjusts request rates accordingly.",
+      "acceptance_criteria": [
+        "Dynamic rate limiting based on API response times",
+        "NBA API health monitoring and status detection",
+        "Automatic rate adjustment for optimal throughput",
+        "Rate limiting metrics and reporting",
+        "Integration with error handling for rate limit violations",
+        "Configurable rate limiting parameters and thresholds"
+      ],
+      "technical_requirements": [
+        "API health monitoring and metrics collection",
+        "Dynamic rate adjustment algorithms",
+        "Integration with retry and error handling systems",
+        "Performance monitoring and optimization"
+      ]
+    },
+    {
+      "id": "backfill-005",
+      "title": "Build data quality validation framework for NBA season data",
+      "category": "data-backfill",
+      "priority": "medium",
+      "complexity": "medium",
+      "epic": "Data Quality Assurance",
+      "source_document": "meta/plans/historical-data-backfill-strategy.md",
+      "source_section": "Phase-Based Implementation Roadmap",
+      "github_labels": ["feature", "data-backfill", "data-quality"],
+      "estimated_effort": "1-2 weeks",
+      "description": "Implement comprehensive data quality validation framework specifically for NBA season data.",
+      "acceptance_criteria": [
+        "Data completeness validation for games and statistics",
+        "Business rule validation for NBA-specific constraints",
+        "Data consistency checks across related entities",
+        "Quality scoring and metrics calculation",
+        "Validation reporting and issue identification",
+        "Integration with backfill process for quality gates"
+      ],
+      "technical_requirements": [
+        "NBA-specific business rule validation",
+        "Data quality metrics and scoring algorithms",
+        "Integration with backfill pipeline",
+        "Quality reporting and alerting capabilities"
+      ]
+    },
+    {
+      "id": "backfill-006",
+      "title": "Implement comprehensive monitoring and alerting for backfill operations",
+      "category": "data-backfill",
+      "priority": "medium",
+      "complexity": "medium",
+      "epic": "Monitoring and Operations",
+      "source_document": "meta/plans/historical-data-backfill-strategy.md",
+      "source_section": "Phase-Based Implementation Roadmap",
+      "github_labels": ["feature", "data-backfill", "monitoring"],
+      "estimated_effort": "1 week",
+      "description": "Build comprehensive monitoring and alerting system for backfill operations with progress tracking and issue detection.",
+      "acceptance_criteria": [
+        "Real-time progress monitoring and reporting",
+        "Performance metrics collection and analysis",
+        "Automated alerting for failures and anomalies",
+        "Dashboard for backfill status and health",
+        "Integration with existing monitoring infrastructure",
+        "Historical metrics and trend analysis"
+      ],
+      "technical_requirements": [
+        "Integration with AWS CloudWatch and monitoring services",
+        "Real-time metrics collection and reporting",
+        "Alerting configuration for various failure scenarios",
+        "Dashboard development for operational visibility"
+      ]
+    },
+    {
+      "id": "backfill-007",
+      "title": "Optimize backfill performance with concurrent processing",
+      "category": "data-backfill",
+      "priority": "low",
+      "complexity": "high",
+      "epic": "Performance Optimization",
+      "source_document": "meta/plans/historical-data-backfill-strategy.md",
+      "source_section": "Phase-Based Implementation Roadmap",
+      "github_labels": ["feature", "data-backfill", "performance"],
+      "estimated_effort": "1-2 weeks",
+      "description": "Implement concurrent processing optimizations to improve backfill performance while respecting API limits.",
+      "acceptance_criteria": [
+        "Concurrent processing of independent data streams",
+        "Thread pool management with configurable concurrency",
+        "Resource utilization optimization",
+        "Performance benchmarking and tuning",
+        "Memory management for large-scale processing",
+        "Integration with rate limiting and error handling"
+      ],
+      "technical_requirements": [
+        "Thread pool and concurrency management",
+        "Resource optimization for memory and CPU usage",
+        "Performance monitoring and tuning capabilities",
+        "Integration with existing rate limiting systems"
+      ]
+    },
+    {
+      "id": "backfill-008",
+      "title": "Create comprehensive validation suite for complete 2024-25 season dataset",
+      "category": "data-backfill",
+      "priority": "medium",
+      "complexity": "medium",
+      "epic": "Validation and Quality Assurance",
+      "source_document": "meta/plans/historical-data-backfill-strategy.md",
+      "source_section": "Phase-Based Implementation Roadmap",
+      "github_labels": ["feature", "data-backfill", "validation"],
+      "estimated_effort": "1 week",
+      "description": "Build comprehensive validation suite to verify completeness and quality of the entire 2024-25 season dataset.",
+      "acceptance_criteria": [
+        "Complete season data validation against NBA official records",
+        "Statistical consistency checks across all games and players",
+        "Data completeness verification for all expected entities",
+        "Quality metrics and scoring for the entire dataset",
+        "Validation reporting with detailed findings",
+        "Integration with data quality monitoring systems"
+      ],
+      "technical_requirements": [
+        "Comprehensive validation rules for NBA season data",
+        "Statistical analysis and consistency checking",
+        "Integration with existing data quality frameworks",
+        "Detailed reporting and metrics generation"
+      ]
+    },
+    {
+      "id": "backfill-009",
+      "title": "Integrate season backfill with ongoing data pipeline operations",
+      "category": "data-backfill",
+      "priority": "medium",
+      "complexity": "medium",
+      "epic": "Pipeline Integration",
+      "source_document": "meta/plans/historical-data-backfill-strategy.md",
+      "source_section": "Phase-Based Implementation Roadmap",
+      "github_labels": ["feature", "data-backfill", "pipeline-integration"],
+      "estimated_effort": "1-2 weeks",
+      "description": "Integrate completed season backfill data with ongoing data pipeline operations for seamless data flow.",
+      "acceptance_criteria": [
+        "Seamless handoff from backfill to ongoing data pipeline",
+        "Data format consistency between backfill and pipeline",
+        "Integration with Bronze-to-Silver ETL processing",
+        "Coordination with incremental data processing",
+        "Validation of integrated data flow",
+        "Documentation of integration patterns and procedures"
+      ],
+      "technical_requirements": [
+        "Data format standardization across systems",
+        "Integration with existing ETL pipeline components",
+        "Coordination mechanisms for data handoff",
+        "Testing and validation of integrated workflows"
+      ]
+    },
+    {
+      "id": "aws-001",
+      "title": "Set up AWS OIDC authentication for GitHub Actions",
+      "category": "aws-integration",
+      "priority": "high",
+      "complexity": "medium",
+      "epic": "AWS Authentication & Identity Management",
+      "source_document": "meta/plans/aws-secrets-integration-setup.md",
+      "source_section": "Epic 1: AWS Authentication & Identity Management",
+      "github_labels": ["feature", "aws-integration", "authentication", "high-priority"],
+      "estimated_effort": "1 week",
+      "description": "Establish secure authentication between GitHub Actions and AWS using OIDC without storing long-lived credentials.",
+      "acceptance_criteria": [
+        "GitHub OIDC provider configured in AWS IAM",
+        "GitHub Actions workflows can authenticate to AWS without stored credentials",
+        "Least-privilege IAM roles created for different workflow types",
+        "Authentication working across all planned workflows",
+        "Security audit and validation of authentication setup",
+        "Documentation of authentication patterns and troubleshooting"
+      ],
+      "technical_requirements": [
+        "AWS IAM OIDC provider configuration",
+        "GitHub repository configuration for OIDC integration",
+        "IAM role definitions with minimal required permissions",
+        "Integration testing with actual workflows"
+      ]
+    },
+    {
+      "id": "aws-002",
+      "title": "Create AWS ECR integration for container image management",
+      "category": "aws-integration",
+      "priority": "high",
+      "complexity": "low",
+      "epic": "Container Registry & Image Management",
+      "source_document": "meta/plans/aws-secrets-integration-setup.md",
+      "source_section": "Epic 2: Container Registry & Image Management",
+      "github_labels": ["feature", "aws-integration", "ecr", "containers"],
+      "estimated_effort": "1 week",
+      "description": "Set up AWS ECR for storing and managing Docker images built by CI/CD pipeline.",
+      "acceptance_criteria": [
+        "ECR repositories created for all application containers",
+        "GitHub Actions workflows can push images to ECR",
+        "ECR lifecycle policies configured for cost management",
+        "Image scanning and security validation enabled",
+        "Integration with deployment workflows for image pulling",
+        "Documentation of image management procedures"
+      ],
+      "technical_requirements": [
+        "ECR repository creation and configuration",
+        "Integration with GitHub Actions for image push/pull",
+        "Lifecycle policies for automated cleanup",
+        "Security scanning and vulnerability assessment"
+      ]
+    },
+    {
+      "id": "aws-003",
+      "title": "Implement AWS Secrets Manager integration for application secrets",
+      "category": "aws-integration",
+      "priority": "high",
+      "complexity": "medium",
+      "epic": "Secrets Management Integration",
+      "source_document": "meta/plans/aws-secrets-integration-setup.md",
+      "source_section": "Epic 3: Secrets Management Integration",
+      "github_labels": ["feature", "aws-integration", "secrets-management", "high-priority"],
+      "estimated_effort": "1-2 weeks",
+      "description": "Implement AWS Secrets Manager for secure storage and retrieval of application configuration and secrets.",
+      "acceptance_criteria": [
+        "Secrets Manager configured for all application secrets",
+        "Standardized secrets interface for all applications",
+        "Automatic secrets rotation capabilities implemented",
+        "Integration with Lambda and containerized applications",
+        "Secrets access logging and monitoring",
+        "Migration of existing secrets to Secrets Manager"
+      ],
+      "technical_requirements": [
+        "Secrets Manager configuration and access policies",
+        "Application integration libraries for secrets retrieval",
+        "Rotation lambda functions for supported secret types",
+        "Monitoring and alerting for secrets access"
+      ]
+    },
+    {
+      "id": "aws-004",
+      "title": "Configure S3 buckets and access policies for data management",
+      "category": "aws-integration",
+      "priority": "high",
+      "complexity": "low",
+      "epic": "S3 Access & Data Management",
+      "source_document": "meta/plans/aws-secrets-integration-setup.md",
+      "source_section": "Epic 4: S3 Access & Data Management",
+      "github_labels": ["feature", "aws-integration", "s3", "data-management"],
+      "estimated_effort": "1 week",
+      "description": "Set up S3 buckets with proper access policies for secure data storage and retrieval.",
+      "acceptance_criteria": [
+        "S3 buckets created for Bronze, Silver, and Gold data layers",
+        "IAM policies configured for least-privilege data access",
+        "Bucket lifecycle policies for cost optimization",
+        "Data encryption and security configurations",
+        "Cross-service access policies for data pipeline integration",
+        "Monitoring and logging for data access patterns"
+      ],
+      "technical_requirements": [
+        "S3 bucket configuration with appropriate naming and organization",
+        "IAM policies for application and service access",
+        "Encryption configuration for data at rest and in transit",
+        "Cost optimization through lifecycle policies"
+      ]
+    },
+    {
+      "id": "aws-005",
+      "title": "Set up AWS Lambda deployment infrastructure for containerized applications",
+      "category": "aws-integration",
+      "priority": "medium",
+      "complexity": "medium",
+      "epic": "Deployment Infrastructure & Orchestration",
+      "source_document": "meta/plans/aws-secrets-integration-setup.md",
+      "source_section": "Epic 5: Deployment Infrastructure & Orchestration",
+      "github_labels": ["feature", "aws-integration", "lambda", "deployment"],
+      "estimated_effort": "1-2 weeks",
+      "description": "Configure AWS Lambda resources for running Dockerized applications with automated deployment from GitHub Actions.",
+      "acceptance_criteria": [
+        "Lambda functions configured for containerized applications",
+        "Automated deployment workflows from GitHub Actions",
+        "Environment-based configuration management",
+        "Monitoring and logging integration with CloudWatch",
+        "Cost optimization through appropriate resource sizing",
+        "Integration with existing application architectures"
+      ],
+      "technical_requirements": [
+        "Lambda function configuration for container images",
+        "GitHub Actions integration for automated deployments",
+        "Environment variable and configuration management",
+        "CloudWatch integration for monitoring and logging"
+      ]
+    },
+    {
+      "id": "aws-006",
+      "title": "Integrate AWS CloudWatch for monitoring and observability",
+      "category": "aws-integration",
+      "priority": "medium",
+      "complexity": "medium",
+      "epic": "Monitoring & Observability Integration",
+      "source_document": "meta/plans/aws-secrets-integration-setup.md",
+      "source_section": "Epic 6: Monitoring & Observability Integration",
+      "github_labels": ["feature", "aws-integration", "cloudwatch", "monitoring"],
+      "estimated_effort": "1-2 weeks",
+      "description": "Extend existing structured logging to work with AWS CloudWatch and monitoring services.",
+      "acceptance_criteria": [
+        "Application logs flowing to CloudWatch",
+        "CloudWatch alarms configured for critical metrics",
+        "Distributed tracing implementation for multi-service debugging",
+        "Custom metrics collection for business intelligence",
+        "Dashboard creation for operational visibility",
+        "Integration with existing logging standards"
+      ],
+      "technical_requirements": [
+        "CloudWatch Logs integration for all applications",
+        "Custom metrics and alarm configuration",
+        "Distributed tracing using AWS X-Ray or similar",
+        "Dashboard development for operational and business metrics"
+      ]
+    }
+  ]
+}

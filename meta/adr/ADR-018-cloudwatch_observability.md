@@ -1,7 +1,7 @@
 ---
 title: "ADR-018: AWS CloudWatch Observability Strategy"
-status: "Proposed"
-date: "2025-07-18"
+status: "Accepted"
+date: "2025-07-19"
 tags:
   - "observability"
   - "cloudwatch"

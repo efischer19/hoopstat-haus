@@ -1,7 +1,7 @@
 ---
 title: "ADR-017: Infrastructure Deployment Workflow"
-status: "Proposed"
-date: "2025-07-18"
+status: "Accepted"
+date: "2025-07-19"
 tags:
   - "infrastructure"
   - "deployment"

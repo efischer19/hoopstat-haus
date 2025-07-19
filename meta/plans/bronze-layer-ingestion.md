@@ -92,35 +92,43 @@ s3://hoopstat-haus-bronze/
 
 The following ADRs need to be proposed to support the Bronze layer ingestion implementation:
 
-### ADR-017: Bronze Layer Ingestion Scheduling and Orchestration
+### ADR-018: Bronze Layer Ingestion Scheduling and Orchestration
 - **Decision Scope:** Define the scheduling mechanism and orchestration platform for daily data ingestion
 - **Key Areas:** GitHub Actions vs AWS EventBridge, timezone handling, retry logic, failure recovery
 - **Impact:** Determines reliability and operational complexity of the ingestion pipeline
-- **Dependencies:** ADR-007 (GitHub Actions), ADR-009 (AWS Cloud), ADR-012 (Single Environment)
+- **Dependencies:** ADR-007 (GitHub Actions), ADR-009 (AWS Cloud), ADR-012 (Single Environment), ADR-017 (Infrastructure Deployment)
 
-### ADR-018: NBA API Rate Limiting and Request Management Strategy
-- **Decision Scope:** Establish patterns for managing API rate limits and request optimization
-- **Key Areas:** Request batching, caching strategies, backoff algorithms, API key management
-- **Impact:** Ensures reliable data ingestion without API access violations
+### ADR-019: NBA API Rate Limiting and Request Management Strategy
+- **Decision Scope:** Establish patterns for managing API rate limits with emphasis on respectful API usage
+- **Key Areas:** Request spacing, conservative rate limiting, backoff algorithms, API citizenship practices
+- **Impact:** Ensures reliable data ingestion while maintaining respectful relationship with unofficial NBA API
 - **Dependencies:** ADR-013 (NBA API Data Source), existing rate limiting research
+- **Philosophy:** Prioritize being respectful and not getting kicked off the API over ingestion speed
 
-### ADR-019: Bronze Layer Data Validation and Quality Gates
+### ADR-020: Bronze Layer Data Validation and Quality Gates
 - **Decision Scope:** Define validation rules and quality thresholds for raw data ingestion
 - **Key Areas:** Schema validation, completeness checks, freshness requirements, quarantine processes
 - **Impact:** Ensures data quality and prevents propagation of bad data to Silver/Gold layers
 - **Dependencies:** ADR-014 (Parquet Storage), ADR-015 (JSON Logging)
 
-### ADR-020: Ingestion Pipeline State Management and Recovery
+### ADR-021: Ingestion Pipeline State Management and Recovery
 - **Decision Scope:** Define how pipeline state is managed and how recovery from failures works
 - **Key Areas:** Idempotent operations, checkpoint mechanisms, partial failure recovery, state storage
 - **Impact:** Ensures pipeline reliability and data consistency across runs
 - **Dependencies:** ADR-009 (AWS Cloud), ADR-014 (Parquet Storage)
 
-### ADR-021: Ingestion Monitoring and Alerting Framework
-- **Decision Scope:** Define monitoring strategy, metrics collection, and alerting thresholds
-- **Key Areas:** Health checks, performance metrics, data quality alerts, notification channels
-- **Impact:** Enables proactive issue detection and operational visibility
-- **Dependencies:** ADR-015 (JSON Logging), AWS monitoring services
+### ADR-022: UTC Datetime Standardization and ISO-8601 Format
+- **Decision Scope:** Establish UTC as standard timezone with ISO-8601 format for all datetime handling
+- **Key Areas:** Timezone standardization, datetime serialization, game time recording, data consistency
+- **Impact:** Eliminates timezone complexity and ensures consistent datetime handling across all systems
+- **Dependencies:** ADR-014 (Parquet Storage), ADR-015 (JSON Logging)
+
+### ADR-023: Ingestion Monitoring and Alerting Framework
+- **Decision Scope:** Define monitoring strategy, metrics collection, and alerting thresholds for data ingestion pipeline
+- **Key Areas:** Health checks, performance metrics, data quality alerts, email notification integration
+- **Impact:** Enables proactive issue detection and operational visibility for ingestion pipeline
+- **Dependencies:** ADR-015 (JSON Logging), existing CloudWatch alarms infrastructure, AWS monitoring services
+- **Note:** Should integrate with existing CloudWatch alarms and notification framework being established
 
 ## Risks & Open Questions
 
@@ -133,18 +141,21 @@ The following ADRs need to be proposed to support the Bronze layer ingestion imp
 
 **2. Rate Limiting and API Access**
 - *Risk:* Aggressive rate limiting could cause daily ingestion to fail or take too long
-- *Mitigation:* Conservative request patterns, intelligent backoff, and request optimization
-- *Open Question:* What's the optimal balance between ingestion speed and API compliance?
+- *Mitigation:* Conservative, respectful request patterns with generous delays and intelligent backoff
+- *Philosophy:* For this hobby project, we care far more about being respectful and not getting kicked off the API than being "blazing fast"
+- *Open Question:* What's the optimal balance between ingestion completeness and API citizenship?
 
 **3. Data Volume Growth**
 - *Risk:* As we add more data sources and historical depth, ingestion time may exceed acceptable windows
-- *Mitigation:* Incremental ingestion patterns, parallel processing capabilities
+- *Mitigation:* Start with conservative data scope (play-by-play focus), monitor volume trends, and reduce fields if needed
+- *Expectation:* Daily ingestion volume should be relatively constant once flowing; will evaluate field reduction before moving to streaming
 - *Open Question:* At what data volume do we need to move from daily batch to streaming ingestion?
 
 **4. Storage Costs and Lifecycle Management**
 - *Risk:* Indefinite retention of raw data in Bronze layer may become cost-prohibitive
 - *Mitigation:* Implement intelligent lifecycle policies and compression optimization
-- *Open Question:* What's the optimal retention period for Bronze layer data?
+- *Initial Approach:* Start with 1-year retention period, then evaluate over time based on usage and costs
+- *Open Question:* How do storage costs scale with current data volume and retention needs?
 
 ### Operational Risks
 
@@ -155,19 +166,24 @@ The following ADRs need to be proposed to support the Bronze layer ingestion imp
 
 **6. Timezone and Scheduling Complexity**
 - *Risk:* Complex timezone handling for games across different time zones
-- *Mitigation:* Standardize on UTC for all processing, add timezone conversion layer
-- *Open Question:* How do we handle games that end after midnight ET?
+- *Mitigation:* Standardize on UTC for all processing (ISO-8601 format), use game start time as effective record time
+- *Game Logic:* A game's effective time in our records is its start time, which is always on the published date, so timezone complexity is simplified
+- *ADR Needed:* Propose ADR for UTC everywhere and ISO-8601 datetime standardization if not already covered
+- *Open Question:* Should we add timezone conversion utilities for user-facing interfaces?
 
 **7. Monitoring and Alerting Gaps**
 - *Risk:* Silent failures or data quality issues may go unnoticed
-- *Mitigation:* Comprehensive monitoring and multiple alerting channels
-- *Open Question:* What level of monitoring detail is appropriate for a hobby project?
+- *Mitigation:* Simple but effective monitoring focused on email notifications for maintainer when action is needed
+- *Approach:* Integrate with existing CloudWatch alarms framework for email notifications on daily run failures
+- *Scope:* Keep monitoring appropriate for hobby project - occasional emails when maintainer needs to take action
+- *Open Question:* What are the essential failure scenarios that require immediate notification?
 
 ### Business/Project Risks
 
 **8. Over-Engineering for Current Scale**
 - *Risk:* Building enterprise-grade infrastructure for hobby project needs
-- *Mitigation:* Start simple, add complexity only when needed, follow YAGNI principle
+- *Mitigation:* Start simple with play-by-play data focus, add complexity only when needed, follow YAGNI principle
+- *Initial Scope:* Focus on play-by-play data at Bronze layer as primary data source
 - *Open Question:* What's the minimum viable ingestion pipeline for current needs?
 
 **9. Maintenance Burden**

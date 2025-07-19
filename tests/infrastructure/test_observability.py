@@ -3,20 +3,18 @@ import json
 import pytest
 from pathlib import Path
 
-INFRASTRUCTURE_DIR = Path(__file__).parent.parent / "infrastructure" / "observability"
+INFRASTRUCTURE_DIR = Path(__file__).parent.parent / "infrastructure"
 
 class TestTerraformInfrastructure:
-    """Test suite for Terraform observability infrastructure."""
+    """Test suite for Terraform infrastructure including observability."""
     
     def test_terraform_files_exist(self):
         """Verify all required Terraform files exist."""
         required_files = [
             "main.tf",
             "variables.tf", 
-            "cloudwatch.tf",
-            "alarms.tf",
-            "iam.tf",
-            "outputs.tf"
+            "outputs.tf",
+            "versions.tf"
         ]
         
         for file_name in required_files:
@@ -69,8 +67,8 @@ class TestTerraformInfrastructure:
 
     def test_log_groups_configuration(self):
         """Verify CloudWatch log groups are properly configured."""
-        cloudwatch_file = INFRASTRUCTURE_DIR / "cloudwatch.tf"
-        content = cloudwatch_file.read_text()
+        main_file = INFRASTRUCTURE_DIR / "main.tf"
+        content = main_file.read_text()
         
         # Check log groups exist
         log_groups = ["applications", "data_pipeline", "infrastructure"]
@@ -83,8 +81,8 @@ class TestTerraformInfrastructure:
 
     def test_adr015_integration(self):
         """Verify integration with ADR-015 JSON logging standard."""
-        cloudwatch_file = INFRASTRUCTURE_DIR / "cloudwatch.tf"
-        content = cloudwatch_file.read_text()
+        main_file = INFRASTRUCTURE_DIR / "main.tf"
+        content = main_file.read_text()
         
         # Check for ADR-015 required fields in metric filters
         assert "duration_in_seconds" in content, \
@@ -97,10 +95,10 @@ class TestTerraformInfrastructure:
 
     def test_alarm_configuration(self):
         """Verify CloudWatch alarms are properly configured."""
-        alarms_file = INFRASTRUCTURE_DIR / "alarms.tf"
-        content = alarms_file.read_text()
+        main_file = INFRASTRUCTURE_DIR / "main.tf"
+        content = main_file.read_text()
         
-        # Check for required alarms per ADR-017
+        # Check for required alarms per ADR-018
         required_alarms = ["high_error_rate", "lambda_timeout", "execution_time_anomaly"]
         for alarm in required_alarms:
             assert f'aws_cloudwatch_metric_alarm" "{alarm}"' in content, \
@@ -112,8 +110,8 @@ class TestTerraformInfrastructure:
 
     def test_iam_permissions(self):
         """Verify IAM roles and policies for Lambda logging."""
-        iam_file = INFRASTRUCTURE_DIR / "iam.tf"
-        content = iam_file.read_text()
+        main_file = INFRASTRUCTURE_DIR / "main.tf"
+        content = main_file.read_text()
         
         # Check Lambda logging role
         assert 'aws_iam_role" "lambda_logging"' in content, \

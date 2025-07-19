@@ -1,5 +1,5 @@
 ---
-title: "ADR-017: AWS CloudWatch Observability Strategy"
+title: "ADR-018: AWS CloudWatch Observability Strategy"
 status: "Proposed"
 date: "2025-07-18"
 tags:

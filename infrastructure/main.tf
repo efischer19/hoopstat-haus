@@ -90,6 +90,17 @@ resource "aws_iam_role_policy" "github_actions" {
           "ecr:CompleteLayerUpload"
         ]
         Resource = "*"
+      },
+      {
+        Effect = "Allow"
+        Action = [
+          "logs:CreateLogGroup",
+          "logs:CreateLogStream",
+          "logs:PutLogEvents",
+          "logs:DescribeLogGroups",
+          "logs:DescribeLogStreams"
+        ]
+        Resource = "*"
       }
     ]
   })
@@ -182,4 +193,233 @@ resource "aws_ecr_lifecycle_policy" "main" {
       }
     ]
   })
+}
+
+# ============================================================================
+# Lambda IAM Role for CloudWatch Logging (ADR-018)
+# ============================================================================
+
+# IAM role for Lambda functions to write to CloudWatch logs
+resource "aws_iam_role" "lambda_logging" {
+  name = "${var.project_name}-lambda-logging"
+
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Action = "sts:AssumeRole"
+        Effect = "Allow"
+        Principal = {
+          Service = "lambda.amazonaws.com"
+        }
+      }
+    ]
+  })
+
+  tags = {
+    Purpose = "Lambda CloudWatch logging permissions"
+  }
+}
+
+# IAM policy for Lambda CloudWatch logging
+resource "aws_iam_policy" "lambda_logging" {
+  name        = "${var.project_name}-lambda-logging"
+  description = "IAM policy for Lambda function CloudWatch logging"
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Action = [
+          "logs:CreateLogStream",
+          "logs:PutLogEvents"
+        ]
+        Resource = [
+          "${aws_cloudwatch_log_group.applications.arn}:*",
+          "${aws_cloudwatch_log_group.data_pipeline.arn}:*"
+        ]
+      }
+    ]
+  })
+}
+
+# Attach the policy to the role
+resource "aws_iam_role_policy_attachment" "lambda_logging" {
+  role       = aws_iam_role.lambda_logging.name
+  policy_arn = aws_iam_policy.lambda_logging.arn
+}
+
+# Attach AWS managed basic execution role
+resource "aws_iam_role_policy_attachment" "lambda_basic_execution" {
+  role       = aws_iam_role.lambda_logging.name
+  policy_arn = "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+}
+
+# ============================================================================
+# CloudWatch Log Groups and Monitoring (ADR-018)
+# ============================================================================
+
+# CloudWatch Log Groups for different application types
+resource "aws_cloudwatch_log_group" "applications" {
+  name              = "/hoopstat-haus/applications"
+  retention_in_days = var.log_retention_days.applications
+
+  tags = {
+    LogType = "applications"
+    Purpose = "General application logging"
+  }
+}
+
+resource "aws_cloudwatch_log_group" "data_pipeline" {
+  name              = "/hoopstat-haus/data-pipeline"
+  retention_in_days = var.log_retention_days.data_pipeline
+
+  tags = {
+    LogType = "data-pipeline"
+    Purpose = "Data processing job logs with performance metrics"
+  }
+}
+
+resource "aws_cloudwatch_log_group" "infrastructure" {
+  name              = "/hoopstat-haus/infrastructure"
+  retention_in_days = var.log_retention_days.infrastructure
+
+  tags = {
+    LogType = "infrastructure"
+    Purpose = "System and infrastructure logs"
+  }
+}
+
+# Metric filters to extract performance metrics from JSON logs per ADR-015
+resource "aws_cloudwatch_log_metric_filter" "execution_duration" {
+  name           = "execution-duration"
+  log_group_name = aws_cloudwatch_log_group.data_pipeline.name
+  pattern        = "[timestamp, level, message, job_name, duration_in_seconds = *, records_processed, ...]"
+
+  metric_transformation {
+    name      = "ExecutionDuration"
+    namespace = "HoopstatHaus/DataPipeline"
+    value     = "$duration_in_seconds"
+    unit      = "Seconds"
+  }
+}
+
+resource "aws_cloudwatch_log_metric_filter" "records_processed" {
+  name           = "records-processed"
+  log_group_name = aws_cloudwatch_log_group.data_pipeline.name
+  pattern        = "[timestamp, level, message, job_name, duration_in_seconds, records_processed = *, ...]"
+
+  metric_transformation {
+    name      = "RecordsProcessed"
+    namespace = "HoopstatHaus/DataPipeline"
+    value     = "$records_processed"
+    unit      = "Count"
+  }
+}
+
+resource "aws_cloudwatch_log_metric_filter" "error_count" {
+  name           = "error-count"
+  log_group_name = aws_cloudwatch_log_group.applications.name
+  pattern        = "[timestamp, level=\"ERROR\", ...]"
+
+  metric_transformation {
+    name      = "ErrorCount"
+    namespace = "HoopstatHaus/Applications"
+    value     = "1"
+    unit      = "Count"
+  }
+}
+
+# ============================================================================
+# SNS Topics and CloudWatch Alarms (ADR-018)
+# ============================================================================
+
+# SNS Topics for different alert severities
+resource "aws_sns_topic" "critical_alerts" {
+  name = "${var.project_name}-critical-alerts"
+
+  tags = {
+    Severity = "critical"
+    Purpose  = "Immediate response alerts"
+  }
+}
+
+resource "aws_sns_topic" "warning_alerts" {
+  name = "${var.project_name}-warning-alerts"
+
+  tags = {
+    Severity = "warning"
+    Purpose  = "24-hour response alerts"
+  }
+}
+
+# SNS Topic subscriptions (only if email is provided)
+resource "aws_sns_topic_subscription" "critical_email" {
+  count     = var.alert_email != "" ? 1 : 0
+  topic_arn = aws_sns_topic.critical_alerts.arn
+  protocol  = "email"
+  endpoint  = var.alert_email
+}
+
+resource "aws_sns_topic_subscription" "warning_email" {
+  count     = var.alert_email != "" ? 1 : 0
+  topic_arn = aws_sns_topic.warning_alerts.arn
+  protocol  = "email"
+  endpoint  = var.alert_email
+}
+
+# CloudWatch Alarms for critical monitoring
+resource "aws_cloudwatch_metric_alarm" "high_error_rate" {
+  alarm_name          = "high-error-rate"
+  comparison_operator = "GreaterThanThreshold"
+  evaluation_periods  = "1"
+  metric_name         = "ErrorCount"
+  namespace           = "HoopstatHaus/Applications"
+  period              = "300"
+  statistic           = "Sum"
+  threshold           = "5"
+  alarm_description   = "This metric monitors application error rate"
+  alarm_actions       = [aws_sns_topic.critical_alerts.arn]
+
+  tags = {
+    Severity = "critical"
+    Type     = "error-rate"
+  }
+}
+
+resource "aws_cloudwatch_metric_alarm" "lambda_timeout" {
+  alarm_name          = "lambda-timeouts"
+  comparison_operator = "GreaterThanThreshold"
+  evaluation_periods  = "1"
+  metric_name         = "Duration"
+  namespace           = "AWS/Lambda"
+  period              = "300"
+  statistic           = "Maximum"
+  threshold           = "900000"  # 15 minutes in milliseconds
+  alarm_description   = "This metric monitors Lambda function timeouts"
+  alarm_actions       = [aws_sns_topic.critical_alerts.arn]
+
+  tags = {
+    Severity = "critical"
+    Type     = "timeout"
+  }
+}
+
+resource "aws_cloudwatch_metric_alarm" "execution_time_anomaly" {
+  alarm_name          = "execution-time-anomaly"
+  comparison_operator = "GreaterThanThreshold"
+  evaluation_periods  = "2"
+  metric_name         = "ExecutionDuration"
+  namespace           = "HoopstatHaus/DataPipeline"
+  period              = "600"
+  statistic           = "Average"
+  threshold           = "300"  # 5 minutes
+  alarm_description   = "This metric monitors unusually long data pipeline execution times"
+  alarm_actions       = [aws_sns_topic.warning_alerts.arn]
+
+  tags = {
+    Severity = "warning"
+    Type     = "performance"
+  }
 }

@@ -1,6 +1,6 @@
 # CloudWatch Observability Infrastructure
 
-This directory contains Terraform infrastructure for AWS CloudWatch observability as defined in ADR-017.
+This infrastructure provides AWS CloudWatch observability as defined in ADR-018, integrated with the main infrastructure.
 
 ## Overview
 
@@ -11,13 +11,39 @@ The infrastructure provides:
 - **SNS Topics** for alert routing by severity
 - **IAM Roles** for Lambda function logging permissions
 
-## Quick Start
+## Integration
 
-1. **Install Terraform** (version >= 1.0)
+The observability infrastructure is integrated into the main infrastructure (`main.tf`) and includes:
 
-2. **Initialize Terraform**:
-   ```bash
-   cd infrastructure/observability
+### CloudWatch Log Groups
+- `/hoopstat-haus/applications` (30-day retention)
+- `/hoopstat-haus/data-pipeline` (90-day retention) 
+- `/hoopstat-haus/infrastructure` (14-day retention)
+
+### Metric Extraction
+Automated extraction from ADR-015 JSON logs:
+- `duration_in_seconds` → ExecutionDuration metric
+- `records_processed` → RecordsProcessed metric
+- Error count from ERROR level logs
+
+### Alarms and Alerting
+- High error rate alarm (>5% in 5 minutes)
+- Lambda timeout monitoring
+- Execution time anomaly detection
+- SNS topics for critical and warning alerts
+
+## Usage
+
+Deploy with the main infrastructure:
+
+```bash
+cd infrastructure
+terraform init
+terraform plan
+terraform apply
+```
+
+See `observability_examples/lambda_function.py` for proper integration examples.
    terraform init
    ```
 

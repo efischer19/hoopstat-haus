@@ -6,16 +6,33 @@ This diagram represents the complete end-to-end architecture of the Hoopstat Hau
 graph TB
     %% External Data Sources
     subgraph "External Data Sources"
-        NBA_API[NBA API<br/>nba-api Python Library<br/>• Game Statistics<br/>• Player Data<br/>• Team Information<br/>• Historical Records]
+        NBA_API["NBA API
+        nba-api Python Library
+        • Game Statistics
+        • Player Data
+        • Team Information
+        • Historical Records"]
         
-        SCHEDULE[NBA Schedule API<br/>• Game Schedules<br/>• Season Calendar<br/>• Playoff Structure]
+        SCHEDULE["NBA Schedule API
+        • Game Schedules
+        • Season Calendar
+        • Playoff Structure"]
     end
 
     %% Data Ingestion Layer
     subgraph "Data Ingestion Layer"
-        BRONZE_APP[Bronze Ingestion App<br/>Python + Docker<br/>• Daily ETL Pipeline<br/>• Error Handling<br/>• Rate Limiting<br/>• Data Validation]
+        BRONZE_APP["Bronze Ingestion App
+        Python + Docker
+        • Daily ETL Pipeline
+        • Error Handling
+        • Rate Limiting
+        • Data Validation"]
         
-        SCHEDULER[GitHub Actions<br/>Scheduled Workflows<br/>• 4:30 AM ET Daily<br/>• Backup at 5:30 AM<br/>• Weekend/Holiday Logic]
+        SCHEDULER["GitHub Actions
+        Scheduled Workflows
+        • 4:30 AM ET Daily
+        • Backup at 5:30 AM
+        • Weekend/Holiday Logic"]
     end
 
     %% AWS Cloud Infrastructure
@@ -23,67 +40,148 @@ graph TB
         %% Storage Layer - Medallion Architecture
         subgraph "S3 Data Lake - Medallion Architecture"
             subgraph "Bronze Layer"
-                S3_BRONZE[S3 Bronze Bucket<br/>hoopstat-haus-bronze<br/>• Raw JSON → Parquet<br/>• Partitioned by Date<br/>• 2 Year Retention<br/>• Immutable Storage]
+                S3_BRONZE["S3 Bronze Bucket
+                hoopstat-haus-bronze
+                • Raw JSON → Parquet
+                • Partitioned by Date
+                • 2 Year Retention
+                • Immutable Storage"]
             end
             
             subgraph "Silver Layer"
-                S3_SILVER[S3 Silver Bucket<br/>hoopstat-haus-silver<br/>• Cleaned & Validated<br/>• Schema Enforced<br/>• Deduplicated<br/>• 3 Year Retention]
+                S3_SILVER["S3 Silver Bucket
+                hoopstat-haus-silver
+                • Cleaned & Validated
+                • Schema Enforced
+                • Deduplicated
+                • 3 Year Retention"]
             end
             
             subgraph "Gold Layer"
-                S3_GOLD[S3 Gold Bucket<br/>hoopstat-haus-gold<br/>• Business-Ready<br/>• Pre-Aggregated<br/>• MCP-Optimized<br/>• Indefinite Retention]
+                S3_GOLD["S3 Gold Bucket
+                hoopstat-haus-gold
+                • Business-Ready
+                • Pre-Aggregated
+                • MCP-Optimized
+                • Indefinite Retention"]
             end
         end
 
         %% Processing Pipeline
         subgraph "Data Processing Pipeline"
-            SILVER_ETL[Silver ETL Jobs<br/>Python + Lambda<br/>• Data Cleaning<br/>• Quality Validation<br/>• Schema Standardization<br/>• SCD Type 2]
+            SILVER_ETL["Silver ETL Jobs
+            Python + Lambda
+            • Data Cleaning
+            • Quality Validation
+            • Schema Standardization
+            • SCD Type 2"]
             
-            GOLD_ETL[Gold ETL Jobs<br/>Python + Lambda<br/>• Business Aggregations<br/>• Performance Metrics<br/>• Lookup Tables<br/>• API-Ready Datasets]
+            GOLD_ETL["Gold ETL Jobs
+            Python + Lambda
+            • Business Aggregations
+            • Performance Metrics
+            • Lookup Tables
+            • API-Ready Datasets"]
         end
 
         %% AI-Native Access Layer
         subgraph "AI-Native Access Layer"
-            API_GW[API Gateway<br/>• Authentication<br/>• Rate Limiting<br/>• CORS Policy<br/>• Request Validation]
+            API_GW["API Gateway
+            • Authentication
+            • Rate Limiting
+            • CORS Policy
+            • Request Validation"]
             
-            MCP_SERVER[MCP Server<br/>Lambda Function<br/>• Model Context Protocol<br/>• Basketball Data APIs<br/>• Query Optimization<br/>• Response Caching]
+            MCP_SERVER["MCP Server
+            Lambda Function
+            • Model Context Protocol
+            • Basketball Data APIs
+            • Query Optimization
+            • Response Caching"]
             
-            BEDROCK[Amazon Bedrock<br/>• LLM Processing<br/>• Natural Language<br/>• Context Management<br/>• AI Orchestration]
+            BEDROCK["Amazon Bedrock
+            • LLM Processing
+            • Natural Language
+            • Context Management
+            • AI Orchestration"]
         end
 
         %% Infrastructure Services
         subgraph "AWS Infrastructure Services"
-            IAM[IAM Roles & Policies<br/>• Least Privilege<br/>• OIDC Integration<br/>• Cross-Service Access]
+            IAM["IAM Roles & Policies
+            • Least Privilege
+            • OIDC Integration
+            • Cross-Service Access"]
             
-            SECRETS[AWS Secrets Manager<br/>• API Keys<br/>• Configuration<br/>• Rotation Support]
+            SECRETS["AWS Secrets Manager
+            • API Keys
+            • Configuration
+            • Rotation Support"]
             
-            CLOUDWATCH[CloudWatch<br/>• Application Logs<br/>• Performance Metrics<br/>• Cost Monitoring<br/>• Alerting]
+            CLOUDWATCH["CloudWatch
+            • Application Logs
+            • Performance Metrics
+            • Cost Monitoring
+            • Alerting"]
             
-            LAMBDA[Lambda Functions<br/>• Serverless Compute<br/>• Event-Driven<br/>• Auto-Scaling]
+            LAMBDA["Lambda Functions
+            • Serverless Compute
+            • Event-Driven
+            • Auto-Scaling"]
         end
     end
 
     %% User Interface Layer
     subgraph "User Interface Layer"
-        FRONTEND[Thin Client Frontend<br/>Static Web Application<br/>• React/Vue/Svelte<br/>• Mobile-First Responsive<br/>• Anonymous Access<br/>• Simple Text Interface]
+        FRONTEND["Thin Client Frontend
+        Static Web Application
+        • React/Vue/Svelte
+        • Mobile-First Responsive
+        • Anonymous Access
+        • Simple Text Interface"]
         
-        CDN[CloudFront CDN<br/>• Global Distribution<br/>• Static Asset Caching<br/>• SSL/TLS Termination<br/>• Custom Domain]
+        CDN["CloudFront CDN
+        • Global Distribution
+        • Static Asset Caching
+        • SSL/TLS Termination
+        • Custom Domain"]
     end
 
     %% AI Agents and External Consumers
     subgraph "AI Agents & External Consumers"
-        AI_AGENTS[AI Agents<br/>• ChatGPT Plugins<br/>• Claude Extensions<br/>• Custom Bots<br/>• Developer Tools]
+        AI_AGENTS["AI Agents
+        • ChatGPT Plugins
+        • Claude Extensions
+        • Custom Bots
+        • Developer Tools"]
         
-        USERS[End Users<br/>• Basketball Fans<br/>• Coaches & Analysts<br/>• Sports Journalists<br/>• Fantasy Players]
+        USERS["End Users
+        • Basketball Fans
+        • Coaches & Analysts
+        • Sports Journalists
+        • Fantasy Players"]
     end
 
     %% Development & Deployment
     subgraph "Development & Deployment"
-        GITHUB[GitHub Repository<br/>Monorepo Structure<br/>• Apps (Python)<br/>• Libs (Shared)<br/>• Infrastructure (Terraform)<br/>• Meta (Documentation)]
+        GITHUB["GitHub Repository
+        Monorepo Structure
+        • Apps (Python)
+        • Libs (Shared)
+        • Infrastructure (Terraform)
+        • Meta (Documentation)"]
         
-        CICD[GitHub Actions CI/CD<br/>• Automated Testing<br/>• Docker Builds<br/>• Terraform Deploy<br/>• Security Scanning]
+        CICD["GitHub Actions CI/CD
+        • Automated Testing
+        • Docker Builds
+        • Terraform Deploy
+        • Security Scanning"]
         
-        TERRAFORM[Terraform Infrastructure<br/>• Infrastructure as Code<br/>• Environment Management<br/>• State Management<br/>• Resource Provisioning]
+        TERRAFORM["Terraform Infrastructure
+        • Infrastructure as Code
+        • Environment Management
+        • State Management
+        • Resource Provisioning"]
     end
 
     %% Data Flow Connections

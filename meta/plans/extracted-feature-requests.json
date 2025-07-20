@@ -6,16 +6,22 @@
       "meta/plans/bronze-to-silver-etl-pipeline.md",
       "meta/plans/mcp-server-architecture.md",
       "meta/plans/historical-data-backfill-strategy.md",
-      "meta/plans/aws-secrets-integration-setup.md"
+      "meta/plans/aws-secrets-integration-setup.md",
+      "meta/plans/bronze-layer-ingestion.md",
+      "meta/plans/silver-to-gold-etl-jobs.md",
+      "meta/plans/e2e-integration-test-workflow.md"
     ],
     "extraction_method": "AI-driven analysis",
-    "total_features": 42,
+    "total_features": 59,
     "feature_categories": [
       "frontend",
       "etl-pipeline", 
       "mcp-server",
       "data-backfill",
-      "aws-integration"
+      "aws-integration",
+      "bronze-ingestion",
+      "silver-to-gold-etl",
+      "e2e-testing"
     ]
   },
   "feature_requests": [
@@ -1090,6 +1096,592 @@
         "Custom metrics and alarm configuration",
         "Distributed tracing using AWS X-Ray or similar",
         "Dashboard development for operational and business metrics"
+      ]
+    },
+    {
+      "id": "bronze-ingestion-001",
+      "title": "Create bronze layer ingestion application structure",
+      "category": "bronze-ingestion",
+      "priority": "high",
+      "complexity": "medium",
+      "epic": "Bronze Data Ingestion - Daily Updates",
+      "source_document": "meta/plans/bronze-layer-ingestion.md",
+      "source_section": "Phase 1: Foundation and Core Ingestion",
+      "github_labels": ["feature", "bronze-ingestion", "setup", "high-priority"],
+      "estimated_effort": "1-2 weeks",
+      "description": "Set up the basic application structure for the bronze ingestion pipeline following the established monorepo patterns.",
+      "acceptance_criteria": [
+        "Application follows existing app template structure",
+        "Poetry configuration includes all required dependencies for NBA API and S3 access",
+        "Dockerfile builds successfully and follows project Docker patterns",
+        "Basic test structure is in place with pytest configuration",
+        "Application can be built and tested using existing CI pipeline"
+      ],
+      "technical_requirements": [
+        "New Python application in apps/bronze-ingestion/",
+        "Poetry configuration with required dependencies (nba-api, pyarrow, boto3)",
+        "Docker container configuration following existing patterns",
+        "Basic project structure with main.py, requirements, and tests"
+      ]
+    },
+    {
+      "id": "bronze-ingestion-002",
+      "title": "Implement basic NBA API data ingestion",
+      "category": "bronze-ingestion",
+      "priority": "high",
+      "complexity": "high",
+      "epic": "Bronze Data Ingestion - Daily Updates",
+      "source_document": "meta/plans/bronze-layer-ingestion.md",
+      "source_section": "Phase 1: Foundation and Core Ingestion",
+      "github_labels": ["feature", "bronze-ingestion", "nba-api", "high-priority"],
+      "estimated_effort": "2 weeks",
+      "description": "Create the core functionality to fetch and store raw NBA data from the nba-api library.",
+      "acceptance_criteria": [
+        "Successfully fetch data from nba-api for a given date range",
+        "Convert raw JSON responses to Parquet format using PyArrow",
+        "Upload Parquet files to S3 Bronze layer with correct partitioning scheme",
+        "Handle API rate limiting with exponential backoff",
+        "Comprehensive error logging for debugging"
+      ],
+      "technical_requirements": [
+        "NBA API client with rate limiting and error handling",
+        "Data fetching for games, players, and basic statistics",
+        "Raw JSON to Parquet conversion functionality",
+        "Basic S3 upload capabilities with proper partitioning"
+      ]
+    },
+    {
+      "id": "bronze-ingestion-003",
+      "title": "Implement daily scheduling with GitHub Actions",
+      "category": "bronze-ingestion",
+      "priority": "high",
+      "complexity": "medium",
+      "epic": "Bronze Data Ingestion - Daily Updates",
+      "source_document": "meta/plans/bronze-layer-ingestion.md",
+      "source_section": "Phase 1: Foundation and Core Ingestion",
+      "github_labels": ["feature", "bronze-ingestion", "github-actions", "high-priority"],
+      "estimated_effort": "1 week",
+      "description": "Set up automated daily scheduling for the ingestion pipeline using GitHub Actions.",
+      "acceptance_criteria": [
+        "Workflow triggers automatically at 4:30 AM ET daily",
+        "Manual workflow dispatch available for testing",
+        "Proper AWS credentials configuration using GitHub OIDC",
+        "Basic notification on workflow success/failure",
+        "Workflow follows existing CI patterns and security practices"
+      ],
+      "technical_requirements": [
+        "GitHub Actions workflow for scheduled execution",
+        "UTC timezone handling for consistent 4:30 AM ET runs",
+        "Manual trigger capability for testing and recovery",
+        "Basic success/failure notification"
+      ]
+    },
+    {
+      "id": "bronze-ingestion-004",
+      "title": "Basic data validation and quality checks",
+      "category": "bronze-ingestion",
+      "priority": "high",
+      "complexity": "medium",
+      "epic": "Bronze Data Ingestion - Daily Updates",
+      "source_document": "meta/plans/bronze-layer-ingestion.md",
+      "source_section": "Phase 1: Foundation and Core Ingestion",
+      "github_labels": ["feature", "bronze-ingestion", "data-quality", "high-priority"],
+      "estimated_effort": "1-2 weeks",
+      "description": "Implement essential data validation to ensure ingested data meets basic quality standards.",
+      "acceptance_criteria": [
+        "Validate all API responses against expected JSON schemas",
+        "Verify expected number of games and players for ingestion date",
+        "Check that ingested data is for the correct date range",
+        "Log data quality metrics for monitoring and debugging",
+        "Quarantine invalid data for manual review"
+      ],
+      "technical_requirements": [
+        "JSON schema validation for API responses",
+        "Completeness checks for expected daily data",
+        "Data freshness validation",
+        "Quality metrics logging"
+      ]
+    },
+    {
+      "id": "bronze-ingestion-005",
+      "title": "Comprehensive error handling and recovery",
+      "category": "bronze-ingestion",
+      "priority": "medium",
+      "complexity": "high",
+      "epic": "Bronze Data Ingestion - Daily Updates",
+      "source_document": "meta/plans/bronze-layer-ingestion.md",
+      "source_section": "Phase 2: Reliability and Monitoring",
+      "github_labels": ["feature", "bronze-ingestion", "error-handling"],
+      "estimated_effort": "2 weeks",
+      "description": "Implement robust error handling and recovery mechanisms for production reliability.",
+      "acceptance_criteria": [
+        "Pipeline continues processing other data sources when one fails",
+        "Failed API requests are stored for manual investigation",
+        "Circuit breaker prevents cascade failures during API outages",
+        "Configurable retry logic with exponential backoff",
+        "Clear error categorization (transient vs permanent failures)"
+      ],
+      "technical_requirements": [
+        "Circuit breaker pattern for API failures",
+        "Partial failure recovery and continuation",
+        "Failed request dead letter queue",
+        "Automatic retry logic with configurable parameters"
+      ]
+    },
+    {
+      "id": "bronze-ingestion-006",
+      "title": "Ingestion monitoring and alerting system",
+      "category": "bronze-ingestion",
+      "priority": "medium",
+      "complexity": "medium",
+      "epic": "Bronze Data Ingestion - Daily Updates",
+      "source_document": "meta/plans/bronze-layer-ingestion.md",
+      "source_section": "Phase 2: Reliability and Monitoring",
+      "github_labels": ["feature", "bronze-ingestion", "monitoring"],
+      "estimated_effort": "2 weeks",
+      "description": "Build comprehensive monitoring and alerting for pipeline health and data quality.",
+      "acceptance_criteria": [
+        "Track and visualize pipeline success rates and execution times",
+        "Monitor data quality trends over time",
+        "Alert on critical failures within 15 minutes",
+        "Weekly summary reports of pipeline health and data statistics",
+        "Cost tracking and optimization recommendations"
+      ],
+      "technical_requirements": [
+        "Pipeline execution metrics and dashboards",
+        "Data quality monitoring with trend analysis",
+        "Multi-channel alerting (email, Slack, etc.)",
+        "Cost and performance tracking"
+      ]
+    },
+    {
+      "id": "bronze-ingestion-007",
+      "title": "Intelligent scheduling based on NBA schedule",
+      "category": "bronze-ingestion",
+      "priority": "low",
+      "complexity": "medium",
+      "epic": "Bronze Data Ingestion - Daily Updates",
+      "source_document": "meta/plans/bronze-layer-ingestion.md",
+      "source_section": "Phase 3: Optimization and Advanced Features",
+      "github_labels": ["feature", "bronze-ingestion", "optimization"],
+      "estimated_effort": "1-2 weeks",
+      "description": "Optimize ingestion frequency based on actual NBA game schedule to reduce unnecessary API calls.",
+      "acceptance_criteria": [
+        "Skip ingestion on days with no NBA games",
+        "Adjust ingestion frequency during playoffs and special events",
+        "Handle holiday schedules and All-Star break appropriately",
+        "Optimize for back-to-back games and West Coast game endings",
+        "Maintain data freshness SLAs while minimizing unnecessary runs"
+      ],
+      "technical_requirements": [
+        "NBA schedule API integration",
+        "Dynamic scheduling based on game availability",
+        "Holiday and off-season handling",
+        "Weekend and back-to-back game optimization"
+      ]
+    },
+    {
+      "id": "bronze-ingestion-008",
+      "title": "Incremental ingestion and change detection",
+      "category": "bronze-ingestion",
+      "priority": "low",
+      "complexity": "high",
+      "epic": "Bronze Data Ingestion - Daily Updates",
+      "source_document": "meta/plans/bronze-layer-ingestion.md",
+      "source_section": "Phase 3: Optimization and Advanced Features",
+      "github_labels": ["feature", "bronze-ingestion", "optimization"],
+      "estimated_effort": "2 weeks",
+      "description": "Implement incremental ingestion patterns to improve efficiency and reduce redundant data processing.",
+      "acceptance_criteria": [
+        "Only ingest changed player and team information",
+        "Efficiently update season statistics without full reprocessing",
+        "Detect and prevent ingestion of duplicate data",
+        "Maintain state between runs for incremental processing",
+        "Significant reduction in processing time and API calls"
+      ],
+      "technical_requirements": [
+        "Change detection for player and team data",
+        "Incremental updates for season statistics",
+        "Deduplication at ingestion layer",
+        "State management for tracking processed data"
+      ]
+    },
+    {
+      "id": "silver-to-gold-001",
+      "title": "Implement basic player daily statistics aggregation Lambda",
+      "category": "silver-to-gold-etl",
+      "priority": "high",
+      "complexity": "medium",
+      "epic": "Silver to Gold ETL Jobs",
+      "source_document": "meta/plans/silver-to-gold-etl-jobs.md",
+      "source_section": "Phase 1: Foundation",
+      "github_labels": ["feature", "silver-to-gold-etl", "lambda", "high-priority"],
+      "estimated_effort": "1-2 weeks",
+      "description": "Create a simple Lambda function that aggregates Silver layer player game data into basic Gold layer daily statistics.",
+      "acceptance_criteria": [
+        "Lambda function triggered by S3 events on Silver layer updates",
+        "Calculate basic daily aggregations (points, rebounds, assists per game)",
+        "Generate season-to-date cumulative statistics",
+        "Calculate simple shooting percentages (FG%, 3P%, FT%)",
+        "Write partitioned Parquet to Gold layer (by season/player_id)",
+        "Basic row count and null value validation"
+      ],
+      "technical_requirements": [
+        "AWS Lambda function with Python runtime",
+        "S3 event trigger configuration",
+        "Pandas/PyArrow for data processing",
+        "Simple aggregation logic without complex metrics initially"
+      ]
+    },
+    {
+      "id": "silver-to-gold-002",
+      "title": "Implement S3 event-driven ETL orchestration",
+      "category": "silver-to-gold-etl",
+      "priority": "high",
+      "complexity": "low",
+      "epic": "Silver to Gold ETL Jobs",
+      "source_document": "meta/plans/silver-to-gold-etl-jobs.md",
+      "source_section": "Phase 1: Foundation",
+      "github_labels": ["feature", "silver-to-gold-etl", "orchestration", "high-priority"],
+      "estimated_effort": "1 week",
+      "description": "Set up S3 event triggers to automatically initiate Gold layer processing when new Silver layer data arrives.",
+      "acceptance_criteria": [
+        "S3 bucket notifications configured for Silver layer updates",
+        "Lambda function triggered automatically on new Silver data",
+        "Event filtering to process only relevant data files",
+        "Basic error handling and retry logic",
+        "CloudWatch logging for orchestration events"
+      ],
+      "technical_requirements": [
+        "S3 event notification configuration",
+        "Lambda trigger setup with appropriate IAM permissions",
+        "Event filtering based on file patterns",
+        "Integration with existing AWS infrastructure"
+      ]
+    },
+    {
+      "id": "silver-to-gold-003",
+      "title": "Create Gold layer data partitioning strategy",
+      "category": "silver-to-gold-etl",
+      "priority": "high",
+      "complexity": "medium",
+      "epic": "Silver to Gold ETL Jobs",
+      "source_document": "meta/plans/silver-to-gold-etl-jobs.md",
+      "source_section": "Phase 1: Foundation",
+      "github_labels": ["feature", "silver-to-gold-etl", "data-modeling"],
+      "estimated_effort": "1 week",
+      "description": "Design and implement optimal partitioning strategy for Gold layer data to support fast MCP server queries.",
+      "acceptance_criteria": [
+        "Partition scheme optimized for common query patterns",
+        "Support for player-level and season-level data access",
+        "File size optimization for query performance",
+        "Backward compatibility with existing data",
+        "Documentation of partitioning strategy and rationale"
+      ],
+      "technical_requirements": [
+        "S3 key structure design (season/player_id/date hierarchy)",
+        "Parquet file size optimization for Lambda memory limits",
+        "Indexing strategy for fast data retrieval",
+        "Integration with MCP server query patterns"
+      ]
+    },
+    {
+      "id": "silver-to-gold-004",
+      "title": "Implement basic ETL error handling and monitoring",
+      "category": "silver-to-gold-etl",
+      "priority": "medium",
+      "complexity": "medium",
+      "epic": "Silver to Gold ETL Jobs",
+      "source_document": "meta/plans/silver-to-gold-etl-jobs.md",
+      "source_section": "Phase 2: Validation",
+      "github_labels": ["feature", "silver-to-gold-etl", "monitoring"],
+      "estimated_effort": "1-2 weeks",
+      "description": "Build monitoring and error handling framework for Silver to Gold ETL operations.",
+      "acceptance_criteria": [
+        "CloudWatch metrics for ETL job success/failure rates",
+        "Automated alerting for processing failures",
+        "Error categorization and routing to appropriate handlers",
+        "Performance monitoring for processing times",
+        "Data quality validation checks in ETL pipeline"
+      ],
+      "technical_requirements": [
+        "CloudWatch integration for metrics and logging",
+        "SNS/SES integration for failure notifications",
+        "Retry logic with exponential backoff",
+        "Dead letter queue for unrecoverable failures"
+      ]
+    },
+    {
+      "id": "silver-to-gold-005",
+      "title": "Add team-level statistics aggregation",
+      "category": "silver-to-gold-etl",
+      "priority": "low",
+      "complexity": "medium",
+      "epic": "Silver to Gold ETL Jobs",
+      "source_document": "meta/plans/silver-to-gold-etl-jobs.md",
+      "source_section": "Phase 3: Extension",
+      "github_labels": ["feature", "silver-to-gold-etl", "team-stats"],
+      "estimated_effort": "1-2 weeks",
+      "description": "Extend ETL processing to include team-level statistics and aggregations.",
+      "acceptance_criteria": [
+        "Team daily statistics calculated from player game data",
+        "Team season aggregations and trends",
+        "Offensive and defensive rating calculations",
+        "Team comparison metrics and rankings",
+        "Integration with existing player statistics pipeline"
+      ],
+      "technical_requirements": [
+        "Team aggregation logic extending existing player pipeline",
+        "Additional Parquet partitioning for team data",
+        "Team-specific business rules and calculations",
+        "Performance optimization for team-level queries"
+      ]
+    },
+    {
+      "id": "silver-to-gold-006",
+      "title": "Implement advanced basketball analytics metrics",
+      "category": "silver-to-gold-etl",
+      "priority": "low",
+      "complexity": "high",
+      "epic": "Silver to Gold ETL Jobs",
+      "source_document": "meta/plans/silver-to-gold-etl-jobs.md",
+      "source_section": "Phase 3: Extension",
+      "github_labels": ["feature", "silver-to-gold-etl", "advanced-analytics"],
+      "estimated_effort": "2-3 weeks",
+      "description": "Add advanced basketball analytics calculations such as PER, Win Shares, and other sophisticated metrics.",
+      "acceptance_criteria": [
+        "Player Efficiency Rating (PER) calculations",
+        "Win Shares and advanced impact metrics",
+        "Usage rate and pace-adjusted statistics",
+        "Plus/minus and on-court impact analysis",
+        "Historical trend analysis and projections"
+      ],
+      "technical_requirements": [
+        "Complex statistical algorithms implementation",
+        "Historical data integration for trend calculations",
+        "Performance optimization for complex aggregations",
+        "Validation against known statistical benchmarks"
+      ]
+    },
+    {
+      "id": "e2e-testing-001",
+      "title": "Implement localstack-based pipeline testing framework",
+      "category": "e2e-testing",
+      "priority": "high",
+      "complexity": "medium",
+      "epic": "E2E Test Setup",
+      "source_document": "meta/plans/e2e-integration-test-workflow.md",
+      "source_section": "Phase 1: Foundation",
+      "github_labels": ["feature", "e2e-testing", "localstack", "high-priority"],
+      "estimated_effort": "3-5 days",
+      "description": "Create a Docker Compose-based testing framework using Localstack to simulate AWS S3 for local and CI pipeline testing.",
+      "acceptance_criteria": [
+        "Docker Compose configuration with localstack S3 simulation",
+        "Test utility functions for S3 bucket operations (create, read, write, delete)",
+        "Basic pipeline test that creates bronze → silver → gold data flow",
+        "CI integration that runs tests in isolated Docker environment",
+        "Documentation for local development setup and usage"
+      ],
+      "technical_requirements": [
+        "Localstack S3 service configuration",
+        "Docker Compose orchestration for multi-service testing",
+        "Test isolation and cleanup mechanisms",
+        "Integration with existing CI/CD patterns"
+      ]
+    },
+    {
+      "id": "e2e-testing-002",
+      "title": "Create mock NBA data generation framework",
+      "category": "e2e-testing",
+      "priority": "high",
+      "complexity": "medium",
+      "epic": "E2E Test Setup",
+      "source_document": "meta/plans/e2e-integration-test-workflow.md",
+      "source_section": "Phase 1: Foundation",
+      "github_labels": ["feature", "e2e-testing", "mock-data", "high-priority"],
+      "estimated_effort": "2-4 days",
+      "description": "Implement a comprehensive mock data generation system that creates realistic NBA statistics for testing purposes.",
+      "acceptance_criteria": [
+        "Mock data generators for players, teams, games, and statistics",
+        "Configurable data volume (from small test sets to large-scale simulations)",
+        "Deterministic generation with seeded randomization for reproducible tests",
+        "Export capabilities for JSON (Bronze layer) and Parquet (Silver/Gold layers)",
+        "Validation utilities to ensure generated data meets expected schemas",
+        "CLI interface for generating test datasets on demand"
+      ],
+      "technical_requirements": [
+        "Realistic NBA data simulation algorithms",
+        "Schema compliance for all data layers",
+        "Configurable parameters for test scenarios",
+        "Export functionality for multiple formats"
+      ]
+    },
+    {
+      "id": "e2e-testing-003",
+      "title": "Bronze layer ingestion validation tests",
+      "category": "e2e-testing",
+      "priority": "high",
+      "complexity": "medium",
+      "epic": "E2E Test Setup",
+      "source_document": "meta/plans/e2e-integration-test-workflow.md",
+      "source_section": "Phase 1: Foundation",
+      "github_labels": ["feature", "e2e-testing", "bronze-validation", "high-priority"],
+      "estimated_effort": "2-3 days",
+      "description": "Create automated tests that validate the bronze layer data ingestion process from mock NBA API data to S3 Parquet storage.",
+      "acceptance_criteria": [
+        "Test data ingestion from mock JSON API responses",
+        "Validate JSON to Parquet conversion accuracy",
+        "Test partitioning scheme (year/month/day/hour) implementation",
+        "Verify metadata enrichment (ingestion timestamps, source system tags)",
+        "Test error handling for malformed data",
+        "Validate compression and storage optimization",
+        "Performance benchmark assertions for ingestion speed"
+      ],
+      "technical_requirements": [
+        "Mock API response simulation",
+        "Data format validation utilities",
+        "S3 integration testing with localstack",
+        "Performance benchmark framework"
+      ]
+    },
+    {
+      "id": "e2e-testing-004",
+      "title": "Silver layer transformation validation",
+      "category": "e2e-testing",
+      "priority": "medium",
+      "complexity": "high",
+      "epic": "E2E Test Setup",
+      "source_document": "meta/plans/e2e-integration-test-workflow.md",
+      "source_section": "Phase 2: Core Pipeline Testing",
+      "github_labels": ["feature", "e2e-testing", "silver-validation"],
+      "estimated_effort": "3-4 days",
+      "description": "Implement comprehensive testing for bronze to silver layer data transformations, including cleaning, normalization, and business rule applications.",
+      "acceptance_criteria": [
+        "Test data cleaning operations (duplicate removal, null handling)",
+        "Validate schema enforcement and type conversions",
+        "Test business rule applications (calculated fields, derived metrics)",
+        "Verify data lineage tracking through transformations",
+        "Test incremental processing and update mechanisms",
+        "Validate referential integrity across related datasets",
+        "Performance testing for transformation operations"
+      ],
+      "technical_requirements": [
+        "Data transformation testing framework",
+        "Schema validation utilities",
+        "Business rule verification system",
+        "Data lineage tracking validation"
+      ]
+    },
+    {
+      "id": "e2e-testing-005",
+      "title": "Gold layer aggregation and optimization tests",
+      "category": "e2e-testing",
+      "priority": "medium",
+      "complexity": "high",
+      "epic": "E2E Test Setup",
+      "source_document": "meta/plans/e2e-integration-test-workflow.md",
+      "source_section": "Phase 2: Core Pipeline Testing",
+      "github_labels": ["feature", "e2e-testing", "gold-validation"],
+      "estimated_effort": "3-4 days",
+      "description": "Create tests that validate the silver to gold layer aggregations, ensuring business metrics are calculated correctly and query performance is optimized.",
+      "acceptance_criteria": [
+        "Test statistical calculations (averages, percentages, rankings)",
+        "Validate aggregations across different time periods (season, monthly, weekly)",
+        "Test player and team performance metrics calculations",
+        "Verify query optimization (partitioning, indexing strategies)",
+        "Test data freshness and update mechanisms",
+        "Validate business KPI calculations match expected formulas",
+        "Performance benchmarks for common query patterns"
+      ],
+      "technical_requirements": [
+        "Statistical calculation validation framework",
+        "Query performance testing utilities",
+        "Business metric verification system",
+        "Performance benchmarking tools"
+      ]
+    },
+    {
+      "id": "e2e-testing-006",
+      "title": "MCP server integration and API testing",
+      "category": "e2e-testing",
+      "priority": "medium",
+      "complexity": "high",
+      "epic": "E2E Test Setup",
+      "source_document": "meta/plans/e2e-integration-test-workflow.md",
+      "source_section": "Phase 2: Core Pipeline Testing",
+      "github_labels": ["feature", "e2e-testing", "mcp-validation"],
+      "estimated_effort": "4-5 days",
+      "description": "Implement end-to-end testing for the MCP server that validates data serving accuracy, API functionality, and protocol compliance.",
+      "acceptance_criteria": [
+        "Test MCP protocol compliance and resource discovery",
+        "Validate data serving accuracy from Gold layer to API responses",
+        "Test authentication and authorization mechanisms",
+        "API performance testing (response times, throughput)",
+        "Test error handling and graceful degradation",
+        "Validate data freshness in API responses",
+        "Test concurrent request handling and rate limiting"
+      ],
+      "technical_requirements": [
+        "MCP protocol testing framework",
+        "API performance testing utilities",
+        "Authentication testing system",
+        "Concurrent request simulation tools"
+      ]
+    },
+    {
+      "id": "e2e-testing-007",
+      "title": "GitHub Actions e2e workflow implementation",
+      "category": "e2e-testing",
+      "priority": "medium",
+      "complexity": "medium",
+      "epic": "E2E Test Setup",
+      "source_document": "meta/plans/e2e-integration-test-workflow.md",
+      "source_section": "Phase 3: Advanced Testing Features",
+      "github_labels": ["feature", "e2e-testing", "github-actions"],
+      "estimated_effort": "2-3 days",
+      "description": "Extend the existing infrastructure deployment workflow (ADR-017) to include comprehensive end-to-end testing pipeline integration.",
+      "acceptance_criteria": [
+        "Extend existing .github/workflows/infrastructure.yml or create complementary E2E workflow",
+        "Matrix testing for different data scenarios and configurations",
+        "Integration with existing GitHub OIDC + AWS IAM authentication",
+        "Leverage established AWS resource access patterns (secrets.AWS_ACCOUNT_ID)",
+        "Test result reporting and failure notifications",
+        "Artifact management for test outputs and debugging",
+        "Coordination with infrastructure deployment workflow triggers"
+      ],
+      "technical_requirements": [
+        "GitHub Actions workflow extension",
+        "Matrix testing configuration",
+        "OIDC authentication integration",
+        "Artifact management and reporting"
+      ]
+    },
+    {
+      "id": "e2e-testing-008",
+      "title": "Performance regression testing framework",
+      "category": "e2e-testing",
+      "priority": "low",
+      "complexity": "medium",
+      "epic": "E2E Test Setup",
+      "source_document": "meta/plans/e2e-integration-test-workflow.md",
+      "source_section": "Phase 3: Advanced Testing Features",
+      "github_labels": ["feature", "e2e-testing", "performance"],
+      "estimated_effort": "2-3 days",
+      "description": "Create automated performance testing that detects regressions in data pipeline processing speed, memory usage, and API response times.",
+      "acceptance_criteria": [
+        "Benchmark data processing times for each pipeline stage",
+        "Memory usage monitoring and regression detection",
+        "API response time and throughput benchmarking",
+        "Historical performance tracking and trend analysis",
+        "Automated alerts for performance degradation",
+        "Configurable performance thresholds and tolerances",
+        "Integration with CI to block performance regressions"
+      ],
+      "technical_requirements": [
+        "Performance benchmarking framework",
+        "Memory usage monitoring tools",
+        "Historical performance tracking system",
+        "Automated alerting for regressions"
       ]
     }
   ]

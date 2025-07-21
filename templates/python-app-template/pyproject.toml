@@ -13,7 +13,7 @@ python = "^3.12"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^8.4.1"
-ruff = "^0.12.3"
+ruff = "^0.12.4"
 black = "^25.1.0"
 pytest-cov = "^6.2.1"
 

@@ -1,6 +1,12 @@
 # Multi-stage Dockerfile for Python Application Template
 # This Dockerfile demonstrates best practices for containerizing Python applications
 # in the Hoopstat Haus project.
+#
+# IMPORTANT: This Dockerfile expects to be built from the repository root context:
+#   docker build -f apps/{app-name}/Dockerfile -t app:latest .
+#
+# This approach works for both standalone apps and apps with shared library dependencies.
+# The CI automatically uses repo root context for all app builds.
 
 # =============================================================================
 # Base stage: Common base for all subsequent stages
@@ -26,7 +32,7 @@ ENV POETRY_VENV_IN_PROJECT=0 \
     POETRY_NO_INTERACTION=1 \
     POETRY_CACHE_DIR=/tmp/poetry_cache
 
-# Set work directory
+# Set work directory to match app structure when building from repo root
 WORKDIR /app
 
 # =============================================================================
@@ -34,17 +40,16 @@ WORKDIR /app
 # =============================================================================
 FROM base AS development
 
-# Copy Poetry files
-COPY pyproject.toml poetry.lock* ./
+# Copy the entire app directory to maintain relative path structure
+# Replace {app-name} with your actual app directory name
+COPY apps/{app-name}/ .
 
-# Install dependencies including dev dependencies
-RUN poetry install --no-root && rm -rf $POETRY_CACHE_DIR
+# Copy entire repository to handle shared library dependencies
+# Only the libs actually referenced in pyproject.toml will be used
+COPY libs/ ../libs/
 
-# Copy source code
-COPY . .
-
-# Install the package in development mode
-RUN poetry install
+# Install dependencies including dev dependencies (Poetry handles path deps automatically)
+RUN poetry install && rm -rf $POETRY_CACHE_DIR
 
 # Default command for development
 CMD ["poetry", "run", "python", "-m", "app.main"]
@@ -54,11 +59,16 @@ CMD ["poetry", "run", "python", "-m", "app.main"]
 # =============================================================================
 FROM base AS dependencies
 
-# Copy Poetry files
-COPY pyproject.toml poetry.lock* ./
+# Copy the entire app directory to maintain relative path structure
+# Replace {app-name} with your actual app directory name
+COPY apps/{app-name}/ .
 
-# Install only production dependencies
-RUN poetry install --only=main --no-root && rm -rf $POETRY_CACHE_DIR
+# Copy entire repository to handle shared library dependencies
+# Only the libs actually referenced in pyproject.toml will be used
+COPY libs/ ../libs/
+
+# Install only production dependencies (Poetry handles path deps automatically)
+RUN poetry install --only=main && rm -rf $POETRY_CACHE_DIR
 
 # =============================================================================
 # Production stage: Minimal production image
@@ -80,8 +90,11 @@ WORKDIR /app
 COPY --from=dependencies /usr/local/lib/python3.12/site-packages /usr/local/lib/python3.12/site-packages
 COPY --from=dependencies /usr/local/bin /usr/local/bin
 
+# Copy shared libraries to maintain runtime compatibility
+COPY --from=dependencies /libs /libs
+
 # Copy application code
-COPY app/ ./app/
+COPY --from=dependencies /app/app ./app
 
 # Change ownership to non-root user
 RUN chown -R appuser:appuser /app

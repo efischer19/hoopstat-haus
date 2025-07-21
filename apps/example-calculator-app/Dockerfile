@@ -1,6 +1,12 @@
 # Multi-stage Dockerfile for Python Application Template
 # This Dockerfile demonstrates best practices for containerizing Python applications
 # in the Hoopstat Haus project.
+#
+# IMPORTANT: When building apps with shared library dependencies from libs/,
+# this Dockerfile expects to be built from the repository root context:
+#   docker build -f apps/example-calculator-app/Dockerfile -t app:latest .
+#
+# The CI automatically detects shared dependencies and uses repo root context.
 
 # =============================================================================
 # Base stage: Common base for all subsequent stages
@@ -26,7 +32,7 @@ ENV POETRY_VENV_IN_PROJECT=0 \
     POETRY_NO_INTERACTION=1 \
     POETRY_CACHE_DIR=/tmp/poetry_cache
 
-# Set work directory
+# Set work directory to match app structure when building from repo root
 WORKDIR /app
 
 # =============================================================================
@@ -34,26 +40,14 @@ WORKDIR /app
 # =============================================================================
 FROM base AS development
 
-# Copy Poetry files
-COPY apps/example-calculator-app/pyproject.toml ./
-
-# Copy shared libraries that this app depends on  
-COPY libs/ ./libs/
-
-# Update pyproject.toml paths to work with current build context
-RUN sed -i 's|path = "../../libs/|path = "./libs/|g' pyproject.toml
-
-# Install the local shared library first
-RUN cd libs/example-math-utils && pip install --trusted-host pypi.org --trusted-host pypi.python.org --trusted-host files.pythonhosted.org -e .
-
-# Install dependencies including dev dependencies (skip the lock file issues)
-RUN poetry install --no-root && rm -rf $POETRY_CACHE_DIR
-
-# Copy source code
+# Copy the entire app directory to maintain relative path structure
 COPY apps/example-calculator-app/ .
 
-# Install the package in development mode  
-RUN poetry install
+# Copy libs directory to maintain relative path dependencies
+COPY libs/ ../libs/
+
+# Install dependencies including dev dependencies (Poetry handles path deps automatically)
+RUN poetry install && rm -rf $POETRY_CACHE_DIR
 
 # Default command for development
 CMD ["poetry", "run", "python", "-m", "app.main"]
@@ -63,14 +57,14 @@ CMD ["poetry", "run", "python", "-m", "app.main"]
 # =============================================================================
 FROM base AS dependencies
 
-# Copy Poetry files
-COPY apps/example-calculator-app/pyproject.toml ./
+# Copy the entire app directory to maintain relative path structure
+COPY apps/example-calculator-app/ .
 
-# Copy shared libraries that this app depends on
-COPY libs/ ./libs/
+# Copy libs directory to maintain relative path dependencies
+COPY libs/ ../libs/
 
-# Install the local shared library (only production dependency)
-RUN cd libs/example-math-utils && pip install --trusted-host pypi.org --trusted-host pypi.python.org --trusted-host files.pythonhosted.org -e .
+# Install only production dependencies (Poetry handles path deps automatically)
+RUN poetry install --only=main && rm -rf $POETRY_CACHE_DIR
 
 # =============================================================================
 # Production stage: Minimal production image
@@ -92,11 +86,11 @@ WORKDIR /app
 COPY --from=dependencies /usr/local/lib/python3.12/site-packages /usr/local/lib/python3.12/site-packages
 COPY --from=dependencies /usr/local/bin /usr/local/bin
 
-# Copy the shared libraries that were installed as editable packages
-COPY --from=dependencies /app/libs/ /app/libs/
+# Copy shared libraries (maintaining editable install compatibility)
+COPY --from=dependencies /libs /libs
 
 # Copy application code
-COPY apps/example-calculator-app/app/ ./app/
+COPY --from=dependencies /app/app ./app
 
 # Change ownership to non-root user
 RUN chown -R appuser:appuser /app

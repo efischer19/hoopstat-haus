@@ -35,7 +35,7 @@ def load_config_file(file_path: str) -> dict[str, Any]:
     Supported formats:
     - JSON (.json)
     - YAML (.yaml, .yml) - requires PyYAML
-    - TOML (.toml) - requires tomli (Python < 3.11) or uses stdlib tomllib 
+    - TOML (.toml) - requires tomli (Python < 3.11) or uses stdlib tomllib
       (Python >= 3.11)
 
     Args:

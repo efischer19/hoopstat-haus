@@ -67,7 +67,7 @@ class ConfigField:
             Converted value from environment variable, or None if not set.
 
         Raises:
-            ConfigEnvironmentError: If environment variable exists but cannot be 
+            ConfigEnvironmentError: If environment variable exists but cannot be
                 converted.
         """
         if not self.env_var:
@@ -119,7 +119,10 @@ class ConfigField:
                 return [self._convert_single_value(item, list_type) for item in items]
 
         # Handle modern union types (Python 3.10+)
-        elif hasattr(field_type, "__class__") and field_type.__class__.__name__ == "UnionType":
+        elif (
+            hasattr(field_type, "__class__")
+            and field_type.__class__.__name__ == "UnionType"
+        ):
             # This is a modern union like str | None
             args = getattr(field_type, "__args__", ())
             if len(args) == 2 and type(None) in args:

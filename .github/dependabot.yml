@@ -11,6 +11,17 @@ updates:
         patterns:
           - "*"
 
+  # Monitor pip dependencies in example-calculator-app
+  - package-ecosystem: "pip"
+    directory: "/apps/example-calculator-app"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 10
+    groups:
+      pip:
+        patterns:
+          - "*"
+
   # NOTE: When adding new Python applications to /apps/, 
   # add a new entry following this pattern:
   #

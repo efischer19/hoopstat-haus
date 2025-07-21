@@ -106,29 +106,7 @@ graph TB
             • AI Orchestration"]
         end
 
-        %% Infrastructure Services
-        subgraph "AWS Infrastructure Services"
-            IAM["IAM Roles & Policies
-            • Least Privilege
-            • OIDC Integration
-            • Cross-Service Access"]
-            
-            SECRETS["AWS Secrets Manager
-            • API Keys
-            • Configuration
-            • Rotation Support"]
-            
-            CLOUDWATCH["CloudWatch
-            • Application Logs
-            • Performance Metrics
-            • Cost Monitoring
-            • Alerting"]
-            
-            LAMBDA["Lambda Functions
-            • Serverless Compute
-            • Event-Driven
-            • Auto-Scaling"]
-        end
+
     end
 
     %% User Interface Layer
@@ -162,27 +140,7 @@ graph TB
         • Fantasy Players"]
     end
 
-    %% Development & Deployment
-    subgraph "Development & Deployment"
-        GITHUB["GitHub Repository
-        Monorepo Structure
-        • Apps (Python)
-        • Libs (Shared)
-        • Infrastructure (Terraform)
-        • Meta (Documentation)"]
-        
-        CICD["GitHub Actions CI/CD
-        • Automated Testing
-        • Docker Builds
-        • Terraform Deploy
-        • Security Scanning"]
-        
-        TERRAFORM["Terraform Infrastructure
-        • Infrastructure as Code
-        • Environment Management
-        • State Management
-        • Resource Provisioning"]
-    end
+
 
     %% Data Flow Connections
     NBA_API --> BRONZE_APP
@@ -209,48 +167,19 @@ graph TB
     CDN --> API_GW
     
     AI_AGENTS --> API_GW
-    
-    %% Infrastructure Dependencies
-    BRONZE_APP --> IAM
-    SILVER_ETL --> IAM
-    GOLD_ETL --> IAM
-    MCP_SERVER --> IAM
-    
-    BRONZE_APP --> SECRETS
-    MCP_SERVER --> SECRETS
-    
-    BRONZE_APP --> CLOUDWATCH
-    SILVER_ETL --> CLOUDWATCH
-    GOLD_ETL --> CLOUDWATCH
-    MCP_SERVER --> CLOUDWATCH
-    API_GW --> CLOUDWATCH
-    
-    SILVER_ETL --> LAMBDA
-    GOLD_ETL --> LAMBDA
-    MCP_SERVER --> LAMBDA
-    
-    %% Deployment Flow
-    GITHUB --> CICD
-    CICD --> TERRAFORM
-    TERRAFORM --> AWS_INFRA[AWS Infrastructure]
-    CICD --> FRONTEND
 
-    %% Styling
+
     classDef dataSource fill:#e1f5fe,stroke:#0277bd,stroke-width:2px
     classDef storage fill:#f3e5f5,stroke:#7b1fa2,stroke-width:2px
     classDef processing fill:#e8f5e8,stroke:#2e7d32,stroke-width:2px
     classDef ai fill:#fff3e0,stroke:#ef6c00,stroke-width:2px
     classDef frontend fill:#fce4ec,stroke:#c2185b,stroke-width:2px
-    classDef infrastructure fill:#f1f8e9,stroke:#558b2f,stroke-width:2px
-    classDef deployment fill:#e0f2f1,stroke:#00695c,stroke-width:2px
 
     class NBA_API,SCHEDULE dataSource
     class S3_BRONZE,S3_SILVER,S3_GOLD storage
     class BRONZE_APP,SILVER_ETL,GOLD_ETL processing
     class MCP_SERVER,BEDROCK,API_GW ai
     class FRONTEND,CDN,USERS,AI_AGENTS frontend
-    class IAM,SECRETS,CLOUDWATCH,LAMBDA infrastructure
-    class GITHUB,CICD,TERRAFORM deployment
 ```
 
 ## Architecture Overview

@@ -1,6 +1,10 @@
 # Multi-stage Dockerfile for Python Application Template
 # This Dockerfile demonstrates best practices for containerizing Python applications
 # in the Hoopstat Haus project.
+#
+# IMPORTANT: If your app uses shared libraries from libs/, you need to modify this
+# Dockerfile to use repo root build context. See apps/example-calculator-app/Dockerfile
+# for an example of how to handle shared library dependencies.
 
 # =============================================================================
 # Base stage: Common base for all subsequent stages

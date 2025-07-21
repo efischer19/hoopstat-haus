@@ -35,15 +35,24 @@ WORKDIR /app
 FROM base AS development
 
 # Copy Poetry files
-COPY pyproject.toml poetry.lock* ./
+COPY apps/example-calculator-app/pyproject.toml ./
 
-# Install dependencies including dev dependencies
+# Copy shared libraries that this app depends on  
+COPY libs/ ./libs/
+
+# Update pyproject.toml paths to work with current build context
+RUN sed -i 's|path = "../../libs/|path = "./libs/|g' pyproject.toml
+
+# Install the local shared library first
+RUN cd libs/example-math-utils && pip install --trusted-host pypi.org --trusted-host pypi.python.org --trusted-host files.pythonhosted.org -e .
+
+# Install dependencies including dev dependencies (skip the lock file issues)
 RUN poetry install --no-root && rm -rf $POETRY_CACHE_DIR
 
 # Copy source code
-COPY . .
+COPY apps/example-calculator-app/ .
 
-# Install the package in development mode
+# Install the package in development mode  
 RUN poetry install
 
 # Default command for development
@@ -55,10 +64,13 @@ CMD ["poetry", "run", "python", "-m", "app.main"]
 FROM base AS dependencies
 
 # Copy Poetry files
-COPY pyproject.toml poetry.lock* ./
+COPY apps/example-calculator-app/pyproject.toml ./
 
-# Install only production dependencies
-RUN poetry install --only=main --no-root && rm -rf $POETRY_CACHE_DIR
+# Copy shared libraries that this app depends on
+COPY libs/ ./libs/
+
+# Install the local shared library (only production dependency)
+RUN cd libs/example-math-utils && pip install --trusted-host pypi.org --trusted-host pypi.python.org --trusted-host files.pythonhosted.org -e .
 
 # =============================================================================
 # Production stage: Minimal production image
@@ -80,8 +92,11 @@ WORKDIR /app
 COPY --from=dependencies /usr/local/lib/python3.12/site-packages /usr/local/lib/python3.12/site-packages
 COPY --from=dependencies /usr/local/bin /usr/local/bin
 
+# Copy the shared libraries that were installed as editable packages
+COPY --from=dependencies /app/libs/ /app/libs/
+
 # Copy application code
-COPY app/ ./app/
+COPY apps/example-calculator-app/app/ ./app/
 
 # Change ownership to non-root user
 RUN chown -R appuser:appuser /app

@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="description" content="Hoopstat Haus - AI-powered basketball analytics. Ask questions about NBA and WNBA statistics in natural language.">
+    
+    <title>Hoopstat Haus - Basketball Analytics</title>
+    
+    <link rel="stylesheet" type="text/css" href="/assets/styles.css" media="all">
+    <link rel="icon" type="image/x-icon" href="/assets/favicon.ico">
+    
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="theme-color" content="#2c5aa0">
+    
+    <script src="/scripts/app.js" defer></script>
+  </head>
+  <body>
+    <header>
+      <h1>🏀 Hoopstat Haus</h1>
+      <p>AI-powered basketball analytics. Ask questions about NBA and WNBA statistics.</p>
+    </header>
+    
+    <main>
+      <div class="query-container">
+        <form id="question-form" class="question-form">
+          <div class="input-group">
+            <label for="basketball-question" class="visually-hidden">
+              Ask a basketball question
+            </label>
+            <textarea 
+              id="basketball-question" 
+              name="question"
+              placeholder="Ask a basketball question... (e.g., 'How did LeBron James perform in the 2023 playoffs?')"
+              rows="3"
+              required
+              aria-describedby="question-help"
+            ></textarea>
+            <button type="submit" id="submit-btn" class="submit-btn">
+              <span class="btn-text">Ask Question</span>
+              <span class="btn-loading" style="display: none;">Analyzing...</span>
+            </button>
+          </div>
+          <div id="question-help" class="help-text">
+            Examples: "Compare Curry's 3-point shooting this season vs last", "Show me LeBron's playoff stats"
+          </div>
+        </form>
+      </div>
+      
+      <div id="response-container" class="response-container" style="display: none;">
+        <div class="response-header">
+          <h2>Analysis Result</h2>
+          <button type="button" id="new-question-btn" class="new-question-btn">
+            Ask Another Question
+          </button>
+        </div>
+        <div id="response-content" class="response-content">
+          <!-- Response content will be inserted here -->
+        </div>
+      </div>
+      
+      <div id="error-container" class="error-container" style="display: none;">
+        <div class="error-content">
+          <h3>⚠️ Something went wrong</h3>
+          <p id="error-message">We're having trouble processing your request right now.</p>
+          <button type="button" id="retry-btn" class="retry-btn">Try Again</button>
+        </div>
+      </div>
+      
+      <div class="examples-section">
+        <h3>Example Questions</h3>
+        <div class="examples-grid">
+          <button type="button" class="example-btn" data-question="How did Stephen Curry perform in the 2023-24 season?">
+            "How did Stephen Curry perform in the 2023-24 season?"
+          </button>
+          <button type="button" class="example-btn" data-question="Compare LeBron James and Michael Jordan's scoring averages">
+            "Compare LeBron James and Michael Jordan's scoring averages"
+          </button>
+          <button type="button" class="example-btn" data-question="Show me the top 5 three-point shooters this season">
+            "Show me the top 5 three-point shooters this season"
+          </button>
+          <button type="button" class="example-btn" data-question="What are the Warriors' win-loss record at home?">
+            "What are the Warriors' win-loss record at home?"
+          </button>
+        </div>
+      </div>
+    </main>
+    
+    <footer>
+      <div class="footer-content">
+        <p>&copy; 2024 Hoopstat Haus. Powered by AI and basketball data.</p>
+        <div class="footer-links">
+          <a href="#about">About</a>
+          <a href="#privacy">Privacy</a>
+          <a href="https://github.com/efischer19/hoopstat-haus" target="_blank" rel="noopener">Source</a>
+        </div>
+      </div>
+    </footer>
+  </body>
+</html>

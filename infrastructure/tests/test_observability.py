@@ -1,6 +1,5 @@
 import subprocess
 import json
-import pytest
 from pathlib import Path
 
 INFRASTRUCTURE_DIR = Path(__file__).parent.parent

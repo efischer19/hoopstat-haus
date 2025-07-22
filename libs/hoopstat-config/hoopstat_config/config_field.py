@@ -171,10 +171,8 @@ class ConfigField:
             return target_type(value)
         except (ValueError, TypeError) as e:
             # Handle modern union types which don't have __name__
-            type_name = getattr(target_type, '__name__', str(target_type))
-            raise ValueError(
-                f"Cannot convert '{value}' to {type_name}"
-            ) from e
+            type_name = getattr(target_type, "__name__", str(target_type))
+            raise ValueError(f"Cannot convert '{value}' to {type_name}") from e
 
 
 def config_field(

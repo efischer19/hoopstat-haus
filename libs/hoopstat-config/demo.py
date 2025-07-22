@@ -67,13 +67,9 @@ def demo_config_file():
     print("=" * 60)
 
     # Create a temporary config file
-    config_data = {
-        "debug": True,
-        "port": 4000,
-        "redis_url": "redis://localhost:6379"
-    }
+    config_data = {"debug": True, "port": 4000, "redis_url": "redis://localhost:6379"}
 
-    with tempfile.NamedTemporaryFile(mode='w', suffix='.json', delete=False) as f:
+    with tempfile.NamedTemporaryFile(mode="w", suffix=".json", delete=False) as f:
         json.dump(config_data, f)
         config_file = f.name
 
@@ -106,10 +102,10 @@ def demo_precedence():
     config_data = {
         "debug": False,
         "port": 4000,
-        "redis_url": "redis://config-file:6379"
+        "redis_url": "redis://config-file:6379",
     }
 
-    with tempfile.NamedTemporaryFile(mode='w', suffix='.json', delete=False) as f:
+    with tempfile.NamedTemporaryFile(mode="w", suffix=".json", delete=False) as f:
         json.dump(config_data, f)
         config_file = f.name
 
@@ -119,7 +115,7 @@ def demo_precedence():
     try:
         config = AppConfig.load(
             config_file=config_file,
-            override_values={"redis_url": "redis://override:6379"}
+            override_values={"redis_url": "redis://override:6379"},
         )
 
         print("Configuration with precedence:")

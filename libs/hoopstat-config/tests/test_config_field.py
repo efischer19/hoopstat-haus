@@ -1,7 +1,6 @@
 """Tests for the configuration field functionality."""
 
 import os
-from typing import Optional
 
 import pytest
 
@@ -158,7 +157,7 @@ class TestEnvironmentVariableHandling:
         os.environ["TEST_STR"] = "test_value"
         field = ConfigField(env_var="TEST_STR")
 
-        result = field.get_env_value(Optional[str])
+        result = field.get_env_value(str | None)
         assert result == "test_value"
 
     def test_env_var_not_set(self):

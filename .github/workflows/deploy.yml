@@ -1,0 +1,205 @@
+---
+name: Deploy Applications
+
+on:
+  workflow_dispatch:
+    inputs:
+      application:
+        description: 'Application to deploy'
+        required: true
+        type: choice
+        options:
+          - example-calculator-app
+      environment:
+        description: 'Target environment'
+        required: true
+        default: 'prod'
+        type: choice
+        options:
+          - prod
+      image_tag:
+        description: 'Image tag to deploy (defaults to latest)'
+        required: false
+        default: 'latest'
+        type: string
+  push:
+    branches: [main]
+    paths:
+      - 'apps/**'
+      - '.github/workflows/deploy.yml'
+
+permissions:
+  id-token: write
+  contents: read
+
+env:
+  AWS_REGION: us-east-1
+  ECR_REPOSITORY: hoopstat-haus/prod
+
+jobs:
+  detect-deployable-apps:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push'
+    outputs:
+      app-matrix: ${{ steps.changes.outputs.app-matrix }}
+      has-deployable-changes: ${{ steps.changes.outputs.has-deployable-changes }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Detect deployable applications
+        id: changes
+        run: |
+          # Get list of changed files in apps directory
+          changed_app_files=$(git diff --name-only origin/main~1...HEAD | \
+            grep '^apps/' | cut -d'/' -f2 | sort -u)
+
+          if [ -z "$changed_app_files" ]; then
+            echo "has-deployable-changes=false" >> $GITHUB_OUTPUT
+            echo "app-matrix={\"include\":[]}" >> $GITHUB_OUTPUT
+            echo "No changes detected in apps directory"
+          else
+            # Build matrix of changed deployable apps
+            app_matrix_items=""
+            found_deployable=false
+            
+            for app in $changed_app_files; do
+              if [ -f "apps/$app/Dockerfile" ]; then
+                if [ -n "$app_matrix_items" ]; then
+                  app_matrix_items="$app_matrix_items,"
+                fi
+                app_matrix_items="$app_matrix_items{\"app\":\"$app\"}"
+                found_deployable=true
+                echo "📦 Found deployable app: $app"
+              fi
+            done
+
+            if [ "$found_deployable" = "true" ]; then
+              echo "has-deployable-changes=true" >> $GITHUB_OUTPUT
+              echo "app-matrix={\"include\":[$app_matrix_items]}" >> $GITHUB_OUTPUT
+              echo "Found deployable applications with changes"
+            else
+              echo "has-deployable-changes=false" >> $GITHUB_OUTPUT
+              echo "app-matrix={\"include\":[]}" >> $GITHUB_OUTPUT
+              echo "No deployable applications found in changed directories"
+            fi
+          fi
+
+  deploy-application:
+    name: Deploy ${{ matrix.app || inputs.application }}
+    runs-on: ubuntu-latest
+    needs: detect-deployable-apps
+    if: |
+      (github.event_name == 'push' && needs.detect-deployable-apps.outputs.has-deployable-changes == 'true') ||
+      github.event_name == 'workflow_dispatch'
+    strategy:
+      fail-fast: false
+      matrix: ${{ github.event_name == 'push' && fromJson(needs.detect-deployable-apps.outputs.app-matrix) || '' }}
+
+    steps:
+      - name: Set deployment variables
+        id: vars
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "app=${{ inputs.application }}" >> $GITHUB_OUTPUT
+            echo "environment=${{ inputs.environment }}" >> $GITHUB_OUTPUT
+            echo "image_tag=${{ inputs.image_tag }}" >> $GITHUB_OUTPUT
+          else
+            echo "app=${{ matrix.app }}" >> $GITHUB_OUTPUT
+            echo "environment=prod" >> $GITHUB_OUTPUT
+            echo "image_tag=${{ github.sha }}" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::${{ secrets.AWS_ACCOUNT_ID }}:role/hoopstat-haus-github-actions
+          role-session-name: GitHubActions-Deploy-${{ github.run_id }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Verify image exists in ECR
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          APP_NAME: ${{ steps.vars.outputs.app }}
+          IMAGE_TAG: ${{ steps.vars.outputs.image_tag }}
+        run: |
+          echo "🔍 Checking if image exists in ECR..."
+          
+          # Check if the image exists
+          if aws ecr describe-images \
+              --repository-name $ECR_REPOSITORY \
+              --image-ids imageTag=$APP_NAME-$IMAGE_TAG \
+              --region $AWS_REGION >/dev/null 2>&1; then
+            echo "✅ Image found: $ECR_REGISTRY/$ECR_REPOSITORY:$APP_NAME-$IMAGE_TAG"
+            echo "image_exists=true" >> $GITHUB_ENV
+          else
+            echo "❌ Image not found: $ECR_REGISTRY/$ECR_REPOSITORY:$APP_NAME-$IMAGE_TAG"
+            echo "Available images for $APP_NAME:"
+            aws ecr describe-images \
+              --repository-name $ECR_REPOSITORY \
+              --query "imageDetails[?starts_with(imageTag, '$APP_NAME-')].imageTags[]" \
+              --output table || echo "No images found"
+            exit 1
+          fi
+
+      - name: Pull and test image
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          APP_NAME: ${{ steps.vars.outputs.app }}
+          IMAGE_TAG: ${{ steps.vars.outputs.image_tag }}
+        run: |
+          echo "📥 Pulling image from ECR..."
+          docker pull $ECR_REGISTRY/$ECR_REPOSITORY:$APP_NAME-$IMAGE_TAG
+          
+          echo "🧪 Testing image health..."
+          # Run a basic health check on the image
+          docker run --rm --name test-$APP_NAME \
+            $ECR_REGISTRY/$ECR_REPOSITORY:$APP_NAME-$IMAGE_TAG \
+            python -c "import app.main; print('Health check passed')" || {
+            echo "❌ Image health check failed"
+            exit 1
+          }
+          
+          echo "✅ Image health check passed"
+
+      - name: Deploy to AWS (Placeholder)
+        env:
+          APP_NAME: ${{ steps.vars.outputs.app }}
+          ENVIRONMENT: ${{ steps.vars.outputs.environment }}
+          IMAGE_TAG: ${{ steps.vars.outputs.image_tag }}
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+        run: |
+          echo "🚀 Deploying $APP_NAME to $ENVIRONMENT..."
+          echo "📍 Image: $ECR_REGISTRY/$ECR_REPOSITORY:$APP_NAME-$IMAGE_TAG"
+          
+          # Placeholder deployment logic - this is where you would:
+          # 1. Deploy to AWS Lambda (if using serverless)
+          # 2. Update ECS service (if using containers)
+          # 3. Update Kubernetes deployment (if using EKS)
+          # 4. Update any other AWS compute service
+          
+          echo "⚠️  This is a placeholder deployment step"
+          echo "🔧 Actual deployment logic should be implemented based on target compute service"
+          echo "💡 Consider using AWS CDK, SAM, or Terraform for deployment automation"
+          
+          echo "✅ Deployment completed successfully (placeholder)"
+
+      - name: Deployment summary
+        env:
+          APP_NAME: ${{ steps.vars.outputs.app }}
+          ENVIRONMENT: ${{ steps.vars.outputs.environment }}
+          IMAGE_TAG: ${{ steps.vars.outputs.image_tag }}
+        run: |
+          echo "📋 Deployment Summary"
+          echo "=================="
+          echo "Application: $APP_NAME"
+          echo "Environment: $ENVIRONMENT" 
+          echo "Image Tag: $IMAGE_TAG"
+          echo "Triggered by: ${{ github.event_name }}"
+          echo "Status: ✅ Success"

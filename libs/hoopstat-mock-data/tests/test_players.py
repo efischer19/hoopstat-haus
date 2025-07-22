@@ -60,9 +60,9 @@ class TestPlayerGenerator:
         # Check jersey number uniqueness within each team
         for team_id, team_player_list in team_players.items():
             jersey_numbers = [p.jersey_number for p in team_player_list]
-            assert len(set(jersey_numbers)) == len(
-                jersey_numbers
-            ), f"Duplicate jersey numbers in team {team_id}"
+            assert len(set(jersey_numbers)) == len(jersey_numbers), (
+                f"Duplicate jersey numbers in team {team_id}"
+            )
 
     def test_position_distribution(self):
         """Test that positions are distributed reasonably."""

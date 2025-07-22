@@ -111,7 +111,8 @@ class SchemaValidator:
             for player in dataset["players"]:
                 if player["team_id"] not in team_ids:
                     errors.append(
-                        f"Player {player['id']} references non-existent team {player['team_id']}"
+                        f"Player {player['id']} references non-existent "
+                        f"team {player['team_id']}"
                     )
 
         if "games" in dataset:
@@ -120,18 +121,21 @@ class SchemaValidator:
             for game in dataset["games"]:
                 if game["home_team_id"] not in team_ids:
                     errors.append(
-                        f"Game {game['id']} references non-existent home team {game['home_team_id']}"
+                        f"Game {game['id']} references non-existent "
+                        f"home team {game['home_team_id']}"
                     )
                 if game["away_team_id"] not in team_ids:
                     errors.append(
-                        f"Game {game['id']} references non-existent away team {game['away_team_id']}"
+                        f"Game {game['id']} references non-existent "
+                        f"away team {game['away_team_id']}"
                     )
 
         if "player_stats" in dataset:
             for stat in dataset["player_stats"]:
                 if stat["player_id"] not in player_ids:
                     errors.append(
-                        f"Player stat references non-existent player {stat['player_id']}"
+                        f"Player stat references non-existent "
+                        f"player {stat['player_id']}"
                     )
                 if stat["game_id"] not in game_ids:
                     errors.append(
@@ -216,19 +220,23 @@ class SchemaValidator:
                 # Field goals made cannot exceed attempted
                 if stat["field_goals_made"] > stat["field_goals_attempted"]:
                     errors.append(
-                        f"Player stat: field goals made ({stat['field_goals_made']}) > attempted ({stat['field_goals_attempted']})"
+                        f"Player stat: field goals made ({stat['field_goals_made']}) > "
+                        f"attempted ({stat['field_goals_attempted']})"
                     )
 
                 # Three-pointers made cannot exceed attempted
                 if stat["three_pointers_made"] > stat["three_pointers_attempted"]:
                     errors.append(
-                        f"Player stat: three-pointers made ({stat['three_pointers_made']}) > attempted ({stat['three_pointers_attempted']})"
+                        f"Player stat: three-pointers made "
+                        f"({stat['three_pointers_made']}) > "
+                        f"attempted ({stat['three_pointers_attempted']})"
                     )
 
                 # Free throws made cannot exceed attempted
                 if stat["free_throws_made"] > stat["free_throws_attempted"]:
                     errors.append(
-                        f"Player stat: free throws made ({stat['free_throws_made']}) > attempted ({stat['free_throws_attempted']})"
+                        f"Player stat: free throws made ({stat['free_throws_made']}) > "
+                        f"attempted ({stat['free_throws_attempted']})"
                     )
 
         return len(errors) == 0, errors

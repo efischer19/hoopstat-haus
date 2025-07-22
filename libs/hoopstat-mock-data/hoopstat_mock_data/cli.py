@@ -118,7 +118,7 @@ def generate(
 
     except Exception as e:
         click.echo(f"✗ Error generating data: {e}")
-        raise click.Abort()
+        raise click.Abort() from e
 
 
 @cli.command()

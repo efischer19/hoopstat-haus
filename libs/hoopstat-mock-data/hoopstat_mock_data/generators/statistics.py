@@ -11,7 +11,7 @@ class StatisticsGenerator:
     """Generator for NBA statistics with realistic distributions."""
 
     def __init__(self, seed: int = None):
-        """Initialize the statistics generator with optional seed for reproducibility."""
+        """Initialize the statistics generator with optional seed."""
         self.random = random.Random(seed)
         if seed is not None:
             np.random.seed(seed)
@@ -116,7 +116,7 @@ class StatisticsGenerator:
         minutes = []
         remaining_minutes = total_minutes
 
-        for i, player in enumerate(sorted_players):
+        for i, _player in enumerate(sorted_players):
             if i < 8:  # Top 8 players get significant minutes
                 if i < 5:  # Starters get most minutes
                     player_minutes = self.random.uniform(28, 42)

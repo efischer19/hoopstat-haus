@@ -1,0 +1,9 @@
+# Application-specific ignores
+/state/
+/data/
+/logs/
+*.parquet
+*.json.log
+
+# Temporary files
+/tmp/

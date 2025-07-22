@@ -29,7 +29,8 @@ def performance_monitor(
     Decorator to monitor data pipeline performance.
 
     Automatically logs execution duration and record count in structured JSON format
-    according to ADR-015 standards. The decorated function should return a value that either:
+    according to ADR-015 standards. The decorated function should return a value that
+    either:
     1. Is the record count (if it returns an integer)
     2. Is a dict containing the record count under records_processed_key
     3. Has a records_processed attribute

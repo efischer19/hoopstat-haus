@@ -9,16 +9,16 @@ This library consolidates logging functionality to ensure consistent observabili
 across all applications while eliminating code duplication.
 """
 
-from .json_logger import JSONLogger, get_logger
-from .performance import performance_monitor, performance_context
 from .correlation import CorrelationContext, correlation_context
 from .diagnostics import DiagnosticLogger
+from .json_logger import JSONLogger, get_logger
+from .performance import performance_context, performance_monitor
 
 __version__ = "0.1.0"
 
 __all__ = [
     "JSONLogger",
-    "get_logger", 
+    "get_logger",
     "performance_monitor",
     "performance_context",
     "CorrelationContext",

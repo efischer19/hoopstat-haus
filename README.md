@@ -28,6 +28,23 @@ The repository has been seeded with foundational documents and architectural pri
 
 The project is **not operational** at this time.
 
+## Repository Structure
+
+```
+apps/           # Individual applications
+libs/           # Shared Python libraries  
+infrastructure/ # Terraform AWS infrastructure (includes ECR)
+docs/           # Documentation (ECR guide, etc.)
+scripts/        # Utility scripts (ECR helper, etc.)
+meta/           # Project metadata and ADRs
+templates/      # Project templates
+```
+
+Key infrastructure components:
+- **AWS ECR**: Container registry with automated CI/CD integration
+- **GitHub Actions**: Automated testing, building, and deployment
+- **Terraform**: Infrastructure as code for AWS resources
+
 ## Contributing
 
 While the core infrastructure is being established, contributions are welcome in the form of ideas, feature requests, and bug reports. Please see our **[Contributing Guidelines](.github/CONTRIBUTING.md)** for more details on how you can help shape the future of Hoopstat Haus.

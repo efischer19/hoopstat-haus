@@ -1,6 +1,6 @@
 provider "aws" {
   region = var.aws_region
-  
+
   default_tags {
     tags = {
       Project     = var.project_name
@@ -10,33 +10,22 @@ provider "aws" {
   }
 }
 
-# GitHub OIDC Provider
-resource "aws_iam_openid_connect_provider" "github" {
+# GitHub OIDC Provider - use existing provider
+data "aws_iam_openid_connect_provider" "github" {
   url = "https://token.actions.githubusercontent.com"
-  
-  client_id_list = ["sts.amazonaws.com"]
-  
-  thumbprint_list = [
-    "6938fd4d98bab03faadb97b34396831e3780aea1",
-    "1c58a3a8518e8759bf075b76b750d4f2df264fcd"
-  ]
-  
-  tags = {
-    Name = "${var.project_name}-github-oidc"
-  }
 }
 
 # IAM Role for GitHub Actions
 resource "aws_iam_role" "github_actions" {
   name = "${var.project_name}-github-actions"
-  
+
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
     Statement = [
       {
         Effect = "Allow"
         Principal = {
-          Federated = aws_iam_openid_connect_provider.github.arn
+          Federated = data.aws_iam_openid_connect_provider.github.arn
         }
         Action = "sts:AssumeRoleWithWebIdentity"
         Condition = {
@@ -50,7 +39,7 @@ resource "aws_iam_role" "github_actions" {
       }
     ]
   })
-  
+
   tags = {
     Name = "${var.project_name}-github-actions-role"
   }
@@ -60,7 +49,7 @@ resource "aws_iam_role" "github_actions" {
 resource "aws_iam_role_policy" "github_actions" {
   name = "${var.project_name}-github-actions-policy"
   role = aws_iam_role.github_actions.id
-  
+
   policy = jsonencode({
     Version = "2012-10-17"
     Statement = [
@@ -109,7 +98,7 @@ resource "aws_iam_role_policy" "github_actions" {
 # S3 Bucket for application data and artifacts
 resource "aws_s3_bucket" "main" {
   bucket = "${var.project_name}-${var.environment}-data"
-  
+
   tags = {
     Name = "${var.project_name}-main-bucket"
   }
@@ -126,7 +115,7 @@ resource "aws_s3_bucket_versioning" "main" {
 # S3 Bucket encryption
 resource "aws_s3_bucket_server_side_encryption_configuration" "main" {
   bucket = aws_s3_bucket.main.id
-  
+
   rule {
     apply_server_side_encryption_by_default {
       sse_algorithm = "AES256"
@@ -138,7 +127,7 @@ resource "aws_s3_bucket_server_side_encryption_configuration" "main" {
 # S3 Bucket public access block
 resource "aws_s3_bucket_public_access_block" "main" {
   bucket = aws_s3_bucket.main.id
-  
+
   block_public_acls       = true
   block_public_policy     = true
   ignore_public_acls      = true
@@ -149,11 +138,11 @@ resource "aws_s3_bucket_public_access_block" "main" {
 resource "aws_ecr_repository" "main" {
   name                 = "${var.project_name}/${var.environment}"
   image_tag_mutability = "MUTABLE"
-  
+
   image_scanning_configuration {
     scan_on_push = true
   }
-  
+
   tags = {
     Name = "${var.project_name}-ecr-repo"
   }
@@ -162,7 +151,7 @@ resource "aws_ecr_repository" "main" {
 # ECR Lifecycle Policy
 resource "aws_ecr_lifecycle_policy" "main" {
   repository = aws_ecr_repository.main.name
-  
+
   policy = jsonencode({
     rules = [
       {
@@ -332,44 +321,10 @@ resource "aws_cloudwatch_log_metric_filter" "error_count" {
 }
 
 # ============================================================================
-# SNS Topics and CloudWatch Alarms (ADR-018)
+# CloudWatch Alarms (ADR-018) - Without SNS Integration
 # ============================================================================
 
-# SNS Topics for different alert severities
-resource "aws_sns_topic" "critical_alerts" {
-  name = "${var.project_name}-critical-alerts"
-
-  tags = {
-    Severity = "critical"
-    Purpose  = "Immediate response alerts"
-  }
-}
-
-resource "aws_sns_topic" "warning_alerts" {
-  name = "${var.project_name}-warning-alerts"
-
-  tags = {
-    Severity = "warning"
-    Purpose  = "24-hour response alerts"
-  }
-}
-
-# SNS Topic subscriptions (only if email is provided)
-resource "aws_sns_topic_subscription" "critical_email" {
-  count     = var.alert_email != "" ? 1 : 0
-  topic_arn = aws_sns_topic.critical_alerts.arn
-  protocol  = "email"
-  endpoint  = var.alert_email
-}
-
-resource "aws_sns_topic_subscription" "warning_email" {
-  count     = var.alert_email != "" ? 1 : 0
-  topic_arn = aws_sns_topic.warning_alerts.arn
-  protocol  = "email"
-  endpoint  = var.alert_email
-}
-
-# CloudWatch Alarms for critical monitoring
+# CloudWatch Alarms for critical monitoring (notifications will be added later)
 resource "aws_cloudwatch_metric_alarm" "high_error_rate" {
   alarm_name          = "high-error-rate"
   comparison_operator = "GreaterThanThreshold"
@@ -380,7 +335,6 @@ resource "aws_cloudwatch_metric_alarm" "high_error_rate" {
   statistic           = "Sum"
   threshold           = "5"
   alarm_description   = "This metric monitors application error rate"
-  alarm_actions       = [aws_sns_topic.critical_alerts.arn]
 
   tags = {
     Severity = "critical"
@@ -396,9 +350,8 @@ resource "aws_cloudwatch_metric_alarm" "lambda_timeout" {
   namespace           = "AWS/Lambda"
   period              = "300"
   statistic           = "Maximum"
-  threshold           = "900000"  # 15 minutes in milliseconds
+  threshold           = "900000" # 15 minutes in milliseconds
   alarm_description   = "This metric monitors Lambda function timeouts"
-  alarm_actions       = [aws_sns_topic.critical_alerts.arn]
 
   tags = {
     Severity = "critical"
@@ -414,9 +367,8 @@ resource "aws_cloudwatch_metric_alarm" "execution_time_anomaly" {
   namespace           = "HoopstatHaus/DataPipeline"
   period              = "600"
   statistic           = "Average"
-  threshold           = "300"  # 5 minutes
+  threshold           = "300" # 5 minutes
   alarm_description   = "This metric monitors unusually long data pipeline execution times"
-  alarm_actions       = [aws_sns_topic.warning_alerts.arn]
 
   tags = {
     Severity = "warning"

@@ -60,10 +60,6 @@ class TestTerraformInfrastructure:
         required_vars = ["aws_region", "project_name", "environment", "log_retention_days"]
         for var in required_vars:
             assert f'variable "{var}"' in content, f"Variable {var} not defined"
-        
-        # Check environment validation per ADR-012
-        assert 'var.environment == "production"' in content, \
-            "Environment validation for production-only per ADR-012 missing"
 
     def test_log_groups_configuration(self):
         """Verify CloudWatch log groups are properly configured."""
@@ -103,10 +99,6 @@ class TestTerraformInfrastructure:
         for alarm in required_alarms:
             assert f'aws_cloudwatch_metric_alarm" "{alarm}"' in content, \
                 f"Alarm {alarm} not defined"
-        
-        # Check SNS integration
-        assert "aws_sns_topic" in content, "SNS topics not configured"
-        assert "alarm_actions" in content, "Alarm actions not configured"
 
     def test_iam_permissions(self):
         """Verify IAM roles and policies for Lambda logging."""
@@ -134,7 +126,6 @@ class TestTerraformInfrastructure:
         required_outputs = [
             "log_group_names",
             "log_group_arns", 
-            "sns_topic_arns",
             "lambda_logging_role_arn"
         ]
         

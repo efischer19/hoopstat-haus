@@ -45,13 +45,7 @@ output "log_group_arns" {
   }
 }
 
-output "sns_topic_arns" {
-  description = "ARNs of the SNS topics for alerts"
-  value = {
-    critical_alerts = aws_sns_topic.critical_alerts.arn
-    warning_alerts  = aws_sns_topic.warning_alerts.arn
-  }
-}
+
 
 output "lambda_logging_role_arn" {
   description = "ARN of the IAM role for Lambda logging"

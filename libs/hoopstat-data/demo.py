@@ -6,15 +6,15 @@ This script demonstrates the key functionality of the data processing library.
 """
 
 from hoopstat_data import (
+    GameStats,
     PlayerStats,
     TeamStats,
-    GameStats,
-    validate_player_stats,
-    normalize_team_name,
     calculate_efficiency_rating,
-    standardize_position,
     check_data_completeness,
     detect_outliers,
+    normalize_team_name,
+    standardize_position,
+    validate_player_stats,
 )
 
 
@@ -38,7 +38,10 @@ def demo_data_models():
         field_goals_attempted=18,
         minutes_played=38.5,
     )
-    print(f"Player: {player.player_name} - {player.points} pts, {player.rebounds} reb, {player.assists} ast")
+    print(
+        f"Player: {player.player_name} - {player.points} pts, "
+        f"{player.rebounds} reb, {player.assists} ast"
+    )
 
     # Team stats model
     team = TeamStats(

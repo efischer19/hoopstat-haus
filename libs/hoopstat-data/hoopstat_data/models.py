@@ -4,7 +4,6 @@ Data models for basketball statistics.
 Provides Pydantic models for consistent data structures across applications.
 """
 
-
 from pydantic import BaseModel, Field, validator
 
 

@@ -16,11 +16,41 @@ The infrastructure is managed using Terraform and deployed via GitHub Actions. T
 The infrastructure includes:
 
 - **S3 Bucket**: Primary storage for application data and artifacts
+- **Medallion Architecture S3 Buckets**: Three-tier data lake (Bronze/Silver/Gold layers) for NBA data processing
 - **ECR Repository**: Container registry for Docker images
 - **IAM Roles**: Least-privilege access roles for different services
 - **OIDC Provider**: GitHub OIDC integration for keyless authentication
 - **CloudWatch Observability** (ADR-018): Log groups, metrics, alarms, and monitoring
 - **SNS Topics**: Alert routing for critical and warning notifications
+
+### Medallion Data Architecture
+
+The infrastructure implements a three-tier medallion architecture for data processing:
+
+#### Bronze Layer (`hoopstat-haus-bronze`)
+- **Purpose**: Raw data landing zone for NBA API ingestion
+- **Retention**: 2 years (primary), 30 days (errors), 90 days (metadata)
+- **Storage**: Intelligent Tiering after 30 days for cost optimization
+- **Security**: AES256 encryption, versioning enabled, public access blocked
+
+#### Silver Layer (`hoopstat-haus-silver`)
+- **Purpose**: Cleaned and conformed data with schema enforcement
+- **Retention**: 3 years (primary), 90 days (quality logs), 30 days (quarantine)
+- **Storage**: Standard-IA after 90 days
+- **Security**: Same as Bronze, with read access to Bronze layer
+
+#### Gold Layer (`hoopstat-haus-gold`)
+- **Purpose**: Business-ready aggregated datasets for MCP server integration
+- **Retention**: Indefinite (core business value)
+- **Storage**: Standard class (frequently accessed by applications)
+- **Security**: Same as Silver, with read access to Silver layer
+
+#### Access Logs (`hoopstat-haus-access-logs`)
+- **Purpose**: Audit trails for all S3 bucket operations
+- **Retention**: 90 days
+- **Storage**: Standard class with automatic cleanup
+
+For detailed information about the data architecture strategy, see `meta/plans/medallion-data-architecture.md`.
 
 ## Deployment Workflow
 
@@ -72,3 +102,26 @@ The infrastructure includes a fully configured ECR repository (`hoopstat-haus/pr
 - `outputs.tf` - Output values
 - `versions.tf` - Provider and Terraform version constraints
 - `.terraform-version` - Terraform version specification
+
+## Testing
+
+The infrastructure includes comprehensive test suites to validate configuration and ensure compliance:
+
+```bash
+# Run general infrastructure validation
+bash tests/test_infrastructure.sh
+
+# Run medallion architecture specific tests  
+bash tests/test_medallion_architecture.sh
+
+# Run observability configuration tests
+python tests/test_observability.py
+```
+
+### Test Coverage
+- **Syntax validation**: Terraform configuration syntax and structure
+- **Security checks**: No sensitive data in configuration files
+- **Resource validation**: All required resources are properly configured
+- **Medallion architecture compliance**: Data layer configuration matches requirements
+- **Lifecycle policies**: Retention and storage class transitions are correct
+- **IAM policies**: Least-privilege access patterns are implemented

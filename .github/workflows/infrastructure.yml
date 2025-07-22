@@ -31,7 +31,6 @@ env:
   TF_VAR_aws_region: us-east-1
   TF_VAR_project_name: hoopstat-haus
   TF_VAR_environment: prod
-  TF_VAR_github_repo: efischer19/hoopstat-haus
 
 jobs:
   terraform:

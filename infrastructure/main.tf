@@ -10,90 +10,15 @@ provider "aws" {
   }
 }
 
-# GitHub OIDC Provider - use existing provider
-data "aws_iam_openid_connect_provider" "github" {
-  url = "https://token.actions.githubusercontent.com"
-}
-
-# IAM Role for GitHub Actions
-resource "aws_iam_role" "github_actions" {
-  name = "${var.project_name}-github-actions"
-
-  assume_role_policy = jsonencode({
-    Version = "2012-10-17"
-    Statement = [
-      {
-        Effect = "Allow"
-        Principal = {
-          Federated = data.aws_iam_openid_connect_provider.github.arn
-        }
-        Action = "sts:AssumeRoleWithWebIdentity"
-        Condition = {
-          StringEquals = {
-            "token.actions.githubusercontent.com:aud" = "sts.amazonaws.com"
-          }
-          StringLike = {
-            "token.actions.githubusercontent.com:sub" = "repo:${var.github_repo}:*"
-          }
-        }
-      }
-    ]
-  })
-
-  tags = {
-    Name = "${var.project_name}-github-actions-role"
-  }
-}
-
-# IAM Policy for GitHub Actions
-resource "aws_iam_role_policy" "github_actions" {
-  name = "${var.project_name}-github-actions-policy"
-  role = aws_iam_role.github_actions.id
-
-  policy = jsonencode({
-    Version = "2012-10-17"
-    Statement = [
-      {
-        Effect = "Allow"
-        Action = [
-          "s3:GetObject",
-          "s3:PutObject",
-          "s3:DeleteObject",
-          "s3:ListBucket"
-        ]
-        Resource = [
-          aws_s3_bucket.main.arn,
-          "${aws_s3_bucket.main.arn}/*"
-        ]
-      },
-      {
-        Effect = "Allow"
-        Action = [
-          "ecr:BatchCheckLayerAvailability",
-          "ecr:GetDownloadUrlForLayer",
-          "ecr:BatchGetImage",
-          "ecr:GetAuthorizationToken",
-          "ecr:PutImage",
-          "ecr:InitiateLayerUpload",
-          "ecr:UploadLayerPart",
-          "ecr:CompleteLayerUpload"
-        ]
-        Resource = "*"
-      },
-      {
-        Effect = "Allow"
-        Action = [
-          "logs:CreateLogGroup",
-          "logs:CreateLogStream",
-          "logs:PutLogEvents",
-          "logs:DescribeLogGroups",
-          "logs:DescribeLogStreams"
-        ]
-        Resource = "*"
-      }
-    ]
-  })
-}
+# Note: GitHub Actions IAM role is managed outside of Terraform
+# to avoid circular dependency during bootstrap process.
+# The role should be created manually with the following permissions:
+#
+# Required permissions for hoopstat-haus-github-actions role:
+# - S3: GetObject, PutObject, DeleteObject, ListBucket on the main bucket
+# - ECR: BatchCheckLayerAvailability, GetDownloadUrlForLayer, BatchGetImage, 
+#        GetAuthorizationToken, PutImage, InitiateLayerUpload, UploadLayerPart, CompleteLayerUpload
+# - CloudWatch Logs: CreateLogGroup, CreateLogStream, PutLogEvents, DescribeLogGroups, DescribeLogStreams
 
 # S3 Bucket for application data and artifacts
 resource "aws_s3_bucket" "main" {

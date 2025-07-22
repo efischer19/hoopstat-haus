@@ -16,11 +16,6 @@ variable "environment" {
   default     = "prod"
 }
 
-variable "github_repo" {
-  description = "GitHub repository in the format owner/repo"
-  type        = string
-  default     = "efischer19/hoopstat-haus"
-}
 
 variable "log_retention_days" {
   description = "CloudWatch log retention periods by log type"

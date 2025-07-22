@@ -219,3 +219,5 @@ override.tf.json
 *_override.tf.json
 .terraformrc
 terraform.rc
+infrastructure/terraform_1.10.3_linux_amd64.zip
+infrastructure/LICENSE.txt

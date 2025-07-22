@@ -116,6 +116,8 @@ class TestTerraformInfrastructure:
         # Check role attachments
         assert "aws_iam_role_policy_attachment" in content, \
             "IAM policy attachments not configured"
+        
+        # Note: GitHub Actions IAM role intentionally excluded due to circular dependency
 
     def test_output_configuration(self):
         """Verify Terraform outputs are properly defined."""

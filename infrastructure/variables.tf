@@ -36,8 +36,3 @@ variable "log_retention_days" {
   }
 }
 
-variable "alert_email" {
-  description = "Email address for alert notifications"
-  type        = string
-  default     = ""
-}

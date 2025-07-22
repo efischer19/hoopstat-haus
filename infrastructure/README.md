@@ -58,6 +58,8 @@ terraform plan
 4. Review the plan output in the PR comments
 5. Merge the PR - this will trigger Terraform apply
 
+**Note:** If this is the first deployment, you may need to import existing resources first. See [IMPORT.md](./IMPORT.md) for instructions.
+
 ### ECR Integration
 The infrastructure includes a fully configured ECR repository (`hoopstat-haus/prod`) that:
 - Automatically scans images for vulnerabilities on push
@@ -72,3 +74,5 @@ The infrastructure includes a fully configured ECR repository (`hoopstat-haus/pr
 - `outputs.tf` - Output values
 - `versions.tf` - Provider and Terraform version constraints
 - `.terraform-version` - Terraform version specification
+- `IMPORT.md` - Guide for importing existing AWS resources
+- `SETUP.md` - One-time setup instructions

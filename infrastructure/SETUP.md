@@ -146,9 +146,16 @@ After completing the setup:
 - Ensure changes are made to files in `infrastructure/` directory
 - Check that the workflow file exists in `.github/workflows/infrastructure.yml`
 
+### 4. Import Existing Resources
+
+Before the first successful deployment, existing AWS resources must be imported into Terraform state. See [IMPORT.md](./IMPORT.md) for detailed instructions.
+
+This is a **one-time operation** required because some infrastructure was created outside of Terraform and needs to be brought under Terraform management.
+
 ## Next Steps
 
 Once setup is complete:
-- The workflow will automatically plan infrastructure changes on PRs
-- Approved changes will automatically apply when merged to main
-- Manual deployment is available via the Actions tab → Infrastructure Deployment → Run workflow
+1. **Import existing resources** using the commands in [IMPORT.md](./IMPORT.md)
+2. The workflow will automatically plan infrastructure changes on PRs
+3. Approved changes will automatically apply when merged to main
+4. Manual deployment is available via the Actions tab → Infrastructure Deployment → Run workflow

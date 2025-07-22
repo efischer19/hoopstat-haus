@@ -1,0 +1,64 @@
+[tool.poetry]
+name = "hoopstat-observability"
+version = "0.1.0"
+description = "Standardized logging and observability utilities for Hoopstat Haus applications"
+authors = ["Hoopstat Haus Team"]
+readme = "README.md"
+packages = [{include = "hoopstat_observability"}]
+
+[tool.poetry.dependencies]
+python = "^3.12"
+
+[tool.poetry.group.dev.dependencies]
+pytest = "^8.4.1"
+ruff = "^0.12.3"
+black = "^25.1.0"
+pytest-cov = "^6.2.1"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
+
+# Ruff configuration
+[tool.ruff]
+target-version = "py312"
+line-length = 88
+
+[tool.ruff.lint]
+select = [
+    "E",  # pycodestyle errors
+    "W",  # pycodestyle warnings
+    "F",  # pyflakes
+    "I",  # isort
+    "B",  # flake8-bugbear
+    "C4", # flake8-comprehensions
+    "UP", # pyupgrade
+]
+ignore = []
+
+[tool.ruff.lint.mccabe]
+max-complexity = 10
+
+# Black configuration
+[tool.black]
+target-version = ["py312"]
+line-length = 88
+
+# Pytest configuration
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py", "*_test.py"]
+python_functions = ["test_*"]
+addopts = "--strict-markers --disable-warnings"
+
+[tool.coverage.run]
+source = ["hoopstat_observability"]
+omit = ["tests/*"]
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "def __repr__",
+    "raise AssertionError",
+    "raise NotImplementedError",
+]

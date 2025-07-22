@@ -58,6 +58,13 @@ terraform plan
 4. Review the plan output in the PR comments
 5. Merge the PR - this will trigger Terraform apply
 
+### ECR Integration
+The infrastructure includes a fully configured ECR repository (`hoopstat-haus/prod`) that:
+- Automatically scans images for vulnerabilities on push
+- Applies lifecycle policies to manage storage costs
+- Integrates with GitHub Actions for automated CI/CD
+- See [ECR Image Management Guide](../docs/ECR_IMAGE_MANAGEMENT.md) for detailed usage
+
 ## File Structure
 
 - `main.tf` - Main Terraform configuration

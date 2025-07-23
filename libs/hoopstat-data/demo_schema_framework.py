@@ -40,7 +40,8 @@ def main():
     )
 
     print(
-        f"✅ Created lineage: {nba_api_lineage.source_system} v{nba_api_lineage.schema_version}"
+        f"✅ Created lineage: {nba_api_lineage.source_system} "
+        f"v{nba_api_lineage.schema_version}"
     )
     print(f"   Ingested at: {nba_api_lineage.ingestion_timestamp}")
     print(f"   Stage: {nba_api_lineage.transformation_stage}")
@@ -112,7 +113,8 @@ def main():
         quarters=4,
     )
     print(
-        f"✅ Valid NBA game: {game.home_team_id} {game.home_score} - {game.away_team_id} {game.away_score}"
+        f"✅ Valid NBA game: {game.home_team_id} {game.home_score} - "
+        f"{game.away_team_id} {game.away_score}"
     )
 
     # Test business rule: teams can't play themselves
@@ -135,18 +137,21 @@ def main():
 
     player_schema = generate_json_schema(PlayerStats)
     print(
-        f"✅ Generated PlayerStats schema with {len(player_schema['properties'])} properties"
+        f"✅ Generated PlayerStats schema with "
+        f"{len(player_schema['properties'])} properties"
     )
     print(f"   Required fields: {player_schema['required']}")
 
     team_schema = generate_json_schema(TeamStats)
     print(
-        f"✅ Generated TeamStats schema with {len(team_schema['properties'])} properties"
+        f"✅ Generated TeamStats schema with "
+        f"{len(team_schema['properties'])} properties"
     )
 
     game_schema = generate_json_schema(GameStats)
     print(
-        f"✅ Generated GameStats schema with {len(game_schema['properties'])} properties"
+        f"✅ Generated GameStats schema with "
+        f"{len(game_schema['properties'])} properties"
     )
 
     # Save schema to file for external validation
@@ -236,7 +241,8 @@ def main():
     )
 
     print(
-        f"✅ String stripping works: '{clean_player.player_id}' and '{clean_player.player_name}'"
+        f"✅ String stripping works: '{clean_player.player_id}' and "
+        f"'{clean_player.player_name}'"
     )
 
     print("\n🎉 Schema validation framework demo completed successfully!")

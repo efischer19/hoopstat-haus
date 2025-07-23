@@ -93,9 +93,8 @@ class PipelineTestRunner:
             # Generate mock data
             dataset = self.mock_generator.generate_complete_dataset(
                 num_teams=num_teams,
-                num_players=num_teams * num_players_per_team,
+                players_per_team=num_players_per_team,
                 num_games=10,
-                seed=42
             )
 
             # Add ingestion metadata
@@ -108,7 +107,7 @@ class PipelineTestRunner:
                     "source": "mock_generator",
                     "layer": "bronze"
                 },
-                "teams": [team.model_dump() for team in dataset.teams]
+                "teams": [team.model_dump() for team in dataset["teams"]]
             }
 
             if not self.s3_utils.put_object(
@@ -126,7 +125,7 @@ class PipelineTestRunner:
                     "source": "mock_generator",
                     "layer": "bronze"
                 },
-                "players": [player.model_dump() for player in dataset.players]
+                "players": [player.model_dump() for player in dataset["players"]]
             }
 
             if not self.s3_utils.put_object(
@@ -144,7 +143,7 @@ class PipelineTestRunner:
                     "source": "mock_generator",
                     "layer": "bronze"
                 },
-                "games": [game.model_dump() for game in dataset.games]
+                "games": [game.model_dump() for game in dataset["games"]]
             }
 
             if not self.s3_utils.put_object(
@@ -155,8 +154,8 @@ class PipelineTestRunner:
                 logger.error("Failed to upload games data to bronze layer")
                 return False
 
-            logger.info(f"Bronze layer ingestion complete: {len(dataset.teams)} teams, "
-                       f"{len(dataset.players)} players, {len(dataset.games)} games")
+            logger.info(f"Bronze layer ingestion complete: {len(dataset['teams'])} teams, "
+                       f"{len(dataset['players'])} players, {len(dataset['games'])} games")
             return True
 
         except Exception as e:

@@ -409,7 +409,7 @@ jobs:
           echo "🚀 Starting E2E pipeline tests with Docker Compose"
           
           # Build and run E2E tests in isolated environment
-          docker-compose -f docker-compose.test.yml up --build --abort-on-container-exit
+          docker compose -f docker-compose.test.yml up --build --abort-on-container-exit
           
           # Check exit code
           exit_code=$?
@@ -421,10 +421,10 @@ jobs:
             
             # Show logs for debugging
             echo "📋 Localstack logs:"
-            docker-compose -f docker-compose.test.yml logs localstack
+            docker compose -f docker-compose.test.yml logs localstack
             
             echo "📋 Test runner logs:"
-            docker-compose -f docker-compose.test.yml logs test-runner
+            docker compose -f docker-compose.test.yml logs test-runner
             
             exit $exit_code
           fi
@@ -433,4 +433,4 @@ jobs:
         if: always()
         run: |
           echo "🧹 Cleaning up E2E test environment"
-          docker-compose -f docker-compose.test.yml down --volumes --remove-orphans
+          docker compose -f docker-compose.test.yml down --volumes --remove-orphans

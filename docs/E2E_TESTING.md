@@ -44,7 +44,7 @@ The E2E testing framework simulates the complete data pipeline flow from bronze 
 
 2. **Start the E2E testing environment:**
    ```bash
-   docker-compose -f docker-compose.test.yml up --build
+   docker compose -f docker-compose.test.yml up --build
    ```
 
 3. **Run tests manually (alternative approach):**
@@ -231,7 +231,7 @@ The `docker-compose.test.yml` file defines:
 curl http://localhost:4566/health
 
 # Restart Localstack
-docker-compose -f docker-compose.test.yml restart localstack
+docker compose -f docker-compose.test.yml restart localstack
 ```
 
 **2. Permission Errors**
@@ -240,7 +240,7 @@ docker-compose -f docker-compose.test.yml restart localstack
 sudo chmod 666 /var/run/docker.sock
 
 # Clean up containers
-docker-compose -f docker-compose.test.yml down --volumes
+docker compose -f docker-compose.test.yml down --volumes
 ```
 
 **3. Port Conflicts**
@@ -278,12 +278,12 @@ s3_utils = S3TestUtils()
 
 Check Localstack logs for S3 operations:
 ```bash
-docker-compose -f docker-compose.test.yml logs localstack
+docker compose -f docker-compose.test.yml logs localstack
 ```
 
 Check test runner logs for application errors:
 ```bash
-docker-compose -f docker-compose.test.yml logs test-runner
+docker compose -f docker-compose.test.yml logs test-runner
 ```
 
 ## Performance Considerations

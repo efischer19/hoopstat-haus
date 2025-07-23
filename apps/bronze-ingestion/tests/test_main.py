@@ -53,7 +53,6 @@ def test_main_runs_without_error():
         patch("app.main.setup_logging") as mock_setup,
         patch("app.main.ingest_nba_data") as mock_ingest,
     ):
-
         main()
 
         # Verify setup_logging was called
@@ -69,7 +68,6 @@ def test_main_handles_exception():
         patch("app.main.ingest_nba_data", side_effect=Exception("Test error")),
         patch("app.main.logging") as mock_logging,
     ):
-
         mock_logger = mock_logging.getLogger.return_value
 
         try:

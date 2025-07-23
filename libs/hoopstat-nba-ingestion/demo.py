@@ -25,7 +25,7 @@ def demo_basic_usage():
 
     # 2. NBA Client Setup
     print("\n2. NBA Client Setup")
-    client = NBAClient(rate_limiter=rate_limiter)
+    NBAClient(rate_limiter=rate_limiter)
     print("   ✅ NBA client initialized with custom rate limiting")
 
     # 3. Parquet Converter Demo
@@ -62,7 +62,10 @@ def demo_basic_usage():
     print("   uploader = S3Uploader(bucket_name='your-bronze-bucket')")
     print("   📍 Upload path would be:")
     target_date = date(2024, 1, 15)
-    expected_path = f"nba-api/games/year={target_date.year}/month={target_date.month:02d}/day={target_date.day:02d}/hour=XX/"
+    expected_path = (
+        f"nba-api/games/year={target_date.year}/"
+        f"month={target_date.month:02d}/day={target_date.day:02d}/hour=XX/"
+    )
     print(f"   {expected_path}")
 
     print("\n✅ Demo completed successfully!")

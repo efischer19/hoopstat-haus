@@ -1,33 +1,23 @@
 [tool.poetry]
-name = "nba-season-backfill"
+name = "hoopstat-nba-client"
 version = "0.1.0"
-description = "Containerized NBA 2024-25 season data backfill application"
+description = "NBA API client library with rate limiting, error handling, and observability for Hoopstat Haus applications"
 authors = ["Hoopstat Haus Team"]
 readme = "README.md"
-packages = [{include = "app"}]
+packages = [{include = "hoopstat_nba_client"}]
 
 [tool.poetry.dependencies]
 python = "^3.12"
-hoopstat-observability = {path = "../../libs/hoopstat-observability", develop = true}
-hoopstat-nba-client = {path = "../../libs/hoopstat-nba-client", develop = true}
-boto3 = "^1.35.96"
-pyarrow = "^19.0.0"
-click = "^8.1.7"
-pydantic = "^2.10.8"
-python-dotenv = "^1.0.1"
+nba-api = "^1.4.1"
+tenacity = "^9.0.0"
+hoopstat-observability = {path = "../hoopstat-observability", develop = true}
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^8.4.1"
-ruff = "^0.12.4"
+ruff = "^0.12.3"
 black = "^25.1.0"
 pytest-cov = "^6.2.1"
-pytest-mock = "^3.14.0"
-
-[tool.poetry.scripts]
-backfill = "app.main:main"
-test = "app.scripts:test"
-lint = "app.scripts:lint"
-format = "app.scripts:format_code"
+pytest-mock = "^3.12.0"
 
 [build-system]
 requires = ["poetry-core"]
@@ -66,7 +56,7 @@ python_functions = ["test_*"]
 addopts = "--strict-markers --disable-warnings"
 
 [tool.coverage.run]
-source = ["app"]
+source = ["hoopstat_nba_client"]
 omit = ["tests/*"]
 
 [tool.coverage.report]

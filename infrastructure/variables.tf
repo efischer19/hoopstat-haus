@@ -31,3 +31,9 @@ variable "log_retention_days" {
   }
 }
 
+variable "github_repo" {
+  description = "GitHub repository in format owner/repo for OIDC integration"
+  type        = string
+  default     = "efischer19/hoopstat-haus"
+}
+

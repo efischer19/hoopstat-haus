@@ -1,0 +1,64 @@
+# Pre-commit hooks configuration for Hoopstat Haus
+# 
+# To use pre-commit hooks:
+# 1. Install pre-commit: pip install pre-commit
+# 2. Install hooks: pre-commit install
+# 3. (Optional) Run on all files: pre-commit run --all-files
+#
+# These hooks run the same quality checks that CI runs, catching issues early.
+
+repos:
+  # Ruff for Python formatting and linting
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.12.3
+    hooks:
+      # Format Python code
+      - id: ruff-format
+        files: ^(apps|libs)/.*\.py$
+        args: [--config=pyproject.toml]
+      
+      # Lint Python code
+      - id: ruff
+        files: ^(apps|libs)/.*\.py$
+        args: [--config=pyproject.toml, --fix]
+
+  # General file quality checks
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.5.0
+    hooks:
+      - id: trailing-whitespace
+      - id: end-of-file-fixer
+      - id: check-yaml
+        files: \.ya?ml$
+      - id: check-toml
+        files: \.toml$
+      - id: check-json
+        files: \.json$
+      - id: check-merge-conflict
+      - id: check-added-large-files
+        args: ['--maxkb=1000']
+
+  # ADR status validation (custom hook)
+  - repo: local
+    hooks:
+      - id: check-adr-status
+        name: Check ADR Status
+        entry: bash
+        args:
+          - -c
+          - |
+            if [ -d "meta/adr" ]; then
+              for adr_file in meta/adr/*.md; do
+                if [[ -f "$adr_file" && "$(basename "$adr_file")" != "TEMPLATE.md" ]]; then
+                  status=$(awk '/^---$/{flag++; next} flag==1 && /^status:/ {gsub(/^status: *"?/, ""); gsub(/"$/, ""); print; exit}' "$adr_file")
+                  if [[ "$status" == "Proposed" ]]; then
+                    echo "❌ ERROR: Found ADR with 'Proposed' status: $(basename "$adr_file")"
+                    echo "   ADRs must be accepted before committing to main branch"
+                    exit 1
+                  fi
+                fi
+              done
+            fi
+        language: system
+        files: ^meta/adr/.*\.md$
+        stages: [commit]

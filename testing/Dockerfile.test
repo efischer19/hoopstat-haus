@@ -1,0 +1,39 @@
+FROM python:3.12-slim
+
+# Install system dependencies
+RUN apt-get update && apt-get install -y \
+    curl \
+    build-essential \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install Poetry
+RUN pip install poetry
+
+# Set working directory
+WORKDIR /app
+
+# Copy poetry configuration files first for better layer caching
+COPY libs/hoopstat-e2e-testing/pyproject.toml libs/hoopstat-e2e-testing/poetry.lock* /app/libs/hoopstat-e2e-testing/
+
+# Copy dependency library configurations
+COPY libs/hoopstat-mock-data/pyproject.toml libs/hoopstat-mock-data/poetry.lock* /app/libs/hoopstat-mock-data/
+COPY libs/hoopstat-data/pyproject.toml libs/hoopstat-data/poetry.lock* /app/libs/hoopstat-data/
+
+# Copy library source code
+COPY libs/hoopstat-mock-data /app/libs/hoopstat-mock-data
+COPY libs/hoopstat-data /app/libs/hoopstat-data
+COPY libs/hoopstat-e2e-testing /app/libs/hoopstat-e2e-testing
+
+# Install dependencies
+WORKDIR /app/libs/hoopstat-e2e-testing
+RUN poetry config virtualenvs.create false && poetry install --no-dev
+
+# Set environment variables for testing
+ENV PYTHONPATH=/app
+ENV AWS_ENDPOINT_URL=http://localstack:4566
+ENV AWS_ACCESS_KEY_ID=test
+ENV AWS_SECRET_ACCESS_KEY=test
+ENV AWS_DEFAULT_REGION=us-east-1
+
+# Default command
+CMD ["poetry", "run", "pytest", "-v", "--tb=short"]

@@ -42,7 +42,12 @@ body:
     attributes:
       label: "Implementation Details & Constraints"
       description: "Provide direct instructions, constraints, or expert guidance for the AI. Point to relevant ADRs or existing code."
-      placeholder: "This must use the `nba_api` library. Adhere to ADR-004-pytest_testing. Do not make external network calls in this module."
+      placeholder: |
+        Example constraints:
+        - This must use the `nba_api` library. Adhere to ADR-004-pytest_testing.
+        - Do not make external network calls in this module.
+        - Run `./scripts/local-ci-check.sh` on any modified apps/libs before submitting.
+        - Follow the code formatting and linting standards enforced by CI.
     validations:
       required: false
 
@@ -57,6 +62,8 @@ body:
         - label: "New code is accompanied by automated tests that pass."
           required: true
         - label: "Existing tests continue to pass."
+          required: true
+        - label: "Code has been formatted and linted locally (run `./scripts/local-ci-check.sh` for your changed apps/libs)."
           required: true
         - label: "The code adheres to the principles in `meta/DEVELOPMENT_PHILOSOPHY.md`."
           required: true

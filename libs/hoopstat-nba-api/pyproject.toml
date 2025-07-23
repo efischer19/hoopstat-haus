@@ -1,29 +1,20 @@
 [tool.poetry]
-name = "bronze-ingestion"
+name = "hoopstat-nba-api"
 version = "0.1.0"
-description = "Bronze layer data ingestion pipeline for NBA statistics"
+description = "NBA API access layer for fetching basketball statistics and game data"
 authors = ["Hoopstat Haus Team"]
 readme = "README.md"
-packages = [{include = "app"}]
+packages = [{include = "hoopstat_nba_api"}]
 
 [tool.poetry.dependencies]
 python = "^3.12"
 nba-api = "^1.5.1"
-pyarrow = "^19.0.1"
-boto3 = "^1.36.9"
-hoopstat-nba-api = {path = "../../libs/hoopstat-nba-api", develop = true}
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^8.4.1"
-ruff = "^0.12.4"
+ruff = "^0.12.3"
 black = "^25.1.0"
 pytest-cov = "^6.2.1"
-
-[tool.poetry.scripts]
-start = "app.main:main"
-test = "app.scripts:test"
-lint = "app.scripts:lint"
-format = "app.scripts:format_code"
 
 [build-system]
 requires = ["poetry-core"]
@@ -62,7 +53,7 @@ python_functions = ["test_*"]
 addopts = "--strict-markers --disable-warnings"
 
 [tool.coverage.run]
-source = ["app"]
+source = ["hoopstat_nba_api"]
 omit = ["tests/*"]
 
 [tool.coverage.report]
@@ -72,4 +63,3 @@ exclude_lines = [
     "raise AssertionError",
     "raise NotImplementedError",
 ]
-

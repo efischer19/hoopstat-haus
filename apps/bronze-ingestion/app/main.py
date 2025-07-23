@@ -9,6 +9,8 @@ from the NBA API and stores it in S3 as Parquet files.
 import logging
 from datetime import UTC, datetime
 
+from hoopstat_nba_api import GamesFetcher, NBAAPIClient, PlayerStatsFetcher
+
 
 def setup_logging() -> None:
     """Configure structured logging for the application."""
@@ -41,13 +43,28 @@ def ingest_nba_data(date: str | None = None) -> None:
 
     logger.info(f"Starting NBA data ingestion for date: {date}")
 
-    # TODO: Implement actual NBA API data fetching
-    # This is a placeholder for the core ingestion logic
-    logger.info("NBA API client initialization - placeholder")
-    logger.info("Fetching games data - placeholder")
-    logger.info("Fetching player statistics - placeholder")
-    logger.info("Converting to Parquet format - placeholder")
-    logger.info("Uploading to S3 Bronze layer - placeholder")
+    # Initialize NBA API client
+    client = NBAAPIClient()
+    logger.info("NBA API client initialized successfully")
+
+    try:
+        # Fetch games data using the shared library
+        games_fetcher = GamesFetcher(client)
+        games_data = games_fetcher.fetch_games_by_date(date)
+        logger.info(f"Fetched {games_data['total_games']} games for {date}")
+
+        # Fetch player statistics using the shared library
+        player_fetcher = PlayerStatsFetcher(client)
+        player_stats = player_fetcher.fetch_player_stats(date)
+        logger.info(f"Fetched stats for {player_stats['total_players']} players")
+
+        # TODO: Convert to Parquet format and upload to S3
+        logger.info("Converting to Parquet format - placeholder")
+        logger.info("Uploading to S3 Bronze layer - placeholder")
+
+    except Exception as e:
+        logger.error(f"Failed to fetch NBA data: {str(e)}")
+        raise
 
     logger.info(f"Completed NBA data ingestion for date: {date}")
 

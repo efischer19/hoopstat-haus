@@ -49,4 +49,22 @@ Key infrastructure components:
 
 While the core infrastructure is being established, contributions are welcome in the form of ideas, feature requests, and bug reports. Please see our **[Contributing Guidelines](.github/CONTRIBUTING.md)** for more details on how you can help shape the future of Hoopstat Haus.
 
+### Quality Assurance for Contributors
+
+To maintain code quality and reduce review cycles, please run local quality checks before submitting pull requests:
+
+```bash
+# For Python projects (apps and libs)
+./scripts/local-ci-check.sh apps/your-app
+./scripts/local-ci-check.sh libs/your-lib
+```
+
+**Optional**: Set up pre-commit hooks to automatically run quality checks:
+```bash
+pip install pre-commit
+pre-commit install
+```
+
+This ensures your code passes the same checks that CI runs, catching formatting and linting issues early.
+
 ---

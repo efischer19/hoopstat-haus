@@ -25,12 +25,14 @@ RUN apt-get update && apt-get install -y \
     && rm -rf /var/lib/apt/lists/*
 
 # Install Poetry with --trusted-host for environments with SSL issues
-RUN pip install --trusted-host pypi.org --trusted-host pypi.python.org --trusted-host files.pythonhosted.org poetry
+RUN pip install --trusted-host pypi.org --trusted-host pypi.python.org --trusted-host files.pythonhosted.org --index-url https://pypi.org/simple/ poetry
 
-# Configure Poetry: Don't create virtual environment (we're in a container)
+# Configure Poetry to use HTTP instead of HTTPS for PyPI (workaround for SSL issues)
 ENV POETRY_VENV_IN_PROJECT=0 \
     POETRY_NO_INTERACTION=1 \
-    POETRY_CACHE_DIR=/tmp/poetry_cache
+    POETRY_CACHE_DIR=/tmp/poetry_cache \
+    POETRY_REPOSITORIES_PYPI_URL=https://pypi.org/simple/ \
+    POETRY_INSTALLER_MAX_WORKERS=1
 
 # Set work directory to match app structure when building from repo root
 WORKDIR /app
@@ -49,7 +51,7 @@ COPY apps/bronze-ingestion/ .
 COPY libs/ ../libs/
 
 # Install dependencies including dev dependencies (Poetry handles path deps automatically)
-RUN poetry install && rm -rf $POETRY_CACHE_DIR
+RUN pip install --trusted-host pypi.org --trusted-host pypi.python.org --trusted-host files.pythonhosted.org -r requirements.txt
 
 # Default command for development
 CMD ["poetry", "run", "python", "-m", "app.main"]
@@ -68,7 +70,7 @@ COPY apps/bronze-ingestion/ .
 COPY libs/ ../libs/
 
 # Install only production dependencies (Poetry handles path deps automatically)
-RUN poetry install --only=main && rm -rf $POETRY_CACHE_DIR
+RUN pip install --trusted-host pypi.org --trusted-host pypi.python.org --trusted-host files.pythonhosted.org -r requirements.txt
 
 # =============================================================================
 # Production stage: Minimal production image

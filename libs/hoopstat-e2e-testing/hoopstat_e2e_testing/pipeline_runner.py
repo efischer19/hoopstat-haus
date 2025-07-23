@@ -105,15 +105,13 @@ class PipelineTestRunner:
                 "ingestion_metadata": {
                     "timestamp": ingestion_timestamp,
                     "source": "mock_generator",
-                    "layer": "bronze"
+                    "layer": "bronze",
                 },
-                "teams": [team.model_dump() for team in dataset["teams"]]
+                "teams": [team.model_dump() for team in dataset["teams"]],
             }
 
             if not self.s3_utils.put_object(
-                self.buckets["bronze"],
-                "raw/teams/teams.json",
-                teams_data
+                self.buckets["bronze"], "raw/teams/teams.json", teams_data
             ):
                 logger.error("Failed to upload teams data to bronze layer")
                 return False
@@ -123,15 +121,13 @@ class PipelineTestRunner:
                 "ingestion_metadata": {
                     "timestamp": ingestion_timestamp,
                     "source": "mock_generator",
-                    "layer": "bronze"
+                    "layer": "bronze",
                 },
-                "players": [player.model_dump() for player in dataset["players"]]
+                "players": [player.model_dump() for player in dataset["players"]],
             }
 
             if not self.s3_utils.put_object(
-                self.buckets["bronze"],
-                "raw/players/players.json",
-                players_data
+                self.buckets["bronze"], "raw/players/players.json", players_data
             ):
                 logger.error("Failed to upload players data to bronze layer")
                 return False
@@ -141,21 +137,21 @@ class PipelineTestRunner:
                 "ingestion_metadata": {
                     "timestamp": ingestion_timestamp,
                     "source": "mock_generator",
-                    "layer": "bronze"
+                    "layer": "bronze",
                 },
-                "games": [game.model_dump() for game in dataset["games"]]
+                "games": [game.model_dump() for game in dataset["games"]],
             }
 
             if not self.s3_utils.put_object(
-                self.buckets["bronze"],
-                "raw/games/games.json",
-                games_data
+                self.buckets["bronze"], "raw/games/games.json", games_data
             ):
                 logger.error("Failed to upload games data to bronze layer")
                 return False
 
-            logger.info(f"Bronze layer ingestion complete: {len(dataset['teams'])} teams, "
-                       f"{len(dataset['players'])} players, {len(dataset['games'])} games")
+            logger.info(
+                f"Bronze layer ingestion complete: {len(dataset['teams'])} teams, "
+                f"{len(dataset['players'])} players, {len(dataset['games'])} games"
+            )
             return True
 
         except Exception as e:
@@ -272,8 +268,8 @@ class PipelineTestRunner:
             team_stats = []
             for _, team in teams_df.iterrows():
                 team_games = games_df[
-                    (games_df["home_team_id"] == team["id"]) |
-                    (games_df["away_team_id"] == team["id"])
+                    (games_df["home_team_id"] == team["id"])
+                    | (games_df["away_team_id"] == team["id"])
                 ]
 
                 wins = 0
@@ -291,34 +287,38 @@ class PipelineTestRunner:
                 wins_pct = wins / len(team_games) if len(team_games) > 0 else 0
                 avg_ppg = total_points / len(team_games) if len(team_games) > 0 else 0
 
-                team_stats.append({
-                    "team_id": team["id"],
-                    "team_name": team["full_name"],
-                    "games_played": len(team_games),
-                    "wins": wins,
-                    "losses": len(team_games) - wins,
-                    "win_percentage": wins_pct,
-                    "total_points": total_points,
-                    "avg_points_per_game": avg_ppg,
-                    "created_at": aggregation_timestamp
-                })
+                team_stats.append(
+                    {
+                        "team_id": team["id"],
+                        "team_name": team["full_name"],
+                        "games_played": len(team_games),
+                        "wins": wins,
+                        "losses": len(team_games) - wins,
+                        "win_percentage": wins_pct,
+                        "total_points": total_points,
+                        "avg_points_per_game": avg_ppg,
+                        "created_at": aggregation_timestamp,
+                    }
+                )
 
             team_stats_df = pd.DataFrame(team_stats)
 
             # Calculate player statistics
             player_stats = []
             for _, player in players_df.iterrows():
-                player_stats.append({
-                    "player_id": player["id"],
-                    "player_name": player["full_name"],
-                    "team_id": player["team_id"],
-                    "position": player["position"],
-                    "height_cm": player["height_inches"] * 2.54,
-                    "weight_kg": player["weight_pounds"] * 0.453592,
-                    "bmi": player["bmi"],
-                    "jersey_number": player["jersey_number"],
-                    "created_at": aggregation_timestamp
-                })
+                player_stats.append(
+                    {
+                        "player_id": player["id"],
+                        "player_name": player["full_name"],
+                        "team_id": player["team_id"],
+                        "position": player["position"],
+                        "height_cm": player["height_inches"] * 2.54,
+                        "weight_kg": player["weight_pounds"] * 0.453592,
+                        "bmi": player["bmi"],
+                        "jersey_number": player["jersey_number"],
+                        "created_at": aggregation_timestamp,
+                    }
+                )
 
             player_stats_df = pd.DataFrame(player_stats)
 
@@ -329,7 +329,7 @@ class PipelineTestRunner:
                 "total_games": len(games_df),
                 "avg_points_per_game": games_df["total_score"].mean(),
                 "highest_scoring_game": games_df["total_score"].max(),
-                "created_at": aggregation_timestamp
+                "created_at": aggregation_timestamp,
             }
 
             # Store aggregated data in gold layer
@@ -420,13 +420,15 @@ class PipelineTestRunner:
             bronze_objects = [
                 "raw/teams/teams.json",
                 "raw/players/players.json",
-                "raw/games/games.json"
+                "raw/games/games.json",
             ]
 
             bronze_valid = True
             bronze_details = {}
             for obj_key in bronze_objects:
-                obj_exists = bool(self.s3_utils.get_object(self.buckets["bronze"], obj_key, "json"))
+                obj_exists = bool(
+                    self.s3_utils.get_object(self.buckets["bronze"], obj_key, "json")
+                )
                 bronze_details[obj_key] = obj_exists
                 if not obj_exists:
                     bronze_valid = False
@@ -438,13 +440,18 @@ class PipelineTestRunner:
             silver_objects = [
                 "cleaned/teams/teams.parquet",
                 "cleaned/players/players.parquet",
-                "cleaned/games/games.parquet"
+                "cleaned/games/games.parquet",
             ]
 
             silver_valid = True
             silver_details = {}
             for obj_key in silver_objects:
-                obj_exists = self.s3_utils.get_object(self.buckets["silver"], obj_key, "dataframe") is not None
+                obj_exists = (
+                    self.s3_utils.get_object(
+                        self.buckets["silver"], obj_key, "dataframe"
+                    )
+                    is not None
+                )
                 silver_details[obj_key] = obj_exists
                 if not obj_exists:
                     silver_valid = False
@@ -456,16 +463,23 @@ class PipelineTestRunner:
             gold_objects = [
                 "metrics/team_stats.parquet",
                 "metrics/player_stats.parquet",
-                "metrics/league_summary.json"
+                "metrics/league_summary.json",
             ]
 
             gold_valid = True
             gold_details = {}
             for obj_key in gold_objects:
                 if obj_key.endswith(".json"):
-                    obj_exists = bool(self.s3_utils.get_object(self.buckets["gold"], obj_key, "json"))
+                    obj_exists = bool(
+                        self.s3_utils.get_object(self.buckets["gold"], obj_key, "json")
+                    )
                 else:
-                    obj_exists = self.s3_utils.get_object(self.buckets["gold"], obj_key, "dataframe") is not None
+                    obj_exists = (
+                        self.s3_utils.get_object(
+                            self.buckets["gold"], obj_key, "dataframe"
+                        )
+                        is not None
+                    )
                 gold_details[obj_key] = obj_exists
                 if not obj_exists:
                     gold_valid = False

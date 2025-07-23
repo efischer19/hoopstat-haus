@@ -85,11 +85,13 @@ class TestS3TestUtils:
         """Test putting and getting DataFrame objects."""
         s3_utils.create_bucket(test_bucket_name)
 
-        test_data = pd.DataFrame({
-            "name": ["Alice", "Bob", "Charlie"],
-            "age": [25, 30, 35],
-            "salary": [50000, 60000, 70000]
-        })
+        test_data = pd.DataFrame(
+            {
+                "name": ["Alice", "Bob", "Charlie"],
+                "age": [25, 30, 35],
+                "salary": [50000, 60000, 70000],
+            }
+        )
         key = "test/dataframe_object.parquet"
 
         # Put object

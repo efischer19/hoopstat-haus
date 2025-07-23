@@ -30,7 +30,9 @@ class TestPipelineTestRunner:
         assert len(pipeline_runner.buckets) == 3
         for layer in ["bronze", "silver", "gold"]:
             assert layer in pipeline_runner.buckets
-            assert pipeline_runner.s3_utils.bucket_exists(pipeline_runner.buckets[layer])
+            assert pipeline_runner.s3_utils.bucket_exists(
+                pipeline_runner.buckets[layer]
+            )
 
         # Clean up
         pipeline_runner.cleanup_environment()
@@ -64,7 +66,7 @@ class TestPipelineTestRunner:
         expected_objects = [
             "raw/teams/teams.json",
             "raw/players/players.json",
-            "raw/games/games.json"
+            "raw/games/games.json",
         ]
 
         for obj_key in expected_objects:
@@ -74,10 +76,14 @@ class TestPipelineTestRunner:
             assert data["ingestion_metadata"]["layer"] == "bronze"
 
         # Verify data content
-        teams_data = pipeline_runner.s3_utils.get_object(bronze_bucket, "raw/teams/teams.json", "json")
+        teams_data = pipeline_runner.s3_utils.get_object(
+            bronze_bucket, "raw/teams/teams.json", "json"
+        )
         assert len(teams_data["teams"]) == 2
 
-        players_data = pipeline_runner.s3_utils.get_object(bronze_bucket, "raw/players/players.json", "json")
+        players_data = pipeline_runner.s3_utils.get_object(
+            bronze_bucket, "raw/players/players.json", "json"
+        )
         assert len(players_data["players"]) == 6  # 2 teams * 3 players each
 
         # Clean up
@@ -97,20 +103,26 @@ class TestPipelineTestRunner:
         expected_objects = [
             "cleaned/teams/teams.parquet",
             "cleaned/players/players.parquet",
-            "cleaned/games/games.parquet"
+            "cleaned/games/games.parquet",
         ]
 
         for obj_key in expected_objects:
-            df = pipeline_runner.s3_utils.get_object(silver_bucket, obj_key, "dataframe")
+            df = pipeline_runner.s3_utils.get_object(
+                silver_bucket, obj_key, "dataframe"
+            )
             assert df is not None
             assert len(df) > 0
             assert "created_at" in df.columns
 
         # Verify transformations
-        teams_df = pipeline_runner.s3_utils.get_object(silver_bucket, "cleaned/teams/teams.parquet", "dataframe")
+        teams_df = pipeline_runner.s3_utils.get_object(
+            silver_bucket, "cleaned/teams/teams.parquet", "dataframe"
+        )
         assert "full_name" in teams_df.columns
 
-        players_df = pipeline_runner.s3_utils.get_object(silver_bucket, "cleaned/players/players.parquet", "dataframe")
+        players_df = pipeline_runner.s3_utils.get_object(
+            silver_bucket, "cleaned/players/players.parquet", "dataframe"
+        )
         assert "full_name" in players_df.columns
         assert "bmi" in players_df.columns
 
@@ -131,18 +143,27 @@ class TestPipelineTestRunner:
         gold_bucket = pipeline_runner.buckets["gold"]
 
         # Check team stats
-        team_stats_df = pipeline_runner.s3_utils.get_object(gold_bucket, "metrics/team_stats.parquet", "dataframe")
+        team_stats_df = pipeline_runner.s3_utils.get_object(
+            gold_bucket, "metrics/team_stats.parquet", "dataframe"
+        )
         assert team_stats_df is not None
         assert len(team_stats_df) == 2  # 2 teams
-        assert all(col in team_stats_df.columns for col in ["team_name", "wins", "losses", "win_percentage"])
+        assert all(
+            col in team_stats_df.columns
+            for col in ["team_name", "wins", "losses", "win_percentage"]
+        )
 
         # Check player stats
-        player_stats_df = pipeline_runner.s3_utils.get_object(gold_bucket, "metrics/player_stats.parquet", "dataframe")
+        player_stats_df = pipeline_runner.s3_utils.get_object(
+            gold_bucket, "metrics/player_stats.parquet", "dataframe"
+        )
         assert player_stats_df is not None
         assert len(player_stats_df) == 6  # 6 players
 
         # Check league summary
-        league_summary = pipeline_runner.s3_utils.get_object(gold_bucket, "metrics/league_summary.json", "json")
+        league_summary = pipeline_runner.s3_utils.get_object(
+            gold_bucket, "metrics/league_summary.json", "json"
+        )
         assert league_summary is not None
         assert "total_teams" in league_summary
         assert league_summary["total_teams"] == 2

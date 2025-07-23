@@ -32,7 +32,7 @@ class S3TestUtils:
         Args:
             endpoint_url: Localstack endpoint URL (defaults to http://localhost:4566)
             aws_access_key_id: AWS access key for testing
-            aws_secret_access_key: AWS secret access key for testing  
+            aws_secret_access_key: AWS secret access key for testing
             region_name: AWS region name
         """
         self.endpoint_url = endpoint_url or "http://localhost:4566"
@@ -149,6 +149,7 @@ class S3TestUtils:
             elif isinstance(data, pd.DataFrame):
                 # For DataFrames, save as Parquet
                 import io
+
                 buffer = io.BytesIO()
                 data.to_parquet(buffer, index=False)
                 body = buffer.getvalue()
@@ -199,6 +200,7 @@ class S3TestUtils:
                 return json.loads(body.decode("utf-8"))
             elif return_type == "dataframe":
                 import io
+
                 return pd.read_parquet(io.BytesIO(body))
             else:
                 raise ValueError(f"Unsupported return_type: {return_type}")
@@ -226,9 +228,7 @@ class S3TestUtils:
             logger.error(f"Error deleting object s3://{bucket_name}/{key}: {e}")
             return False
 
-    def list_objects(
-        self, bucket_name: str, prefix: str = ""
-    ) -> list[dict[str, Any]]:
+    def list_objects(self, bucket_name: str, prefix: str = "") -> list[dict[str, Any]]:
         """
         List objects in a bucket.
 
@@ -240,9 +240,7 @@ class S3TestUtils:
             List of object information dictionaries
         """
         try:
-            response = self.s3_client.list_objects_v2(
-                Bucket=bucket_name, Prefix=prefix
-            )
+            response = self.s3_client.list_objects_v2(Bucket=bucket_name, Prefix=prefix)
             return response.get("Contents", [])
         except Exception as e:
             logger.error(f"Error listing objects in s3://{bucket_name}: {e}")
@@ -265,7 +263,9 @@ class S3TestUtils:
         except Exception as e:
             logger.error(f"Error cleaning up test buckets: {e}")
 
-    def setup_medallion_buckets(self, project_name: str = "test-hoopstat") -> dict[str, str]:
+    def setup_medallion_buckets(
+        self, project_name: str = "test-hoopstat"
+    ) -> dict[str, str]:
         """
         Set up bronze, silver, and gold buckets for medallion architecture testing.
 

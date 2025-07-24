@@ -80,3 +80,37 @@ class TestLambdaConfig:
         assert config.chunk_size == 5000
         assert config.min_expected_players == 10
         assert config.max_null_percentage == 0.05
+
+    def test_season_validation_configuration_defaults(self, monkeypatch):
+        """Test default values for season validation settings."""
+        monkeypatch.setenv("SILVER_BUCKET", "test-silver-bucket")
+        monkeypatch.setenv("GOLD_BUCKET", "test-gold-bucket")
+
+        config = LambdaConfig.from_environment()
+
+        assert config.enable_season_totals_validation is True  # default
+        assert config.season_totals_tolerance == 0.01  # default
+
+    def test_season_validation_configuration_from_env(self, monkeypatch):
+        """Test season validation settings from environment variables."""
+        monkeypatch.setenv("SILVER_BUCKET", "test-silver-bucket")
+        monkeypatch.setenv("GOLD_BUCKET", "test-gold-bucket")
+        monkeypatch.setenv("ENABLE_SEASON_TOTALS_VALIDATION", "false")
+        monkeypatch.setenv("SEASON_TOTALS_TOLERANCE", "0.05")
+
+        config = LambdaConfig.from_environment()
+
+        assert config.enable_season_totals_validation is False
+        assert config.season_totals_tolerance == 0.05
+
+    def test_configuration_with_season_validation_values(self):
+        """Test configuration with explicit season validation values."""
+        config = LambdaConfig(
+            silver_bucket="my-silver",
+            gold_bucket="my-gold",
+            enable_season_totals_validation=False,
+            season_totals_tolerance=0.02,
+        )
+
+        assert config.enable_season_totals_validation is False
+        assert config.season_totals_tolerance == 0.02

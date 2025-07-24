@@ -70,6 +70,10 @@ class PlayerStatsAggregator:
         validate_output_data(daily_stats, self.config)
         validate_output_data(updated_season_stats, self.config)
 
+        # Validate against silver layer season totals if enabled
+        if self.config.enable_season_totals_validation:
+            self._validate_against_silver_season_totals(updated_season_stats, season)
+
         # Write Gold layer files
         files_written = self._write_gold_layer_files(
             daily_stats, updated_season_stats, season
@@ -385,3 +389,132 @@ class PlayerStatsAggregator:
 
         logger.info(f"Wrote {files_written} Gold layer files to S3")
         return files_written
+
+    def _validate_against_silver_season_totals(
+        self, calculated_season_stats: pd.DataFrame, season: str
+    ) -> None:
+        """
+        Validate our calculated season stats against silver layer season totals.
+
+        Args:
+            calculated_season_stats: Our calculated season statistics
+            season: Season string (e.g., "2023-24")
+
+        Logs warnings for any discrepancies found.
+        """
+        if not self.config.enable_season_totals_validation:
+            logger.debug("Season totals validation is disabled")
+            return
+
+        logger.info(f"Validating calculated season stats against silver layer totals for season {season}")
+
+        # Look for silver layer season totals files
+        silver_season_prefix = f"silver/player_season_stats/season={season}/"
+        
+        try:
+            # List objects in the silver season stats directory
+            silver_objects = self.s3_client.list_objects(
+                self.config.silver_bucket, silver_season_prefix
+            )
+            
+            if not silver_objects:
+                logger.info(f"No silver layer season totals found for season {season}")
+                return
+
+            # Read silver season stats
+            silver_season_stats = []
+            for obj_key in silver_objects:
+                if obj_key.endswith('.parquet'):
+                    try:
+                        df = self.s3_client.read_parquet(self.config.silver_bucket, obj_key)
+                        silver_season_stats.append(df)
+                    except Exception as e:
+                        logger.warning(f"Could not read silver season stats file {obj_key}: {e}")
+
+            if not silver_season_stats:
+                logger.info(f"No valid silver season stats files found for season {season}")
+                return
+
+            # Combine all silver season stats
+            silver_df = pd.concat(silver_season_stats, ignore_index=True)
+            logger.info(f"Found silver season stats for {len(silver_df)} players")
+
+            # Compare stats for players that exist in both datasets
+            discrepancies = []
+            
+            for _, calculated_row in calculated_season_stats.iterrows():
+                player_id = calculated_row["player_id"]
+                
+                # Find corresponding silver row
+                silver_rows = silver_df[silver_df["player_id"] == player_id]
+                
+                if len(silver_rows) == 0:
+                    logger.warning(f"Player {player_id} not found in silver season stats")
+                    continue
+                
+                if len(silver_rows) > 1:
+                    logger.warning(f"Multiple records for player {player_id} in silver season stats")
+                    continue
+                
+                silver_row = silver_rows.iloc[0]
+                
+                # Compare key statistics
+                stats_to_compare = [
+                    "games_played", "points", "rebounds", "assists",
+                    "field_goals_made", "field_goals_attempted",
+                    "three_pointers_made", "three_pointers_attempted",
+                    "free_throws_made", "free_throws_attempted",
+                    "steals", "blocks", "turnovers", "minutes_played"
+                ]
+                
+                player_discrepancies = []
+                
+                for stat in stats_to_compare:
+                    if stat not in calculated_row.index or stat not in silver_row.index:
+                        continue
+                    
+                    calculated_value = calculated_row[stat]
+                    silver_value = silver_row[stat]
+                    
+                    # Skip if either value is null/nan
+                    if pd.isna(calculated_value) or pd.isna(silver_value):
+                        continue
+                    
+                    # Calculate relative difference
+                    if silver_value != 0:
+                        relative_diff = abs(calculated_value - silver_value) / abs(silver_value)
+                    else:
+                        # For zero values, check if calculated is also zero
+                        relative_diff = 1.0 if calculated_value != 0 else 0.0
+                    
+                    if relative_diff > self.config.season_totals_tolerance:
+                        player_discrepancies.append({
+                            "stat": stat,
+                            "calculated": calculated_value,
+                            "silver": silver_value,
+                            "relative_diff": relative_diff
+                        })
+                
+                if player_discrepancies:
+                    discrepancies.append({
+                        "player_id": player_id,
+                        "discrepancies": player_discrepancies
+                    })
+
+            # Log discrepancies
+            if discrepancies:
+                logger.warning(f"Found season stats discrepancies for {len(discrepancies)} players:")
+                for player_disc in discrepancies:
+                    player_id = player_disc["player_id"]
+                    logger.warning(f"Player {player_id}:")
+                    for disc in player_disc["discrepancies"]:
+                        logger.warning(
+                            f"  {disc['stat']}: calculated={disc['calculated']}, "
+                            f"silver={disc['silver']}, diff={disc['relative_diff']:.1%}"
+                        )
+            else:
+                logger.info(f"Season stats validation passed - no significant discrepancies found")
+
+        except Exception as e:
+            logger.warning(f"Could not validate against silver season totals: {e}")
+            # Don't fail the entire process for validation issues

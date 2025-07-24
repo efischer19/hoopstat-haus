@@ -21,6 +21,8 @@ The Lambda function requires the following environment variables:
 | `CHUNK_SIZE` | No | 10000 | Processing chunk size |
 | `MIN_EXPECTED_PLAYERS` | No | 1 | Minimum players expected for validation |
 | `MAX_NULL_PERCENTAGE` | No | 0.1 | Maximum null percentage allowed (0.1 = 10%) |
+| `ENABLE_SEASON_TOTALS_VALIDATION` | No | true | Enable validation against Silver season totals |
+| `SEASON_TOTALS_TOLERANCE` | No | 0.01 | Tolerance for discrepancies (0.01 = 1%) |
 
 ## IAM Permissions
 

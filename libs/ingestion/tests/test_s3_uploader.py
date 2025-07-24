@@ -7,9 +7,8 @@ from unittest.mock import Mock, patch
 
 import boto3
 import pytest
-from moto import mock_aws
-
 from hoopstat_nba_ingestion.s3_uploader import S3Uploader, S3UploadError
+from moto import mock_aws
 
 
 class TestS3Uploader:

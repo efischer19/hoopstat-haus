@@ -6,7 +6,6 @@ from datetime import date
 from unittest.mock import Mock, patch
 
 import pytest
-
 from hoopstat_nba_ingestion.nba_client import NBAAPIError, NBAClient
 from hoopstat_nba_ingestion.rate_limiter import RateLimiter
 

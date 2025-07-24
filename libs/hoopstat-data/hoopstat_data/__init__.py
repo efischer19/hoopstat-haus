@@ -2,10 +2,27 @@
 Hoopstat Data Processing Utilities
 
 A shared library for basketball statistics data processing, validation,
-transformation, and quality checking.
+transformation, quality checking, and Gold layer partitioning.
 """
 
-from .models import GameStats, PlayerStats, TeamStats
+from .models import (
+    GameStats,
+    GoldPlayerDailyStats,
+    GoldPlayerSeasonSummary,
+    GoldTeamDailyStats,
+    PlayerStats,
+    TeamStats,
+)
+from .partitioning import (
+    FileSizeOptimizer,
+    PartitionHealthChecker,
+    PartitionType,
+    QueryPatternOptimizer,
+    S3PartitionKey,
+    create_player_daily_partition,
+    create_player_season_partition,
+    create_team_daily_partition,
+)
 from .quality import check_data_completeness, detect_outliers
 from .rules_engine import DataCleaningRulesEngine, TransformationResult
 from .transforms import (
@@ -26,10 +43,14 @@ from .validation import (
 __version__ = "0.1.0"
 
 __all__ = [
-    # Models
+    # Silver Layer Models
     "PlayerStats",
     "TeamStats",
     "GameStats",
+    # Gold Layer Models
+    "GoldPlayerDailyStats",
+    "GoldPlayerSeasonSummary",
+    "GoldTeamDailyStats",
     # Validation
     "validate_player_stats",
     "validate_team_stats",
@@ -48,4 +69,13 @@ __all__ = [
     # Rules Engine
     "DataCleaningRulesEngine",
     "TransformationResult",
+    # Partitioning
+    "S3PartitionKey",
+    "PartitionType",
+    "FileSizeOptimizer",
+    "QueryPatternOptimizer",
+    "PartitionHealthChecker",
+    "create_player_daily_partition",
+    "create_player_season_partition",
+    "create_team_daily_partition",
 ]

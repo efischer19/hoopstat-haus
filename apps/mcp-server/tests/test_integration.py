@@ -64,7 +64,7 @@ def test_server_error_handling():
 
     # Basic test that the server can be created without errors
     assert app is not None
-    
+
     # Test that the server has both synchronous and asynchronous run methods
     assert hasattr(server, "run")
     assert hasattr(server, "run_stdio")

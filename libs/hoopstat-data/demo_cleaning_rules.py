@@ -94,7 +94,10 @@ def demo_batch_processing():
         {
             "player_id": f"player_{i}",
             "team_name": ["lakers", "warriors", "celtics", "bulls", "heat"][i % 5],
-            "position": ["point guard", "shooting guard", "center", "power forward", "small forward"][i % 5],
+            "position": [
+                "point guard", "shooting guard", "center",
+                "power forward", "small forward"
+            ][i % 5],
             "points": str(20 + i),
             "rebounds": 5 + (i % 3),
             "assists": 3 + (i % 4),
@@ -150,7 +153,10 @@ def demo_rules_engine():
     test_dates = ["2023-12-25", "12/25/2023", "2023-12-25 15:30:00", "invalid"]
     for date_str in test_dates:
         result = engine.standardize_datetime(date_str)
-        print(f"  '{date_str}' -> '{result.transformed_value}' (success: {result.success})")
+        print(
+            f"  '{date_str}' -> '{result.transformed_value}' "
+            f"(success: {result.success})"
+        )
 
     # Process a batch and show transformation summary
     sample_records = [
@@ -177,10 +183,10 @@ def demo_rules_engine():
     print(f"Applied {len(transformations)} transformations")
 
     summary = engine.get_transformation_summary()
-    print(f"\nTransformation Summary:")
+    print("\nTransformation Summary:")
     print(f"  Total transformations: {summary['total_transformations']}")
     print(f"  Success rate: {summary['success_rate']:.2%}")
-    print(f"  Transformations by type:")
+    print("  Transformations by type:")
     for t_type, stats in summary["transformations_by_type"].items():
         print(f"    {t_type}: {stats['successful']}/{stats['total']} successful")
 

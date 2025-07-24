@@ -2,28 +2,46 @@
 Data transformation utilities for basketball statistics.
 
 Provides common transformations, calculations, and normalization functions.
+Enhanced with configurable rules engine integration.
 """
 
 import re
 from typing import Any
 
+from .rules_engine import DataCleaningRulesEngine
 
-def normalize_team_name(team_name: str) -> str:
+
+def normalize_team_name(team_name: str, use_rules_engine: bool = True) -> str:
     """
     Normalize team names to a standard format.
 
     Args:
         team_name: Raw team name
+        use_rules_engine: Whether to use the configurable rules engine
 
     Returns:
         Normalized team name
 
     Example:
         >>> normalize_team_name("lakers")
-        "Lakers"
+        "Los Angeles Lakers"
         >>> normalize_team_name("LA Lakers")
-        "Lakers"
+        "Los Angeles Lakers"
     """
+    if use_rules_engine:
+        try:
+            engine = DataCleaningRulesEngine()
+            result = engine.standardize_team_name(team_name)
+            if result.success:
+                return result.transformed_value
+            else:
+                # If rules engine fails, fall back to original logic
+                pass
+        except Exception:
+            # Fallback to original logic if rules engine fails
+            pass
+
+    # Original logic as fallback
     if not team_name or not isinstance(team_name, str):
         return ""
 
@@ -93,12 +111,13 @@ def calculate_efficiency_rating(stats: dict[str, Any]) -> float:
         return 0.0
 
 
-def standardize_position(position: str) -> str:
+def standardize_position(position: str, use_rules_engine: bool = True) -> str:
     """
     Standardize player position to common abbreviations.
 
     Args:
         position: Raw position string
+        use_rules_engine: Whether to use the configurable rules engine
 
     Returns:
         Standardized position abbreviation
@@ -109,6 +128,16 @@ def standardize_position(position: str) -> str:
         >>> standardize_position("center")
         "C"
     """
+    if use_rules_engine:
+        try:
+            engine = DataCleaningRulesEngine()
+            result = engine.standardize_position(position)
+            return result.transformed_value if result.success else position
+        except Exception:
+            # Fallback to original logic if rules engine fails
+            pass
+
+    # Original logic as fallback
     if not position or not isinstance(position, str):
         return "UNKNOWN"
 
@@ -223,3 +252,137 @@ def normalize_stat_per_game(stat_value: float, games_played: int) -> float | Non
         return None
 
     return round(stat_value / games_played, 1)
+
+
+def clean_and_transform_record(
+    record: dict[str, Any],
+    entity_type: str = "player_stats",
+    use_rules_engine: bool = True,
+) -> dict[str, Any]:
+    """
+    Apply comprehensive cleaning and transformation to a single record.
+
+    Args:
+        record: Dictionary containing raw data
+        entity_type: Type of entity (player_stats, team_stats, game_stats)
+        use_rules_engine: Whether to use the configurable rules engine
+
+    Returns:
+        Cleaned and transformed record
+
+    Example:
+        >>> record = {"team_name": "lakers", "points": "25", "position": "point guard"}
+        >>> clean_and_transform_record(record)
+        {"team_name": "Los Angeles Lakers", "points": 25, "position": "PG"}
+    """
+    if use_rules_engine:
+        try:
+            engine = DataCleaningRulesEngine()
+            cleaned_records, _ = engine.process_batch([record], entity_type)
+            return cleaned_records[0] if cleaned_records else record
+        except Exception:
+            # Fallback to basic cleaning if rules engine fails
+            pass
+
+    # Basic fallback cleaning
+    cleaned = record.copy()
+
+    # Apply basic transformations
+    if "team_name" in cleaned:
+        cleaned["team_name"] = normalize_team_name(cleaned["team_name"], False)
+
+    if "position" in cleaned:
+        cleaned["position"] = standardize_position(cleaned["position"], False)
+
+    # Basic numeric cleaning
+    for field in ["points", "rebounds", "assists", "steals", "blocks", "turnovers"]:
+        if field in cleaned and isinstance(cleaned[field], str):
+            try:
+                cleaned[field] = int(cleaned[field])
+            except (ValueError, TypeError):
+                pass
+
+    return cleaned
+
+
+def clean_batch(
+    records: list[dict[str, Any]],
+    entity_type: str = "player_stats",
+    batch_size: int = 1000,
+) -> list[dict[str, Any]]:
+    """
+    Clean a batch of records efficiently.
+
+    Args:
+        records: List of records to clean
+        entity_type: Type of entity (player_stats, team_stats, game_stats)
+        batch_size: Number of records to process in each batch
+
+    Returns:
+        List of cleaned records
+
+    Example:
+        >>> records = [{"team_name": "lakers"}, {"team_name": "warriors"}]
+        >>> clean_batch(records)
+        [{"team_name": "Los Angeles Lakers"}, {"team_name": "Golden State Warriors"}]
+    """
+    try:
+        engine = DataCleaningRulesEngine()
+
+        # Process in batches for performance
+        all_cleaned = []
+        for i in range(0, len(records), batch_size):
+            batch = records[i : i + batch_size]
+            cleaned_batch, _ = engine.process_batch(batch, entity_type)
+            all_cleaned.extend(cleaned_batch)
+
+        return all_cleaned
+
+    except Exception:
+        # Fallback to individual record cleaning
+        return [
+            clean_and_transform_record(record, entity_type, False) for record in records
+        ]
+
+
+def validate_and_standardize_season(season_str: str) -> str | None:
+    """
+    Validate and standardize NBA season format.
+
+    Args:
+        season_str: Raw season string
+
+    Returns:
+        Standardized season string (e.g., "2023-24") or None if invalid
+
+    Example:
+        >>> validate_and_standardize_season("2023-2024")
+        "2023-24"
+        >>> validate_and_standardize_season("23-24")
+        "2023-24"
+    """
+    if not season_str or not isinstance(season_str, str):
+        return None
+
+    season_str = season_str.strip()
+
+    # Handle full year format: "2023-2024" -> "2023-24"
+    if re.match(r"^\d{4}-\d{4}$", season_str):
+        start_year, end_year = season_str.split("-")
+        if int(end_year) == int(start_year) + 1:
+            return f"{start_year}-{end_year[-2:]}"
+
+    # Handle short year format: "23-24" -> "2023-24"
+    if re.match(r"^\d{2}-\d{2}$", season_str):
+        start_year, end_year = season_str.split("-")
+        # Assume 21st century for NBA seasons
+        full_start = f"20{start_year}"
+        full_end = f"20{end_year}"
+        if int(full_end) == int(full_start) + 1:
+            return f"{full_start}-{end_year}"
+
+    # Already in correct format
+    if re.match(r"^\d{4}-\d{2}$", season_str):
+        return season_str
+
+    return None

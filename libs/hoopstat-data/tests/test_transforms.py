@@ -3,10 +3,13 @@
 from hoopstat_data.transforms import (
     calculate_efficiency_rating,
     calculate_shooting_percentage,
+    clean_and_transform_record,
+    clean_batch,
     convert_minutes_to_decimal,
     normalize_stat_per_game,
     normalize_team_name,
     standardize_position,
+    validate_and_standardize_season,
 )
 
 
@@ -15,29 +18,51 @@ class TestNormalizeTeamName:
 
     def test_basic_normalization(self):
         """Test basic team name normalization."""
-        assert normalize_team_name("lakers") == "Lakers"
-        assert normalize_team_name("LAKERS") == "Lakers"
-        assert normalize_team_name("  lakers  ") == "Lakers"
+        # With rules engine (default) - returns full official names
+        assert normalize_team_name("lakers") == "Los Angeles Lakers"
+        assert normalize_team_name("LAKERS") == "Los Angeles Lakers"
+        assert normalize_team_name("  lakers  ") == "Los Angeles Lakers"
+
+        # Without rules engine - returns simple form
+        assert normalize_team_name("lakers", use_rules_engine=False) == "Lakers"
 
     def test_common_team_mappings(self):
         """Test normalization of common team name variations."""
-        assert normalize_team_name("LA Lakers") == "Lakers"
-        assert normalize_team_name("Los Angeles Lakers") == "Lakers"
-        assert normalize_team_name("L.A. Lakers") == "Lakers"
-        assert normalize_team_name("Golden State Warriors") == "Warriors"
-        assert normalize_team_name("Boston Celtics") == "Celtics"
+        # With rules engine
+        assert normalize_team_name("LA Lakers") == "Los Angeles Lakers"
+        assert normalize_team_name("Los Angeles Lakers") == "Los Angeles Lakers"
+        assert normalize_team_name("L.A. Lakers") == "Los Angeles Lakers"
+        assert normalize_team_name("Golden State Warriors") == "Golden State Warriors"
+        assert normalize_team_name("Boston Celtics") == "Boston Celtics"
+
+        # Test fallback without rules engine
+        assert normalize_team_name("LA Lakers", use_rules_engine=False) == "Lakers"
 
     def test_multi_word_teams(self):
         """Test normalization of multi-word team names."""
-        assert normalize_team_name("trail blazers") == "Trail Blazers"
+        # With rules engine - returns full official names
+        assert normalize_team_name("trail blazers") == "Portland Trail Blazers"
         assert normalize_team_name("new york knicks") == "New York Knicks"
+
+        # Without rules engine - uses title case
+        assert (
+            normalize_team_name("trail blazers", use_rules_engine=False)
+            == "Trail Blazers"
+        )
 
     def test_edge_cases(self):
         """Test edge cases for team name normalization."""
+        # With rules engine, empty/None should fall back to original logic
         assert normalize_team_name("") == ""
-        assert normalize_team_name(None) == ""
+        assert normalize_team_name(None) == ""  # Should fall back and return ""
         assert normalize_team_name("   ") == ""
-        assert normalize_team_name(123) == ""  # Non-string input
+
+        # Test fallback behavior
+        assert normalize_team_name("", use_rules_engine=False) == ""
+        assert normalize_team_name(None, use_rules_engine=False) == ""
+        assert (
+            normalize_team_name(123, use_rules_engine=False) == ""
+        )  # Non-string input
 
 
 class TestCalculateEfficiencyRating:
@@ -199,3 +224,110 @@ class TestNormalizeStatPerGame:
         """Test proper rounding of results."""
         assert normalize_stat_per_game(100, 3) == 33.3
         assert normalize_stat_per_game(200, 7) == 28.6
+
+
+class TestCleanAndTransformRecord:
+    """Test cases for clean_and_transform_record function."""
+
+    def test_basic_record_cleaning(self):
+        """Test basic record cleaning and transformation."""
+        record = {
+            "player_id": "123",
+            "team_name": "lakers",
+            "position": "point guard",
+            "points": "25",
+            "rebounds": 10,
+            "assists": 5,
+        }
+
+        cleaned = clean_and_transform_record(record, "player_stats")
+
+        assert cleaned["player_id"] == "123"
+        assert cleaned["team_name"] == "Los Angeles Lakers"
+        assert cleaned["position"] == "PG"
+        assert cleaned["points"] == 25
+        assert cleaned["rebounds"] == 10
+        assert cleaned["assists"] == 5
+
+    def test_fallback_cleaning(self):
+        """Test fallback cleaning without rules engine."""
+        record = {"team_name": "warriors", "position": "center", "points": "30"}
+
+        cleaned = clean_and_transform_record(
+            record, "player_stats", use_rules_engine=False
+        )
+
+        # Should still apply basic transformations
+        assert "Warriors" in cleaned["team_name"]
+        assert cleaned["position"] == "C"
+        assert cleaned["points"] == 30
+
+
+class TestCleanBatch:
+    """Test cases for clean_batch function."""
+
+    def test_batch_cleaning(self):
+        """Test batch cleaning of multiple records."""
+        records = [
+            {"team_name": "lakers", "points": "25"},
+            {"team_name": "warriors", "points": "30"},
+            {"team_name": "celtics", "points": "28"},
+        ]
+
+        cleaned_records = clean_batch(records, "player_stats")
+
+        assert len(cleaned_records) == 3
+        assert cleaned_records[0]["team_name"] == "Los Angeles Lakers"
+        assert cleaned_records[1]["team_name"] == "Golden State Warriors"
+        assert cleaned_records[2]["team_name"] == "Boston Celtics"
+
+        # Check numeric conversion
+        assert all(
+            isinstance(record["points"], int | float) for record in cleaned_records
+        )
+
+    def test_batch_cleaning_with_batch_size(self):
+        """Test batch cleaning with specific batch size."""
+        records = [{"team_name": f"team_{i}", "points": str(i * 10)} for i in range(5)]
+
+        cleaned_records = clean_batch(records, "player_stats", batch_size=2)
+
+        assert len(cleaned_records) == 5
+        # All should be processed regardless of batch size
+
+
+class TestValidateAndStandardizeSeason:
+    """Test cases for season validation and standardization."""
+
+    def test_full_year_format(self):
+        """Test standardization of full year format."""
+        assert validate_and_standardize_season("2023-2024") == "2023-24"
+        assert validate_and_standardize_season("2022-2023") == "2022-23"
+
+    def test_short_year_format(self):
+        """Test standardization of short year format."""
+        assert validate_and_standardize_season("23-24") == "2023-24"
+        assert validate_and_standardize_season("22-23") == "2022-23"
+
+    def test_already_correct_format(self):
+        """Test seasons already in correct format."""
+        assert validate_and_standardize_season("2023-24") == "2023-24"
+        assert validate_and_standardize_season("2022-23") == "2022-23"
+
+    def test_invalid_season_formats(self):
+        """Test invalid season formats."""
+        assert validate_and_standardize_season("2023") is None
+        assert validate_and_standardize_season("invalid") is None
+        assert validate_and_standardize_season("") is None
+        assert validate_and_standardize_season(None) is None
+
+    def test_invalid_year_sequences(self):
+        """Test invalid year sequences."""
+        # Years not consecutive
+        assert validate_and_standardize_season("2023-2025") is None
+        assert validate_and_standardize_season("23-25") is None
+
+    def test_whitespace_handling(self):
+        """Test handling of whitespace in season strings."""
+        assert validate_and_standardize_season("  2023-24  ") == "2023-24"
+        assert validate_and_standardize_season("  23-24  ") == "2023-24"

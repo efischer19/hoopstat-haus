@@ -1,0 +1,311 @@
+# Data Cleaning and Standardization Rules Configuration
+# This file defines the rules used for cleaning and standardizing NBA data
+
+version: "1.0.0"
+
+# Team name standardization mappings
+team_name_mappings:
+  # Los Angeles Teams
+  "la lakers": "Los Angeles Lakers"
+  "los angeles lakers": "Los Angeles Lakers"
+  "l.a. lakers": "Los Angeles Lakers"
+  "lakers": "Los Angeles Lakers"
+  "la clippers": "Los Angeles Clippers"
+  "los angeles clippers": "Los Angeles Clippers"
+  "l.a. clippers": "Los Angeles Clippers"
+  "clippers": "Los Angeles Clippers"
+  
+  # Golden State Warriors
+  "golden state warriors": "Golden State Warriors"
+  "gs warriors": "Golden State Warriors"
+  "gsw": "Golden State Warriors"
+  "warriors": "Golden State Warriors"
+  
+  # New York Teams
+  "new york knicks": "New York Knicks"
+  "ny knicks": "New York Knicks"
+  "knicks": "New York Knicks"
+  "brooklyn nets": "Brooklyn Nets"
+  "new jersey nets": "Brooklyn Nets"  # Historical name
+  "nets": "Brooklyn Nets"
+  
+  # Other Major Teams
+  "boston celtics": "Boston Celtics"
+  "celtics": "Boston Celtics"
+  "chicago bulls": "Chicago Bulls"
+  "bulls": "Chicago Bulls"
+  "miami heat": "Miami Heat"
+  "heat": "Miami Heat"
+  "san antonio spurs": "San Antonio Spurs"
+  "sa spurs": "San Antonio Spurs"
+  "spurs": "San Antonio Spurs"
+  "phoenix suns": "Phoenix Suns"
+  "phx suns": "Phoenix Suns"
+  "suns": "Phoenix Suns"
+  "dallas mavericks": "Dallas Mavericks"
+  "mavericks": "Dallas Mavericks"
+  "mavs": "Dallas Mavericks"
+  "denver nuggets": "Denver Nuggets"
+  "nuggets": "Denver Nuggets"
+  "milwaukee bucks": "Milwaukee Bucks"
+  "bucks": "Milwaukee Bucks"
+  "philadelphia 76ers": "Philadelphia 76ers"
+  "76ers": "Philadelphia 76ers"
+  "sixers": "Philadelphia 76ers"
+  "toronto raptors": "Toronto Raptors"
+  "raptors": "Toronto Raptors"
+  "atlanta hawks": "Atlanta Hawks"
+  "hawks": "Atlanta Hawks"
+  "charlotte hornets": "Charlotte Hornets"
+  "charlotte bobcats": "Charlotte Hornets"  # Historical name
+  "hornets": "Charlotte Hornets"
+  "cleveland cavaliers": "Cleveland Cavaliers"
+  "cavaliers": "Cleveland Cavaliers"
+  "cavs": "Cleveland Cavaliers"
+  "detroit pistons": "Detroit Pistons"
+  "pistons": "Detroit Pistons"
+  "indiana pacers": "Indiana Pacers"
+  "pacers": "Indiana Pacers"
+  "orlando magic": "Orlando Magic"
+  "magic": "Orlando Magic"
+  "washington wizards": "Washington Wizards"
+  "wizards": "Washington Wizards"
+  "memphis grizzlies": "Memphis Grizzlies"
+  "grizzlies": "Memphis Grizzlies"
+  "minnesota timberwolves": "Minnesota Timberwolves"
+  "timberwolves": "Minnesota Timberwolves"
+  "new orleans pelicans": "New Orleans Pelicans"
+  "no pelicans": "New Orleans Pelicans"
+  "pelicans": "New Orleans Pelicans"
+  "oklahoma city thunder": "Oklahoma City Thunder"
+  "okc thunder": "Oklahoma City Thunder"
+  "thunder": "Oklahoma City Thunder"
+  "seattle supersonics": "Oklahoma City Thunder"  # Historical name
+  "portland trail blazers": "Portland Trail Blazers"
+  "trail blazers": "Portland Trail Blazers"
+  "blazers": "Portland Trail Blazers"
+  "sacramento kings": "Sacramento Kings"
+  "kings": "Sacramento Kings"
+  "utah jazz": "Utah Jazz"
+  "jazz": "Utah Jazz"
+
+# Official NBA team names for validation
+official_team_names:
+  - "Atlanta Hawks"
+  - "Boston Celtics"
+  - "Brooklyn Nets"
+  - "Charlotte Hornets"
+  - "Chicago Bulls"
+  - "Cleveland Cavaliers"
+  - "Dallas Mavericks"
+  - "Denver Nuggets"
+  - "Detroit Pistons"
+  - "Golden State Warriors"
+  - "Houston Rockets"
+  - "Indiana Pacers"
+  - "Los Angeles Clippers"
+  - "Los Angeles Lakers"
+  - "Memphis Grizzlies"
+  - "Miami Heat"
+  - "Milwaukee Bucks"
+  - "Minnesota Timberwolves"
+  - "New Orleans Pelicans"
+  - "New York Knicks"
+  - "Oklahoma City Thunder"
+  - "Orlando Magic"
+  - "Philadelphia 76ers"
+  - "Phoenix Suns"
+  - "Portland Trail Blazers"
+  - "Sacramento Kings"
+  - "San Antonio Spurs"
+  - "Toronto Raptors"
+  - "Utah Jazz"
+  - "Washington Wizards"
+
+# Player position standardization mappings
+position_mappings:
+  "point guard": "PG"
+  "pg": "PG"
+  "shooting guard": "SG"
+  "sg": "SG"
+  "small forward": "SF"
+  "sf": "SF"
+  "power forward": "PF"
+  "pf": "PF"
+  "center": "C"
+  "c": "C"
+  "guard": "G"
+  "forward": "F"
+  # Combination positions
+  "pg/sg": "G"
+  "sg/pg": "G"
+  "sg/sf": "G"
+  "sf/sg": "F"
+  "sf/pf": "F"
+  "pf/sf": "F"
+  "pf/c": "F"
+  "c/pf": "C"
+  # Legacy/unusual positions
+  "guard-forward": "G"
+  "forward-center": "F"
+  "swingman": "G"
+
+# Null value handling rules
+null_handling:
+  # Fields that are required and cannot be null
+  required_fields:
+    player_stats: ["player_id", "points", "rebounds", "assists"]
+    team_stats: ["team_id", "team_name", "points"]
+    game_stats: ["game_id", "home_team_id", "away_team_id", "home_score", "away_score"]
+  
+  # Default values for optional fields when null
+  default_values:
+    jersey_number: null
+    height_inches: null
+    weight_lbs: null
+    birth_date: null
+    years_experience: 0
+    is_active: true
+    minutes_played: 0.0
+    field_goals_made: 0
+    field_goals_attempted: 0
+    three_pointers_made: 0
+    three_pointers_attempted: 0
+    free_throws_made: 0
+    free_throws_attempted: 0
+    steals: 0
+    blocks: 0
+    turnovers: 0
+    fouls: 0
+
+# Data type conversion rules
+data_types:
+  numeric_fields:
+    - "points"
+    - "rebounds" 
+    - "assists"
+    - "steals"
+    - "blocks"
+    - "turnovers"
+    - "field_goals_made"
+    - "field_goals_attempted"
+    - "three_pointers_made"
+    - "three_pointers_attempted"
+    - "free_throws_made"
+    - "free_throws_attempted"
+    - "minutes_played"
+    - "height_inches"
+    - "weight_lbs"
+    - "jersey_number"
+    - "years_experience"
+  
+  string_fields:
+    - "player_name"
+    - "team_name"
+    - "position"
+    - "venue"
+    - "season"
+  
+  boolean_fields:
+    - "is_active"
+    - "overtime"
+  
+  date_fields:
+    - "birth_date"
+    - "game_date"
+
+# Numeric field validation ranges and cleaning rules
+numeric_validation:
+  points:
+    min: 0
+    max: 100  # Wilt Chamberlain's record
+    clean_patterns:
+      - "remove_commas"
+      - "remove_currency"
+  
+  rebounds:
+    min: 0
+    max: 50
+  
+  assists:
+    min: 0
+    max: 30
+  
+  steals:
+    min: 0
+    max: 15
+  
+  blocks:
+    min: 0
+    max: 15
+  
+  turnovers:
+    min: 0
+    max: 20
+  
+  minutes_played:
+    min: 0.0
+    max: 60.0  # NBA games are 48 minutes + overtime
+  
+  height_inches:
+    min: 60  # 5 feet
+    max: 96  # 8 feet
+  
+  weight_lbs:
+    min: 120
+    max: 400
+  
+  jersey_number:
+    min: 0
+    max: 99
+
+# Date/time standardization formats
+datetime_formats:
+  input_formats:
+    - "%Y-%m-%dT%H:%M:%S.%fZ"  # ISO format with microseconds
+    - "%Y-%m-%dT%H:%M:%SZ"     # ISO format
+    - "%Y-%m-%d %H:%M:%S"      # SQL format
+    - "%m/%d/%Y %H:%M:%S"      # US format
+    - "%Y-%m-%d"               # Date only
+    - "%m/%d/%Y"               # US date only
+    - "%d/%m/%Y"               # European date only
+  
+  output_format: "%Y-%m-%dT%H:%M:%SZ"  # Standard ISO format
+  
+  season_format_pattern: "^\\d{4}-\\d{2}$"  # e.g., "2023-24"
+
+# Fuzzy matching configuration
+fuzzy_matching:
+  similarity_threshold: 85  # Minimum similarity score (0-100)
+  team_name_threshold: 85
+  player_name_threshold: 80
+  
+  # Enable fuzzy matching for these fields
+  enabled_fields:
+    - "team_name"
+    - "player_name"
+
+# Performance optimization settings
+performance:
+  batch_size: 1000  # Process records in batches
+  enable_parallel_processing: true
+  max_workers: 4
+  target_records_per_minute: 10000
+
+# Logging configuration
+logging:
+  level: "INFO"
+  log_transformations: true
+  log_validation_failures: true
+  include_data_lineage: true
+  
+  # Log categories
+  categories:
+    - "team_name_standardization"
+    - "position_normalization"
+    - "null_value_handling"
+    - "data_type_conversion"
+    - "numeric_cleaning"
+    - "date_standardization"
+    - "fuzzy_matching"
+    - "validation_failures"

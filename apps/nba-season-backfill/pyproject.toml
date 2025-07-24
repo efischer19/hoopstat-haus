@@ -9,9 +9,9 @@ packages = [{include = "app"}]
 [tool.poetry.dependencies]
 python = "^3.12"
 nba-api = "^1.5.2"
-boto3 = "^1.35.0"
+boto3 = "^1.39.13"
 pandas = "^2.0.0"
-pyarrow = "^18.0.0"
+pyarrow = "^21.0.0"
 tenacity = "^9.0.0"
 click = "^8.1.0"
 hoopstat-observability = {path = "../../libs/hoopstat-observability", develop = true}
@@ -20,7 +20,7 @@ hoopstat-config = {path = "../../libs/hoopstat-config", develop = true}
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^8.4.1"
-ruff = "^0.12.3"
+ruff = "^0.12.5"
 black = "^25.1.0"
 pytest-cov = "^6.2.1"
 moto = "^5.0.0"

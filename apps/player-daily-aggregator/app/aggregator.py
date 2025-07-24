@@ -146,7 +146,7 @@ class PlayerStatsAggregator:
             )
             .reset_index()
         )
-        
+
         # Add games played count (number of games per player)
         games_count = df.groupby("player_id").size().reset_index(name="games_played")
         daily_agg = daily_agg.merge(games_count, on="player_id")

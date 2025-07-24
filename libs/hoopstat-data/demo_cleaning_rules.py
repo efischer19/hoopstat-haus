@@ -95,8 +95,11 @@ def demo_batch_processing():
             "player_id": f"player_{i}",
             "team_name": ["lakers", "warriors", "celtics", "bulls", "heat"][i % 5],
             "position": [
-                "point guard", "shooting guard", "center",
-                "power forward", "small forward"
+                "point guard",
+                "shooting guard",
+                "center",
+                "power forward",
+                "small forward",
             ][i % 5],
             "points": str(20 + i),
             "rebounds": 5 + (i % 3),

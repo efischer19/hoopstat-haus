@@ -1,7 +1,7 @@
 ---
 title: "ADR-020: Gold Layer Data Partitioning for MCP Performance"
 status: "Accepted"
-date: "2025-01-22"
+date: "2025-07-24"
 tags:
   - "data-pipeline"
   - "partitioning"

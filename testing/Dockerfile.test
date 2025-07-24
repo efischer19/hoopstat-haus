@@ -26,7 +26,7 @@ COPY libs/hoopstat-e2e-testing /app/libs/hoopstat-e2e-testing
 
 # Install dependencies
 WORKDIR /app/libs/hoopstat-e2e-testing
-RUN poetry config virtualenvs.create false && poetry install --no-dev
+RUN poetry config virtualenvs.create false && poetry install
 
 # Set environment variables for testing
 ENV PYTHONPATH=/app

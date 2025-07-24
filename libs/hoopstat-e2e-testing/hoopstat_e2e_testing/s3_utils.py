@@ -40,7 +40,7 @@ class S3TestUtils:
         Initialize S3 test utilities.
 
         Args:
-            endpoint_url: Localstack endpoint URL (defaults to http://localhost:4566, 
+            endpoint_url: Localstack endpoint URL (defaults to http://localhost:4566,
                          set to None for moto or real AWS)
             aws_access_key_id: AWS access key for testing
             aws_secret_access_key: AWS secret access key for testing
@@ -71,13 +71,23 @@ class S3TestUtils:
             )
 
         # Initialize S3 resource for higher-level operations
-        self.s3_resource = boto3.resource(
-            "s3",
-            endpoint_url=self.endpoint_url,
-            aws_access_key_id=self.aws_access_key_id,
-            aws_secret_access_key=self.aws_secret_access_key,
-            region_name=self.region_name,
-        )
+        if self.endpoint_url:
+            # Use custom endpoint (e.g., Localstack)
+            self.s3_resource = boto3.resource(
+                "s3",
+                endpoint_url=self.endpoint_url,
+                aws_access_key_id=self.aws_access_key_id,
+                aws_secret_access_key=self.aws_secret_access_key,
+                region_name=self.region_name,
+            )
+        else:
+            # Use default AWS resource (for moto or real AWS)
+            self.s3_resource = boto3.resource(
+                "s3",
+                aws_access_key_id=self.aws_access_key_id,
+                aws_secret_access_key=self.aws_secret_access_key,
+                region_name=self.region_name,
+            )
 
     def create_bucket(self, bucket_name: str) -> bool:
         """

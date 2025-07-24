@@ -5,17 +5,18 @@ This test suite demonstrates the bronze → silver → gold data flow
 in an isolated Docker environment with Localstack S3 simulation.
 """
 
+import logging
 import os
 import sys
+
 import pytest
-import logging
 
 # Add the libraries to the path
 sys.path.insert(0, "/app/libs/hoopstat-e2e-testing")
 sys.path.insert(0, "/app/libs/hoopstat-mock-data")
 sys.path.insert(0, "/app/libs/hoopstat-data")
 
-from hoopstat_e2e_testing import S3TestUtils, PipelineTestRunner
+from hoopstat_e2e_testing import PipelineTestRunner, S3TestUtils
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -26,6 +27,12 @@ logger = logging.getLogger(__name__)
 def s3_utils():
     """Create S3 utilities instance for testing."""
     endpoint_url = os.getenv("AWS_ENDPOINT_URL", "http://localhost:4566")
+    logger.info(f"🔧 Initializing S3TestUtils with endpoint: {endpoint_url}")
+
+    # Additional environment info for debugging
+    logger.info(f"   AWS_ACCESS_KEY_ID: {os.getenv('AWS_ACCESS_KEY_ID', 'not set')}")
+    logger.info(f"   AWS_DEFAULT_REGION: {os.getenv('AWS_DEFAULT_REGION', 'not set')}")
+
     return S3TestUtils(endpoint_url=endpoint_url)
 
 
@@ -40,15 +47,58 @@ class TestFullPipelineIntegration:
 
     def test_environment_connectivity(self, s3_utils):
         """Test that we can connect to Localstack S3."""
-        # Create a test bucket to verify connectivity
+        import time
+
+        import requests
+        from botocore.exceptions import EndpointConnectionError
+
+        # First, check if Localstack health endpoint is available
+        endpoint_url = os.getenv("AWS_ENDPOINT_URL", "http://localhost:4566")
+        health_url = endpoint_url.replace(":4566", ":4566/health")
+
+        logger.info(f"🔍 Checking Localstack health at: {health_url}")
+
+        # Wait up to 30 seconds for Localstack to be ready
+        max_retries = 30
+        for attempt in range(max_retries):
+            try:
+                response = requests.get(health_url, timeout=5)
+                if response.status_code == 200:
+                    logger.info(
+                        f"✅ Localstack health check passed on attempt {attempt + 1}"
+                    )
+                    break
+            except requests.RequestException as e:
+                logger.info(
+                    f"⏳ Localstack not ready (attempt {attempt + 1}/"
+                    f"{max_retries}): {e}"
+                )
+                if attempt < max_retries - 1:
+                    time.sleep(1)
+                else:
+                    logger.error("❌ Localstack health check failed after all retries")
+                    raise
+
+        # Now test S3 connectivity
         test_bucket = "connectivity-test"
 
-        assert s3_utils.create_bucket(test_bucket), "Failed to create test bucket"
-        assert s3_utils.bucket_exists(test_bucket), "Test bucket does not exist"
+        try:
+            logger.info(f"🔧 Testing S3 connectivity with bucket: {test_bucket}")
+            assert s3_utils.create_bucket(test_bucket), "Failed to create test bucket"
+            assert s3_utils.bucket_exists(test_bucket), "Test bucket does not exist"
 
-        # Clean up
-        s3_utils.delete_bucket(test_bucket)
-        logger.info("✅ Successfully connected to Localstack S3")
+            # Clean up
+            s3_utils.delete_bucket(test_bucket)
+            logger.info("✅ Successfully connected to Localstack S3")
+        except EndpointConnectionError as e:
+            logger.error(f"❌ Failed to connect to S3 endpoint: {e}")
+            logger.error(f"   Endpoint URL: {endpoint_url}")
+            logger.error("   This suggests Localstack S3 service is not available")
+            raise
+        except Exception as e:
+            logger.error(f"❌ Unexpected error during S3 connectivity test: {e}")
+            logger.error(f"   Endpoint URL: {endpoint_url}")
+            raise
 
     def test_s3_operations(self, s3_utils):
         """Test basic S3 operations work correctly."""
@@ -388,8 +438,10 @@ class TestFullPipelineIntegration:
         assert verification["silver_layer"]["status"] == "valid"
         assert verification["gold_layer"]["status"] == "valid"
 
+        total_players = num_teams * num_players_per_team
         logger.info(
-            f"✅ Performance test passed with {num_teams} teams and {num_teams * num_players_per_team} players"
+            f"✅ Performance test passed with {num_teams} teams and "
+            f"{total_players} players"
         )
 
         # Clean up

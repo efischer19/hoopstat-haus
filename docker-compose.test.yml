@@ -15,11 +15,11 @@ services:
       - "./tmp/localstack:/var/lib/localstack"
       - "/var/run/docker.sock:/var/run/docker.sock"
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:4566/health"]
-      interval: 10s
-      timeout: 5s
-      retries: 3
-      start_period: 10s
+      test: ["CMD", "curl", "-f", "http://localhost:4566/health?service=s3"]
+      interval: 5s
+      timeout: 3s
+      retries: 6
+      start_period: 15s
     networks:
       - localstack-net
 

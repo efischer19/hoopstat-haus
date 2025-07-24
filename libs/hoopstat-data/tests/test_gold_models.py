@@ -2,7 +2,6 @@
 Tests for Gold layer data models.
 """
 
-
 import pytest
 
 from hoopstat_data.models import (

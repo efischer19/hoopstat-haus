@@ -4,6 +4,7 @@ Tests for S3 utilities.
 
 import pandas as pd
 import pytest
+from moto import mock_aws
 
 from hoopstat_e2e_testing.s3_utils import S3TestUtils
 
@@ -13,8 +14,10 @@ class TestS3TestUtils:
 
     @pytest.fixture
     def s3_utils(self):
-        """Create S3TestUtils instance for testing."""
-        return S3TestUtils()
+        """Create S3TestUtils instance for testing with moto."""
+        with mock_aws():
+            # Use moto's mock AWS service instead of real Localstack
+            yield S3TestUtils(endpoint_url=None)  # moto doesn't need endpoint_url
 
     @pytest.fixture
     def test_bucket_name(self):

@@ -7,6 +7,7 @@ and buckets during testing.
 
 import json
 import logging
+from datetime import datetime
 from typing import Any
 
 import boto3
@@ -16,12 +17,21 @@ from botocore.exceptions import ClientError
 logger = logging.getLogger(__name__)
 
 
+class DateTimeEncoder(json.JSONEncoder):
+    """Custom JSON encoder that handles datetime objects."""
+
+    def default(self, obj):
+        if isinstance(obj, datetime):
+            return obj.isoformat()
+        return super().default(obj)
+
+
 class S3TestUtils:
     """Utilities for S3 operations during testing with Localstack."""
 
     def __init__(
         self,
-        endpoint_url: str | None = None,
+        endpoint_url: str | None = "http://localhost:4566",
         aws_access_key_id: str = "test",
         aws_secret_access_key: str = "test",
         region_name: str = "us-east-1",
@@ -30,24 +40,35 @@ class S3TestUtils:
         Initialize S3 test utilities.
 
         Args:
-            endpoint_url: Localstack endpoint URL (defaults to http://localhost:4566)
+            endpoint_url: Localstack endpoint URL (defaults to http://localhost:4566, 
+                         set to None for moto or real AWS)
             aws_access_key_id: AWS access key for testing
             aws_secret_access_key: AWS secret access key for testing
             region_name: AWS region name
         """
-        self.endpoint_url = endpoint_url or "http://localhost:4566"
+        self.endpoint_url = endpoint_url
         self.aws_access_key_id = aws_access_key_id
         self.aws_secret_access_key = aws_secret_access_key
         self.region_name = region_name
 
         # Initialize S3 client
-        self.s3_client = boto3.client(
-            "s3",
-            endpoint_url=self.endpoint_url,
-            aws_access_key_id=self.aws_access_key_id,
-            aws_secret_access_key=self.aws_secret_access_key,
-            region_name=self.region_name,
-        )
+        if self.endpoint_url:
+            # Use custom endpoint (e.g., Localstack)
+            self.s3_client = boto3.client(
+                "s3",
+                endpoint_url=self.endpoint_url,
+                aws_access_key_id=self.aws_access_key_id,
+                aws_secret_access_key=self.aws_secret_access_key,
+                region_name=self.region_name,
+            )
+        else:
+            # Use default AWS client (for moto or real AWS)
+            self.s3_client = boto3.client(
+                "s3",
+                aws_access_key_id=self.aws_access_key_id,
+                aws_secret_access_key=self.aws_secret_access_key,
+                region_name=self.region_name,
+            )
 
         # Initialize S3 resource for higher-level operations
         self.s3_resource = boto3.resource(
@@ -144,7 +165,7 @@ class S3TestUtils:
         try:
             # Convert data based on type
             if isinstance(data, dict):
-                body = json.dumps(data, indent=2)
+                body = json.dumps(data, indent=2, cls=DateTimeEncoder)
                 content_type = content_type or "application/json"
             elif isinstance(data, pd.DataFrame):
                 # For DataFrames, save as Parquet

@@ -21,6 +21,7 @@ pytest = "^8.4.1"
 ruff = "^0.12.3"
 black = "^25.1.0"
 pytest-cov = "^6.2.1"
+moto = {extras = ["s3"], version = "^5.1.0"}
 
 [build-system]
 requires = ["poetry-core"]

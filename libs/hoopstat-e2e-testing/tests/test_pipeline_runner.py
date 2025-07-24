@@ -3,6 +3,7 @@ Tests for pipeline runner.
 """
 
 import pytest
+from moto import mock_aws
 
 from hoopstat_e2e_testing.pipeline_runner import PipelineTestRunner
 from hoopstat_e2e_testing.s3_utils import S3TestUtils
@@ -13,8 +14,9 @@ class TestPipelineTestRunner:
 
     @pytest.fixture
     def s3_utils(self):
-        """Create S3TestUtils instance for testing."""
-        return S3TestUtils()
+        """Create S3TestUtils instance for testing with moto."""
+        with mock_aws():
+            yield S3TestUtils(endpoint_url=None)  # moto doesn't need endpoint_url
 
     @pytest.fixture
     def pipeline_runner(self, s3_utils):

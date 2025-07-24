@@ -1,0 +1,1 @@
+"""Test package for player daily aggregator."""

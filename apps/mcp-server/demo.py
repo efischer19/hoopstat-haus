@@ -52,7 +52,7 @@ async def demonstrate_mcp_features():
         "field_goal_percentage": 0.473,
         "three_point_percentage": 0.355,
         "status": "success",
-        "note": "Mock data - actual Gold layer integration pending"
+        "note": "Mock data - actual Gold layer integration pending",
     }
     print(f"   Output: {json.dumps(mock_player_data, indent=2)}")
 
@@ -69,7 +69,7 @@ async def demonstrate_mcp_features():
         "points_allowed_per_game": 112.4,
         "net_rating": 2.4,
         "status": "success",
-        "note": "Mock data - actual Gold layer integration pending"
+        "note": "Mock data - actual Gold layer integration pending",
     }
     print(f"   Output: {json.dumps(mock_team_data, indent=2)}")
 
@@ -78,14 +78,18 @@ async def demonstrate_mcp_features():
     print("   Input: team=None, season=None")
     mock_players_data = {
         "players": [
-            "LeBron James", "Anthony Davis", "Russell Westbrook",
-            "Stephen Curry", "Klay Thompson", "Draymond Green"
+            "LeBron James",
+            "Anthony Davis",
+            "Russell Westbrook",
+            "Stephen Curry",
+            "Klay Thompson",
+            "Draymond Green",
         ],
         "team_filter": None,
         "season_filter": None,
         "total_count": 6,
         "status": "success",
-        "note": "Mock data - actual Gold layer integration pending"
+        "note": "Mock data - actual Gold layer integration pending",
     }
     print(f"   Output: {json.dumps(mock_players_data, indent=2)}")
 

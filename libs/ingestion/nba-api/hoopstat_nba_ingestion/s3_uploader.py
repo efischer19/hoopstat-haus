@@ -123,6 +123,9 @@ class S3Uploader:
         except (BotoCoreError, ClientError) as e:
             logger.error(f"Failed to upload to S3: {e}")
             raise S3UploadError(f"S3 upload failed: {e}") from e
+        except Exception as e:
+            logger.error(f"Failed to upload to S3: {e}")
+            raise S3UploadError(f"S3 upload failed: {e}") from e
 
     def upload_games(self, parquet_data: bytes, target_date: date) -> str:
         """

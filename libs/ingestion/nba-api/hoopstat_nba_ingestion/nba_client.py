@@ -75,9 +75,8 @@ class NBAClient:
                 # Reset rate limiter on success
                 self.rate_limiter.reset_delay()
 
-                logger.debug(
-                    f"Successfully fetched data from {endpoint_class.__name__}"
-                )
+                endpoint_name = getattr(endpoint_class, "__name__", str(endpoint_class))
+                logger.debug(f"Successfully fetched data from {endpoint_name}")
                 return data
 
             except requests.exceptions.HTTPError as e:

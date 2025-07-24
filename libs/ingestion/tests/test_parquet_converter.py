@@ -225,7 +225,5 @@ class TestParquetConverter:
                 }
             }
             # Instead, let's mock the table creation to fail
-            with patch(
-                "pyarrow.Table.from_pylist", side_effect=Exception("Mock error")
-            ):
+            with patch("pyarrow.table", side_effect=Exception("Mock error")):
                 converter.convert_to_parquet_bytes(invalid_data)

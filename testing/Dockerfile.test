@@ -6,27 +6,34 @@ RUN apt-get update && apt-get install -y \
     build-essential \
     && rm -rf /var/lib/apt/lists/*
 
-# Install Poetry
-RUN pip install poetry
-
 # Set working directory
 WORKDIR /app
-
-# Copy poetry configuration files first for better layer caching
-COPY libs/hoopstat-e2e-testing/pyproject.toml libs/hoopstat-e2e-testing/poetry.lock* /app/libs/hoopstat-e2e-testing/
-
-# Copy dependency library configurations
-COPY libs/hoopstat-mock-data/pyproject.toml libs/hoopstat-mock-data/poetry.lock* /app/libs/hoopstat-mock-data/
-COPY libs/hoopstat-data/pyproject.toml libs/hoopstat-data/poetry.lock* /app/libs/hoopstat-data/
 
 # Copy library source code
 COPY libs/hoopstat-mock-data /app/libs/hoopstat-mock-data
 COPY libs/hoopstat-data /app/libs/hoopstat-data
 COPY libs/hoopstat-e2e-testing /app/libs/hoopstat-e2e-testing
 
-# Install dependencies
-WORKDIR /app/libs/hoopstat-e2e-testing
-RUN poetry config virtualenvs.create false && poetry install
+# Install dependencies directly with pip for more reliability in CI
+WORKDIR /app
+RUN pip install --trusted-host pypi.org --trusted-host pypi.python.org --trusted-host files.pythonhosted.org \
+    boto3>=1.34.0 \
+    pytest>=8.4.1 \
+    docker>=7.0.0 \
+    pandas>=2.0.0 \
+    pyarrow>=16.0.0 \
+    ruff>=0.12.3 \
+    pytest-cov>=6.2.1 \
+    "moto[s3]>=5.1.0" \
+    requests
+
+# Install local libraries
+RUN pip install --trusted-host pypi.org --trusted-host pypi.python.org --trusted-host files.pythonhosted.org \
+    -e ./libs/hoopstat-mock-data && \
+    pip install --trusted-host pypi.org --trusted-host pypi.python.org --trusted-host files.pythonhosted.org \
+    -e ./libs/hoopstat-data && \
+    pip install --trusted-host pypi.org --trusted-host pypi.python.org --trusted-host files.pythonhosted.org \
+    -e ./libs/hoopstat-e2e-testing
 
 # Set environment variables for testing
 ENV PYTHONPATH=/app
@@ -36,4 +43,4 @@ ENV AWS_SECRET_ACCESS_KEY=test
 ENV AWS_DEFAULT_REGION=us-east-1
 
 # Default command
-CMD ["poetry", "run", "pytest", "-v", "--tb=short"]
+CMD ["python", "-m", "pytest", "testing/tests/", "-v", "--tb=short"]

@@ -41,7 +41,7 @@ services:
     working_dir: /app
     networks:
       - localstack-net
-    command: ["poetry", "run", "pytest", "testing/tests/", "-v", "--tb=short"]
+    command: ["python", "-m", "pytest", "testing/tests/", "-v", "--tb=short"]
 
 networks:
   localstack-net:

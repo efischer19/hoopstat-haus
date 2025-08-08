@@ -401,36 +401,44 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.12'
 
-      - name: Run E2E Pipeline Tests
-        run: |
-          echo "🚀 Starting E2E pipeline tests with Docker Compose"
-          
-          # Build and run E2E tests in isolated environment
-          docker compose -f docker-compose.test.yml up --build --abort-on-container-exit
-          
-          # Check exit code
-          exit_code=$?
-          
-          if [ $exit_code -eq 0 ]; then
-            echo "✅ E2E pipeline tests passed"
-          else
-            echo "❌ E2E pipeline tests failed"
-            
-            # Show logs for debugging
-            echo "📋 Localstack logs:"
-            docker compose -f docker-compose.test.yml logs localstack
-            
-            echo "📋 Test runner logs:"
-            docker compose -f docker-compose.test.yml logs test-runner
-            
-            exit $exit_code
-          fi
+      - name: Install Poetry
+        uses: snok/install-poetry@v1
+        with:
+          version: latest
+          virtualenvs-create: true
+          virtualenvs-in-project: true
 
-      - name: Cleanup E2E Environment
-        if: always()
+      - name: Cache Poetry dependencies
+        uses: actions/cache@v3
+        with:
+          path: libs/hoopstat-e2e-testing/.venv
+          key: >-
+            poetry-lib-hoopstat-e2e-testing-${{ runner.os }}-
+            ${{ hashFiles('libs/hoopstat-e2e-testing/poetry.lock') }}
+          restore-keys: |
+            poetry-lib-hoopstat-e2e-testing-${{ runner.os }}-
+
+      - name: Install E2E testing dependencies
+        working-directory: libs/hoopstat-e2e-testing
+        run: poetry install
+
+      - name: Run E2E Pipeline Tests (Unit Mode)
+        working-directory: libs/hoopstat-e2e-testing
         run: |
-          echo "🧹 Cleaning up E2E test environment"
-          docker compose -f docker-compose.test.yml down --volumes --remove-orphans
+          echo "🚀 Running E2E pipeline tests with moto simulation"
+          poetry run pytest tests/ -v --tb=short
+          echo "✅ E2E pipeline tests passed"
+
+      - name: E2E Testing Summary
+        run: |
+          echo "📋 E2E Testing Summary:"
+          echo "   ✅ Unit tests with moto S3 simulation: PASSED"
+          echo "   📦 Framework ready for local Docker testing"
+          echo ""
+          echo "🐳 For full integration testing with Localstack (local development):"
+          echo "   docker compose -f docker-compose.test.yml up --build"

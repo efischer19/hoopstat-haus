@@ -196,7 +196,16 @@ def test_json_serialization():
 
 def main():
     """Run all validation tests."""
+    import argparse
+    
+    parser = argparse.ArgumentParser(description="Validate E2E testing framework")
+    parser.add_argument("--no-docker", action="store_true", 
+                        help="Skip Docker-dependent tests and use moto for S3 simulation")
+    args = parser.parse_args()
+    
     print("🚀 Starting E2E Testing Framework Validation")
+    if args.no_docker:
+        print("🔧 Running in CI mode with moto (no Docker required)")
     print("=" * 50)
 
     try:
@@ -216,8 +225,13 @@ def main():
         print(f"   S3 endpoint: {s3_utils.endpoint_url}")
         print(f"   Pipeline project: {pipeline.project_name}")
         print("\n✅ The E2E testing framework is ready for use!")
-        print("\n🐳 To run full tests with Localstack:")
-        print("   docker compose -f docker-compose.test.yml up --build")
+        
+        if not args.no_docker:
+            print("\n🐳 To run full tests with Localstack:")
+            print("   docker compose -f docker-compose.test.yml up --build")
+        else:
+            print("\n🧪 Unit tests with moto simulation completed successfully")
+            print("   For full integration tests, use Docker Compose locally")
 
         return 0
 

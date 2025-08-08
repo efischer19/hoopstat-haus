@@ -1,33 +1,39 @@
 [tool.poetry]
-name = "nba-season-backfill"
+name = "hoopstat-mcp-server"
 version = "0.1.0"
-description = "Containerized NBA 2024-25 season data backfill application"
+description = "MCP server for exposing Gold layer basketball data to AI agents"
 authors = ["Hoopstat Haus Team"]
 readme = "README.md"
-packages = [{include = "app"}]
+packages = [{include = "mcp_server"}]
 
 [tool.poetry.dependencies]
 python = "^3.12"
-nba-api = "^1.5.2"
-boto3 = "^1.40.2"
-pandas = "^2.0.0"
-pyarrow = "^21.0.0"
-tenacity = "^9.0.0"
-click = "^8.1.0"
-hoopstat-observability = {path = "../../libs/hoopstat-observability", develop = true}
-hoopstat-data = {path = "../../libs/hoopstat-data", develop = true}
+mcp = "^1.6.0"
+# Local dependencies for configuration and data access
 hoopstat-config = {path = "../../libs/hoopstat-config", develop = true}
+hoopstat-data = {path = "../../libs/hoopstat-data", develop = true}
+hoopstat-observability = {path = "../../libs/hoopstat-observability", develop = true}
+# AWS and data processing dependencies
+boto3 = "^1.35.0"
+pandas = "^2.2.0"
+pyarrow = "^21.0.0"
+# HTTP and async support
+pydantic = "^2.10.0"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^8.4.1"
-ruff = "^0.12.7"
-black = "^25.1.0"
+pytest-asyncio = "^1.1.0"
 pytest-cov = "^6.2.1"
-moto = "^5.1.9"
-pytest-mock = "^3.12.0"
+ruff = "^0.12.4"
+black = "^25.1.0"
+moto = "^5.0.0"  # For mocking AWS services
 
 [tool.poetry.scripts]
-start = "app.main:main"
+mcp-server = "mcp_server.main:main"
+dev = "mcp_server.scripts:dev"
+test = "mcp_server.scripts:test"
+lint = "mcp_server.scripts:lint"
+format = "mcp_server.scripts:format_code"
 
 [build-system]
 requires = ["poetry-core"]
@@ -64,9 +70,10 @@ testpaths = ["tests"]
 python_files = ["test_*.py", "*_test.py"]
 python_functions = ["test_*"]
 addopts = "--strict-markers --disable-warnings"
+asyncio_mode = "auto"
 
 [tool.coverage.run]
-source = ["app"]
+source = ["mcp_server"]
 omit = ["tests/*"]
 
 [tool.coverage.report]

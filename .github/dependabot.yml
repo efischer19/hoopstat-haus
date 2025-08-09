@@ -44,6 +44,17 @@ updates:
         patterns:
           - "*"
 
+  # Monitor pip dependencies in bronze-ingestion
+  - package-ecosystem: "pip"
+    directory: "/apps/bronze-ingestion"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 10
+    groups:
+      pip:
+        patterns:
+          - "*"
+
   # NOTE: When adding new Python applications to /apps/, 
   # add a new entry following this pattern:
   #

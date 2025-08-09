@@ -1,0 +1,1748 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="API documentation for shared Python libraries">
+      
+      
+      
+        <link rel="canonical" href="https://efischer19.github.io/hoopstat-haus/SHARED_LIBRARY_VERSIONING/">
+      
+      
+        <link rel="prev" href="../LOCAL_DEVELOPMENT_DEPENDENCIES/">
+      
+      
+      
+      <link rel="icon" href="../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.6.16">
+    
+    
+      
+        <title>Shared Library Versioning - Hoopstat Haus Shared Libraries Documentation</title>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/stylesheets/main.7e37652d.min.css">
+      
+        
+        <link rel="stylesheet" href="../assets/stylesheets/palette.06af60db.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+    
+  </head>
+  
+  
+    
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="blue" data-md-color-accent="orange">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#shared-library-versioning-guide" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+<header class="md-header" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href=".." title="Hoopstat Haus Shared Libraries Documentation" class="md-header__button md-logo" aria-label="Hoopstat Haus Shared Libraries Documentation" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            Hoopstat Haus Shared Libraries Documentation
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Shared Library Versioning
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+    
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+            
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href=".." class="md-tabs__link">
+        
+  
+  
+    
+  
+  Home
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../libraries/" class="md-tabs__link">
+          
+  
+  
+  Shared Libraries
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+    
+  
+  
+    
+    
+      <li class="md-tabs__item md-tabs__item--active">
+        <a href="../CONTRIBUTING/" class="md-tabs__link">
+          
+  
+  
+  Development
+
+        </a>
+      </li>
+    
+  
+
+      
+    </ul>
+  </div>
+</nav>
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href=".." title="Hoopstat Haus Shared Libraries Documentation" class="md-nav__button md-logo" aria-label="Hoopstat Haus Shared Libraries Documentation" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    Hoopstat Haus Shared Libraries Documentation
+  </label>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href=".." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Home
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" >
+        
+          
+          <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    Shared Libraries
+    
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            Shared Libraries
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../libraries/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Overview
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../libraries/example-math-utils/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    example-math-utils
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../libraries/hoopstat-config/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    hoopstat-config
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../libraries/hoopstat-data/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    hoopstat-data
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../libraries/hoopstat-e2e-testing/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    hoopstat-e2e-testing
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../libraries/hoopstat-mock-data/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    hoopstat-mock-data
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../libraries/hoopstat-observability/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    hoopstat-observability
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../libraries/ingestion/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    ingestion
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    Development
+    
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            Development
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../CONTRIBUTING/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Contributing
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../DEVELOPMENT_PHILOSOPHY/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Development Philosophy
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../BUILD_ORCHESTRATION/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Build Orchestration
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../E2E_TESTING/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    E2E Testing
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../LOCAL_DEVELOPMENT_DEPENDENCIES/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Local Development
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    Shared Library Versioning
+    
+  </span>
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    Shared Library Versioning
+    
+  </span>
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#overview" class="md-nav__link">
+    <span class="md-ellipsis">
+      Overview
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#semantic-versioning-format" class="md-nav__link">
+    <span class="md-ellipsis">
+      Semantic Versioning Format
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Semantic Versioning Format">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#examples" class="md-nav__link">
+    <span class="md-ellipsis">
+      Examples
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#version-management-process" class="md-nav__link">
+    <span class="md-ellipsis">
+      Version Management Process
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Version Management Process">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#1-initial-library-version" class="md-nav__link">
+    <span class="md-ellipsis">
+      1. Initial Library Version
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#2-version-bumping-guidelines" class="md-nav__link">
+    <span class="md-ellipsis">
+      2. Version Bumping Guidelines
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="2. Version Bumping Guidelines">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#for-bug-fixes-patch" class="md-nav__link">
+    <span class="md-ellipsis">
+      For Bug Fixes (PATCH)
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#for-new-features-minor" class="md-nav__link">
+    <span class="md-ellipsis">
+      For New Features (MINOR)
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#for-breaking-changes-major" class="md-nav__link">
+    <span class="md-ellipsis">
+      For Breaking Changes (MAJOR)
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#3-pre-release-versions" class="md-nav__link">
+    <span class="md-ellipsis">
+      3. Pre-release Versions
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#dependency-management-between-apps-and-libraries" class="md-nav__link">
+    <span class="md-ellipsis">
+      Dependency Management Between Apps and Libraries
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Dependency Management Between Apps and Libraries">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#development-dependencies-recommended" class="md-nav__link">
+    <span class="md-ellipsis">
+      Development Dependencies (Recommended)
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#production-dependencies-optional" class="md-nav__link">
+    <span class="md-ellipsis">
+      Production Dependencies (Optional)
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#version-constraint-guidelines" class="md-nav__link">
+    <span class="md-ellipsis">
+      Version Constraint Guidelines
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#breaking-change-management" class="md-nav__link">
+    <span class="md-ellipsis">
+      Breaking Change Management
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Breaking Change Management">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#1-planning-breaking-changes" class="md-nav__link">
+    <span class="md-ellipsis">
+      1. Planning Breaking Changes
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#2-implementing-breaking-changes" class="md-nav__link">
+    <span class="md-ellipsis">
+      2. Implementing Breaking Changes
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#3-migration-strategy" class="md-nav__link">
+    <span class="md-ellipsis">
+      3. Migration Strategy
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#library-release-checklist" class="md-nav__link">
+    <span class="md-ellipsis">
+      Library Release Checklist
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#best-practices" class="md-nav__link">
+    <span class="md-ellipsis">
+      Best Practices
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Best Practices">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#1-version-consistency" class="md-nav__link">
+    <span class="md-ellipsis">
+      1. Version Consistency
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#2-dependency-updates" class="md-nav__link">
+    <span class="md-ellipsis">
+      2. Dependency Updates
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#3-backward-compatibility" class="md-nav__link">
+    <span class="md-ellipsis">
+      3. Backward Compatibility
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#4-development-workflow" class="md-nav__link">
+    <span class="md-ellipsis">
+      4. Development Workflow
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#common-patterns" class="md-nav__link">
+    <span class="md-ellipsis">
+      Common Patterns
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Common Patterns">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#pattern-1-feature-development" class="md-nav__link">
+    <span class="md-ellipsis">
+      Pattern 1: Feature Development
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pattern-2-bug-fix" class="md-nav__link">
+    <span class="md-ellipsis">
+      Pattern 2: Bug Fix
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pattern-3-breaking-change" class="md-nav__link">
+    <span class="md-ellipsis">
+      Pattern 3: Breaking Change
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#troubleshooting" class="md-nav__link">
+    <span class="md-ellipsis">
+      Troubleshooting
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Troubleshooting">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#issue-package-not-found-errors" class="md-nav__link">
+    <span class="md-ellipsis">
+      Issue: "Package not found" errors
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#issue-version-conflicts-between-libraries" class="md-nav__link">
+    <span class="md-ellipsis">
+      Issue: Version conflicts between libraries
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#issue-development-changes-not-reflected" class="md-nav__link">
+    <span class="md-ellipsis">
+      Issue: Development changes not reflected
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#overview" class="md-nav__link">
+    <span class="md-ellipsis">
+      Overview
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#semantic-versioning-format" class="md-nav__link">
+    <span class="md-ellipsis">
+      Semantic Versioning Format
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Semantic Versioning Format">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#examples" class="md-nav__link">
+    <span class="md-ellipsis">
+      Examples
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#version-management-process" class="md-nav__link">
+    <span class="md-ellipsis">
+      Version Management Process
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Version Management Process">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#1-initial-library-version" class="md-nav__link">
+    <span class="md-ellipsis">
+      1. Initial Library Version
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#2-version-bumping-guidelines" class="md-nav__link">
+    <span class="md-ellipsis">
+      2. Version Bumping Guidelines
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="2. Version Bumping Guidelines">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#for-bug-fixes-patch" class="md-nav__link">
+    <span class="md-ellipsis">
+      For Bug Fixes (PATCH)
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#for-new-features-minor" class="md-nav__link">
+    <span class="md-ellipsis">
+      For New Features (MINOR)
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#for-breaking-changes-major" class="md-nav__link">
+    <span class="md-ellipsis">
+      For Breaking Changes (MAJOR)
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#3-pre-release-versions" class="md-nav__link">
+    <span class="md-ellipsis">
+      3. Pre-release Versions
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#dependency-management-between-apps-and-libraries" class="md-nav__link">
+    <span class="md-ellipsis">
+      Dependency Management Between Apps and Libraries
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Dependency Management Between Apps and Libraries">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#development-dependencies-recommended" class="md-nav__link">
+    <span class="md-ellipsis">
+      Development Dependencies (Recommended)
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#production-dependencies-optional" class="md-nav__link">
+    <span class="md-ellipsis">
+      Production Dependencies (Optional)
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#version-constraint-guidelines" class="md-nav__link">
+    <span class="md-ellipsis">
+      Version Constraint Guidelines
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#breaking-change-management" class="md-nav__link">
+    <span class="md-ellipsis">
+      Breaking Change Management
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Breaking Change Management">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#1-planning-breaking-changes" class="md-nav__link">
+    <span class="md-ellipsis">
+      1. Planning Breaking Changes
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#2-implementing-breaking-changes" class="md-nav__link">
+    <span class="md-ellipsis">
+      2. Implementing Breaking Changes
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#3-migration-strategy" class="md-nav__link">
+    <span class="md-ellipsis">
+      3. Migration Strategy
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#library-release-checklist" class="md-nav__link">
+    <span class="md-ellipsis">
+      Library Release Checklist
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#best-practices" class="md-nav__link">
+    <span class="md-ellipsis">
+      Best Practices
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Best Practices">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#1-version-consistency" class="md-nav__link">
+    <span class="md-ellipsis">
+      1. Version Consistency
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#2-dependency-updates" class="md-nav__link">
+    <span class="md-ellipsis">
+      2. Dependency Updates
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#3-backward-compatibility" class="md-nav__link">
+    <span class="md-ellipsis">
+      3. Backward Compatibility
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#4-development-workflow" class="md-nav__link">
+    <span class="md-ellipsis">
+      4. Development Workflow
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#common-patterns" class="md-nav__link">
+    <span class="md-ellipsis">
+      Common Patterns
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Common Patterns">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#pattern-1-feature-development" class="md-nav__link">
+    <span class="md-ellipsis">
+      Pattern 1: Feature Development
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pattern-2-bug-fix" class="md-nav__link">
+    <span class="md-ellipsis">
+      Pattern 2: Bug Fix
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pattern-3-breaking-change" class="md-nav__link">
+    <span class="md-ellipsis">
+      Pattern 3: Breaking Change
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#troubleshooting" class="md-nav__link">
+    <span class="md-ellipsis">
+      Troubleshooting
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Troubleshooting">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#issue-package-not-found-errors" class="md-nav__link">
+    <span class="md-ellipsis">
+      Issue: "Package not found" errors
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#issue-version-conflicts-between-libraries" class="md-nav__link">
+    <span class="md-ellipsis">
+      Issue: Version conflicts between libraries
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#issue-development-changes-not-reflected" class="md-nav__link">
+    <span class="md-ellipsis">
+      Issue: Development changes not reflected
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+
+<h1 id="shared-library-versioning-guide">Shared Library Versioning Guide<a class="headerlink" href="#shared-library-versioning-guide" title="Permanent link">&para;</a></h1>
+<p>This document outlines the versioning strategy for shared libraries in the Hoopstat Haus monorepo, as established in <a href="../meta/adr/ADR-016-shared_library_versioning.md">ADR-016</a>.</p>
+<h2 id="overview">Overview<a class="headerlink" href="#overview" title="Permanent link">&para;</a></h2>
+<p>Shared libraries in the <code>/libs</code> directory follow <a href="https://semver.org/">Semantic Versioning (SemVer)</a> to enable clear dependency management and stable deployments.</p>
+<h2 id="semantic-versioning-format">Semantic Versioning Format<a class="headerlink" href="#semantic-versioning-format" title="Permanent link">&para;</a></h2>
+<p>All shared libraries use the <strong>MAJOR.MINOR.PATCH</strong> format:</p>
+<ul>
+<li><strong>MAJOR</strong>: Incremented for breaking changes that require code changes in consuming applications</li>
+<li><strong>MINOR</strong>: Incremented for new features that are backward compatible</li>
+<li><strong>PATCH</strong>: Incremented for bug fixes that are backward compatible</li>
+</ul>
+<h3 id="examples">Examples<a class="headerlink" href="#examples" title="Permanent link">&para;</a></h3>
+<ul>
+<li><code>1.0.0</code> → <code>1.0.1</code>: Bug fix (safe to update)</li>
+<li><code>1.0.1</code> → <code>1.1.0</code>: New backward-compatible feature (safe to update) </li>
+<li><code>1.1.0</code> → <code>2.0.0</code>: Breaking change (requires code changes in apps)</li>
+</ul>
+<h2 id="version-management-process">Version Management Process<a class="headerlink" href="#version-management-process" title="Permanent link">&para;</a></h2>
+<h3 id="1-initial-library-version">1. Initial Library Version<a class="headerlink" href="#1-initial-library-version" title="Permanent link">&para;</a></h3>
+<p>New libraries start at version <code>0.1.0</code> to indicate pre-release status:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="k">[tool.poetry]</span>
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="n">name</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;my-new-library&quot;</span>
+<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="n">version</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;0.1.0&quot;</span>
+</code></pre></div>
+<h3 id="2-version-bumping-guidelines">2. Version Bumping Guidelines<a class="headerlink" href="#2-version-bumping-guidelines" title="Permanent link">&para;</a></h3>
+<h4 id="for-bug-fixes-patch">For Bug Fixes (PATCH)<a class="headerlink" href="#for-bug-fixes-patch" title="Permanent link">&para;</a></h4>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="c1"># Fix a bug without changing the API</span>
+<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="c1"># 1.0.0 → 1.0.1</span>
+<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>poetry<span class="w"> </span>version<span class="w"> </span>patch
+</code></pre></div>
+<h4 id="for-new-features-minor">For New Features (MINOR)<a class="headerlink" href="#for-new-features-minor" title="Permanent link">&para;</a></h4>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="c1"># Add new functions/classes without breaking existing ones</span>
+<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="c1"># 1.0.1 → 1.1.0</span>
+<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>poetry<span class="w"> </span>version<span class="w"> </span>minor
+</code></pre></div>
+<h4 id="for-breaking-changes-major">For Breaking Changes (MAJOR)<a class="headerlink" href="#for-breaking-changes-major" title="Permanent link">&para;</a></h4>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="c1"># Change function signatures, remove functions, change behavior</span>
+<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a><span class="c1"># 1.1.0 → 2.0.0</span>
+<a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a>poetry<span class="w"> </span>version<span class="w"> </span>major
+</code></pre></div>
+<h3 id="3-pre-release-versions">3. Pre-release Versions<a class="headerlink" href="#3-pre-release-versions" title="Permanent link">&para;</a></h3>
+<p>For development versions before a stable release:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="c1"># Create a pre-release version</span>
+<a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a><span class="c1"># 1.0.0 → 1.1.0-alpha.1</span>
+<a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a>poetry<span class="w"> </span>version<span class="w"> </span>preminor<span class="w"> </span>--next-phase<span class="o">=</span>alpha
+<a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a>
+<a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a><span class="c1"># Bump pre-release</span>
+<a id="__codelineno-4-6" name="__codelineno-4-6" href="#__codelineno-4-6"></a><span class="c1"># 1.1.0-alpha.1 → 1.1.0-alpha.2</span>
+<a id="__codelineno-4-7" name="__codelineno-4-7" href="#__codelineno-4-7"></a>poetry<span class="w"> </span>version<span class="w"> </span>prerelease
+</code></pre></div>
+<h2 id="dependency-management-between-apps-and-libraries">Dependency Management Between Apps and Libraries<a class="headerlink" href="#dependency-management-between-apps-and-libraries" title="Permanent link">&para;</a></h2>
+<h3 id="development-dependencies-recommended">Development Dependencies (Recommended)<a class="headerlink" href="#development-dependencies-recommended" title="Permanent link">&para;</a></h3>
+<p>For active development, applications should use local path dependencies:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="c1"># In apps/my-app/pyproject.toml</span>
+<a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a><span class="k">[tool.poetry.dependencies]</span>
+<a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a><span class="n">python</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;^3.12&quot;</span>
+<a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a><span class="c1"># Use local path for development</span>
+<a id="__codelineno-5-5" name="__codelineno-5-5" href="#__codelineno-5-5"></a><span class="n">basketball-stats</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span><span class="n">path</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s2">&quot;../../libs/basketball-stats&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">develop</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="kc">true</span><span class="p">}</span>
+<a id="__codelineno-5-6" name="__codelineno-5-6" href="#__codelineno-5-6"></a><span class="n">data-utils</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span><span class="n">path</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s2">&quot;../../libs/data-utils&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">develop</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="kc">true</span><span class="p">}</span>
+</code></pre></div>
+<p>Benefits:
+- Immediate access to library changes during development
+- No version management overhead for local development
+- Supports rapid iteration and testing</p>
+<h3 id="production-dependencies-optional">Production Dependencies (Optional)<a class="headerlink" href="#production-dependencies-optional" title="Permanent link">&para;</a></h3>
+<p>For production stability, applications can pin to specific versions:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="c1"># In apps/my-app/pyproject.toml</span>
+<a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a><span class="k">[tool.poetry.dependencies]</span>
+<a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a><span class="n">python</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;^3.12&quot;</span>
+<a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a><span class="c1"># Pin to specific versions for stability</span>
+<a id="__codelineno-6-5" name="__codelineno-6-5" href="#__codelineno-6-5"></a><span class="n">basketball-stats</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span><span class="n">path</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s2">&quot;../../libs/basketball-stats&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">version</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s2">&quot;^1.2.0&quot;</span><span class="p">}</span>
+<a id="__codelineno-6-6" name="__codelineno-6-6" href="#__codelineno-6-6"></a><span class="n">data-utils</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span><span class="n">path</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s2">&quot;../../libs/data-utils&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">version</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s2">&quot;^2.0.0&quot;</span><span class="p">}</span>
+</code></pre></div>
+<h3 id="version-constraint-guidelines">Version Constraint Guidelines<a class="headerlink" href="#version-constraint-guidelines" title="Permanent link">&para;</a></h3>
+<p>Use caret constraints (<code>^</code>) for most dependencies:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a><span class="c1"># Allows 1.2.0 ≤ version &lt; 2.0.0</span>
+<a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a><span class="n">basketball-stats</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span><span class="n">path</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s2">&quot;../../libs/basketball-stats&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">version</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s2">&quot;^1.2.0&quot;</span><span class="p">}</span>
+<a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a>
+<a id="__codelineno-7-4" name="__codelineno-7-4" href="#__codelineno-7-4"></a><span class="c1"># For pre-1.0 libraries, use tilde constraints to avoid breaking changes</span>
+<a id="__codelineno-7-5" name="__codelineno-7-5" href="#__codelineno-7-5"></a><span class="n">experimental-lib</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span><span class="n">path</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s2">&quot;../../libs/experimental-lib&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">version</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s2">&quot;~0.3.0&quot;</span><span class="p">}</span>
+</code></pre></div>
+<h2 id="breaking-change-management">Breaking Change Management<a class="headerlink" href="#breaking-change-management" title="Permanent link">&para;</a></h2>
+<h3 id="1-planning-breaking-changes">1. Planning Breaking Changes<a class="headerlink" href="#1-planning-breaking-changes" title="Permanent link">&para;</a></h3>
+<p>Before introducing breaking changes:</p>
+<ol>
+<li><strong>Document the change</strong>: Update library README with migration guide</li>
+<li><strong>Deprecation period</strong>: Mark old functionality as deprecated in a minor release</li>
+<li><strong>Communication</strong>: Notify application maintainers of upcoming changes</li>
+</ol>
+<h3 id="2-implementing-breaking-changes">2. Implementing Breaking Changes<a class="headerlink" href="#2-implementing-breaking-changes" title="Permanent link">&para;</a></h3>
+<ol>
+<li><strong>Create migration documentation</strong> in the library's README</li>
+<li><strong>Bump major version</strong> using <code>poetry version major</code></li>
+<li><strong>Update library changelog</strong> with clear migration instructions</li>
+<li><strong>Update applications</strong> that consume the library</li>
+</ol>
+<h3 id="3-migration-strategy">3. Migration Strategy<a class="headerlink" href="#3-migration-strategy" title="Permanent link">&para;</a></h3>
+<p>For gradual migration:</p>
+<ol>
+<li><strong>Version pinning</strong>: Pin applications to the last compatible version</li>
+<li><strong>Parallel development</strong>: Applications can migrate at their own pace</li>
+<li><strong>Testing</strong>: Verify compatibility before updating dependencies</li>
+</ol>
+<h2 id="library-release-checklist">Library Release Checklist<a class="headerlink" href="#library-release-checklist" title="Permanent link">&para;</a></h2>
+<p>Before releasing a new library version:</p>
+<ul>
+<li>[ ] Update version in <code>pyproject.toml</code> using <code>poetry version</code></li>
+<li>[ ] Update <code>CHANGELOG.md</code> (if present) with changes</li>
+<li>[ ] Run tests: <code>poetry run pytest</code></li>
+<li>[ ] Run linting: <code>poetry run ruff check</code></li>
+<li>[ ] Update documentation if needed</li>
+<li>[ ] Commit version bump: <code>git commit -m "bump: version X.Y.Z"</code></li>
+<li>[ ] Tag release: <code>git tag vX.Y.Z</code> (optional, for tracking)</li>
+</ul>
+<h2 id="best-practices">Best Practices<a class="headerlink" href="#best-practices" title="Permanent link">&para;</a></h2>
+<h3 id="1-version-consistency">1. Version Consistency<a class="headerlink" href="#1-version-consistency" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Use <code>poetry version</code> command to ensure consistent version bumping</li>
+<li>Keep versions in sync with actual changes (don't skip versions)</li>
+<li>Document breaking changes clearly in commit messages</li>
+</ul>
+<h3 id="2-dependency-updates">2. Dependency Updates<a class="headerlink" href="#2-dependency-updates" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Review library changes before updating dependencies in applications</li>
+<li>Test applications thoroughly after updating library dependencies</li>
+<li>Use version ranges (<code>^1.0.0</code>) rather than exact pins when possible</li>
+</ul>
+<h3 id="3-backward-compatibility">3. Backward Compatibility<a class="headerlink" href="#3-backward-compatibility" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Maintain backward compatibility within major versions</li>
+<li>Use deprecation warnings before removing functionality</li>
+<li>Provide clear migration paths for breaking changes</li>
+</ul>
+<h3 id="4-development-workflow">4. Development Workflow<a class="headerlink" href="#4-development-workflow" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Use local path dependencies during active development</li>
+<li>Consider version pinning for critical production applications</li>
+<li>Coordinate library updates across multiple consuming applications</li>
+</ul>
+<h2 id="common-patterns">Common Patterns<a class="headerlink" href="#common-patterns" title="Permanent link">&para;</a></h2>
+<h3 id="pattern-1-feature-development">Pattern 1: Feature Development<a class="headerlink" href="#pattern-1-feature-development" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a><span class="c1"># 1. Develop new feature in library</span>
+<a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a><span class="nb">cd</span><span class="w"> </span>libs/my-library
+<a id="__codelineno-8-3" name="__codelineno-8-3" href="#__codelineno-8-3"></a><span class="c1"># Work on feature...</span>
+<a id="__codelineno-8-4" name="__codelineno-8-4" href="#__codelineno-8-4"></a>poetry<span class="w"> </span>run<span class="w"> </span>pytest<span class="w">  </span><span class="c1"># Ensure tests pass</span>
+<a id="__codelineno-8-5" name="__codelineno-8-5" href="#__codelineno-8-5"></a>
+<a id="__codelineno-8-6" name="__codelineno-8-6" href="#__codelineno-8-6"></a><span class="c1"># 2. Bump minor version for new feature</span>
+<a id="__codelineno-8-7" name="__codelineno-8-7" href="#__codelineno-8-7"></a>poetry<span class="w"> </span>version<span class="w"> </span>minor<span class="w">  </span><span class="c1"># 1.0.0 → 1.1.0</span>
+<a id="__codelineno-8-8" name="__codelineno-8-8" href="#__codelineno-8-8"></a>
+<a id="__codelineno-8-9" name="__codelineno-8-9" href="#__codelineno-8-9"></a><span class="c1"># 3. Update consuming applications (optional)</span>
+<a id="__codelineno-8-10" name="__codelineno-8-10" href="#__codelineno-8-10"></a><span class="nb">cd</span><span class="w"> </span>apps/my-app
+<a id="__codelineno-8-11" name="__codelineno-8-11" href="#__codelineno-8-11"></a><span class="c1"># Update dependency version if needed</span>
+<a id="__codelineno-8-12" name="__codelineno-8-12" href="#__codelineno-8-12"></a>poetry<span class="w"> </span>update<span class="w"> </span>my-library
+</code></pre></div>
+<h3 id="pattern-2-bug-fix">Pattern 2: Bug Fix<a class="headerlink" href="#pattern-2-bug-fix" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a><span class="c1"># 1. Fix bug in library</span>
+<a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a><span class="nb">cd</span><span class="w"> </span>libs/my-library
+<a id="__codelineno-9-3" name="__codelineno-9-3" href="#__codelineno-9-3"></a><span class="c1"># Fix the bug...</span>
+<a id="__codelineno-9-4" name="__codelineno-9-4" href="#__codelineno-9-4"></a>poetry<span class="w"> </span>run<span class="w"> </span>pytest
+<a id="__codelineno-9-5" name="__codelineno-9-5" href="#__codelineno-9-5"></a>
+<a id="__codelineno-9-6" name="__codelineno-9-6" href="#__codelineno-9-6"></a><span class="c1"># 2. Bump patch version</span>
+<a id="__codelineno-9-7" name="__codelineno-9-7" href="#__codelineno-9-7"></a>poetry<span class="w"> </span>version<span class="w"> </span>patch<span class="w">  </span><span class="c1"># 1.1.0 → 1.1.1</span>
+<a id="__codelineno-9-8" name="__codelineno-9-8" href="#__codelineno-9-8"></a>
+<a id="__codelineno-9-9" name="__codelineno-9-9" href="#__codelineno-9-9"></a><span class="c1"># 3. Applications using ^1.1.0 will automatically get the fix</span>
+</code></pre></div>
+<h3 id="pattern-3-breaking-change">Pattern 3: Breaking Change<a class="headerlink" href="#pattern-3-breaking-change" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a><span class="c1"># 1. Plan and communicate breaking change</span>
+<a id="__codelineno-10-2" name="__codelineno-10-2" href="#__codelineno-10-2"></a><span class="c1"># 2. Implement change in library</span>
+<a id="__codelineno-10-3" name="__codelineno-10-3" href="#__codelineno-10-3"></a><span class="nb">cd</span><span class="w"> </span>libs/my-library
+<a id="__codelineno-10-4" name="__codelineno-10-4" href="#__codelineno-10-4"></a><span class="c1"># Make breaking changes...</span>
+<a id="__codelineno-10-5" name="__codelineno-10-5" href="#__codelineno-10-5"></a>poetry<span class="w"> </span>run<span class="w"> </span>pytest
+<a id="__codelineno-10-6" name="__codelineno-10-6" href="#__codelineno-10-6"></a>
+<a id="__codelineno-10-7" name="__codelineno-10-7" href="#__codelineno-10-7"></a><span class="c1"># 3. Bump major version</span>
+<a id="__codelineno-10-8" name="__codelineno-10-8" href="#__codelineno-10-8"></a>poetry<span class="w"> </span>version<span class="w"> </span>major<span class="w">  </span><span class="c1"># 1.1.1 → 2.0.0</span>
+<a id="__codelineno-10-9" name="__codelineno-10-9" href="#__codelineno-10-9"></a>
+<a id="__codelineno-10-10" name="__codelineno-10-10" href="#__codelineno-10-10"></a><span class="c1"># 4. Update applications one by one</span>
+<a id="__codelineno-10-11" name="__codelineno-10-11" href="#__codelineno-10-11"></a><span class="nb">cd</span><span class="w"> </span>apps/my-app
+<a id="__codelineno-10-12" name="__codelineno-10-12" href="#__codelineno-10-12"></a><span class="c1"># Update code to work with new API</span>
+<a id="__codelineno-10-13" name="__codelineno-10-13" href="#__codelineno-10-13"></a><span class="c1"># Update dependency version</span>
+<a id="__codelineno-10-14" name="__codelineno-10-14" href="#__codelineno-10-14"></a>poetry<span class="w"> </span>add<span class="w"> </span>my-library@^2.0.0
+</code></pre></div>
+<h2 id="troubleshooting">Troubleshooting<a class="headerlink" href="#troubleshooting" title="Permanent link">&para;</a></h2>
+<h3 id="issue-package-not-found-errors">Issue: "Package not found" errors<a class="headerlink" href="#issue-package-not-found-errors" title="Permanent link">&para;</a></h3>
+<p><strong>Solution</strong>: Ensure the library path is correct and the library has a valid <code>pyproject.toml</code>:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a><span class="c1"># Verify library structure</span>
+<a id="__codelineno-11-2" name="__codelineno-11-2" href="#__codelineno-11-2"></a>ls<span class="w"> </span>libs/my-library/pyproject.toml
+<a id="__codelineno-11-3" name="__codelineno-11-3" href="#__codelineno-11-3"></a>ls<span class="w"> </span>libs/my-library/my_library/__init__.py
+</code></pre></div>
+<h3 id="issue-version-conflicts-between-libraries">Issue: Version conflicts between libraries<a class="headerlink" href="#issue-version-conflicts-between-libraries" title="Permanent link">&para;</a></h3>
+<p><strong>Solution</strong>: Use compatible version ranges and coordinate updates:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a><span class="c1"># Check current versions</span>
+<a id="__codelineno-12-2" name="__codelineno-12-2" href="#__codelineno-12-2"></a>poetry<span class="w"> </span>show<span class="w"> </span><span class="p">|</span><span class="w"> </span>grep<span class="w"> </span>my-library
+<a id="__codelineno-12-3" name="__codelineno-12-3" href="#__codelineno-12-3"></a>
+<a id="__codelineno-12-4" name="__codelineno-12-4" href="#__codelineno-12-4"></a><span class="c1"># Update with compatible constraints</span>
+<a id="__codelineno-12-5" name="__codelineno-12-5" href="#__codelineno-12-5"></a>poetry<span class="w"> </span>add<span class="w"> </span>my-library@^1.0.0
+</code></pre></div>
+<h3 id="issue-development-changes-not-reflected">Issue: Development changes not reflected<a class="headerlink" href="#issue-development-changes-not-reflected" title="Permanent link">&para;</a></h3>
+<p><strong>Solution</strong>: Ensure using development mode for local dependencies:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a><span class="n">my-library</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span><span class="n">path</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s2">&quot;../../libs/my-library&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">develop</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="kc">true</span><span class="p">}</span>
+</code></pre></div>
+<p>This versioning strategy enables stable dependency management while maintaining the flexibility needed for monorepo development workflows.</p>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+        <div class="md-social">
+  
+    
+    
+    
+    
+      
+      
+    
+    <a href="https://github.com/efischer19/hoopstat-haus" target="_blank" rel="noopener" title="github.com" class="md-social__link">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.0.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path fill="currentColor" d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      <script id="__config" type="application/json">{"base": "..", "features": ["navigation.tabs", "navigation.sections", "search.suggest", "search.highlight"], "search": "../assets/javascripts/workers/search.d50fe291.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../assets/javascripts/bundle.50899def.min.js"></script>
+      
+    
+  </body>
+</html>

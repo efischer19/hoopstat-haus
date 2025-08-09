@@ -24,10 +24,14 @@ from .partitioning import (
     create_team_daily_partition,
 )
 from .quality import check_data_completeness, detect_outliers
+from .rules_engine import DataCleaningRulesEngine, TransformationResult
 from .transforms import (
     calculate_efficiency_rating,
+    clean_and_transform_record,
+    clean_batch,
     normalize_team_name,
     standardize_position,
+    validate_and_standardize_season,
 )
 from .validation import (
     validate_game_stats,
@@ -56,9 +60,15 @@ __all__ = [
     "normalize_team_name",
     "calculate_efficiency_rating",
     "standardize_position",
+    "clean_and_transform_record",
+    "clean_batch",
+    "validate_and_standardize_season",
     # Quality
     "check_data_completeness",
     "detect_outliers",
+    # Rules Engine
+    "DataCleaningRulesEngine",
+    "TransformationResult",
     # Partitioning
     "S3PartitionKey",
     "PartitionType",

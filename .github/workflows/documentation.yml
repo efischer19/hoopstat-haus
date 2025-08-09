@@ -19,6 +19,7 @@ on:
       - 'mkdocs.yml'
       - 'scripts/generate-docs.py'
       - 'scripts/build-docs.sh'
+  workflow_dispatch:
 
 jobs:
   build-docs:

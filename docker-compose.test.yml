@@ -1,0 +1,51 @@
+services:
+  localstack:
+    image: localstack/localstack:3.8
+    ports:
+      - "4566:4566"
+    environment:
+      - SERVICES=s3
+      - DEBUG=1
+      - PERSISTENCE=0
+      - DISABLE_CORS_CHECKS=1
+      - DISABLE_CUSTOM_CORS_S3=1
+      - S3_SKIP_SIGNATURE_VALIDATION=1
+      - EAGER_SERVICE_LOADING=1
+    volumes:
+      - "./tmp/localstack:/var/lib/localstack"
+      - "/var/run/docker.sock:/var/run/docker.sock"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:4566/health?service=s3"]
+      interval: 5s
+      timeout: 3s
+      retries: 6
+      start_period: 15s
+    networks:
+      - localstack-net
+
+  test-runner:
+    build:
+      context: .
+      dockerfile: testing/Dockerfile.test
+    depends_on:
+      localstack:
+        condition: service_healthy
+    environment:
+      - AWS_ENDPOINT_URL=http://localstack:4566
+      - AWS_ACCESS_KEY_ID=test
+      - AWS_SECRET_ACCESS_KEY=test
+      - AWS_DEFAULT_REGION=us-east-1
+      - PYTHONPATH=/app
+    volumes:
+      - .:/app
+    working_dir: /app
+    networks:
+      - localstack-net
+    command: ["python", "-m", "pytest", "testing/tests/", "-v", "--tb=short"]
+
+networks:
+  localstack-net:
+    driver: bridge
+
+volumes:
+  localstack-data:

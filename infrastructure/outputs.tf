@@ -106,16 +106,6 @@ output "medallion_iam_roles" {
 output "lambda_functions" {
   description = "Information about deployed Lambda functions"
   value = {
-    example_calculator_app = {
-      function_name = aws_lambda_function.example_calculator_app.function_name
-      function_arn  = aws_lambda_function.example_calculator_app.arn
-      invoke_arn    = aws_lambda_function.example_calculator_app.invoke_arn
-    }
-    nba_season_backfill = {
-      function_name = aws_lambda_function.nba_season_backfill.function_name
-      function_arn  = aws_lambda_function.nba_season_backfill.arn
-      invoke_arn    = aws_lambda_function.nba_season_backfill.invoke_arn
-    }
     bronze_ingestion = {
       function_name = aws_lambda_function.bronze_ingestion.function_name
       function_arn  = aws_lambda_function.bronze_ingestion.arn

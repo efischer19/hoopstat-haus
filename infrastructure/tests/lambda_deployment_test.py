@@ -71,8 +71,6 @@ def test_lambda_configuration_syntax() -> bool:
         return False
     
     expected_functions = [
-        "example_calculator_app",
-        "nba_season_backfill", 
         "bronze_ingestion",
         "mcp_server"
     ]
@@ -186,8 +184,6 @@ def test_variables_configuration() -> bool:
     
     # Check for required function configurations
     required_configs = [
-        "example_calculator_app",
-        "nba_season_backfill",
         "bronze_ingestion", 
         "mcp_server"
     ]

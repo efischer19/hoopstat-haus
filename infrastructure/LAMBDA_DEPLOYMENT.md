@@ -14,12 +14,10 @@ The infrastructure supports deploying containerized Python applications as AWS L
 
 ### Lambda Functions
 
-The infrastructure provisions 4 Lambda functions for existing containerized applications:
+The infrastructure provisions 2 Lambda functions for existing containerized applications:
 
 | Function Name | Purpose | Timeout | Memory | Log Group |
 |---------------|---------|---------|--------|-----------|
-| `hoopstat-haus-example-calculator-app` | Example/demo application | 30s | 128MB | `/hoopstat-haus/applications` |
-| `hoopstat-haus-nba-season-backfill` | NBA data backfill processing | 15min | 512MB | `/hoopstat-haus/data-pipeline` |
 | `hoopstat-haus-bronze-ingestion` | Data ingestion to bronze layer | 5min | 256MB | `/hoopstat-haus/data-pipeline` |
 | `hoopstat-haus-mcp-server` | MCP server API | 30s | 256MB | `/hoopstat-haus/applications` |
 
@@ -75,7 +73,7 @@ You can also deploy manually using the GitHub Actions workflow dispatch:
 ```bash
 # Via GitHub CLI
 gh workflow run deploy.yml \
-  --field application=example-calculator-app \
+  --field application=bronze-ingestion \
   --field environment=prod \
   --field image_tag=latest
 
@@ -92,7 +90,7 @@ Container images in ECR follow the pattern:
 
 Example:
 ```
-123456789012.dkr.ecr.us-east-1.amazonaws.com/hoopstat-haus/prod:example-calculator-app-abc123
+123456789012.dkr.ecr.us-east-1.amazonaws.com/hoopstat-haus/prod:bronze-ingestion-abc123
 ```
 
 ## Cost Optimization
@@ -101,8 +99,7 @@ Example:
 
 Function configurations are optimized for cost:
 
-- **API Services** (calculator, mcp-server): 30s timeout, minimal memory
-- **Data Processing** (nba-backfill): Longer timeout, more memory
+- **API Services** (mcp-server): 30s timeout, minimal memory
 - **Data Ingestion** (bronze-ingestion): Balanced configuration
 
 ### Lifecycle Management
@@ -135,11 +132,14 @@ Key configuration options in `variables.tf`:
 variable "lambda_config" {
   description = "Configuration for Lambda functions"
   type = object({
-    example_calculator_app = object({
+    bronze_ingestion = object({
       timeout     = number
       memory_size = number
     })
-    # ... other functions
+    mcp_server = object({
+      timeout     = number
+      memory_size = number
+    })
   })
 }
 ```
@@ -149,7 +149,7 @@ variable "lambda_config" {
 Override defaults using Terraform variables:
 
 ```bash
-terraform plan -var="lambda_config.nba_season_backfill.timeout=1800"
+terraform plan -var="lambda_config.bronze_ingestion.timeout=600"
 ```
 
 ## Testing

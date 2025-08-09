@@ -9,7 +9,8 @@ on:
         required: true
         type: choice
         options:
-          - example-calculator-app
+          - bronze-ingestion
+          - mcp-server
       environment:
         description: 'Target environment'
         required: true
@@ -220,8 +221,8 @@ jobs:
             if [ $? -eq 0 ]; then
               echo "✅ Lambda function is now active and ready"
               
-              # Optional: Run a test invocation for non-long-running functions
-              if [[ "$APP_NAME" == "example-calculator-app" || "$APP_NAME" == "mcp-server" ]]; then
+              # Optional: Run a test invocation for API service functions
+              if [[ "$APP_NAME" == "mcp-server" ]]; then
                 echo "🧪 Running test invocation..."
                 TEST_PAYLOAD='{"test": true, "message": "deployment verification"}'
                 

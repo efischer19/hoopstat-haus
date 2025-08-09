@@ -1,7 +1,7 @@
 ---
 title: "ADR-021: Use Tenacity for Retry Logic and Resilience"
-status: "Proposed"
-date: "2025-01-27"
+status: "Accepted"
+date: "2025-08-09"
 tags:
   - "resilience"
   - "error-handling"

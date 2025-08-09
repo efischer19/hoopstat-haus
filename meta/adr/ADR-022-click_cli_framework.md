@@ -1,7 +1,7 @@
 ---
 title: "ADR-022: Use Click for Command Line Interfaces"
-status: "Proposed"
-date: "2025-01-27"
+status: "Accepted"
+date: "2025-08-09"
 tags:
   - "cli"
   - "user-interface"

@@ -308,6 +308,106 @@ resource "aws_cloudwatch_metric_alarm" "execution_time_anomaly" {
   }
 }
 
+# Lambda-specific CloudWatch Alarms
+resource "aws_cloudwatch_metric_alarm" "lambda_errors" {
+  for_each = {
+    example_calculator_app = aws_lambda_function.example_calculator_app.function_name
+    nba_season_backfill    = aws_lambda_function.nba_season_backfill.function_name
+    bronze_ingestion       = aws_lambda_function.bronze_ingestion.function_name
+    mcp_server             = aws_lambda_function.mcp_server.function_name
+  }
+
+  alarm_name          = "lambda-errors-${each.key}"
+  comparison_operator = "GreaterThanThreshold"
+  evaluation_periods  = "2"
+  metric_name         = "Errors"
+  namespace           = "AWS/Lambda"
+  period              = "300"
+  statistic           = "Sum"
+  threshold           = "1"
+  alarm_description   = "This metric monitors Lambda function errors for ${each.key}"
+
+  dimensions = {
+    FunctionName = each.value
+  }
+
+  tags = {
+    Severity    = "critical"
+    Type        = "lambda-errors"
+    Application = each.key
+  }
+}
+
+resource "aws_cloudwatch_metric_alarm" "lambda_duration" {
+  for_each = {
+    example_calculator_app = {
+      function_name = aws_lambda_function.example_calculator_app.function_name
+      threshold     = 25000 # 25 seconds (83% of 30s timeout)
+    }
+    nba_season_backfill = {
+      function_name = aws_lambda_function.nba_season_backfill.function_name
+      threshold     = 750000 # 12.5 minutes (83% of 15m timeout)
+    }
+    bronze_ingestion = {
+      function_name = aws_lambda_function.bronze_ingestion.function_name
+      threshold     = 250000 # 4.17 minutes (83% of 5m timeout)
+    }
+    mcp_server = {
+      function_name = aws_lambda_function.mcp_server.function_name
+      threshold     = 25000 # 25 seconds (83% of 30s timeout)
+    }
+  }
+
+  alarm_name          = "lambda-duration-${each.key}"
+  comparison_operator = "GreaterThanThreshold"
+  evaluation_periods  = "2"
+  metric_name         = "Duration"
+  namespace           = "AWS/Lambda"
+  period              = "300"
+  statistic           = "Average"
+  threshold           = each.value.threshold
+  alarm_description   = "This metric monitors Lambda function duration for ${each.key}"
+
+  dimensions = {
+    FunctionName = each.value.function_name
+  }
+
+  tags = {
+    Severity    = "warning"
+    Type        = "lambda-duration"
+    Application = each.key
+  }
+}
+
+resource "aws_cloudwatch_metric_alarm" "lambda_throttles" {
+  for_each = {
+    example_calculator_app = aws_lambda_function.example_calculator_app.function_name
+    nba_season_backfill    = aws_lambda_function.nba_season_backfill.function_name
+    bronze_ingestion       = aws_lambda_function.bronze_ingestion.function_name
+    mcp_server             = aws_lambda_function.mcp_server.function_name
+  }
+
+  alarm_name          = "lambda-throttles-${each.key}"
+  comparison_operator = "GreaterThanThreshold"
+  evaluation_periods  = "1"
+  metric_name         = "Throttles"
+  namespace           = "AWS/Lambda"
+  period              = "300"
+  statistic           = "Sum"
+  threshold           = "0"
+  alarm_description   = "This metric monitors Lambda function throttles for ${each.key}"
+
+  dimensions = {
+    FunctionName = each.value
+  }
+
+  tags = {
+    Severity    = "critical"
+    Type        = "lambda-throttles"
+    Application = each.key
+  }
+}
+
 # ============================================================================
 # Medallion Architecture S3 Buckets (Bronze/Silver/Gold)
 # ============================================================================
@@ -650,6 +750,249 @@ resource "aws_s3_bucket_logging" "gold" {
 
   target_bucket = aws_s3_bucket.access_logs.id
   target_prefix = "gold/"
+}
+
+# ============================================================================
+# Lambda Functions and IAM Roles for Containerized Applications
+# ============================================================================
+
+# IAM Role for Lambda Function Execution with S3 and ECR access
+resource "aws_iam_role" "lambda_execution" {
+  name = "${var.project_name}-lambda-execution"
+
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Action = "sts:AssumeRole"
+        Effect = "Allow"
+        Principal = {
+          Service = "lambda.amazonaws.com"
+        }
+      }
+    ]
+  })
+
+  tags = {
+    Purpose = "Lambda function execution with S3 and CloudWatch access"
+  }
+}
+
+# IAM policy for Lambda execution (S3, CloudWatch, ECR access)
+resource "aws_iam_policy" "lambda_execution" {
+  name        = "${var.project_name}-lambda-execution"
+  description = "IAM policy for Lambda function execution with S3 and CloudWatch access"
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Action = [
+          "logs:CreateLogStream",
+          "logs:PutLogEvents"
+        ]
+        Resource = [
+          "${aws_cloudwatch_log_group.applications.arn}:*",
+          "${aws_cloudwatch_log_group.data_pipeline.arn}:*"
+        ]
+      },
+      {
+        Effect = "Allow"
+        Action = [
+          "s3:GetObject",
+          "s3:PutObject",
+          "s3:DeleteObject",
+          "s3:ListBucket",
+          "s3:GetBucketLocation"
+        ]
+        Resource = [
+          aws_s3_bucket.main.arn,
+          "${aws_s3_bucket.main.arn}/*",
+          aws_s3_bucket.bronze.arn,
+          "${aws_s3_bucket.bronze.arn}/*",
+          aws_s3_bucket.silver.arn,
+          "${aws_s3_bucket.silver.arn}/*",
+          aws_s3_bucket.gold.arn,
+          "${aws_s3_bucket.gold.arn}/*"
+        ]
+      },
+      {
+        Effect = "Allow"
+        Action = [
+          "ecr:BatchCheckLayerAvailability",
+          "ecr:GetDownloadUrlForLayer",
+          "ecr:BatchGetImage"
+        ]
+        Resource = [
+          aws_ecr_repository.main.arn
+        ]
+      },
+      {
+        Effect = "Allow"
+        Action = [
+          "ecr:GetAuthorizationToken"
+        ]
+        Resource = "*"
+      }
+    ]
+  })
+}
+
+# Attach the custom policy to the Lambda execution role
+resource "aws_iam_role_policy_attachment" "lambda_execution" {
+  role       = aws_iam_role.lambda_execution.name
+  policy_arn = aws_iam_policy.lambda_execution.arn
+}
+
+# Attach AWS managed basic execution role for Lambda
+resource "aws_iam_role_policy_attachment" "lambda_basic_execution_role" {
+  role       = aws_iam_role.lambda_execution.name
+  policy_arn = "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+}
+
+# Lambda function configurations for different applications
+# Note: These functions will be created with placeholder image URIs
+# The actual deployment will update the function code with built images
+
+# Example Calculator App Lambda Function
+resource "aws_lambda_function" "example_calculator_app" {
+  function_name = "${var.project_name}-example-calculator-app"
+  role          = aws_iam_role.lambda_execution.arn
+  package_type  = "Image"
+  image_uri     = "${aws_ecr_repository.main.repository_url}:example-calculator-app-latest"
+
+  timeout     = var.lambda_config.example_calculator_app.timeout
+  memory_size = var.lambda_config.example_calculator_app.memory_size
+
+  environment {
+    variables = {
+      LOG_LEVEL  = "INFO"
+      APP_NAME   = "example-calculator-app"
+      AWS_REGION = var.aws_region
+    }
+  }
+
+  logging_config {
+    log_format = "JSON"
+    log_group  = aws_cloudwatch_log_group.applications.name
+  }
+
+  tags = {
+    Application = "example-calculator-app"
+    Type        = "containerized-lambda"
+  }
+
+  # Lifecycle rule to ignore image_uri changes (managed by deployment workflow)
+  lifecycle {
+    ignore_changes = [image_uri]
+  }
+}
+
+# NBA Season Backfill Lambda Function
+resource "aws_lambda_function" "nba_season_backfill" {
+  function_name = "${var.project_name}-nba-season-backfill"
+  role          = aws_iam_role.lambda_execution.arn
+  package_type  = "Image"
+  image_uri     = "${aws_ecr_repository.main.repository_url}:nba-season-backfill-latest"
+
+  timeout     = var.lambda_config.nba_season_backfill.timeout
+  memory_size = var.lambda_config.nba_season_backfill.memory_size
+
+  environment {
+    variables = {
+      LOG_LEVEL     = "INFO"
+      APP_NAME      = "nba-season-backfill"
+      AWS_REGION    = var.aws_region
+      BRONZE_BUCKET = aws_s3_bucket.bronze.bucket
+      SILVER_BUCKET = aws_s3_bucket.silver.bucket
+    }
+  }
+
+  logging_config {
+    log_format = "JSON"
+    log_group  = aws_cloudwatch_log_group.data_pipeline.name
+  }
+
+  tags = {
+    Application = "nba-season-backfill"
+    Type        = "data-pipeline"
+  }
+
+  # Lifecycle rule to ignore image_uri changes (managed by deployment workflow)
+  lifecycle {
+    ignore_changes = [image_uri]
+  }
+}
+
+# Bronze Ingestion Lambda Function
+resource "aws_lambda_function" "bronze_ingestion" {
+  function_name = "${var.project_name}-bronze-ingestion"
+  role          = aws_iam_role.lambda_execution.arn
+  package_type  = "Image"
+  image_uri     = "${aws_ecr_repository.main.repository_url}:bronze-ingestion-latest"
+
+  timeout     = var.lambda_config.bronze_ingestion.timeout
+  memory_size = var.lambda_config.bronze_ingestion.memory_size
+
+  environment {
+    variables = {
+      LOG_LEVEL     = "INFO"
+      APP_NAME      = "bronze-ingestion"
+      AWS_REGION    = var.aws_region
+      BRONZE_BUCKET = aws_s3_bucket.bronze.bucket
+    }
+  }
+
+  logging_config {
+    log_format = "JSON"
+    log_group  = aws_cloudwatch_log_group.data_pipeline.name
+  }
+
+  tags = {
+    Application = "bronze-ingestion"
+    Type        = "data-pipeline"
+  }
+
+  # Lifecycle rule to ignore image_uri changes (managed by deployment workflow)
+  lifecycle {
+    ignore_changes = [image_uri]
+  }
+}
+
+# MCP Server Lambda Function
+resource "aws_lambda_function" "mcp_server" {
+  function_name = "${var.project_name}-mcp-server"
+  role          = aws_iam_role.lambda_execution.arn
+  package_type  = "Image"
+  image_uri     = "${aws_ecr_repository.main.repository_url}:mcp-server-latest"
+
+  timeout     = var.lambda_config.mcp_server.timeout
+  memory_size = var.lambda_config.mcp_server.memory_size
+
+  environment {
+    variables = {
+      LOG_LEVEL   = "INFO"
+      APP_NAME    = "mcp-server"
+      AWS_REGION  = var.aws_region
+      GOLD_BUCKET = aws_s3_bucket.gold.bucket
+    }
+  }
+
+  logging_config {
+    log_format = "JSON"
+    log_group  = aws_cloudwatch_log_group.applications.name
+  }
+
+  tags = {
+    Application = "mcp-server"
+    Type        = "api-service"
+  }
+
+  # Lifecycle rule to ignore image_uri changes (managed by deployment workflow)
+  lifecycle {
+    ignore_changes = [image_uri]
+  }
 }
 
 # ============================================================================

@@ -9,7 +9,8 @@ on:
         required: true
         type: choice
         options:
-          - example-calculator-app
+          - bronze-ingestion
+          - mcp-server
       environment:
         description: 'Target environment'
         required: true
@@ -119,6 +120,11 @@ jobs:
           role-session-name: GitHubActions-Deploy-${{ github.run_id }}
           aws-region: ${{ env.AWS_REGION }}
 
+      - name: Install deployment dependencies
+        run: |
+          # Install jq for JSON processing
+          sudo apt-get update && sudo apt-get install -y jq
+
       - name: Login to Amazon ECR
         id: login-ecr
         uses: aws-actions/amazon-ecr-login@v2
@@ -168,27 +174,85 @@ jobs:
           
           echo "✅ Image health check passed"
 
-      - name: Deploy to AWS (Placeholder)
+      - name: Deploy to AWS Lambda
         env:
           APP_NAME: ${{ steps.vars.outputs.app }}
           ENVIRONMENT: ${{ steps.vars.outputs.environment }}
           IMAGE_TAG: ${{ steps.vars.outputs.image_tag }}
           ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
         run: |
-          echo "🚀 Deploying $APP_NAME to $ENVIRONMENT..."
+          echo "🚀 Deploying $APP_NAME to AWS Lambda in $ENVIRONMENT..."
           echo "📍 Image: $ECR_REGISTRY/$ECR_REPOSITORY:$APP_NAME-$IMAGE_TAG"
           
-          # Placeholder deployment logic - this is where you would:
-          # 1. Deploy to AWS Lambda (if using serverless)
-          # 2. Update ECS service (if using containers)
-          # 3. Update Kubernetes deployment (if using EKS)
-          # 4. Update any other AWS compute service
+          # Lambda function name follows the pattern: hoopstat-haus-{app-name}
+          FUNCTION_NAME="hoopstat-haus-$APP_NAME"
+          IMAGE_URI="$ECR_REGISTRY/$ECR_REPOSITORY:$APP_NAME-$IMAGE_TAG"
           
-          echo "⚠️  This is a placeholder deployment step"
-          echo "🔧 Actual deployment logic should be implemented based on target compute service"
-          echo "💡 Consider using AWS CDK, SAM, or Terraform for deployment automation"
+          echo "🔄 Updating Lambda function: $FUNCTION_NAME"
+          echo "📦 New image URI: $IMAGE_URI"
           
-          echo "✅ Deployment completed successfully (placeholder)"
+          # Update Lambda function code with new container image
+          aws lambda update-function-code \
+            --function-name "$FUNCTION_NAME" \
+            --image-uri "$IMAGE_URI" \
+            --region "$AWS_REGION" \
+            --output json > lambda_update_result.json
+          
+          # Check if update was successful
+          if [ $? -eq 0 ]; then
+            echo "✅ Lambda function code updated successfully"
+            
+            # Extract some information from the response
+            LAST_MODIFIED=$(cat lambda_update_result.json | jq -r '.LastModified')
+            CODE_SHA256=$(cat lambda_update_result.json | jq -r '.CodeSha256')
+            FUNCTION_ARN=$(cat lambda_update_result.json | jq -r '.FunctionArn')
+            
+            echo "📋 Update Details:"
+            echo "  Function ARN: $FUNCTION_ARN"
+            echo "  Last Modified: $LAST_MODIFIED"
+            echo "  Code SHA256: $CODE_SHA256"
+            
+            # Wait for function to be active
+            echo "⏳ Waiting for function to become active..."
+            aws lambda wait function-updated \
+              --function-name "$FUNCTION_NAME" \
+              --region "$AWS_REGION"
+            
+            if [ $? -eq 0 ]; then
+              echo "✅ Lambda function is now active and ready"
+              
+              # Optional: Run a test invocation for API service functions
+              if [[ "$APP_NAME" == "mcp-server" ]]; then
+                echo "🧪 Running test invocation..."
+                TEST_PAYLOAD='{"test": true, "message": "deployment verification"}'
+                
+                aws lambda invoke \
+                  --function-name "$FUNCTION_NAME" \
+                  --payload "$TEST_PAYLOAD" \
+                  --region "$AWS_REGION" \
+                  --log-type Tail \
+                  test_response.json
+                
+                if [ $? -eq 0 ]; then
+                  echo "✅ Test invocation successful"
+                  echo "📋 Response:"
+                  cat test_response.json | jq '.'
+                else
+                  echo "⚠️  Test invocation failed - function may need manual verification"
+                fi
+              else
+                echo "ℹ️  Skipping test invocation for data processing function"
+              fi
+              
+            else
+              echo "❌ Function update did not complete successfully"
+              exit 1
+            fi
+          else
+            echo "❌ Failed to update Lambda function code"
+            cat lambda_update_result.json || echo "No response file created"
+            exit 1
+          fi
 
       - name: Deployment summary
         env:
@@ -203,3 +267,9 @@ jobs:
           echo "Image Tag: $IMAGE_TAG"
           echo "Triggered by: ${{ github.event_name }}"
           echo "Status: ✅ Success"
+
+      - name: Cleanup temporary files
+        if: always()
+        run: |
+          # Clean up any temporary files created during deployment
+          rm -f lambda_update_result.json test_response.json

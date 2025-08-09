@@ -1,0 +1,65 @@
+name: Documentation
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - 'libs/**'
+      - 'docs/**'
+      - 'docs-src/**'
+      - 'mkdocs.yml'
+      - 'scripts/generate-docs.py'
+      - 'scripts/build-docs.sh'
+  pull_request:
+    branches: [ main ]
+    paths:
+      - 'libs/**'
+      - 'docs/**'
+      - 'docs-src/**'
+      - 'mkdocs.yml'
+      - 'scripts/generate-docs.py'
+      - 'scripts/build-docs.sh'
+
+jobs:
+  build-docs:
+    runs-on: ubuntu-latest
+    name: Build Documentation
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.12'
+    
+    - name: Install documentation dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r docs-requirements.txt
+    
+    - name: Build documentation
+      run: ./scripts/build-docs.sh
+    
+    - name: Check documentation completeness
+      run: |
+        echo "Checking that all libraries have documentation..."
+        for lib in libs/*/; do
+          lib_name=$(basename "$lib")
+          doc_file="docs-src/libraries/${lib_name}.md"
+          if [ ! -f "$doc_file" ]; then
+            echo "ERROR: Missing documentation for library: $lib_name"
+            exit 1
+          fi
+          echo "✓ Documentation exists for $lib_name"
+        done
+        echo "All libraries have documentation!"
+    
+    # Deploy to GitHub Pages on main branch
+    - name: Deploy to GitHub Pages
+      if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+      uses: peaceiris/actions-gh-pages@v3
+      with:
+        github_token: ${{ secrets.GITHUB_TOKEN }}
+        publish_dir: ./site
+        destination_dir: shared-library-docs

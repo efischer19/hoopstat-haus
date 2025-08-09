@@ -57,6 +57,9 @@ class LambdaConfig:
             chunk_size=int(os.getenv("CHUNK_SIZE", "10000")),
             min_expected_players=int(os.getenv("MIN_EXPECTED_PLAYERS", "1")),
             max_null_percentage=float(os.getenv("MAX_NULL_PERCENTAGE", "0.1")),
-            enable_season_totals_validation=os.getenv("ENABLE_SEASON_TOTALS_VALIDATION", "true").lower() == "true",
+            enable_season_totals_validation=os.getenv(
+                "ENABLE_SEASON_TOTALS_VALIDATION", "true"
+            ).lower()
+            == "true",
             season_totals_tolerance=float(os.getenv("SEASON_TOTALS_TOLERANCE", "0.01")),
         )

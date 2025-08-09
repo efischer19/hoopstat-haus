@@ -188,18 +188,20 @@ class TestPlayerStatsAggregator:
 
         # Config with validation enabled
         config = LambdaConfig(
-            silver_bucket="test-silver", 
+            silver_bucket="test-silver",
             gold_bucket="test-gold",
-            enable_season_totals_validation=True
+            enable_season_totals_validation=True,
         )
 
         aggregator = PlayerStatsAggregator(config, mock_s3_client)
 
         # Mock the write and validation methods
         aggregator._write_gold_layer_files = Mock(return_value=2)
-        
-        with patch.object(aggregator, '_validate_against_silver_season_totals') as mock_validate:
-            result = aggregator.process_silver_file(
+
+        with patch.object(
+            aggregator, "_validate_against_silver_season_totals"
+        ) as mock_validate:
+            aggregator.process_silver_file(
                 "test-silver",
                 "silver/player_games/season=2023-24/date=2024-01-15/player_stats.parquet",
             )
@@ -365,55 +367,63 @@ class TestSeasonTotalsValidation:
             silver_bucket="test-silver",
             gold_bucket="test-gold",
             enable_season_totals_validation=True,
-            season_totals_tolerance=0.01
+            season_totals_tolerance=0.01,
         )
         mock_s3_client = Mock()
         aggregator = PlayerStatsAggregator(config, mock_s3_client)
 
         # Mock calculated season stats
-        calculated_stats = pd.DataFrame([
-            {
-                "player_id": "player1",
-                "season": "2023-24",
-                "games_played": 5,
-                "points": 100,
-                "rebounds": 50,
-                "assists": 25,
-                "field_goals_made": 40,
-                "field_goals_attempted": 80,
-                "steals": 10,
-                "blocks": 5,
-                "turnovers": 15,
-                "minutes_played": 200
-            }
-        ])
+        calculated_stats = pd.DataFrame(
+            [
+                {
+                    "player_id": "player1",
+                    "season": "2023-24",
+                    "games_played": 5,
+                    "points": 100,
+                    "rebounds": 50,
+                    "assists": 25,
+                    "field_goals_made": 40,
+                    "field_goals_attempted": 80,
+                    "steals": 10,
+                    "blocks": 5,
+                    "turnovers": 15,
+                    "minutes_played": 200,
+                }
+            ]
+        )
 
         # Mock silver season stats that match
-        silver_stats = pd.DataFrame([
-            {
-                "player_id": "player1",
-                "season": "2023-24",
-                "games_played": 5,
-                "points": 100,
-                "rebounds": 50,
-                "assists": 25,
-                "field_goals_made": 40,
-                "field_goals_attempted": 80,
-                "steals": 10,
-                "blocks": 5,
-                "turnovers": 15,
-                "minutes_played": 200
-            }
-        ])
+        silver_stats = pd.DataFrame(
+            [
+                {
+                    "player_id": "player1",
+                    "season": "2023-24",
+                    "games_played": 5,
+                    "points": 100,
+                    "rebounds": 50,
+                    "assists": 25,
+                    "field_goals_made": 40,
+                    "field_goals_attempted": 80,
+                    "steals": 10,
+                    "blocks": 5,
+                    "turnovers": 15,
+                    "minutes_played": 200,
+                }
+            ]
+        )
 
         # Mock S3 operations
-        mock_s3_client.list_objects.return_value = ["silver/player_season_stats/season=2023-24/stats.parquet"]
+        mock_s3_client.list_objects.return_value = [
+            "silver/player_season_stats/season=2023-24/stats.parquet"
+        ]
         mock_s3_client.read_parquet.return_value = silver_stats
 
         # Should not raise any exceptions or log warnings
         aggregator._validate_against_silver_season_totals(calculated_stats, "2023-24")
 
-        mock_s3_client.list_objects.assert_called_once_with("test-silver", "silver/player_season_stats/season=2023-24/")
+        mock_s3_client.list_objects.assert_called_once_with(
+            "test-silver", "silver/player_season_stats/season=2023-24/"
+        )
         mock_s3_client.read_parquet.assert_called_once()
 
     def test_validate_against_silver_season_totals_with_discrepancies(self, caplog):
@@ -422,59 +432,78 @@ class TestSeasonTotalsValidation:
             silver_bucket="test-silver",
             gold_bucket="test-gold",
             enable_season_totals_validation=True,
-            season_totals_tolerance=0.01
+            season_totals_tolerance=0.01,
         )
         mock_s3_client = Mock()
         aggregator = PlayerStatsAggregator(config, mock_s3_client)
 
         # Mock calculated season stats
-        calculated_stats = pd.DataFrame([
-            {
-                "player_id": "player1",
-                "season": "2023-24",
-                "games_played": 5,
-                "points": 100,
-                "rebounds": 50,
-                "assists": 25,
-                "field_goals_made": 40,
-                "field_goals_attempted": 80,
-                "steals": 10,
-                "blocks": 5,
-                "turnovers": 15,
-                "minutes_played": 200
-            }
-        ])
+        calculated_stats = pd.DataFrame(
+            [
+                {
+                    "player_id": "player1",
+                    "season": "2023-24",
+                    "games_played": 5,
+                    "points": 100,
+                    "rebounds": 50,
+                    "assists": 25,
+                    "field_goals_made": 40,
+                    "field_goals_attempted": 80,
+                    "steals": 10,
+                    "blocks": 5,
+                    "turnovers": 15,
+                    "minutes_played": 200,
+                }
+            ]
+        )
 
         # Mock silver season stats with significant differences
-        silver_stats = pd.DataFrame([
-            {
-                "player_id": "player1",
-                "season": "2023-24",
-                "games_played": 5,
-                "points": 110,  # 10% difference
-                "rebounds": 50,
-                "assists": 25,
-                "field_goals_made": 45,  # 12.5% difference
-                "field_goals_attempted": 80,
-                "steals": 10,
-                "blocks": 5,
-                "turnovers": 15,
-                "minutes_played": 200
-            }
-        ])
+        silver_stats = pd.DataFrame(
+            [
+                {
+                    "player_id": "player1",
+                    "season": "2023-24",
+                    "games_played": 5,
+                    "points": 110,  # 10% difference
+                    "rebounds": 50,
+                    "assists": 25,
+                    "field_goals_made": 45,  # 12.5% difference
+                    "field_goals_attempted": 80,
+                    "steals": 10,
+                    "blocks": 5,
+                    "turnovers": 15,
+                    "minutes_played": 200,
+                }
+            ]
+        )
 
         # Mock S3 operations
-        mock_s3_client.list_objects.return_value = ["silver/player_season_stats/season=2023-24/stats.parquet"]
+        mock_s3_client.list_objects.return_value = [
+            "silver/player_season_stats/season=2023-24/stats.parquet"
+        ]
         mock_s3_client.read_parquet.return_value = silver_stats
 
         with caplog.at_level(logging.WARNING):
-            aggregator._validate_against_silver_season_totals(calculated_stats, "2023-24")
+            aggregator._validate_against_silver_season_totals(
+                calculated_stats, "2023-24"
+            )
 
         # Check that warnings were logged for discrepancies
-        warning_messages = [record.message for record in caplog.records if record.levelno == logging.WARNING]
-        assert any("Found season stats discrepancies" in msg for msg in warning_messages)
-        assert any("points: calculated=100, silver=110" in msg for msg in warning_messages)
-        assert any("field_goals_made: calculated=40, silver=45" in msg for msg in warning_messages)
+        warning_messages = [
+            record.message
+            for record in caplog.records
+            if record.levelno == logging.WARNING
+        ]
+        assert any(
+            "Found season stats discrepancies" in msg for msg in warning_messages
+        )
+        assert any(
+            "points: calculated=100, silver=110" in msg for msg in warning_messages
+        )
+        assert any(
+            "field_goals_made: calculated=40, silver=45" in msg
+            for msg in warning_messages
+        )
 
     def test_validate_against_silver_season_totals_no_silver_data(self, caplog):
         """Test validation gracefully handles missing silver data."""
@@ -482,36 +511,46 @@ class TestSeasonTotalsValidation:
             silver_bucket="test-silver",
             gold_bucket="test-gold",
             enable_season_totals_validation=True,
-            season_totals_tolerance=0.01
+            season_totals_tolerance=0.01,
         )
         mock_s3_client = Mock()
         aggregator = PlayerStatsAggregator(config, mock_s3_client)
 
-        calculated_stats = pd.DataFrame([
-            {
-                "player_id": "player1",
-                "season": "2023-24",
-                "games_played": 5,
-                "points": 100
-            }
-        ])
+        calculated_stats = pd.DataFrame(
+            [
+                {
+                    "player_id": "player1",
+                    "season": "2023-24",
+                    "games_played": 5,
+                    "points": 100,
+                }
+            ]
+        )
 
         # Mock no silver data found
         mock_s3_client.list_objects.return_value = []
 
         with caplog.at_level(logging.INFO):
-            aggregator._validate_against_silver_season_totals(calculated_stats, "2023-24")
+            aggregator._validate_against_silver_season_totals(
+                calculated_stats, "2023-24"
+            )
 
         # Check info message was logged
-        info_messages = [record.message for record in caplog.records if record.levelno == logging.INFO]
-        assert any("No silver layer season totals found" in msg for msg in info_messages)
+        info_messages = [
+            record.message
+            for record in caplog.records
+            if record.levelno == logging.INFO
+        ]
+        assert any(
+            "No silver layer season totals found" in msg for msg in info_messages
+        )
 
     def test_validate_against_silver_season_totals_disabled(self):
         """Test validation is skipped when disabled."""
         config = LambdaConfig(
             silver_bucket="test-silver",
             gold_bucket="test-gold",
-            enable_season_totals_validation=False
+            enable_season_totals_validation=False,
         )
         mock_s3_client = Mock()
         aggregator = PlayerStatsAggregator(config, mock_s3_client)

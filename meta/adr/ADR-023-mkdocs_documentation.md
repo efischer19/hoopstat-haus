@@ -1,6 +1,6 @@
 ---
 title: "ADR-023: Use MkDocs with Material Theme for Documentation Generation"
-status: "Proposed"
+status: "Accepted"
 date: "2025-08-09"
 tags:
   - "documentation"

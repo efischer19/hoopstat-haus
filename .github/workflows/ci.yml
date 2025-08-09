@@ -385,3 +385,60 @@ jobs:
           
           echo "✅ Integration testing passed for ${{ matrix.app }}"
           echo "🔗 Application works correctly with updated shared libraries"
+
+  test-e2e-pipeline:
+    name: Test E2E Pipeline
+    needs: [detect-changes, test-libraries]
+    if: >
+      (contains(needs.detect-changes.outputs.lib-matrix, 'hoopstat-e2e-testing') ||
+       contains(needs.detect-changes.outputs.lib-matrix, 'hoopstat-mock-data') ||
+       contains(needs.detect-changes.outputs.lib-matrix, 'hoopstat-data')) ||
+      contains(github.event.pull_request.body, '[e2e]') ||
+      github.event_name == 'push'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.12'
+
+      - name: Install Poetry
+        uses: snok/install-poetry@v1
+        with:
+          version: latest
+          virtualenvs-create: true
+          virtualenvs-in-project: true
+
+      - name: Cache Poetry dependencies
+        uses: actions/cache@v3
+        with:
+          path: libs/hoopstat-e2e-testing/.venv
+          key: >-
+            poetry-lib-hoopstat-e2e-testing-${{ runner.os }}-
+            ${{ hashFiles('libs/hoopstat-e2e-testing/poetry.lock') }}
+          restore-keys: |
+            poetry-lib-hoopstat-e2e-testing-${{ runner.os }}-
+
+      - name: Install E2E testing dependencies
+        working-directory: libs/hoopstat-e2e-testing
+        run: poetry install
+
+      - name: Run E2E Pipeline Tests (Unit Mode)
+        working-directory: libs/hoopstat-e2e-testing
+        run: |
+          echo "🚀 Running E2E pipeline tests with moto simulation"
+          poetry run pytest tests/ -v --tb=short
+          echo "✅ E2E pipeline tests passed"
+
+      - name: E2E Testing Summary
+        run: |
+          echo "📋 E2E Testing Summary:"
+          echo "   ✅ Unit tests with moto S3 simulation: PASSED"
+          echo "   📦 Framework ready for local Docker testing"
+          echo ""
+          echo "🐳 For full integration testing with Localstack (local development):"
+          echo "   docker compose -f docker-compose.test.yml up --build"

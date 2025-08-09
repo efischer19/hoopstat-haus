@@ -192,8 +192,11 @@ NBA API → Bronze Layer (Raw Parquet) → Silver Layer (Cleaned) → Gold Layer
 
 ### 🟡 Areas Needing Attention:
 
-**Missing Implementation vs. Planned ADRs:**
-- Several planned ADRs referenced in architectural documents are not yet proposed (ADR-016 through ADR-022)
+**ADR Planning vs. Implementation Discrepancies:**
+- ADRs 021-022 referenced in planning documents are not yet proposed:
+  - ADR-021: Referenced as "Ingestion Pipeline State Management" in [bronze-layer-ingestion.md](meta/plans/bronze-layer-ingestion.md#L114) and "Data Security and Access Control Framework" in [medallion-data-architecture.md](meta/plans/medallion-data-architecture.md#L246)
+  - ADR-022: Referenced as "UTC Datetime Standardization" in [bronze-layer-ingestion.md](meta/plans/bronze-layer-ingestion.md#L120) and "Data Monitoring and Alerting Strategy" in [medallion-data-architecture.md](meta/plans/medallion-data-architecture.md#L252)
+- Topic misalignment: Some planning documents reference ADR numbers with different topics than implemented ADRs (e.g., [medallion-data-architecture.md](meta/plans/medallion-data-architecture.md#L216-L252) vs. actual ADR-016 through ADR-020)
 - Single environment strategy (ADR-012) needs validation against actual deployment patterns
 
 **Documentation Gaps:**

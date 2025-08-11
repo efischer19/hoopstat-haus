@@ -1,7 +1,7 @@
 ---
 title: "ADR-024: Metadata Catalog Strategy for Data Discovery and Schema Management"
-status: "Proposed"
-date: "2025-01-22"
+status: "Accepted"
+date: "2025-08-11"
 tags:
   - "data-pipeline"
   - "metadata"

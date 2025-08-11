@@ -539,6 +539,24 @@ type = "directory"
 url = "../../libs/hoopstat-data"
 
 [[package]]
+name = "hoopstat-nba-api"
+version = "0.1.0"
+description = "NBA API client library with rate limiting and error handling"
+optional = false
+python-versions = "^3.12"
+groups = ["main"]
+files = []
+develop = true
+
+[package.dependencies]
+nba-api = "^1.5.2"
+requests = "^2.31.0"
+
+[package.source]
+type = "directory"
+url = "../../libs/hoopstat-nba_api"
+
+[[package]]
 name = "hoopstat-observability"
 version = "0.1.0"
 description = "Standardized logging and observability utilities for Hoopstat Haus applications"
@@ -1801,4 +1819,4 @@ files = [
 [metadata]
 lock-version = "2.1"
 python-versions = "^3.12"
-content-hash = "00b89cad37b54e5047d0c89a30915cab9575bf762d70e495a7c89ccb97cd4020"
+content-hash = "47ee6c7d6c3de5983c9a46911c205480bf6405778d2509da6bb8dac2958cc179"

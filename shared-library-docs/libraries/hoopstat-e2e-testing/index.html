@@ -1456,7 +1456,7 @@ using Localstack S3 simulation and Docker Compose orchestration.</p>
 <li><code>cleanup_environment(self) -&gt; bool</code></li>
 <li>Clean up the testing environment.</li>
 <li><code>ingest_bronze_data(self, num_teams: int, num_players_per_team: int) -&gt; bool</code></li>
-<li>Ingest raw mock data into the bronze layer.</li>
+<li>Ingest raw mock data into the bronze layer as Parquet.</li>
 <li><code>transform_silver_data(self) -&gt; bool</code></li>
 <li>Transform bronze data into silver layer (cleaned and normalized).</li>
 <li><code>aggregate_gold_data(self) -&gt; bool</code></li>
@@ -1545,7 +1545,7 @@ using Localstack S3 simulation and Docker Compose orchestration.</p>
 <h4 id="ingest_bronze_data">ingest_bronze_data<a class="headerlink" href="#ingest_bronze_data" title="Permanent link">&para;</a></h4>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a><span class="n">ingest_bronze_data</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">num_teams</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">num_players_per_team</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span>
 </code></pre></div>
-<p>Ingest raw mock data into the bronze layer.</p>
+<p>Ingest raw mock data into the bronze layer as Parquet.</p>
 <p>Args:
     num_teams: Number of teams to generate
     num_players_per_team: Number of players per team</p>

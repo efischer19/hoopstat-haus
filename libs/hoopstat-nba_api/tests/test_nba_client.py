@@ -6,8 +6,9 @@ from datetime import date
 from unittest.mock import Mock, patch
 
 import pytest
-from hoopstat_nba_ingestion.nba_client import NBAAPIError, NBAClient
-from hoopstat_nba_ingestion.rate_limiter import RateLimiter
+
+from hoopstat_nba_api.nba_client import NBAAPIError, NBAClient
+from hoopstat_nba_api.rate_limiter import RateLimiter
 
 
 class TestNBAClient:
@@ -25,7 +26,7 @@ class TestNBAClient:
         client = NBAClient(rate_limiter=custom_limiter)
         assert client.rate_limiter is custom_limiter
 
-    @patch("hoopstat_nba_ingestion.nba_client.LeagueGameFinder")
+    @patch("hoopstat_nba_api.nba_client.LeagueGameFinder")
     def test_make_request_success(self, mock_endpoint):
         """Test successful API request."""
         # Mock the endpoint response
@@ -41,7 +42,7 @@ class TestNBAClient:
         mock_endpoint.assert_called_once_with(test_param="value")
         mock_instance.get_json.assert_called_once()
 
-    @patch("hoopstat_nba_ingestion.nba_client.LeagueGameFinder")
+    @patch("hoopstat_nba_api.nba_client.LeagueGameFinder")
     def test_make_request_with_retries(self, mock_endpoint):
         """Test API request with retries on failure."""
         # Mock endpoint that fails then succeeds
@@ -59,7 +60,7 @@ class TestNBAClient:
         assert result == {"test": "data"}
         assert mock_instance.get_json.call_count == 2
 
-    @patch("hoopstat_nba_ingestion.nba_client.LeagueGameFinder")
+    @patch("hoopstat_nba_api.nba_client.LeagueGameFinder")
     def test_make_request_max_retries_exceeded(self, mock_endpoint):
         """Test API request that exceeds max retries."""
         # Mock endpoint that always fails

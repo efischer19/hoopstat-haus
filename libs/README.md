@@ -14,6 +14,22 @@ This directory provides a standardized location for shared Python code component
 
 For comprehensive documentation about the shared libraries, visit our [published documentation](https://efischer19.github.io/hoopstat-haus/shared-library-docs/).
 
+## Available Libraries
+
+### NBA Data Processing
+- **hoopstat-nba_api** - NBA API client with rate limiting and error handling
+- **hoopstat-s3** - S3 storage and Parquet data processing for NBA data
+
+### Core Infrastructure  
+- **hoopstat-config** - Configuration management utilities
+- **hoopstat-data** - Data models and schemas
+- **hoopstat-observability** - Logging and monitoring utilities
+
+### Testing & Development
+- **hoopstat-e2e-testing** - End-to-end testing framework and utilities
+- **hoopstat-mock-data** - Mock data generation for testing
+- **example-math-utils** - Example library demonstrating patterns
+
 ## Directory Structure
 
 Each library within `/libs` should follow this standard structure:

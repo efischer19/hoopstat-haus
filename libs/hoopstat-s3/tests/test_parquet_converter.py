@@ -7,7 +7,8 @@ from unittest.mock import patch
 
 import pyarrow.parquet as pq
 import pytest
-from hoopstat_nba_ingestion.parquet_converter import (
+
+from hoopstat_s3.parquet_converter import (
     ParquetConversionError,
     ParquetConverter,
 )

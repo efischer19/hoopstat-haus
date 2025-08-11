@@ -10,10 +10,15 @@ provider "aws" {
   }
 }
 
-# Data source for GitHub OIDC provider (managed outside Terraform)
-data "aws_iam_openid_connect_provider" "github" {
-  url = "https://token.actions.githubusercontent.com"
+# Get current AWS account ID for constructing ARNs
+data "aws_caller_identity" "current" {}
+
+# Local values for computed ARNs
+locals {
+  # GitHub OIDC provider ARN (managed outside Terraform)
+  github_oidc_provider_arn = "arn:aws:iam::${data.aws_caller_identity.current.account_id}:oidc-provider/token.actions.githubusercontent.com"
 }
+
 
 # Note: GitHub Actions IAM role is managed outside of Terraform
 # to avoid circular dependency during bootstrap process.
@@ -666,7 +671,7 @@ resource "aws_iam_role" "bronze_data_access" {
       {
         Effect = "Allow"
         Principal = {
-          Federated = data.aws_iam_openid_connect_provider.github.arn
+          Federated = local.github_oidc_provider_arn
         }
         Action = "sts:AssumeRoleWithWebIdentity"
         Condition = {
@@ -734,7 +739,7 @@ resource "aws_iam_role" "silver_data_access" {
       {
         Effect = "Allow"
         Principal = {
-          Federated = data.aws_iam_openid_connect_provider.github.arn
+          Federated = local.github_oidc_provider_arn
         }
         Action = "sts:AssumeRoleWithWebIdentity"
         Condition = {
@@ -814,7 +819,7 @@ resource "aws_iam_role" "gold_data_access" {
       {
         Effect = "Allow"
         Principal = {
-          Federated = data.aws_iam_openid_connect_provider.github.arn
+          Federated = local.github_oidc_provider_arn
         }
         Action = "sts:AssumeRoleWithWebIdentity"
         Condition = {

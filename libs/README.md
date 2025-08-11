@@ -10,6 +10,10 @@ This directory provides a standardized location for shared Python code component
 - Maintain consistent interfaces and patterns across the project
 - Enable code reuse while avoiding duplication
 
+## Documentation
+
+For comprehensive documentation about the shared libraries, visit our [published documentation](https://efischer19.github.io/hoopstat-haus/shared-library-docs/).
+
 ## Available Libraries
 
 ### NBA Data Processing

@@ -6,12 +6,28 @@ transformation, quality checking, and Gold layer partitioning.
 """
 
 from .models import (
+    BoxScoreRaw,
+    # Core types
+    DataLineage,
+    # Silver layer models (main API - backward compatible)
     GameStats,
+    # Gold layer models
     GoldPlayerDailyStats,
     GoldPlayerSeasonSummary,
     GoldTeamDailyStats,
+    PlayByPlayRaw,
+    PlayerRaw,
     PlayerStats,
+    PlayerStatsRaw,
+    ScheduleGameRaw,
+    # Bronze layer models
+    TeamRaw,
     TeamStats,
+    TeamStatsRaw,
+    ValidationMode,
+    generate_all_schemas,
+    # Schema generation
+    generate_json_schema,
 )
 from .partitioning import (
     FileSizeOptimizer,
@@ -43,7 +59,10 @@ from .validation import (
 __version__ = "0.1.0"
 
 __all__ = [
-    # Silver Layer Models
+    # Core types
+    "DataLineage",
+    "ValidationMode",
+    # Silver Layer Models (main backward-compatible API)
     "PlayerStats",
     "TeamStats",
     "GameStats",
@@ -51,6 +70,17 @@ __all__ = [
     "GoldPlayerDailyStats",
     "GoldPlayerSeasonSummary",
     "GoldTeamDailyStats",
+    # Bronze Layer Models
+    "TeamRaw",
+    "PlayerRaw",
+    "ScheduleGameRaw",
+    "PlayerStatsRaw",
+    "TeamStatsRaw",
+    "PlayByPlayRaw",
+    "BoxScoreRaw",
+    # Schema utilities
+    "generate_json_schema",
+    "generate_all_schemas",
     # Validation
     "validate_player_stats",
     "validate_team_stats",

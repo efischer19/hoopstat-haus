@@ -539,6 +539,27 @@ type = "directory"
 url = "../../libs/hoopstat-data"
 
 [[package]]
+name = "hoopstat-nba-ingestion"
+version = "0.1.0"
+description = "NBA API data ingestion library with rate limiting, Parquet conversion, and S3 upload capabilities"
+optional = false
+python-versions = "^3.12"
+groups = ["main"]
+files = []
+develop = true
+
+[package.dependencies]
+boto3 = "^1.35.0"
+nba-api = "^1.5.2"
+pyarrow = "^21.0.0"
+pydantic = "^2.0.0"
+requests = "^2.31.0"
+
+[package.source]
+type = "directory"
+url = "../../libs/ingestion"
+
+[[package]]
 name = "hoopstat-observability"
 version = "0.1.0"
 description = "Standardized logging and observability utilities for Hoopstat Haus applications"
@@ -1801,4 +1822,4 @@ files = [
 [metadata]
 lock-version = "2.1"
 python-versions = "^3.12"
-content-hash = "00b89cad37b54e5047d0c89a30915cab9575bf762d70e495a7c89ccb97cd4020"
+content-hash = "7d9cbd1f390c8910a89bb50a4d45e6ac232e8fdf5b52abad97dea85e50f63298"

@@ -23,13 +23,13 @@ class TestNBAAPIClient:
         """Test that rate limiting enforces delays between calls."""
         # First call should not sleep
         start_time = time.time()
-        self.client._rate_limit()
+        self.client.rate_limiter.wait_if_needed()
         first_call_time = time.time() - start_time
         assert first_call_time < 0.1  # Should be very fast
 
         # Second call should enforce rate limit
         start_time = time.time()
-        self.client._rate_limit()
+        self.client.rate_limiter.wait_if_needed()
         second_call_time = time.time() - start_time
         assert (
             second_call_time >= self.config.rate_limit_seconds * 0.9

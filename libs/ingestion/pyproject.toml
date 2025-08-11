@@ -9,7 +9,7 @@ packages = [{include = "hoopstat_nba_ingestion", from = "nba-api"}]
 [tool.poetry.dependencies]
 python = "^3.12"
 nba-api = "^1.5.2"
-pyarrow = "^17.0.0"
+pyarrow = "^21.0.0"
 boto3 = "^1.35.0"
 requests = "^2.31.0"
 pydantic = "^2.0.0"

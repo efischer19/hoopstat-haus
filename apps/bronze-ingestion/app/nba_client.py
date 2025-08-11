@@ -1,9 +1,9 @@
 """NBA API client with retry logic and rate limiting."""
 
-import time
 from datetime import datetime
 
 import pandas as pd
+from hoopstat_nba_ingestion import RateLimiter
 from hoopstat_observability import get_logger
 from nba_api.stats.endpoints import (
     boxscoretraditionalv2,
@@ -23,7 +23,7 @@ logger = get_logger(__name__)
 
 
 class NBAAPIClient:
-    """NBA API client with rate limiting and retry logic."""
+    """NBA API client with rate limiting and retry logic, using ingestion library."""
 
     def __init__(self, config: BronzeIngestionConfig):
         """Initialize the NBA API client.
@@ -32,18 +32,12 @@ class NBAAPIClient:
             config: Configuration object with rate limiting and retry settings
         """
         self.config = config
-        self.last_request_time: float | None = None
-
-    def _rate_limit(self) -> None:
-        """Enforce rate limiting between API calls."""
-        if self.last_request_time is not None:
-            elapsed = time.time() - self.last_request_time
-            if elapsed < self.config.rate_limit_seconds:
-                sleep_time = self.config.rate_limit_seconds - elapsed
-                logger.debug(f"Rate limiting: sleeping for {sleep_time:.2f} seconds")
-                time.sleep(sleep_time)
-
-        self.last_request_time = time.time()
+        # Use the library's rate limiter for consistency
+        self.rate_limiter = RateLimiter(
+            min_delay=config.rate_limit_seconds,
+            max_delay=60.0,  # Allow up to 60s delay for backoff
+            backoff_factor=2.0,
+        )
 
     @retry(
         stop=stop_after_attempt(3),  # Will be configurable
@@ -63,7 +57,7 @@ class NBAAPIClient:
         Raises:
             ConnectionError: If API call fails after retries
         """
-        self._rate_limit()
+        self.rate_limiter.wait_if_needed()
 
         # Convert YYYY-MM-DD to MM/DD/YYYY format expected by NBA API
         date_obj = datetime.strptime(game_date, "%Y-%m-%d")
@@ -74,6 +68,9 @@ class NBAAPIClient:
         try:
             scoreboard = scoreboardv2.ScoreboardV2(game_date=nba_api_date)
             games_df = scoreboard.line_score.get_data_frame()
+
+            # Reset rate limiter delay on success
+            self.rate_limiter.reset_delay()
 
             logger.info(
                 "Retrieved schedule data",
@@ -107,13 +104,16 @@ class NBAAPIClient:
         Returns:
             DataFrame with box score data
         """
-        self._rate_limit()
+        self.rate_limiter.wait_if_needed()
 
         logger.debug(f"Fetching box score for game: {game_id}")
 
         try:
             box_score = boxscoretraditionalv2.BoxScoreTraditionalV2(game_id=game_id)
             players_df = box_score.player_stats.get_data_frame()
+
+            # Reset rate limiter delay on success
+            self.rate_limiter.reset_delay()
 
             logger.debug(
                 f"Retrieved box score data for game {game_id}: "
@@ -141,13 +141,16 @@ class NBAAPIClient:
         Returns:
             DataFrame with play-by-play data
         """
-        self._rate_limit()
+        self.rate_limiter.wait_if_needed()
 
         logger.debug(f"Fetching play-by-play for game: {game_id}")
 
         try:
             play_by_play = playbyplayv3.PlayByPlayV3(game_id=game_id)
             plays_df = play_by_play.plays.get_data_frame()
+
+            # Reset rate limiter delay on success
+            self.rate_limiter.reset_delay()
 
             logger.debug(
                 f"Retrieved play-by-play data for game {game_id}: {len(plays_df)} plays"

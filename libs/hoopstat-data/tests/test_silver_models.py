@@ -4,7 +4,6 @@ import pytest
 from pydantic import ValidationError
 
 from hoopstat_data.silver_models import (
-    BaseSilverModel,
     DataLineage,
     GameStats,
     PlayerStats,
@@ -133,7 +132,9 @@ class TestPlayerStats:
 
     def test_negative_stats_rejected_silver(self):
         """Test that Silver layer strictly rejects negative stats."""
-        with pytest.raises(ValidationError, match="Input should be greater than or equal to 0"):
+        with pytest.raises(
+            ValidationError, match="Input should be greater than or equal to 0"
+        ):
             PlayerStats(
                 player_id="2544",
                 points=-5,  # Negative points rejected in Silver
@@ -144,7 +145,9 @@ class TestPlayerStats:
                 turnovers=3,
             )
 
-        with pytest.raises(ValidationError, match="Input should be greater than or equal to 0"):
+        with pytest.raises(
+            ValidationError, match="Input should be greater than or equal to 0"
+        ):
             PlayerStats(
                 player_id="2544",
                 points=25,
@@ -157,7 +160,9 @@ class TestPlayerStats:
 
     def test_field_goals_consistency_strict(self):
         """Test that Silver layer strictly validates field goal consistency."""
-        with pytest.raises(ValidationError, match="Field goals attempted must be >= field goals made"):
+        with pytest.raises(
+            ValidationError, match="Field goals attempted must be >= field goals made"
+        ):
             PlayerStats(
                 player_id="2544",
                 points=25,
@@ -172,7 +177,9 @@ class TestPlayerStats:
 
     def test_unrealistic_points_strict_validation(self):
         """Test that Silver layer validates unrealistic point totals."""
-        with pytest.raises(ValidationError, match="Points exceeds reasonable NBA single-game maximum"):
+        with pytest.raises(
+            ValidationError, match="Points exceeds reasonable NBA single-game maximum"
+        ):
             PlayerStats(
                 player_id="2544",
                 points=150,  # Unrealistic points rejected in Silver
@@ -303,7 +310,10 @@ class TestTeamStats:
 
     def test_unrealistic_team_points_validation(self):
         """Test validation of unrealistic team point totals."""
-        with pytest.raises(ValidationError, match="Team points exceed reasonable NBA single-game maximum"):
+        with pytest.raises(
+            ValidationError,
+            match="Team points exceed reasonable NBA single-game maximum",
+        ):
             TeamStats(
                 team_id="1610612747",
                 team_name="Los Angeles Lakers",
@@ -314,7 +324,10 @@ class TestTeamStats:
                 assists=28,
             )
 
-        with pytest.raises(ValidationError, match="Team points below reasonable NBA single-game minimum"):
+        with pytest.raises(
+            ValidationError,
+            match="Team points below reasonable NBA single-game minimum",
+        ):
             TeamStats(
                 team_id="1610612747",
                 team_name="Los Angeles Lakers",
@@ -327,7 +340,10 @@ class TestTeamStats:
 
     def test_team_shooting_consistency_validation(self):
         """Test team shooting statistics consistency validation."""
-        with pytest.raises(ValidationError, match="Field goals made cannot exceed field goals attempted"):
+        with pytest.raises(
+            ValidationError,
+            match="Field goals made cannot exceed field goals attempted",
+        ):
             TeamStats(
                 team_id="1610612747",
                 team_name="Los Angeles Lakers",
@@ -338,7 +354,10 @@ class TestTeamStats:
                 assists=28,
             )
 
-        with pytest.raises(ValidationError, match="Three pointers made cannot exceed three pointers attempted"):
+        with pytest.raises(
+            ValidationError,
+            match="Three pointers made cannot exceed three pointers attempted",
+        ):
             TeamStats(
                 team_id="1610612747",
                 team_name="Los Angeles Lakers",
@@ -402,7 +421,9 @@ class TestGameStats:
 
     def test_same_team_validation(self):
         """Test that teams cannot play themselves."""
-        with pytest.raises(ValidationError, match="Home and away teams cannot be the same"):
+        with pytest.raises(
+            ValidationError, match="Home and away teams cannot be the same"
+        ):
             GameStats(
                 game_id="0022300123",
                 home_team_id="1610612747",
@@ -436,7 +457,9 @@ class TestGameStats:
 
     def test_overtime_quarters_validation(self):
         """Test overtime and quarters consistency validation."""
-        with pytest.raises(ValidationError, match="Overtime games must have at least 5 quarters"):
+        with pytest.raises(
+            ValidationError, match="Overtime games must have at least 5 quarters"
+        ):
             GameStats(
                 game_id="0022300123",
                 home_team_id="1610612747",
@@ -464,7 +487,9 @@ class TestGameStats:
 
     def test_negative_scores_rejected(self):
         """Test that negative scores are rejected."""
-        with pytest.raises(ValidationError, match="Input should be greater than or equal to 0"):
+        with pytest.raises(
+            ValidationError, match="Input should be greater than or equal to 0"
+        ):
             GameStats(
                 game_id="0022300123",
                 home_team_id="1610612747",
@@ -498,7 +523,7 @@ class TestSilverSchemaGeneration:
         assert "GameStats" in schemas
 
         # Check that each schema is a valid JSON schema dict
-        for model_name, schema in schemas.items():
+        for _model_name, schema in schemas.items():
             assert isinstance(schema, dict)
             assert "type" in schema
             assert "properties" in schema

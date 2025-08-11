@@ -5,7 +5,6 @@ on:
     branches: [ main ]
     paths:
       - 'libs/**'
-      - 'docs/**'
       - 'docs-src/**'
       - 'mkdocs.yml'
       - 'scripts/generate-docs.py'
@@ -14,7 +13,6 @@ on:
     branches: [ main ]
     paths:
       - 'libs/**'
-      - 'docs/**'
       - 'docs-src/**'
       - 'mkdocs.yml'
       - 'scripts/generate-docs.py'
@@ -55,6 +53,23 @@ jobs:
           echo "✓ Documentation exists for $lib_name"
         done
         echo "All libraries have documentation!"
+    
+    - name: Prevent documentation duplication
+      run: |
+        echo "Checking for documentation duplication between docs/ and docs-src/..."
+        if [ -d "docs" ] && [ "$(find docs -name '*.md' | wc -l)" -gt 0 ]; then
+          echo "WARNING: Found markdown files in docs/ directory."
+          echo "Per ADR-023, all documentation should be authored in docs-src/ only."
+          echo "Files found in docs/:"
+          find docs -name '*.md' | head -10
+          echo ""
+          echo "Please move any unique content to docs-src/ and remove files from docs/"
+          echo "The docs/ directory should only contain legacy content or be removed entirely."
+          # For now, this is a warning. Will become an error once docs/ is cleaned up
+          echo "NOTICE: This will become a blocking error in future versions."
+        else
+          echo "✓ No markdown files found in docs/ - documentation properly consolidated!"
+        fi
     
     # Deploy to GitHub Pages on main branch
     - name: Deploy to GitHub Pages

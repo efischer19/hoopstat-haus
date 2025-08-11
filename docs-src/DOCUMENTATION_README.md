@@ -23,7 +23,7 @@ docs-src/               # Source documentation files
 ├── libraries/         # Generated library documentation
 │   ├── index.md      # Libraries overview
 │   └── *.md          # Individual library docs (auto-generated)
-├── *.md              # Copied from /docs/ directory
+├── *.md              # Development guides and documentation
 └── DEVELOPMENT_PHILOSOPHY.md  # Copied from /meta/
 
 mkdocs.yml             # MkDocs configuration

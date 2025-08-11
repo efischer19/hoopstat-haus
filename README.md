@@ -34,7 +34,7 @@ The project is **not operational** at this time.
 apps/           # Individual applications
 libs/           # Shared Python libraries  
 infrastructure/ # Terraform AWS infrastructure (includes ECR)
-docs/           # Documentation (ECR guide, etc.)
+docs-src/       # Documentation source (MkDocs with Material theme)
 scripts/        # Utility scripts (ECR helper, etc.)
 meta/           # Project metadata and ADRs
 templates/      # Project templates
@@ -66,5 +66,28 @@ pre-commit install
 ```
 
 This ensures your code passes the same checks that CI runs, catching formatting and linting issues early.
+
+### Documentation
+
+This project uses [MkDocs with Material theme](https://squidfunk.github.io/mkdocs-material/) for documentation. All documentation is authored in `docs-src/` and automatically published to GitHub Pages.
+
+**Local Documentation Development:**
+```bash
+# Install documentation dependencies
+pip install -r docs-requirements.txt
+
+# Build documentation (includes API docs generation)
+./scripts/build-docs.sh
+
+# Serve documentation locally
+mkdocs serve
+```
+
+The documentation site will be available at `http://localhost:8000` for local preview.
+
+**Documentation Structure:**
+- Library API documentation is automatically generated from docstrings
+- Development guides and ADRs are manually authored in `docs-src/`
+- Documentation is published to: https://efischer19.github.io/hoopstat-haus/
 
 ---

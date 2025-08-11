@@ -7,7 +7,7 @@
 Hoopstat Data Processing Utilities
 
 A shared library for basketball statistics data processing, validation,
-transformation, quality checking, and Gold layer partitioning.
+transformation, quality checking, and Gold layer partitioning with Bronze/Silver/Gold data model layering.
 
 ## Installation
 
@@ -18,17 +18,243 @@ Add to your application's `pyproject.toml`:
 hoopstat-data = {path = "../libs/hoopstat-data", develop = true}
 ```
 
+## Architecture Overview
+
+The library implements a layered data model approach following the Bronze/Silver/Gold paradigm:
+
+- **Bronze Layer**: Raw, minimally processed data from NBA API sources with lenient validation
+- **Silver Layer**: Cleaned, standardized, and validated data suitable for analysis  
+- **Gold Layer**: Enriched data with computed metrics optimized for analytics and reporting
+
 ## Usage
 
+### Basic Imports (Backward Compatible)
+
 ```python
-from hoopstat_data import PlayerStats, TeamStats, GameStats, GoldPlayerDailyStats, GoldPlayerSeasonSummary, GoldTeamDailyStats, validate_player_stats, validate_team_stats, validate_game_stats, validate_stat_ranges, normalize_team_name, calculate_efficiency_rating, standardize_position, clean_and_transform_record, clean_batch, validate_and_standardize_season, check_data_completeness, detect_outliers, DataCleaningRulesEngine, TransformationResult, S3PartitionKey, PartitionType, FileSizeOptimizer, QueryPatternOptimizer, PartitionHealthChecker, create_player_daily_partition, create_player_season_partition, create_team_daily_partition
+# Standard imports - maintains existing API
+from hoopstat_data import PlayerStats, TeamStats, GameStats
+from hoopstat_data import GoldPlayerDailyStats, GoldPlayerSeasonSummary, GoldTeamDailyStats
+
+# Core functionality
+from hoopstat_data import validate_player_stats, validate_team_stats, validate_game_stats
+from hoopstat_data import normalize_team_name, calculate_efficiency_rating
+from hoopstat_data import DataCleaningRulesEngine, S3PartitionKey
+```
+
+### Layer-Specific Imports (Recommended for New Code)
+
+```python
+# Bronze layer - raw NBA API data
+from hoopstat_data.bronze_models import (
+    TeamRaw, PlayerRaw, ScheduleGameRaw, 
+    PlayerStatsRaw, TeamStatsRaw, PlayByPlayRaw, BoxScoreRaw
+)
+
+# Silver layer - cleaned and standardized data  
+from hoopstat_data.silver_models import PlayerStats, TeamStats, GameStats
+
+# Gold layer - computed analytics data
+from hoopstat_data.gold_models import (
+    GoldPlayerDailyStats, GoldPlayerSeasonSummary, GoldTeamDailyStats
+)
+```
+
+### Schema Generation and Contract Testing
+
+```python
+from hoopstat_data import generate_all_schemas
+
+# Generate JSON schemas for all layers
+schemas = generate_all_schemas()
+bronze_schemas = schemas["bronze"]  # Raw data schemas
+silver_schemas = schemas["silver"]  # Cleaned data schemas  
+gold_schemas = schemas["gold"]      # Analytics schemas
+
+# Individual layer schema generation
+from hoopstat_data.bronze_models import generate_all_bronze_schemas
+from hoopstat_data.silver_models import generate_all_silver_schemas
+from hoopstat_data.gold_models import generate_all_gold_schemas
+```
+
+## Data Model Examples
+
+### Bronze Layer - Raw NBA API Data
+
+Bronze models accept raw NBA API payloads with minimal validation:
+
+```python
+from hoopstat_data.bronze_models import PlayerStatsRaw, TeamRaw
+
+# Raw player stats from NBA API (lenient validation)
+raw_stats = PlayerStatsRaw(
+    player_id=1,
+    minutes_played="32:42",  # String format accepted
+    points=25,
+    field_goals_made=10,
+    field_goals_attempted=5,  # Inconsistent data accepted
+    extra_api_field="allowed"  # Extra fields allowed
+)
+
+# Raw team data
+team = TeamRaw(
+    id=1,
+    name="Lakers",
+    city="Los Angeles", 
+    conference="Western",
+    unknown_api_field="accepted"  # API changes accommodated
+)
+```
+
+### Silver Layer - Cleaned and Validated Data
+
+Silver models enforce strict validation and business rules:
+
+```python
+from hoopstat_data.silver_models import PlayerStats, ValidationMode
+
+# Strictly validated player stats
+player_stats = PlayerStats(
+    player_id="12345",
+    player_name="LeBron James",
+    team="Los Angeles Lakers",
+    position="SF",
+    points=25,
+    rebounds=7,
+    assists=8,
+    steals=1,
+    blocks=1, 
+    turnovers=3,
+    field_goals_made=9,
+    field_goals_attempted=18,  # Must be >= field_goals_made
+    minutes_played=35.5
+)
+
+print(f"Validation mode: {player_stats.lineage.validation_mode}")  # STRICT
+print(f"Stage: {player_stats.lineage.transformation_stage}")       # silver
+```
+
+### Gold Layer - Analytics-Ready Data
+
+Gold models include computed metrics for analysis:
+
+```python
+from hoopstat_data.gold_models import GoldPlayerDailyStats
+
+# Player stats with computed analytics
+gold_stats = GoldPlayerDailyStats(
+    player_id="12345", 
+    player_name="LeBron James",
+    points=25,
+    rebounds=7,
+    assists=8,
+    # ... other base stats ...
+    
+    # Computed Gold layer metrics
+    efficiency_rating=28.5,
+    true_shooting_percentage=0.625,
+    usage_rate=0.32,
+    plus_minus=8,
+    
+    # Partition metadata
+    season="2023-24",
+    partition_key="season=2023-24/player_id=12345/date=2024-01-15"
+)
 ```
 
 ## API Reference
 
 ### Classes
 
-#### TransformationResult
+#### Bronze Layer Models
+
+##### BaseBronzeModel
+
+Base model for all Bronze layer entities with lenient validation for raw NBA API data.
+
+- Uses `ValidationMode.LENIENT` by default
+- Allows extra fields from API responses (`extra="allow"`)
+- Source system defaults to "nba-api"
+- Transformation stage set to "bronze"
+
+##### TeamRaw
+
+Raw team data model matching NBA API team endpoints.
+
+**Fields:**
+- `id: int` - NBA team ID (required)
+- `name: str | None` - Team name (e.g., 'Lakers')  
+- `city: str | None` - Team city (e.g., 'Los Angeles')
+- `full_name: str | None` - Full team name
+- `abbreviation: str | None` - Team abbreviation (e.g., 'LAL')
+- `conference: str | None` - Conference (Eastern/Western)
+- `division: str | None` - Division name
+- Additional raw fields accepted
+
+##### PlayerRaw
+
+Raw player data model matching NBA API player endpoints.
+
+**Fields:**
+- `id: int` - NBA player ID (required)
+- `first_name: str | None` - Player first name
+- `last_name: str | None` - Player last name  
+- `full_name: str | None` - Player full name
+- `team_id: int | None` - Current team ID
+- `position: str | None` - Player position
+- `jersey_number: int | None` - Jersey number
+- `height_inches: int | None` - Height in inches
+- `weight_pounds: int | None` - Weight in pounds
+- `age: int | None` - Player age
+- `years_experience: int | None` - Years of NBA experience
+
+##### PlayerStatsRaw
+
+Raw player statistics matching NBA API boxscore/stats endpoints.
+
+**Fields:**
+- `player_id: int | None` - Player ID
+- `game_id: int | None` - Game ID
+- `team_id: int | None` - Team ID
+- `minutes_played: float | str | None` - Minutes played (accepts string format)
+- `points: int | None` - Points scored
+- `rebounds: int | None` - Total rebounds
+- `assists: int | None` - Assists
+- `steals: int | None` - Steals
+- `blocks: int | None` - Blocks
+- `turnovers: int | None` - Turnovers
+- `field_goals_made: int | None` - Field goals made
+- `field_goals_attempted: int | None` - Field goals attempted
+- Plus additional shooting and advanced stats
+
+##### TeamStatsRaw
+
+Raw team statistics matching NBA API team stats endpoints.
+
+##### ScheduleGameRaw
+
+Raw game/schedule data model matching NBA API game endpoints.
+
+##### PlayByPlayRaw
+
+Raw play-by-play data matching NBA API play-by-play endpoints.
+
+##### BoxScoreRaw
+
+Raw boxscore data container matching NBA API boxscore endpoints.
+
+#### Silver Layer Models
+
+##### ValidationMode
+
+Validation strictness levels for schema validation.
+
+##### DataLineage
+
+Data lineage tracking information.
+
+##### BaseSilverModel
+
+Base model for all Silver layer entities with common metadata.
 
 Result of a data transformation operation.
 

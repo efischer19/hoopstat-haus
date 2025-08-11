@@ -7,7 +7,7 @@ import pandas as pd
 import pytest
 
 from app.config import BronzeIngestionConfig
-from app.nba_client import NBAAPIClient
+from hoopstat_nba_ingestion import NBAAPIClient
 
 
 class TestNBAAPIClient:
@@ -35,7 +35,7 @@ class TestNBAAPIClient:
             second_call_time >= self.config.rate_limit_seconds * 0.9
         )  # Allow some tolerance
 
-    @patch("app.nba_client.scoreboardv2.ScoreboardV2")
+    @patch("hoopstat_nba_ingestion.nba_client.scoreboardv2.ScoreboardV2")
     def test_get_schedule_for_date_success(self, mock_scoreboard_class):
         """Test successful schedule retrieval."""
         # Mock NBA API response
@@ -58,7 +58,7 @@ class TestNBAAPIClient:
         assert len(result) == 2
         assert list(result["GAME_ID"]) == ["001", "002"]
 
-    @patch("app.nba_client.scoreboardv2.ScoreboardV2")
+    @patch("hoopstat_nba_ingestion.nba_client.scoreboardv2.ScoreboardV2")
     def test_get_schedule_for_date_no_games(self, mock_scoreboard_class):
         """Test schedule retrieval when no games exist."""
         # Mock empty response
@@ -73,7 +73,7 @@ class TestNBAAPIClient:
         assert len(result) == 0
         assert result.empty
 
-    @patch("app.nba_client.scoreboardv2.ScoreboardV2")
+    @patch("hoopstat_nba_ingestion.nba_client.scoreboardv2.ScoreboardV2")
     def test_get_schedule_for_date_api_error(self, mock_scoreboard_class):
         """Test schedule retrieval handles API errors."""
         # Mock API error
@@ -82,7 +82,7 @@ class TestNBAAPIClient:
         with pytest.raises(ConnectionError, match="NBA API request failed"):
             self.client.get_schedule_for_date("2024-01-15")
 
-    @patch("app.nba_client.boxscoretraditionalv2.BoxScoreTraditionalV2")
+    @patch("hoopstat_nba_ingestion.nba_client.boxscoretraditionalv2.BoxScoreTraditionalV2")
     def test_get_box_score_success(self, mock_boxscore_class):
         """Test successful box score retrieval."""
         # Mock NBA API response
@@ -105,7 +105,7 @@ class TestNBAAPIClient:
         assert len(result) == 2
         assert "PLAYER_NAME" in result.columns
 
-    @patch("app.nba_client.playbyplayv3.PlayByPlayV3")
+    @patch("hoopstat_nba_ingestion.nba_client.playbyplayv3.PlayByPlayV3")
     def test_get_play_by_play_success(self, mock_pbp_class):
         """Test successful play-by-play retrieval."""
         # Mock NBA API response
@@ -128,7 +128,7 @@ class TestNBAAPIClient:
         assert len(result) == 3
         assert "DESCRIPTION" in result.columns
 
-    @patch("app.nba_client.boxscoretraditionalv2.BoxScoreTraditionalV2")
+    @patch("hoopstat_nba_ingestion.nba_client.boxscoretraditionalv2.BoxScoreTraditionalV2")
     def test_retry_mechanism(self, mock_boxscore_class):
         """Test that retry mechanism works for transient failures."""
         # First two calls fail, third succeeds
@@ -145,7 +145,7 @@ class TestNBAAPIClient:
         assert mock_boxscore_class.call_count == 3
         assert isinstance(result, pd.DataFrame)
 
-    @patch("app.nba_client.boxscoretraditionalv2.BoxScoreTraditionalV2")
+    @patch("hoopstat_nba_ingestion.nba_client.boxscoretraditionalv2.BoxScoreTraditionalV2")
     def test_retry_exhaustion(self, mock_boxscore_class):
         """Test that method fails after retry limit is reached."""
         # All calls fail

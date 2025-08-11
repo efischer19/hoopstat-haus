@@ -1,23 +1,31 @@
-"""S3 storage client for bronze layer Parquet data."""
+"""S3 storage client for bronze layer Parquet data following ADR-014."""
 
 from io import BytesIO
 
 import boto3
-import pandas as pd
-import pyarrow as pa
-import pyarrow.parquet as pq
 from botocore.exceptions import ClientError, NoCredentialsError
-from hoopstat_observability import get_logger
 
-from .config import BronzeIngestionConfig
+# Optional imports
+try:
+    import pandas as pd
+    import pyarrow as pa
+    import pyarrow.parquet as pq
+    HAS_PANDAS = True
+except ImportError:
+    HAS_PANDAS = False
 
-logger = get_logger(__name__)
+try:
+    from hoopstat_observability import get_logger
+    logger = get_logger(__name__)
+except ImportError:
+    import logging
+    logger = logging.getLogger(__name__)
 
 
 class S3ParquetClient:
-    """S3 client for storing bronze layer data in Parquet format."""
+    """S3 client for storing bronze layer data in Parquet format following ADR-014."""
 
-    def __init__(self, config: BronzeIngestionConfig):
+    def __init__(self, config):
         """Initialize the S3 client.
 
         Args:
@@ -49,7 +57,7 @@ class S3ParquetClient:
                 raise ValueError(f"Error accessing S3 bucket: {e}") from e
 
     def _build_s3_key(self, entity: str, date: str) -> str:
-        """Build S3 key following the bronze layer structure.
+        """Build S3 key following the bronze layer structure (ADR-014).
 
         Args:
             entity: Data entity name (e.g., 'schedule', 'box_score', 'play_by_play')
@@ -61,7 +69,7 @@ class S3ParquetClient:
         return f"raw/{entity}/date={date}/data.parquet"
 
     def write_parquet(
-        self, dataframe: pd.DataFrame, entity: str, date: str, overwrite: bool = True
+        self, dataframe, entity: str, date: str, overwrite: bool = True
     ) -> str:
         """Write DataFrame to S3 as Parquet file.
 
@@ -76,7 +84,11 @@ class S3ParquetClient:
 
         Raises:
             ValueError: If write fails
+            ImportError: If pandas/pyarrow are not available
         """
+        if not HAS_PANDAS:
+            raise ImportError("pandas and pyarrow are required for Parquet operations")
+
         if dataframe.empty:
             logger.warning(f"Empty dataframe for {entity} on {date}, skipping write")
             return ""
@@ -154,7 +166,7 @@ class S3ParquetClient:
                 logger.error(f"Error checking file existence: {e}")
                 raise ValueError(f"Failed to check if file exists: {e}") from e
 
-    def read_parquet(self, entity: str, date: str) -> pd.DataFrame | None:
+    def read_parquet(self, entity: str, date: str):
         """Read Parquet file from S3.
 
         Args:
@@ -163,7 +175,13 @@ class S3ParquetClient:
 
         Returns:
             DataFrame with the data, or None if file doesn't exist
+
+        Raises:
+            ImportError: If pandas/pyarrow are not available
         """
+        if not HAS_PANDAS:
+            raise ImportError("pandas and pyarrow are required for Parquet operations")
+
         s3_key = self._build_s3_key(entity, date)
 
         try:

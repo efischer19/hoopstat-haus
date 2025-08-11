@@ -7,7 +7,7 @@ import pytest
 from botocore.exceptions import ClientError, NoCredentialsError
 
 from app.config import BronzeIngestionConfig
-from app.s3_client import S3ParquetClient
+from hoopstat_nba_ingestion import S3ParquetClient
 
 
 class TestS3ParquetClient:
@@ -19,7 +19,7 @@ class TestS3ParquetClient:
         self.config.aws_region = "us-east-1"
         self.config.bronze_bucket_name = "test-bucket"
 
-    @patch("app.s3_client.boto3.client")
+    @patch("hoopstat_nba_ingestion.s3_parquet_client.boto3.client")
     def test_init_success(self, mock_boto3_client):
         """Test successful S3 client initialization."""
         mock_s3_client = Mock()
@@ -31,7 +31,7 @@ class TestS3ParquetClient:
         mock_s3_client.head_bucket.assert_called_once_with(Bucket="test-bucket")
         assert client.s3_client == mock_s3_client
 
-    @patch("app.s3_client.boto3.client")
+    @patch("hoopstat_nba_ingestion.s3_parquet_client.boto3.client")
     def test_init_no_credentials(self, mock_boto3_client):
         """Test initialization fails with no AWS credentials."""
         mock_boto3_client.side_effect = NoCredentialsError()
@@ -39,7 +39,7 @@ class TestS3ParquetClient:
         with pytest.raises(ValueError, match="AWS credentials not found"):
             S3ParquetClient(self.config)
 
-    @patch("app.s3_client.boto3.client")
+    @patch("hoopstat_nba_ingestion.s3_parquet_client.boto3.client")
     def test_init_bucket_not_found(self, mock_boto3_client):
         """Test initialization fails when bucket doesn't exist."""
         mock_s3_client = Mock()
@@ -53,7 +53,7 @@ class TestS3ParquetClient:
 
     def test_build_s3_key(self):
         """Test S3 key building follows the correct pattern."""
-        with patch("app.s3_client.boto3.client"):
+        with patch("hoopstat_nba_ingestion.s3_parquet_client.boto3.client"):
             client = S3ParquetClient(self.config)
 
             key = client._build_s3_key("schedule", "2024-01-15")
@@ -62,7 +62,7 @@ class TestS3ParquetClient:
             key = client._build_s3_key("box_score", "2024-12-25")
             assert key == "raw/box_score/date=2024-12-25/data.parquet"
 
-    @patch("app.s3_client.boto3.client")
+    @patch("hoopstat_nba_ingestion.s3_parquet_client.boto3.client")
     def test_write_parquet_success(self, mock_boto3_client):
         """Test successful Parquet file writing to S3."""
         # Mock S3 client
@@ -80,9 +80,9 @@ class TestS3ParquetClient:
             "_build_s3_key",
             return_value="raw/schedule/date=2024-01-15/data.parquet",
         ):
-            with patch("app.s3_client.BytesIO") as mock_bytesio_class:
-                with patch("app.s3_client.pa") as mock_pa:
-                    with patch("app.s3_client.pq"):  # Don't need to assign
+            with patch("hoopstat_nba_ingestion.s3_parquet_client.BytesIO") as mock_bytesio_class:
+                with patch("hoopstat_nba_ingestion.s3_parquet_client.pa") as mock_pa:
+                    with patch("hoopstat_nba_ingestion.s3_parquet_client.pq"):  # Don't need to assign
                         # Setup mocks
                         mock_buffer = Mock()
                         mock_buffer.getvalue.return_value = b"parquet_data"
@@ -106,7 +106,7 @@ class TestS3ParquetClient:
         # Verify return value
         assert result == f"s3://test-bucket/{expected_key}"
 
-    @patch("app.s3_client.boto3.client")
+    @patch("hoopstat_nba_ingestion.s3_parquet_client.boto3.client")
     def test_write_parquet_empty_dataframe(self, mock_boto3_client):
         """Test writing empty DataFrame is skipped."""
         mock_s3_client = Mock()
@@ -122,7 +122,7 @@ class TestS3ParquetClient:
         mock_s3_client.put_object.assert_not_called()
         assert result == ""
 
-    @patch("app.s3_client.boto3.client")
+    @patch("hoopstat_nba_ingestion.s3_parquet_client.boto3.client")
     def test_write_parquet_no_overwrite_existing(self, mock_boto3_client):
         """Test writing with overwrite=False when file exists."""
         mock_s3_client = Mock()
@@ -144,7 +144,7 @@ class TestS3ParquetClient:
         mock_s3_client.put_object.assert_not_called()
         assert result == f"s3://test-bucket/{expected_key}"
 
-    @patch("app.s3_client.boto3.client")
+    @patch("hoopstat_nba_ingestion.s3_parquet_client.boto3.client")
     def test_file_exists_true(self, mock_boto3_client):
         """Test file_exists returns True when file exists."""
         mock_s3_client = Mock()
@@ -161,7 +161,7 @@ class TestS3ParquetClient:
             Bucket="test-bucket", Key=expected_key
         )
 
-    @patch("app.s3_client.boto3.client")
+    @patch("hoopstat_nba_ingestion.s3_parquet_client.boto3.client")
     def test_file_exists_false(self, mock_boto3_client):
         """Test file_exists returns False when file doesn't exist."""
         mock_s3_client = Mock()
@@ -176,8 +176,8 @@ class TestS3ParquetClient:
 
         assert result is False
 
-    @patch("app.s3_client.boto3.client")
-    @patch("app.s3_client.pq.read_table")
+    @patch("hoopstat_nba_ingestion.s3_parquet_client.boto3.client")
+    @patch("hoopstat_nba_ingestion.s3_parquet_client.pq.read_table")
     def test_read_parquet_success(self, mock_read_table, mock_boto3_client):
         """Test successful Parquet file reading from S3."""
         # Mock S3 client
@@ -205,7 +205,7 @@ class TestS3ParquetClient:
         # Verify result
         pd.testing.assert_frame_equal(result, mock_df)
 
-    @patch("app.s3_client.boto3.client")
+    @patch("hoopstat_nba_ingestion.s3_parquet_client.boto3.client")
     def test_read_parquet_file_not_found(self, mock_boto3_client):
         """Test reading non-existent file returns None."""
         mock_s3_client = Mock()

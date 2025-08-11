@@ -4,10 +4,9 @@ import time
 
 import pandas as pd
 from hoopstat_observability import get_logger, performance_context
+from hoopstat_nba_ingestion import NBAAPIClient, S3ParquetClient
 
 from .config import BronzeIngestionConfig
-from .nba_client import NBAAPIClient
-from .s3_client import S3ParquetClient
 
 logger = get_logger(__name__)
 

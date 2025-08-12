@@ -369,16 +369,17 @@ class TestBronzeLayerValidation:
             bronze_bucket=bucket_name, aws_region="us-east-1"
         )
 
-        # Create realistic test data
+        # Create realistic test data that conforms to validation schema
         games_data = []
         for i in range(20):  # Simulate 20 games
             games_data.append({
-                "GAME_ID": f"002230050{i:02d}",
+                "GAME_ID": f"00223005{i:02d}",  # Exactly 10 digits
                 "GAME_DATE": "2023-12-25",
-                "HOME_TEAM": f"TEAM{i % 10}",
-                "AWAY_TEAM": f"TEAM{(i + 1) % 10}",
-                "HOME_SCORE": 100 + i,
-                "AWAY_SCORE": 95 + i,
+                "TEAM_ID": 1610612747 + (i % 10),  # Lakers team ID + offset
+                "TEAM_ABBREVIATION": f"T{i % 10:02d}",
+                "TEAM_NAME": f"Team {i % 10}",
+                "MATCHUP": f"T{i % 10:02d} vs T{(i + 1) % 10:02d}",
+                "PTS": 100 + i,
             })
 
         box_score_data = {
@@ -387,7 +388,8 @@ class TestBronzeLayerValidation:
             "resultSets": [
                 {
                     "name": "PlayerStats",
-                    "rowSet": [["Player" + str(i), i * 2] for i in range(100)],
+                    "headers": ["PLAYER_ID", "PLAYER_NAME", "PTS"],
+                    "rowSet": [["Player" + str(i), f"Player {i}", i * 2] for i in range(100)],
                 }
             ],
         }
@@ -441,27 +443,25 @@ class TestBronzeLayerValidation:
             bronze_bucket=bucket_name, aws_region="us-east-1"
         )
 
-        # Mock complete NBA API data
+        # Mock complete NBA API data that conforms to validation schema
         mock_games = [
             {
                 "GAME_ID": "0022300500",
                 "GAME_DATE": "2023-12-25",
-                "HOME_TEAM": "LAL",
-                "AWAY_TEAM": "GSW",
-                "HOME_SCORE": 123,
-                "AWAY_SCORE": 109,
-                "SEASON": "2023-24",
-                "GAME_STATUS_TEXT": "Final",
+                "TEAM_ID": 1610612747,  # Lakers team ID
+                "TEAM_ABBREVIATION": "LAL",
+                "TEAM_NAME": "Los Angeles Lakers",
+                "MATCHUP": "LAL vs GSW",
+                "PTS": 123,
             },
             {
                 "GAME_ID": "0022300501",
                 "GAME_DATE": "2023-12-25",
-                "HOME_TEAM": "BOS",
-                "AWAY_TEAM": "MIA",
-                "HOME_SCORE": 114,
-                "AWAY_SCORE": 106,
-                "SEASON": "2023-24",
-                "GAME_STATUS_TEXT": "Final",
+                "TEAM_ID": 1610612738,  # Celtics team ID
+                "TEAM_ABBREVIATION": "BOS",
+                "TEAM_NAME": "Boston Celtics",
+                "MATCHUP": "BOS vs MIA",
+                "PTS": 114,
             },
         ]
 
@@ -517,8 +517,8 @@ class TestBronzeLayerValidation:
             assert len(schedule_data) == 2
             assert "0022300500" in schedule_data["GAME_ID"].values
             assert "0022300501" in schedule_data["GAME_ID"].values
-            assert "LAL" in schedule_data["HOME_TEAM"].values
-            assert "GSW" in schedule_data["AWAY_TEAM"].values
+            assert "LAL" in schedule_data["TEAM_ABBREVIATION"].values
+            assert "BOS" in schedule_data["TEAM_ABBREVIATION"].values
 
             # Verify metadata
             metadata = s3_client.head_object(Bucket=bucket_name, Key=schedule_key)["Metadata"]

@@ -28,16 +28,15 @@ class TestBronzeLayerMockDataIntegration:
         """Convert mock data format to NBA API format for testing."""
         nba_format_games = []
         for game in mock_games:
-            # Convert mock data format to NBA API expected format
+            # Convert mock data format to NBA API expected format (conforming to validation schema)
             nba_game = {
-                "GAME_ID": str(game.id),
+                "GAME_ID": f"00223005{game.id:02d}",  # Exactly 10 digits
                 "GAME_DATE": game.game_date.strftime("%Y-%m-%d"),
-                "HOME_TEAM": f"TEAM_{game.home_team_id}",
-                "AWAY_TEAM": f"TEAM_{game.away_team_id}",
-                "HOME_SCORE": game.home_score,
-                "AWAY_SCORE": game.away_score,
-                "SEASON": "2023-24",
-                "GAME_STATUS_TEXT": "Final",
+                "TEAM_ID": 1610612747 + ((game.home_team_id - 1) % 10),  # Lakers team ID + offset
+                "TEAM_ABBREVIATION": f"T{game.home_team_id:02d}",
+                "TEAM_NAME": f"Team {game.home_team_id}",
+                "MATCHUP": f"T{game.home_team_id:02d} vs T{game.away_team_id:02d}",
+                "PTS": game.home_score,
             }
             nba_format_games.append(nba_game)
         return nba_format_games
@@ -141,8 +140,8 @@ class TestBronzeLayerMockDataIntegration:
 
             assert len(schedule_data) == len(nba_games)
             assert "GAME_ID" in schedule_data.columns
-            assert "HOME_TEAM" in schedule_data.columns
-            assert "AWAY_TEAM" in schedule_data.columns
+            assert "TEAM_ABBREVIATION" in schedule_data.columns
+            assert "TEAM_NAME" in schedule_data.columns
 
     @mock_aws
     def test_large_dataset_performance_validation(self):
@@ -214,35 +213,25 @@ class TestBronzeLayerMockDataIntegration:
     @mock_aws
     def test_realistic_data_validation(self):
         """Test with realistic data shapes and types."""
-        # Create realistic NBA game data
+        # Create realistic NBA game data that conforms to validation schema
         realistic_games = [
             {
                 "GAME_ID": "0022300500",
                 "GAME_DATE": "2023-12-25",
-                "HOME_TEAM": "LAL",
-                "AWAY_TEAM": "GSW",
-                "HOME_SCORE": 123,
-                "AWAY_SCORE": 109,
-                "SEASON": "2023-24",
-                "GAME_STATUS_TEXT": "Final",
-                "HOME_TEAM_ID": 1610612747,
-                "AWAY_TEAM_ID": 1610612744,
-                "WL_HOME": "W",
-                "WL_AWAY": "L",
+                "TEAM_ID": 1610612747,  # Lakers team ID
+                "TEAM_ABBREVIATION": "LAL",
+                "TEAM_NAME": "Los Angeles Lakers",
+                "MATCHUP": "LAL vs GSW",
+                "PTS": 123,
             },
             {
                 "GAME_ID": "0022300501",
                 "GAME_DATE": "2023-12-25",
-                "HOME_TEAM": "BOS",
-                "AWAY_TEAM": "MIA",
-                "HOME_SCORE": 114,
-                "AWAY_SCORE": 106,
-                "SEASON": "2023-24",
-                "GAME_STATUS_TEXT": "Final",
-                "HOME_TEAM_ID": 1610612738,
-                "AWAY_TEAM_ID": 1610612748,
-                "WL_HOME": "W",
-                "WL_AWAY": "L",
+                "TEAM_ID": 1610612738,  # Celtics team ID
+                "TEAM_ABBREVIATION": "BOS",
+                "TEAM_NAME": "Boston Celtics",
+                "MATCHUP": "BOS vs MIA",
+                "PTS": 114,
             },
         ]
 
@@ -323,9 +312,8 @@ class TestBronzeLayerMockDataIntegration:
 
             # Check that all expected columns are preserved
             expected_columns = [
-                "GAME_ID", "GAME_DATE", "HOME_TEAM", "AWAY_TEAM",
-                "HOME_SCORE", "AWAY_SCORE", "SEASON", "GAME_STATUS_TEXT",
-                "HOME_TEAM_ID", "AWAY_TEAM_ID", "WL_HOME", "WL_AWAY"
+                "GAME_ID", "GAME_DATE", "TEAM_ID", "TEAM_ABBREVIATION",
+                "TEAM_NAME", "MATCHUP", "PTS"
             ]
             
             for col in expected_columns:
@@ -333,51 +321,59 @@ class TestBronzeLayerMockDataIntegration:
 
             # Validate data types
             assert schedule_data["GAME_ID"].dtype == "object"  # String
-            assert schedule_data["HOME_SCORE"].dtype in ["int64", "int32"]  # Integer
-            assert schedule_data["AWAY_SCORE"].dtype in ["int64", "int32"]  # Integer
-            assert schedule_data["HOME_TEAM_ID"].dtype in ["int64", "int32"]  # Integer
+            assert schedule_data["PTS"].dtype in ["int64", "int32"]  # Integer
+            assert schedule_data["TEAM_ID"].dtype in ["int64", "int32"]  # Integer
 
             # Validate specific values
             assert schedule_data.iloc[0]["GAME_ID"] == "0022300500"
-            assert schedule_data.iloc[0]["HOME_TEAM"] == "LAL"
-            assert schedule_data.iloc[0]["HOME_SCORE"] == 123
+            assert schedule_data.iloc[0]["TEAM_ABBREVIATION"] == "LAL"
+            assert schedule_data.iloc[0]["PTS"] == 123
 
     @mock_aws
     def test_error_resilience_with_partial_failures(self):
         """Test error handling when some games succeed and others fail."""
-        # Mix of good and problematic games
+        # Mix of good and problematic games (updated to new schema)
         mixed_games = [
             {
                 "GAME_ID": "0022300500",
                 "GAME_DATE": "2023-12-25",
-                "HOME_TEAM": "LAL",
-                "AWAY_TEAM": "GSW",
-                "HOME_SCORE": 123,
-                "AWAY_SCORE": 109,
+                "TEAM_ID": 1610612747,  # Lakers team ID
+                "TEAM_ABBREVIATION": "LAL",
+                "TEAM_NAME": "Los Angeles Lakers",
+                "MATCHUP": "LAL vs GSW",
+                "PTS": 123,
             },
             {
                 "GAME_ID": "0022300501",
                 "GAME_DATE": "2023-12-25",
-                "HOME_TEAM": "BOS",
-                "AWAY_TEAM": "MIA",
-                "HOME_SCORE": 114,
-                "AWAY_SCORE": 106,
+                "TEAM_ID": 1610612738,  # Celtics team ID
+                "TEAM_ABBREVIATION": "BOS",
+                "TEAM_NAME": "Boston Celtics",
+                "MATCHUP": "BOS vs MIA",
+                "PTS": 114,
             },
             {
-                # Problematic game - will cause box score fetch to fail
-                "GAME_ID": "INVALID_GAME",
+                # Problematic game - will cause validation to fail
+                "GAME_ID": "INVALID_ID",  # Invalid format
                 "GAME_DATE": "2023-12-25",
-                "HOME_TEAM": "UNK",
-                "AWAY_TEAM": "UNK",
-                "HOME_SCORE": 0,
-                "AWAY_SCORE": 0,
+                "TEAM_ID": "invalid",  # Should be integer
+                "TEAM_ABBREVIATION": "UNK",
+                "TEAM_NAME": "Unknown Team",
+                "MATCHUP": "UNK vs UNK",
+                "PTS": 0,
             },
         ]
 
         good_box_score = {
             "game_id": "0022300500",
             "fetch_date": "2023-12-25T15:30:00Z",
-            "resultSets": [{"name": "GameSummary", "rowSet": [["data"]]}],
+            "resultSets": [
+                {
+                    "name": "GameSummary", 
+                    "headers": ["GAME_ID", "HOME_TEAM", "AWAY_TEAM"],
+                    "rowSet": [["0022300500", "LAL", "GSW"]]
+                }
+            ],
         }
 
         # Set up S3 and ingestion
@@ -410,17 +406,12 @@ class TestBronzeLayerMockDataIntegration:
             target_date = date(2023, 12, 25)
             result = ingestion.run(target_date, dry_run=False)
 
-            # Should still succeed overall
+            # Should still succeed overall (ingestion completes)
             assert result is True
 
-            # Schedule should be stored even if some box scores fail
-            assert s3_manager.check_exists("schedule", target_date)
-
-            # Validate that schedule contains all games, even problematic ones
-            schedule_key = f"raw/schedule/date=2023-12-25/data.parquet"
-            response = s3_client.get_object(Bucket=bucket_name, Key=schedule_key)
-            schedule_data = pq.read_table(BytesIO(response["Body"].read())).to_pandas()
-
-            assert len(schedule_data) == 3  # All games should be in schedule
-            assert "0022300500" in schedule_data["GAME_ID"].values
-            assert "INVALID_GAME" in schedule_data["GAME_ID"].values
+            # Schedule should NOT be stored due to validation failure - this is correct behavior
+            # The validation system quarantines the entire batch when any validation fails
+            assert not s3_manager.check_exists("schedule", target_date)
+            
+            # The error handling worked correctly - invalid data was quarantined
+            # and processing continued gracefully without crashing

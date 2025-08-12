@@ -10,8 +10,7 @@ on:
         type: choice
         options:
           - bronze-ingestion
-          - example-calculator-app
-          - nba-season-backfill
+          - mcp-server
       environment:
         description: 'Target environment'
         required: true
@@ -50,7 +49,7 @@ jobs:
         id: dispatch-defaults
         run: |
           echo "has-deployable-changes=true" >> $GITHUB_OUTPUT
-          echo "app-matrix={\"include\":[]}" >> $GITHUB_OUTPUT
+          echo "app-matrix={\"include\":[{\"app\":\"${{ inputs.application }}\"}]}" >> $GITHUB_OUTPUT
 
       - name: Checkout code
         if: github.event_name == 'push'
@@ -106,7 +105,7 @@ jobs:
       (github.event_name == 'workflow_dispatch' && needs.detect-deployable-apps.outputs.has-deployable-changes == 'true')
     strategy:
       fail-fast: false
-      matrix: ${{ github.event_name == 'push' && fromJson(needs.detect-deployable-apps.outputs.app-matrix) || '' }}
+      matrix: ${{ fromJson(needs.detect-deployable-apps.outputs.app-matrix) }}
 
     steps:
       - name: Set deployment variables

@@ -18,8 +18,19 @@ output "ecr_repository_arn" {
   value       = aws_ecr_repository.main.arn
 }
 
-# Note: GitHub Actions IAM role output removed due to circular dependency.
-# Role is managed outside of Terraform to enable bootstrap process.
+# Note: GitHub Actions admin IAM role output removed due to circular dependency.
+# Admin role is managed outside of Terraform to enable bootstrap process.
+
+# GitHub Actions operations role (managed in Terraform)
+output "github_actions_operations_role_arn" {
+  description = "ARN of the GitHub Actions operations IAM role"
+  value       = aws_iam_role.github_actions_operations.arn
+}
+
+output "github_actions_operations_role_name" {
+  description = "Name of the GitHub Actions operations IAM role"
+  value       = aws_iam_role.github_actions_operations.name
+}
 
 # ============================================================================
 # CloudWatch Observability Outputs (ADR-018)

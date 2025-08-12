@@ -1,10 +1,23 @@
-# GitHub Actions IAM Role Configuration
+# GitHub Actions IAM Roles Configuration
 
 ## Overview
 
-The GitHub Actions IAM role (`hoopstat-haus-github-actions`) must be created manually outside of Terraform to avoid a circular dependency during the bootstrap process. This document specifies the exact configuration required for this role.
+The GitHub Actions workflows use a **two-role security model** that separates infrastructure administration from day-to-day operations:
 
-## Role Configuration
+1. **Infrastructure Administration Role** (`hoopstat-haus-github-actions`) - Externally managed
+2. **Operations Role** (`hoopstat-haus-operations`) - Managed in Terraform
+
+This separation implements the principle of least privilege and reduces the blast radius if CI/CD workflows are compromised.
+
+## Infrastructure Administration Role
+
+### Role: `hoopstat-haus-github-actions`
+
+**Purpose**: Infrastructure deployment and administrative tasks
+**Management**: Created manually outside of Terraform to avoid circular dependency
+**Used By**: Infrastructure workflow (`infrastructure.yml`)
+
+This role must be created manually outside of Terraform to avoid a circular dependency during the bootstrap process.
 
 ### Trust Policy
 
@@ -35,7 +48,7 @@ The role should trust the GitHub OIDC provider and allow the `efischer19/hoopsta
 
 ### Required Permissions Policy
 
-The role needs the following permissions to deploy and manage the infrastructure:
+The infrastructure admin role needs comprehensive permissions to deploy and manage the infrastructure:
 
 ```json
 {
@@ -44,38 +57,35 @@ The role needs the following permissions to deploy and manage the infrastructure
     {
       "Effect": "Allow",
       "Action": [
-        "s3:GetObject",
-        "s3:PutObject",
-        "s3:DeleteObject",
-        "s3:ListBucket"
+        "s3:*"
       ],
-      "Resource": [
-        "arn:aws:s3:::hoopstat-haus-prod-data",
-        "arn:aws:s3:::hoopstat-haus-prod-data/*"
-      ]
+      "Resource": "*"
     },
     {
-      "Effect": "Allow",
+      "Effect": "Allow", 
       "Action": [
-        "ecr:BatchCheckLayerAvailability",
-        "ecr:GetDownloadUrlForLayer",
-        "ecr:BatchGetImage",
-        "ecr:GetAuthorizationToken",
-        "ecr:PutImage",
-        "ecr:InitiateLayerUpload",
-        "ecr:UploadLayerPart",
-        "ecr:CompleteLayerUpload"
+        "ecr:*"
       ],
       "Resource": "*"
     },
     {
       "Effect": "Allow",
       "Action": [
-        "logs:CreateLogGroup",
-        "logs:CreateLogStream",
-        "logs:PutLogEvents",
-        "logs:DescribeLogGroups",
-        "logs:DescribeLogStreams"
+        "logs:*"
+      ],
+      "Resource": "*"
+    },
+    {
+      "Effect": "Allow",
+      "Action": [
+        "iam:*"
+      ],
+      "Resource": "*"
+    },
+    {
+      "Effect": "Allow",
+      "Action": [
+        "cloudwatch:*"
       ],
       "Resource": "*"
     }
@@ -83,41 +93,66 @@ The role needs the following permissions to deploy and manage the infrastructure
 }
 ```
 
-## Purpose of Each Permission Set
+## Operations Role
 
-### S3 Permissions
-- **Target**: The main application data bucket (`hoopstat-haus-prod-data`)
-- **Use**: Storing and retrieving application artifacts, data files, and build outputs
-- **Actions**: Full object lifecycle management within the project bucket
+### Role: `hoopstat-haus-operations`
 
-### ECR Permissions
-- **Target**: All ECR repositories (using `*` due to ECR access patterns)
-- **Use**: Building, pushing, and pulling Docker container images
-- **Actions**: Complete container registry operations for CI/CD pipeline
+**Purpose**: Day-to-day application operations with least-privilege access
+**Management**: Managed in Terraform (`infrastructure/main.tf`)
+**Used By**: CI workflow (`ci.yml`) and deployment workflow (`deploy.yml`)
 
-### CloudWatch Logs Permissions
-- **Target**: All log groups (using `*` for operational flexibility)
-- **Use**: Creating and writing to log groups for application monitoring
-- **Actions**: Full logging capabilities for observability infrastructure
+This role is automatically created by Terraform and has restricted permissions for runtime operations only.
 
-## Manual Creation Steps
+### Permissions Summary
+
+The operations role has access to:
+- **ECR**: Push/pull container images to `hoopstat-haus/prod` repository
+- **S3**: Object operations on medallion buckets (bronze/silver/gold/access_logs/main)
+- **CloudWatch Logs**: Create log streams and write events to `/hoopstat-haus/*` log groups
+
+The operations role **explicitly denies**:
+- S3 bucket management (creation, deletion, policy changes)
+- ECR repository management
+- IAM operations
+- CloudWatch management operations
+
+### Automatic Configuration
+
+When you run `terraform apply`, this role is automatically created with the correct:
+- OIDC trust policy for GitHub Actions
+- Least-privilege permissions for operations
+- Explicit denials for administrative actions
+
+## Role Usage by Workflow
+
+| Workflow | Role Used | Purpose |
+|----------|-----------|---------|
+| `infrastructure.yml` | `hoopstat-haus-github-actions` | Deploy/modify infrastructure |
+| `ci.yml` | `hoopstat-haus-operations` | Build and push container images |
+| `deploy.yml` | `hoopstat-haus-operations` | Deploy applications |
+
+## Manual Creation Steps (Admin Role Only)
+
+The operations role is created automatically by Terraform. Only the admin role needs manual creation:
 
 1. **Prerequisites**: Ensure the GitHub OIDC provider exists in your AWS account
-2. **Create Role**: Use the trust policy above to create the role
-3. **Attach Policy**: Create and attach an inline policy with the permissions above
-4. **Verify**: Test that GitHub Actions can assume the role successfully
+2. **Create Role**: Use the trust policy above to create the `hoopstat-haus-github-actions` role
+3. **Attach Policy**: Create and attach an inline policy with the administrative permissions above
+4. **Deploy Infrastructure**: Run Terraform to create the operations role and other resources
+5. **Verify**: Test that both infrastructure and CI/deploy workflows work correctly
 
 ## Bootstrap Process
 
-Once this role is created manually:
-1. GitHub Actions can assume the role
-2. Terraform can manage all other infrastructure resources
-3. The bootstrap dependency is resolved
+The bootstrap sequence is:
+1. Manually create `hoopstat-haus-github-actions` role
+2. Infrastructure workflow uses admin role to deploy Terraform
+3. Terraform creates `hoopstat-haus-operations` role automatically
+4. CI/deploy workflows use the operations role for runtime tasks
 
-## Why This Approach?
+## Security Benefits
 
-This manual approach resolves the circular dependency where:
-- Terraform needs the GitHub Actions role to deploy infrastructure
-- But the GitHub Actions role was defined in the Terraform infrastructure
-
-By managing this one role outside of Terraform, we enable a clean bootstrap process while keeping all other infrastructure as code.
+This two-role model provides:
+- **Least Privilege**: Operations workflows cannot modify infrastructure
+- **Separation of Concerns**: Infrastructure changes require explicit admin role usage
+- **Defense in Depth**: Compromised CI workflows cannot escalate privileges
+- **Audit Trail**: Clear separation between administrative and operational actions

@@ -64,10 +64,35 @@ For detailed information about the data architecture strategy, see `meta/plans/m
 
 ## Security
 
+The infrastructure uses a two-role security model that separates infrastructure administration from day-to-day operations:
+
+### Infrastructure Administration Role
+- **Role Name**: `hoopstat-haus-github-actions` (externally managed)
+- **Purpose**: Infrastructure deployment and administrative tasks
+- **Used By**: Infrastructure workflow (`infrastructure.yml`)
+- **Permissions**: Full administrative access for Terraform operations
+- **Management**: Created manually outside Terraform to avoid circular dependency
+
+### Operations Role  
+- **Role Name**: `hoopstat-haus-operations` (managed in Terraform)
+- **Purpose**: Day-to-day application operations with least-privilege access
+- **Used By**: CI workflow (`ci.yml`) and deployment workflow (`deploy.yml`)
+- **Permissions**: 
+  - ECR: Push/pull container images
+  - S3: Object operations on medallion buckets (bronze/silver/gold/access_logs/main)
+  - CloudWatch Logs: Create log streams and write log events
+  - **Explicit denials**: All administrative actions (bucket creation, IAM operations, etc.)
+
+### Security Benefits
+- **Principle of Least Privilege**: Operations workflows cannot perform administrative actions
+- **Separation of Concerns**: Infrastructure changes require the admin role, runtime operations use the limited role
+- **Defense in Depth**: Even if CI/deploy workflows are compromised, infrastructure cannot be modified
+
+### Authentication
 - No long-lived AWS credentials are stored in GitHub
 - Authentication uses GitHub OIDC with temporary tokens
 - IAM roles follow the principle of least privilege
-- S3 bucket includes encryption and access controls
+- S3 buckets include encryption and access controls
 - ECR repository includes image scanning and lifecycle policies
 
 ## Usage

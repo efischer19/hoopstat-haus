@@ -1,0 +1,53 @@
+site_name: Hoopstat Haus Shared Libraries Documentation
+site_description: API documentation for shared Python libraries
+site_url: https://efischer19.github.io/hoopstat-haus/
+docs_dir: docs-src
+
+theme:
+  name: material
+  palette:
+    primary: blue
+    accent: orange
+  features:
+    - navigation.tabs
+    - navigation.sections
+    - search.suggest
+    - search.highlight
+
+plugins:
+  - search
+
+nav:
+  - Home: index.md
+  - Shared Libraries:
+    - Overview: libraries/index.md
+    - example-math-utils: libraries/example-math-utils.md
+    - hoopstat-config: libraries/hoopstat-config.md
+    - hoopstat-data: libraries/hoopstat-data.md
+    - hoopstat-e2e-testing: libraries/hoopstat-e2e-testing.md
+    - hoopstat-mock-data: libraries/hoopstat-mock-data.md
+    - hoopstat-observability: libraries/hoopstat-observability.md
+    - ingestion: libraries/ingestion.md
+  - Development:
+    - Contributing: CONTRIBUTING.md
+    - Development Philosophy: DEVELOPMENT_PHILOSOPHY.md
+    - Build Orchestration: BUILD_ORCHESTRATION.md
+    - E2E Testing: E2E_TESTING.md
+    - Local Development: LOCAL_DEVELOPMENT_DEPENDENCIES.md
+    - Shared Library Versioning: SHARED_LIBRARY_VERSIONING.md
+
+markdown_extensions:
+  - admonition
+  - pymdownx.details
+  - pymdownx.superfences
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.inlinehilite
+  - pymdownx.snippets
+  - toc:
+      permalink: true
+
+extra:
+  social:
+    - icon: fontawesome/brands/github
+      link: https://github.com/efischer19/hoopstat-haus

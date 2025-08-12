@@ -290,7 +290,7 @@ jobs:
         if: steps.deployment-check.outputs.deployable == 'true' && github.event_name == 'push' && github.ref == 'refs/heads/main'
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          role-to-assume: arn:aws:iam::${{ secrets.AWS_ACCOUNT_ID }}:role/hoopstat-haus-github-actions
+          role-to-assume: arn:aws:iam::${{ secrets.AWS_ACCOUNT_ID }}:role/hoopstat-haus-operations
           role-session-name: GitHubActions-ECR-${{ github.run_id }}
           aws-region: us-east-1
 

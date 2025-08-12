@@ -70,7 +70,42 @@ poetry run pytest --cov=app
 
 # Run specific test file
 poetry run pytest tests/test_main.py
+
+# Run bronze layer validation tests
+poetry run pytest tests/test_bronze_layer_validation.py
+
+# Run integration tests with mock data
+poetry run pytest tests/test_mock_data_integration.py
 ```
+
+### Bronze Layer Validation
+
+This application includes comprehensive validation tests that cover all acceptance criteria for bronze layer ingestion:
+
+```bash
+# Run complete validation suite
+python validate_bronze_layer.py --all
+
+# Run specific validation categories
+python validate_bronze_layer.py --core           # Core validation tests
+python validate_bronze_layer.py --integration    # Integration tests
+python validate_bronze_layer.py --performance    # Performance benchmarks
+
+# Check acceptance criteria coverage
+python validate_bronze_layer.py --check-criteria
+```
+
+#### Validation Coverage
+
+The validation suite ensures:
+
+- **JSON to Parquet Conversion**: Validates data accuracy during conversion
+- **Partitioning Scheme**: Tests year/month/day/hour partitioning implementation  
+- **Metadata Enrichment**: Verifies ingestion timestamps and source system tags
+- **Error Handling**: Tests resilience against malformed data
+- **Compression Optimization**: Validates Parquet compression and storage efficiency
+- **Performance Benchmarks**: Asserts ingestion speed and throughput requirements
+- **Mock Data Integration**: Tests with realistic NBA data simulation
 
 ### Code Quality
 

@@ -54,6 +54,7 @@ required_files=(
     "variables.tf"
     "outputs.tf"
     "versions.tf"
+    "backend.tf"
     ".terraform-version"
     ".gitignore"
     "README.md"
@@ -98,6 +99,25 @@ if [[ -f "$workflow_file" ]]; then
     fi
 else
     echo "❌ GitHub Actions workflow file not found: $workflow_file"
+    exit 1
+fi
+
+# Test 6: Validate Terraform backend configuration
+echo "Test 6: Validating Terraform backend configuration..."
+if [[ -f "backend.tf" ]]; then
+    # Check for required S3 backend configuration elements
+    if grep -q "backend \"s3\"" backend.tf && \
+       grep -q "bucket.*=.*\"hoopstat-haus-tfstate\"" backend.tf && \
+       grep -q "key.*=.*\"hoopstat-haus/prod/terraform.tfstate\"" backend.tf && \
+       grep -q "region.*=.*\"us-east-1\"" backend.tf && \
+       grep -q "dynamodb_table.*=.*\"hoopstat-haus-tflock\"" backend.tf; then
+        echo "✅ Terraform backend configuration is valid"
+    else
+        echo "❌ Terraform backend configuration is missing required elements"
+        exit 1
+    fi
+else
+    echo "❌ backend.tf file not found"
     exit 1
 fi
 

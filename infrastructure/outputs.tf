@@ -109,3 +109,31 @@ output "medallion_iam_roles" {
     }
   }
 }
+
+# ============================================================================
+# Lambda Function Outputs
+# ============================================================================
+
+output "lambda_functions" {
+  description = "Information about deployed Lambda functions"
+  value = {
+    bronze_ingestion = {
+      function_name = aws_lambda_function.bronze_ingestion.function_name
+      function_arn  = aws_lambda_function.bronze_ingestion.arn
+      invoke_arn    = aws_lambda_function.bronze_ingestion.invoke_arn
+    }
+    mcp_server = {
+      function_name = aws_lambda_function.mcp_server.function_name
+      function_arn  = aws_lambda_function.mcp_server.arn
+      invoke_arn    = aws_lambda_function.mcp_server.invoke_arn
+    }
+  }
+}
+
+output "lambda_execution_role" {
+  description = "Lambda execution role information"
+  value = {
+    name = aws_iam_role.lambda_execution.name
+    arn  = aws_iam_role.lambda_execution.arn
+  }
+}

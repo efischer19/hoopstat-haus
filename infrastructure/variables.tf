@@ -37,3 +37,27 @@ variable "github_repo" {
   default     = "efischer19/hoopstat-haus"
 }
 
+variable "lambda_config" {
+  description = "Configuration for Lambda functions"
+  type = object({
+    bronze_ingestion = object({
+      timeout     = number
+      memory_size = number
+    })
+    mcp_server = object({
+      timeout     = number
+      memory_size = number
+    })
+  })
+  default = {
+    bronze_ingestion = {
+      timeout     = 300 # 5 minutes for data ingestion
+      memory_size = 256
+    }
+    mcp_server = {
+      timeout     = 30
+      memory_size = 256
+    }
+  }
+}
+

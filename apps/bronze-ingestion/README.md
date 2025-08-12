@@ -6,11 +6,12 @@ The Bronze Layer Ingestion application is responsible for collecting raw NBA sta
 
 This application ingests NBA data and provides the foundation for downstream data processing in the silver and gold layers. It handles:
 
-- NBA API data collection
+- NBA API data collection with rate limiting
+- Data validation and quality checks
 - Raw data storage in S3 (bronze layer) 
-- Data quality validation
+- Automatic quarantine of invalid data
 - Retry logic for reliable ingestion
-- Observability and monitoring
+- Comprehensive observability and monitoring
 
 ## Installation
 
@@ -32,11 +33,11 @@ poetry run python -m app.main --help
 # Show help
 poetry run python -m app.main --help
 
-# Ingest data for current season
+# Ingest data for current date
 poetry run python -m app.main ingest
 
-# Ingest data for specific season
-poetry run python -m app.main ingest --season 2023-24
+# Ingest data for specific date  
+poetry run python -m app.main ingest --date 2023-12-25
 
 # Dry run (no data written)
 poetry run python -m app.main ingest --dry-run
@@ -47,6 +48,18 @@ poetry run python -m app.main status
 # Enable debug logging
 poetry run python -m app.main --debug ingest
 ```
+
+## Data Validation and Quality
+
+This application includes comprehensive data validation and quality checks:
+
+- **JSON Schema Validation**: All NBA API responses are validated against predefined schemas
+- **Data Completeness Checks**: Ensures expected number of games and players for each date
+- **Date Consistency Validation**: Verifies data is for the correct date range
+- **Quality Metrics Logging**: Comprehensive quality scoring and monitoring
+- **Automatic Quarantine**: Invalid data is quarantined for manual review instead of being discarded
+
+See [VALIDATION_GUIDE.md](./VALIDATION_GUIDE.md) for detailed information about the validation system.
 
 ## Configuration
 
@@ -175,7 +188,8 @@ This application follows the established patterns:
 - `pyarrow`: Parquet file support
 - `tenacity`: Retry logic
 - `click`: CLI framework
-- Shared libraries: `hoopstat-config`, `hoopstat-observability`, `hoopstat-data`
+- `jsonschema`: JSON schema validation
+- Shared libraries: `hoopstat-config`, `hoopstat-observability`, `hoopstat-data`, `hoopstat-nba_api`
 
 ### Development
 - `pytest`: Testing framework

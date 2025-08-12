@@ -14,6 +14,7 @@ pandas = "^2.0.0"
 pyarrow = "^21.0.0"
 tenacity = "^9.0.0"
 click = "^8.1.0"
+jsonschema = "^4.21.0"
 hoopstat-observability = {path = "../../libs/hoopstat-observability", develop = true}
 hoopstat-data = {path = "../../libs/hoopstat-data", develop = true}
 hoopstat-config = {path = "../../libs/hoopstat-config", develop = true}

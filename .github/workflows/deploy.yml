@@ -10,7 +10,8 @@ on:
         type: choice
         options:
           - bronze-ingestion
-          - mcp-server
+          - example-calculator-app
+          - nba-season-backfill
       environment:
         description: 'Target environment'
         required: true

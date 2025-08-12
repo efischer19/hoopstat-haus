@@ -12,7 +12,6 @@ according to the acceptance criteria:
 - Performance benchmark assertions for ingestion speed
 """
 
-import json
 import time
 from datetime import date, datetime
 from io import BytesIO
@@ -66,12 +65,26 @@ class TestBronzeLayerValidation:
             "resultSets": [
                 {
                     "name": "GameSummary",
-                    "headers": ["GAME_ID", "HOME_TEAM", "AWAY_TEAM", "HOME_SCORE", "AWAY_SCORE"],
+                    "headers": [
+                        "GAME_ID",
+                        "HOME_TEAM",
+                        "AWAY_TEAM",
+                        "HOME_SCORE",
+                        "AWAY_SCORE",
+                    ],
                     "rowSet": [["0022300500", "LAL", "GSW", 123, 109]],
                 },
                 {
                     "name": "PlayerStats",
-                    "headers": ["PLAYER_ID", "PLAYER_NAME", "TEAM", "MIN", "PTS", "REB", "AST"],
+                    "headers": [
+                        "PLAYER_ID",
+                        "PLAYER_NAME",
+                        "TEAM",
+                        "MIN",
+                        "PTS",
+                        "REB",
+                        "AST",
+                    ],
                     "rowSet": [
                         ["2544", "LeBron James", "LAL", "36:45", 31, 8, 11],
                         ["201939", "Stephen Curry", "GSW", "35:22", 28, 4, 9],
@@ -180,14 +193,18 @@ class TestBronzeLayerValidation:
 
         # Store data for each date
         for test_date in test_dates:
-            df = pd.DataFrame({
-                "game_id": [f"game_{test_date.strftime('%Y%m%d')}"],
-                "date": [test_date.strftime("%Y-%m-%d")]
-            })
+            df = pd.DataFrame(
+                {
+                    "game_id": [f"game_{test_date.strftime('%Y%m%d')}"],
+                    "date": [test_date.strftime("%Y-%m-%d")],
+                }
+            )
             key = s3_manager.store_parquet(df, "games", test_date)
-            
+
             # Verify key structure follows partitioning scheme
-            expected_key = f"raw/games/date={test_date.strftime('%Y-%m-%d')}/data.parquet"
+            expected_key = (
+                f"raw/games/date={test_date.strftime('%Y-%m-%d')}/data.parquet"
+            )
             assert key == expected_key
 
         # Test game-specific partitioning with suffix
@@ -196,7 +213,7 @@ class TestBronzeLayerValidation:
         key = s3_manager.store_parquet(
             df, "box_scores", date(2023, 12, 25), f"/{game_id}"
         )
-        
+
         expected_key = f"raw/box_scores/date=2023-12-25/{game_id}/data.parquet"
         assert key == expected_key
 
@@ -218,12 +235,10 @@ class TestBronzeLayerValidation:
         s3_manager = BronzeS3Manager(bucket_name)
 
         # Store data with metadata
-        df = pd.DataFrame({
-            "game_id": ["0022300500"],
-            "home_team": ["LAL"],
-            "away_team": ["GSW"]
-        })
-        
+        df = pd.DataFrame(
+            {"game_id": ["0022300500"], "home_team": ["LAL"], "away_team": ["GSW"]}
+        )
+
         target_date = date(2023, 12, 25)
         key = s3_manager.store_parquet(df, "games", target_date)
 
@@ -246,19 +261,23 @@ class TestBronzeLayerValidation:
         assert isinstance(response["LastModified"], datetime)
 
         # Test enhanced metadata for box scores
-        box_score_df = pd.DataFrame({
-            "game_id": ["0022300500"],
-            "fetch_timestamp": [datetime.now().isoformat()],
-            "source_system": ["nba_api"]
-        })
-        
+        box_score_df = pd.DataFrame(
+            {
+                "game_id": ["0022300500"],
+                "fetch_timestamp": [datetime.now().isoformat()],
+                "source_system": ["nba_api"],
+            }
+        )
+
         box_score_key = s3_manager.store_parquet(
             box_score_df, "box_scores", target_date, "/0022300500"
         )
-        
-        box_score_response = s3_client.head_object(Bucket=bucket_name, Key=box_score_key)
+
+        box_score_response = s3_client.head_object(
+            Bucket=bucket_name, Key=box_score_key
+        )
         box_score_metadata = box_score_response["Metadata"]
-        
+
         assert box_score_metadata["entity"] == "box_scores"
 
     @mock_aws
@@ -280,21 +299,22 @@ class TestBronzeLayerValidation:
             mock_nba_client.return_value = mock_client_instance
 
             ingestion = DateScopedIngestion(config)
-            s3_manager = ingestion.s3_manager
 
             # Test missing required fields
             mock_client_instance.get_games_for_date.return_value = (
                 malformed_data_samples["missing_game_id"]["games"]
             )
             mock_client_instance.get_box_score.return_value = None
-            
+
             target_date = date(2023, 12, 25)
-            
+
             # Should handle missing GAME_ID gracefully
-            # The current implementation should not crash but may skip games without GAME_ID
+            # The current implementation should not crash but may skip games
+            # without GAME_ID
             result = ingestion.run(target_date, dry_run=False)
-            
-            # The ingestion should complete but may not process games without required fields
+
+            # The ingestion should complete but may not process games without
+            # required fields
             assert result is True
 
             # Test null values handling
@@ -302,7 +322,7 @@ class TestBronzeLayerValidation:
                 malformed_data_samples["null_values"]["games"]
             )
             mock_client_instance.get_box_score.return_value = None
-            
+
             # Should handle null values gracefully
             result = ingestion.run(target_date, dry_run=False)
             assert result is True
@@ -321,12 +341,16 @@ class TestBronzeLayerValidation:
         s3_manager = BronzeS3Manager(bucket_name)
 
         # Create test data with repeated values (good for compression)
-        large_df = pd.DataFrame({
-            "game_id": ["0022300500"] * 1000,
-            "team": ["LAL"] * 500 + ["GSW"] * 500,
-            "player_name": ["LeBron James"] * 300 + ["Stephen Curry"] * 300 + ["Other"] * 400,
-            "stat_value": [25.5] * 1000,
-        })
+        large_df = pd.DataFrame(
+            {
+                "game_id": ["0022300500"] * 1000,
+                "team": ["LAL"] * 500 + ["GSW"] * 500,
+                "player_name": ["LeBron James"] * 300
+                + ["Stephen Curry"] * 300
+                + ["Other"] * 400,
+                "stat_value": [25.5] * 1000,
+            }
+        )
 
         target_date = date(2023, 12, 25)
         key = s3_manager.store_parquet(large_df, "player_stats", target_date)
@@ -372,15 +396,17 @@ class TestBronzeLayerValidation:
         # Create realistic test data that conforms to validation schema
         games_data = []
         for i in range(20):  # Simulate 20 games
-            games_data.append({
-                "GAME_ID": f"00223005{i:02d}",  # Exactly 10 digits
-                "GAME_DATE": "2023-12-25",
-                "TEAM_ID": 1610612747 + (i % 10),  # Lakers team ID + offset
-                "TEAM_ABBREVIATION": f"T{i % 10:02d}",
-                "TEAM_NAME": f"Team {i % 10}",
-                "MATCHUP": f"T{i % 10:02d} vs T{(i + 1) % 10:02d}",
-                "PTS": 100 + i,
-            })
+            games_data.append(
+                {
+                    "GAME_ID": f"00223005{i:02d}",  # Exactly 10 digits
+                    "GAME_DATE": "2023-12-25",
+                    "TEAM_ID": 1610612747 + (i % 10),  # Lakers team ID + offset
+                    "TEAM_ABBREVIATION": f"T{i % 10:02d}",
+                    "TEAM_NAME": f"Team {i % 10}",
+                    "MATCHUP": f"T{i % 10:02d} vs T{(i + 1) % 10:02d}",
+                    "PTS": 100 + i,
+                }
+            )
 
         box_score_data = {
             "game_id": "0022300500",
@@ -389,7 +415,9 @@ class TestBronzeLayerValidation:
                 {
                     "name": "PlayerStats",
                     "headers": ["PLAYER_ID", "PLAYER_NAME", "PTS"],
-                    "rowSet": [["Player" + str(i), f"Player {i}", i * 2] for i in range(100)],
+                    "rowSet": [
+                        ["Player" + str(i), f"Player {i}", i * 2] for i in range(100)
+                    ],
                 }
             ],
         }
@@ -414,14 +442,14 @@ class TestBronzeLayerValidation:
 
             # Performance assertions
             ingestion_time = end_time - start_time
-            
+
             # Should complete within reasonable time (adjust threshold as needed)
             assert ingestion_time < 10.0  # Should complete within 10 seconds
-            
+
             # Calculate throughput
             total_records = len(games_data) + len(games_data)  # Schedule + box scores
             throughput = total_records / ingestion_time
-            
+
             # Should process at least 2 records per second
             assert throughput >= 2.0
 
@@ -510,7 +538,7 @@ class TestBronzeLayerValidation:
             assert box_score_exists
 
             # Verify data content by reading back
-            schedule_key = f"raw/schedule/date=2023-12-25/data.parquet"
+            schedule_key = "raw/schedule/date=2023-12-25/data.parquet"
             response = s3_client.get_object(Bucket=bucket_name, Key=schedule_key)
             schedule_data = pq.read_table(BytesIO(response["Body"].read())).to_pandas()
 
@@ -521,7 +549,9 @@ class TestBronzeLayerValidation:
             assert "BOS" in schedule_data["TEAM_ABBREVIATION"].values
 
             # Verify metadata
-            metadata = s3_client.head_object(Bucket=bucket_name, Key=schedule_key)["Metadata"]
+            metadata = s3_client.head_object(Bucket=bucket_name, Key=schedule_key)[
+                "Metadata"
+            ]
             assert metadata["entity"] == "schedule"
             assert metadata["date"] == "2023-12-25"
             assert metadata["format"] == "parquet"
@@ -530,16 +560,18 @@ class TestBronzeLayerValidation:
     def test_data_type_validation_and_schema_consistency(self):
         """Test that data types are properly validated and schema is consistent."""
         # Create test data with various data types
-        test_data = pd.DataFrame({
-            "game_id": ["0022300500", "0022300501"],  # string
-            "game_date": ["2023-12-25", "2023-12-25"],  # string (date)
-            "home_score": [123, 114],  # integer
-            "away_score": [109, 106],  # integer
-            "game_time": ["19:30", "20:00"],  # string (time)
-            "is_playoff": [False, False],  # boolean
-            "attendance": [18997, 19596],  # integer
-            "game_duration_minutes": [125.5, 132.0],  # float
-        })
+        test_data = pd.DataFrame(
+            {
+                "game_id": ["0022300500", "0022300501"],  # string
+                "game_date": ["2023-12-25", "2023-12-25"],  # string (date)
+                "home_score": [123, 114],  # integer
+                "away_score": [109, 106],  # integer
+                "game_time": ["19:30", "20:00"],  # string (time)
+                "is_playoff": [False, False],  # boolean
+                "attendance": [18997, 19596],  # integer
+                "game_duration_minutes": [125.5, 132.0],  # float
+            }
+        )
 
         # Verify data types
         assert test_data["game_id"].dtype == "object"  # string
@@ -548,23 +580,25 @@ class TestBronzeLayerValidation:
         assert test_data["game_duration_minutes"].dtype == "float64"  # float
 
         # Test schema consistency across multiple DataFrames
-        test_data_2 = pd.DataFrame({
-            "game_id": ["0022300502"],
-            "game_date": ["2023-12-26"],
-            "home_score": [98],
-            "away_score": [102],
-            "game_time": ["19:00"],
-            "is_playoff": [True],
-            "attendance": [20000],
-            "game_duration_minutes": [118.5],
-        })
+        test_data_2 = pd.DataFrame(
+            {
+                "game_id": ["0022300502"],
+                "game_date": ["2023-12-26"],
+                "home_score": [98],
+                "away_score": [102],
+                "game_time": ["19:00"],
+                "is_playoff": [True],
+                "attendance": [20000],
+                "game_duration_minutes": [118.5],
+            }
+        )
 
         # Both DataFrames should have consistent schema
         assert list(test_data.columns) == list(test_data_2.columns)
         for col in test_data.columns:
             assert test_data[col].dtype == test_data_2[col].dtype
 
-    @mock_aws  
+    @mock_aws
     def test_incremental_ingestion_detection(self):
         """Test detection and handling of incremental ingestion scenarios."""
         import boto3
@@ -578,10 +612,7 @@ class TestBronzeLayerValidation:
         s3_manager = BronzeS3Manager(bucket_name)
 
         # First ingestion
-        df1 = pd.DataFrame({
-            "game_id": ["0022300500"],
-            "status": ["scheduled"]
-        })
+        df1 = pd.DataFrame({"game_id": ["0022300500"], "status": ["scheduled"]})
         target_date = date(2023, 12, 25)
         s3_manager.store_parquet(df1, "games", target_date)
 
@@ -593,10 +624,7 @@ class TestBronzeLayerValidation:
         assert "games" in entities
 
         # Add more data for the same date (simulating incremental update)
-        df2 = pd.DataFrame({
-            "game_id": ["0022300501"],
-            "status": ["in_progress"]
-        })
+        df2 = pd.DataFrame({"game_id": ["0022300501"], "status": ["in_progress"]})
         s3_manager.store_parquet(df2, "player_stats", target_date)
 
         # Both entities should exist

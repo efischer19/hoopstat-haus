@@ -149,7 +149,7 @@ class DataQuarantine:
             json_data = json.dumps(record, default=str, indent=2)
 
             # Store in S3
-            self.s3_manager.client.put_object(
+            self.s3_manager.s3_client.put_object(
                 Bucket=self.s3_manager.bucket_name,
                 Key=key,
                 Body=json_data.encode("utf-8"),
@@ -193,7 +193,7 @@ class DataQuarantine:
                     prefix += f"{data_type}/"
 
             # List objects in quarantine area
-            response = self.s3_manager.client.list_objects_v2(
+            response = self.s3_manager.s3_client.list_objects_v2(
                 Bucket=self.s3_manager.bucket_name, Prefix=prefix
             )
 

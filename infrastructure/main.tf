@@ -10,22 +10,24 @@ provider "aws" {
   }
 }
 
-# Data source for GitHub OIDC provider (managed outside Terraform)
-data "aws_iam_openid_connect_provider" "github" {
-  url = "https://token.actions.githubusercontent.com"
+# Get current AWS account ID for constructing ARNs
+data "aws_caller_identity" "current" {}
+
+# Local values for computed ARNs
+locals {
+  # GitHub OIDC provider ARN (managed outside Terraform)
+  github_oidc_provider_arn = "arn:aws:iam::${data.aws_caller_identity.current.account_id}:oidc-provider/token.actions.githubusercontent.com"
 }
 
-# Note: GitHub Actions IAM role is managed outside of Terraform
+
+# Note: GitHub Actions admin IAM role is managed outside of Terraform
 # to avoid circular dependency during bootstrap process.
-# The role should be created manually with the following permissions:
+# The admin role (hoopstat-haus-github-actions) is used exclusively for infrastructure operations.
+# 
+# The operations role (hoopstat-haus-operations) defined below is used for day-to-day CI/CD operations
+# and has least-privilege permissions that explicitly deny administrative actions.
 #
-# Required permissions for hoopstat-haus-github-actions role:
-# - S3: GetObject, PutObject, DeleteObject, ListBucket on the main bucket
-# - S3: GetObject, PutObject, DeleteObject, ListBucket on medallion architecture buckets
-#   (hoopstat-haus-bronze, hoopstat-haus-silver, hoopstat-haus-gold, hoopstat-haus-access-logs)
-# - ECR: BatchCheckLayerAvailability, GetDownloadUrlForLayer, BatchGetImage, 
-#        GetAuthorizationToken, PutImage, InitiateLayerUpload, UploadLayerPart, CompleteLayerUpload
-# - CloudWatch Logs: CreateLogGroup, CreateLogStream, PutLogEvents, DescribeLogGroups, DescribeLogStreams
+# This two-role model separates infrastructure administration from runtime operations.
 
 # S3 Bucket for application data and artifacts
 resource "aws_s3_bucket" "main" {
@@ -305,94 +307,6 @@ resource "aws_cloudwatch_metric_alarm" "execution_time_anomaly" {
   tags = {
     Severity = "warning"
     Type     = "performance"
-  }
-}
-
-# Lambda-specific CloudWatch Alarms
-resource "aws_cloudwatch_metric_alarm" "lambda_errors" {
-  for_each = {
-    bronze_ingestion = aws_lambda_function.bronze_ingestion.function_name
-    mcp_server       = aws_lambda_function.mcp_server.function_name
-  }
-
-  alarm_name          = "lambda-errors-${each.key}"
-  comparison_operator = "GreaterThanThreshold"
-  evaluation_periods  = "2"
-  metric_name         = "Errors"
-  namespace           = "AWS/Lambda"
-  period              = "300"
-  statistic           = "Sum"
-  threshold           = "1"
-  alarm_description   = "This metric monitors Lambda function errors for ${each.key}"
-
-  dimensions = {
-    FunctionName = each.value
-  }
-
-  tags = {
-    Severity    = "critical"
-    Type        = "lambda-errors"
-    Application = each.key
-  }
-}
-
-resource "aws_cloudwatch_metric_alarm" "lambda_duration" {
-  for_each = {
-    bronze_ingestion = {
-      function_name = aws_lambda_function.bronze_ingestion.function_name
-      threshold     = 250000 # 4.17 minutes (83% of 5m timeout)
-    }
-    mcp_server = {
-      function_name = aws_lambda_function.mcp_server.function_name
-      threshold     = 25000 # 25 seconds (83% of 30s timeout)
-    }
-  }
-
-  alarm_name          = "lambda-duration-${each.key}"
-  comparison_operator = "GreaterThanThreshold"
-  evaluation_periods  = "2"
-  metric_name         = "Duration"
-  namespace           = "AWS/Lambda"
-  period              = "300"
-  statistic           = "Average"
-  threshold           = each.value.threshold
-  alarm_description   = "This metric monitors Lambda function duration for ${each.key}"
-
-  dimensions = {
-    FunctionName = each.value.function_name
-  }
-
-  tags = {
-    Severity    = "warning"
-    Type        = "lambda-duration"
-    Application = each.key
-  }
-}
-
-resource "aws_cloudwatch_metric_alarm" "lambda_throttles" {
-  for_each = {
-    bronze_ingestion = aws_lambda_function.bronze_ingestion.function_name
-    mcp_server       = aws_lambda_function.mcp_server.function_name
-  }
-
-  alarm_name          = "lambda-throttles-${each.key}"
-  comparison_operator = "GreaterThanThreshold"
-  evaluation_periods  = "1"
-  metric_name         = "Throttles"
-  namespace           = "AWS/Lambda"
-  period              = "300"
-  statistic           = "Sum"
-  threshold           = "0"
-  alarm_description   = "This metric monitors Lambda function throttles for ${each.key}"
-
-  dimensions = {
-    FunctionName = each.value
-  }
-
-  tags = {
-    Severity    = "critical"
-    Type        = "lambda-throttles"
-    Application = each.key
   }
 }
 
@@ -741,6 +655,452 @@ resource "aws_s3_bucket_logging" "gold" {
 }
 
 # ============================================================================
+# GitHub Actions Operations Role (ADR-011)
+# ============================================================================
+
+# IAM role for GitHub Actions day-to-day operations (separate from admin role)
+resource "aws_iam_role" "github_actions_operations" {
+  name = "${var.project_name}-operations"
+
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Principal = {
+          Federated = local.github_oidc_provider_arn
+        }
+        Action = "sts:AssumeRoleWithWebIdentity"
+        Condition = {
+          StringEquals = {
+            "token.actions.githubusercontent.com:aud" = "sts.amazonaws.com"
+          }
+          StringLike = {
+            "token.actions.githubusercontent.com:sub" = "repo:${var.github_repo}:*"
+          }
+        }
+      }
+    ]
+  })
+
+  tags = {
+    Name    = "${var.project_name}-operations-role"
+    Purpose = "GitHub Actions day-to-day operations with least-privilege access"
+    Type    = "operations"
+  }
+}
+
+# ECR permissions for container operations
+resource "aws_iam_role_policy" "github_actions_operations_ecr" {
+  name = "${var.project_name}-operations-ecr"
+  role = aws_iam_role.github_actions_operations.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Action = [
+          "ecr:GetAuthorizationToken"
+        ]
+        Resource = "*"
+      },
+      {
+        Effect = "Allow"
+        Action = [
+          "ecr:BatchCheckLayerAvailability",
+          "ecr:GetDownloadUrlForLayer",
+          "ecr:BatchGetImage",
+          "ecr:PutImage",
+          "ecr:InitiateLayerUpload",
+          "ecr:UploadLayerPart",
+          "ecr:CompleteLayerUpload"
+        ]
+        Resource = aws_ecr_repository.main.arn
+      }
+    ]
+  })
+}
+
+# S3 object operations for medallion architecture buckets
+resource "aws_iam_role_policy" "github_actions_operations_s3" {
+  name = "${var.project_name}-operations-s3"
+  role = aws_iam_role.github_actions_operations.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Action = [
+          "s3:ListBucket",
+          "s3:GetBucketLocation"
+        ]
+        Resource = [
+          aws_s3_bucket.main.arn,
+          aws_s3_bucket.bronze.arn,
+          aws_s3_bucket.silver.arn,
+          aws_s3_bucket.gold.arn,
+          aws_s3_bucket.access_logs.arn
+        ]
+      },
+      {
+        Effect = "Allow"
+        Action = [
+          "s3:GetObject",
+          "s3:PutObject",
+          "s3:DeleteObject"
+        ]
+        Resource = [
+          "${aws_s3_bucket.main.arn}/*",
+          "${aws_s3_bucket.bronze.arn}/*",
+          "${aws_s3_bucket.silver.arn}/*",
+          "${aws_s3_bucket.gold.arn}/*",
+          "${aws_s3_bucket.access_logs.arn}/*"
+        ]
+      }
+    ]
+  })
+}
+
+# CloudWatch Logs permissions for application logging
+resource "aws_iam_role_policy" "github_actions_operations_logs" {
+  name = "${var.project_name}-operations-logs"
+  role = aws_iam_role.github_actions_operations.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Action = [
+          "logs:CreateLogStream",
+          "logs:PutLogEvents",
+          "logs:DescribeLogGroups",
+          "logs:DescribeLogStreams"
+        ]
+        Resource = [
+          "${aws_cloudwatch_log_group.applications.arn}:*",
+          "${aws_cloudwatch_log_group.data_pipeline.arn}:*",
+          "${aws_cloudwatch_log_group.infrastructure.arn}:*"
+        ]
+      }
+    ]
+  })
+}
+
+# Lambda operations permissions for GitHub Actions
+resource "aws_iam_role_policy" "github_actions_operations_lambda" {
+  name = "${var.project_name}-operations-lambda"
+  role = aws_iam_role.github_actions_operations.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Action = [
+          "lambda:UpdateFunctionCode",
+          "lambda:GetFunction",
+          "lambda:InvokeFunction"
+        ]
+        Resource = [
+          "arn:aws:lambda:${var.aws_region}:${data.aws_caller_identity.current.account_id}:function:${var.project_name}-bronze-ingestion",
+          "arn:aws:lambda:${var.aws_region}:${data.aws_caller_identity.current.account_id}:function:${var.project_name}-mcp-server"
+        ]
+      }
+    ]
+  })
+}
+
+# Explicit denials for administrative actions
+resource "aws_iam_role_policy" "github_actions_operations_denials" {
+  name = "${var.project_name}-operations-denials"
+  role = aws_iam_role.github_actions_operations.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Deny"
+        Action = [
+          # S3 bucket management
+          "s3:CreateBucket",
+          "s3:DeleteBucket",
+          "s3:PutBucketPolicy",
+          "s3:DeleteBucketPolicy",
+          "s3:PutBucketVersioning",
+          "s3:PutBucketEncryption",
+          "s3:PutBucketLifecycle*",
+          "s3:PutBucketLogging",
+          "s3:PutBucketPublicAccessBlock",
+          # ECR repository management
+          "ecr:CreateRepository",
+          "ecr:DeleteRepository",
+          "ecr:PutRepositoryPolicy",
+          "ecr:DeleteRepositoryPolicy",
+          "ecr:PutLifecyclePolicy",
+          "ecr:DeleteLifecyclePolicy",
+          # IAM operations
+          "iam:Create*",
+          "iam:Delete*",
+          "iam:Put*",
+          "iam:Attach*",
+          "iam:Detach*",
+          "iam:Update*",
+          # CloudWatch management operations
+          "logs:CreateLogGroup",
+          "logs:DeleteLogGroup",
+          "logs:PutRetentionPolicy",
+          "logs:DeleteRetentionPolicy",
+          "logs:PutMetricFilter",
+          "logs:DeleteMetricFilter",
+          "cloudwatch:PutMetricAlarm",
+          "cloudwatch:DeleteAlarms",
+          "cloudwatch:PutMetricFilter",
+          # Lambda function management (only updates allowed)
+          "lambda:CreateFunction",
+          "lambda:DeleteFunction",
+          "lambda:UpdateFunctionConfiguration"
+        ]
+        Resource = "*"
+      }
+    ]
+  })
+}
+
+# ============================================================================
+# IAM Roles for Medallion Architecture Data Access
+# ============================================================================
+
+# IAM Role for Bronze Layer Data Access
+resource "aws_iam_role" "bronze_data_access" {
+  name = "${var.project_name}-bronze-data-access"
+
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Principal = {
+          Federated = local.github_oidc_provider_arn
+        }
+        Action = "sts:AssumeRoleWithWebIdentity"
+        Condition = {
+          StringEquals = {
+            "token.actions.githubusercontent.com:aud" = "sts.amazonaws.com"
+          }
+          StringLike = {
+            "token.actions.githubusercontent.com:sub" = "repo:${var.github_repo}:*"
+          }
+        }
+      }
+    ]
+  })
+
+  tags = {
+    Name      = "${var.project_name}-bronze-data-access-role"
+    DataLayer = "bronze"
+    Purpose   = "Data ingestion and raw data access"
+  }
+}
+
+# IAM Policy for Bronze Layer
+resource "aws_iam_role_policy" "bronze_data_access" {
+  name = "${var.project_name}-bronze-data-access-policy"
+  role = aws_iam_role.bronze_data_access.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Action = [
+          "s3:GetObject",
+          "s3:PutObject",
+          "s3:DeleteObject",
+          "s3:ListBucket",
+          "s3:GetBucketLocation"
+        ]
+        Resource = [
+          aws_s3_bucket.bronze.arn,
+          "${aws_s3_bucket.bronze.arn}/*"
+        ]
+      },
+      {
+        Effect = "Allow"
+        Action = [
+          "logs:CreateLogStream",
+          "logs:PutLogEvents"
+        ]
+        Resource = [
+          "${aws_cloudwatch_log_group.data_pipeline.arn}:*"
+        ]
+      }
+    ]
+  })
+}
+
+# IAM Role for Silver Layer Data Access
+resource "aws_iam_role" "silver_data_access" {
+  name = "${var.project_name}-silver-data-access"
+
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Principal = {
+          Federated = local.github_oidc_provider_arn
+        }
+        Action = "sts:AssumeRoleWithWebIdentity"
+        Condition = {
+          StringEquals = {
+            "token.actions.githubusercontent.com:aud" = "sts.amazonaws.com"
+          }
+          StringLike = {
+            "token.actions.githubusercontent.com:sub" = "repo:${var.github_repo}:*"
+          }
+        }
+      }
+    ]
+  })
+
+  tags = {
+    Name      = "${var.project_name}-silver-data-access-role"
+    DataLayer = "silver"
+    Purpose   = "Data transformation and quality validation"
+  }
+}
+
+# IAM Policy for Silver Layer
+resource "aws_iam_role_policy" "silver_data_access" {
+  name = "${var.project_name}-silver-data-access-policy"
+  role = aws_iam_role.silver_data_access.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Action = [
+          "s3:GetObject",
+          "s3:ListBucket",
+          "s3:GetBucketLocation"
+        ]
+        Resource = [
+          aws_s3_bucket.bronze.arn,
+          "${aws_s3_bucket.bronze.arn}/*"
+        ]
+      },
+      {
+        Effect = "Allow"
+        Action = [
+          "s3:GetObject",
+          "s3:PutObject",
+          "s3:DeleteObject",
+          "s3:ListBucket",
+          "s3:GetBucketLocation"
+        ]
+        Resource = [
+          aws_s3_bucket.silver.arn,
+          "${aws_s3_bucket.silver.arn}/*"
+        ]
+      },
+      {
+        Effect = "Allow"
+        Action = [
+          "logs:CreateLogStream",
+          "logs:PutLogEvents"
+        ]
+        Resource = [
+          "${aws_cloudwatch_log_group.data_pipeline.arn}:*"
+        ]
+      }
+    ]
+  })
+}
+
+# IAM Role for Gold Layer Data Access
+resource "aws_iam_role" "gold_data_access" {
+  name = "${var.project_name}-gold-data-access"
+
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Principal = {
+          Federated = local.github_oidc_provider_arn
+        }
+        Action = "sts:AssumeRoleWithWebIdentity"
+        Condition = {
+          StringEquals = {
+            "token.actions.githubusercontent.com:aud" = "sts.amazonaws.com"
+          }
+          StringLike = {
+            "token.actions.githubusercontent.com:sub" = "repo:${var.github_repo}:*"
+          }
+        }
+      }
+    ]
+  })
+
+  tags = {
+    Name      = "${var.project_name}-gold-data-access-role"
+    DataLayer = "gold"
+    Purpose   = "Business analytics and MCP server integration"
+  }
+}
+
+# IAM Policy for Gold Layer
+resource "aws_iam_role_policy" "gold_data_access" {
+  name = "${var.project_name}-gold-data-access-policy"
+  role = aws_iam_role.gold_data_access.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Action = [
+          "s3:GetObject",
+          "s3:ListBucket",
+          "s3:GetBucketLocation"
+        ]
+        Resource = [
+          aws_s3_bucket.silver.arn,
+          "${aws_s3_bucket.silver.arn}/*"
+        ]
+      },
+      {
+        Effect = "Allow"
+        Action = [
+          "s3:GetObject",
+          "s3:PutObject",
+          "s3:DeleteObject",
+          "s3:ListBucket",
+          "s3:GetBucketLocation"
+        ]
+        Resource = [
+          aws_s3_bucket.gold.arn,
+          "${aws_s3_bucket.gold.arn}/*"
+        ]
+      },
+      {
+        Effect = "Allow"
+        Action = [
+          "logs:CreateLogStream",
+          "logs:PutLogEvents"
+        ]
+        Resource = [
+          "${aws_cloudwatch_log_group.data_pipeline.arn}:*"
+        ]
+      }
+    ]
+  })
+}
+# ============================================================================
 # Lambda Functions and IAM Roles for Containerized Applications
 # ============================================================================
 
@@ -843,10 +1203,6 @@ resource "aws_iam_role_policy_attachment" "lambda_basic_execution_role" {
 # Note: These functions will be created with placeholder image URIs
 # The actual deployment will update the function code with built images
 
-
-
-
-
 # Bronze Ingestion Lambda Function
 resource "aws_lambda_function" "bronze_ingestion" {
   function_name = "${var.project_name}-bronze-ingestion"
@@ -917,234 +1273,90 @@ resource "aws_lambda_function" "mcp_server" {
   }
 }
 
-# ============================================================================
-# IAM Roles for Medallion Architecture Data Access
-# ============================================================================
+# Lambda-specific CloudWatch Alarms
+resource "aws_cloudwatch_metric_alarm" "lambda_errors" {
+  for_each = {
+    bronze_ingestion = aws_lambda_function.bronze_ingestion.function_name
+    mcp_server       = aws_lambda_function.mcp_server.function_name
+  }
 
-# IAM Role for Bronze Layer Data Access
-resource "aws_iam_role" "bronze_data_access" {
-  name = "${var.project_name}-bronze-data-access"
+  alarm_name          = "lambda-errors-${each.key}"
+  comparison_operator = "GreaterThanThreshold"
+  evaluation_periods  = "2"
+  metric_name         = "Errors"
+  namespace           = "AWS/Lambda"
+  period              = "300"
+  statistic           = "Sum"
+  threshold           = "1"
+  alarm_description   = "This metric monitors Lambda function errors for ${each.key}"
 
-  assume_role_policy = jsonencode({
-    Version = "2012-10-17"
-    Statement = [
-      {
-        Effect = "Allow"
-        Principal = {
-          Federated = data.aws_iam_openid_connect_provider.github.arn
-        }
-        Action = "sts:AssumeRoleWithWebIdentity"
-        Condition = {
-          StringEquals = {
-            "token.actions.githubusercontent.com:aud" = "sts.amazonaws.com"
-          }
-          StringLike = {
-            "token.actions.githubusercontent.com:sub" = "repo:${var.github_repo}:*"
-          }
-        }
-      }
-    ]
-  })
+  dimensions = {
+    FunctionName = each.value
+  }
 
   tags = {
-    Name      = "${var.project_name}-bronze-data-access-role"
-    DataLayer = "bronze"
-    Purpose   = "Data ingestion and raw data access"
+    Severity    = "critical"
+    Type        = "lambda-errors"
+    Application = each.key
   }
 }
 
-# IAM Policy for Bronze Layer
-resource "aws_iam_role_policy" "bronze_data_access" {
-  name = "${var.project_name}-bronze-data-access-policy"
-  role = aws_iam_role.bronze_data_access.id
+resource "aws_cloudwatch_metric_alarm" "lambda_duration" {
+  for_each = {
+    bronze_ingestion = {
+      function_name = aws_lambda_function.bronze_ingestion.function_name
+      threshold     = 250000 # 4.17 minutes (83% of 5m timeout)
+    }
+    mcp_server = {
+      function_name = aws_lambda_function.mcp_server.function_name
+      threshold     = 25000 # 25 seconds (83% of 30s timeout)
+    }
+  }
 
-  policy = jsonencode({
-    Version = "2012-10-17"
-    Statement = [
-      {
-        Effect = "Allow"
-        Action = [
-          "s3:GetObject",
-          "s3:PutObject",
-          "s3:DeleteObject",
-          "s3:ListBucket",
-          "s3:GetBucketLocation"
-        ]
-        Resource = [
-          aws_s3_bucket.bronze.arn,
-          "${aws_s3_bucket.bronze.arn}/*"
-        ]
-      },
-      {
-        Effect = "Allow"
-        Action = [
-          "logs:CreateLogStream",
-          "logs:PutLogEvents"
-        ]
-        Resource = [
-          "${aws_cloudwatch_log_group.data_pipeline.arn}:*"
-        ]
-      }
-    ]
-  })
-}
+  alarm_name          = "lambda-duration-${each.key}"
+  comparison_operator = "GreaterThanThreshold"
+  evaluation_periods  = "2"
+  metric_name         = "Duration"
+  namespace           = "AWS/Lambda"
+  period              = "300"
+  statistic           = "Average"
+  threshold           = each.value.threshold
+  alarm_description   = "This metric monitors Lambda function duration for ${each.key}"
 
-# IAM Role for Silver Layer Data Access
-resource "aws_iam_role" "silver_data_access" {
-  name = "${var.project_name}-silver-data-access"
-
-  assume_role_policy = jsonencode({
-    Version = "2012-10-17"
-    Statement = [
-      {
-        Effect = "Allow"
-        Principal = {
-          Federated = data.aws_iam_openid_connect_provider.github.arn
-        }
-        Action = "sts:AssumeRoleWithWebIdentity"
-        Condition = {
-          StringEquals = {
-            "token.actions.githubusercontent.com:aud" = "sts.amazonaws.com"
-          }
-          StringLike = {
-            "token.actions.githubusercontent.com:sub" = "repo:${var.github_repo}:*"
-          }
-        }
-      }
-    ]
-  })
+  dimensions = {
+    FunctionName = each.value.function_name
+  }
 
   tags = {
-    Name      = "${var.project_name}-silver-data-access-role"
-    DataLayer = "silver"
-    Purpose   = "Data transformation and quality validation"
+    Severity    = "warning"
+    Type        = "lambda-duration"
+    Application = each.key
   }
 }
 
-# IAM Policy for Silver Layer
-resource "aws_iam_role_policy" "silver_data_access" {
-  name = "${var.project_name}-silver-data-access-policy"
-  role = aws_iam_role.silver_data_access.id
+resource "aws_cloudwatch_metric_alarm" "lambda_throttles" {
+  for_each = {
+    bronze_ingestion = aws_lambda_function.bronze_ingestion.function_name
+    mcp_server       = aws_lambda_function.mcp_server.function_name
+  }
 
-  policy = jsonencode({
-    Version = "2012-10-17"
-    Statement = [
-      {
-        Effect = "Allow"
-        Action = [
-          "s3:GetObject",
-          "s3:ListBucket",
-          "s3:GetBucketLocation"
-        ]
-        Resource = [
-          aws_s3_bucket.bronze.arn,
-          "${aws_s3_bucket.bronze.arn}/*"
-        ]
-      },
-      {
-        Effect = "Allow"
-        Action = [
-          "s3:GetObject",
-          "s3:PutObject",
-          "s3:DeleteObject",
-          "s3:ListBucket",
-          "s3:GetBucketLocation"
-        ]
-        Resource = [
-          aws_s3_bucket.silver.arn,
-          "${aws_s3_bucket.silver.arn}/*"
-        ]
-      },
-      {
-        Effect = "Allow"
-        Action = [
-          "logs:CreateLogStream",
-          "logs:PutLogEvents"
-        ]
-        Resource = [
-          "${aws_cloudwatch_log_group.data_pipeline.arn}:*"
-        ]
-      }
-    ]
-  })
-}
+  alarm_name          = "lambda-throttles-${each.key}"
+  comparison_operator = "GreaterThanThreshold"
+  evaluation_periods  = "1"
+  metric_name         = "Throttles"
+  namespace           = "AWS/Lambda"
+  period              = "300"
+  statistic           = "Sum"
+  threshold           = "0"
+  alarm_description   = "This metric monitors Lambda function throttles for ${each.key}"
 
-# IAM Role for Gold Layer Data Access
-resource "aws_iam_role" "gold_data_access" {
-  name = "${var.project_name}-gold-data-access"
-
-  assume_role_policy = jsonencode({
-    Version = "2012-10-17"
-    Statement = [
-      {
-        Effect = "Allow"
-        Principal = {
-          Federated = data.aws_iam_openid_connect_provider.github.arn
-        }
-        Action = "sts:AssumeRoleWithWebIdentity"
-        Condition = {
-          StringEquals = {
-            "token.actions.githubusercontent.com:aud" = "sts.amazonaws.com"
-          }
-          StringLike = {
-            "token.actions.githubusercontent.com:sub" = "repo:${var.github_repo}:*"
-          }
-        }
-      }
-    ]
-  })
+  dimensions = {
+    FunctionName = each.value
+  }
 
   tags = {
-    Name      = "${var.project_name}-gold-data-access-role"
-    DataLayer = "gold"
-    Purpose   = "Business analytics and MCP server integration"
+    Severity    = "critical"
+    Type        = "lambda-throttles"
+    Application = each.key
   }
-}
-
-# IAM Policy for Gold Layer
-resource "aws_iam_role_policy" "gold_data_access" {
-  name = "${var.project_name}-gold-data-access-policy"
-  role = aws_iam_role.gold_data_access.id
-
-  policy = jsonencode({
-    Version = "2012-10-17"
-    Statement = [
-      {
-        Effect = "Allow"
-        Action = [
-          "s3:GetObject",
-          "s3:ListBucket",
-          "s3:GetBucketLocation"
-        ]
-        Resource = [
-          aws_s3_bucket.silver.arn,
-          "${aws_s3_bucket.silver.arn}/*"
-        ]
-      },
-      {
-        Effect = "Allow"
-        Action = [
-          "s3:GetObject",
-          "s3:PutObject",
-          "s3:DeleteObject",
-          "s3:ListBucket",
-          "s3:GetBucketLocation"
-        ]
-        Resource = [
-          aws_s3_bucket.gold.arn,
-          "${aws_s3_bucket.gold.arn}/*"
-        ]
-      },
-      {
-        Effect = "Allow"
-        Action = [
-          "logs:CreateLogStream",
-          "logs:PutLogEvents"
-        ]
-        Resource = [
-          "${aws_cloudwatch_log_group.data_pipeline.arn}:*"
-        ]
-      }
-    ]
-  })
 }

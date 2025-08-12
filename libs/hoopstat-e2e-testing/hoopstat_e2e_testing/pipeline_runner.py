@@ -78,7 +78,7 @@ class PipelineTestRunner:
         self, num_teams: int = 4, num_players_per_team: int = 5
     ) -> bool:
         """
-        Ingest raw mock data into the bronze layer.
+        Ingest raw mock data into the bronze layer as Parquet.
 
         Args:
             num_teams: Number of teams to generate
@@ -97,53 +97,71 @@ class PipelineTestRunner:
                 num_games=10,
             )
 
-            # Add ingestion metadata
+            # Add ingestion metadata to each record
             ingestion_timestamp = datetime.utcnow().isoformat()
 
-            # Store teams data
-            teams_data = {
-                "ingestion_metadata": {
-                    "timestamp": ingestion_timestamp,
-                    "source": "mock_generator",
-                    "layer": "bronze",
-                },
-                "teams": [team.model_dump() for team in dataset["teams"]],
-            }
+            # Convert teams to DataFrame and store as Parquet
+            teams_data = []
+            for team in dataset["teams"]:
+                team_dict = team.model_dump()
+                team_dict.update(
+                    {
+                        "ingestion_timestamp": ingestion_timestamp,
+                        "source": "mock_generator",
+                        "layer": "bronze",
+                    }
+                )
+                teams_data.append(team_dict)
 
+            teams_df = pd.DataFrame(teams_data)
             if not self.s3_utils.put_object(
-                self.buckets["bronze"], "raw/teams/teams.json", teams_data
+                self.buckets["bronze"],
+                "raw/teams/date=2023-12-25/data.parquet",
+                teams_df,
             ):
                 logger.error("Failed to upload teams data to bronze layer")
                 return False
 
-            # Store players data
-            players_data = {
-                "ingestion_metadata": {
-                    "timestamp": ingestion_timestamp,
-                    "source": "mock_generator",
-                    "layer": "bronze",
-                },
-                "players": [player.model_dump() for player in dataset["players"]],
-            }
+            # Convert players to DataFrame and store as Parquet
+            players_data = []
+            for player in dataset["players"]:
+                player_dict = player.model_dump()
+                player_dict.update(
+                    {
+                        "ingestion_timestamp": ingestion_timestamp,
+                        "source": "mock_generator",
+                        "layer": "bronze",
+                    }
+                )
+                players_data.append(player_dict)
 
+            players_df = pd.DataFrame(players_data)
             if not self.s3_utils.put_object(
-                self.buckets["bronze"], "raw/players/players.json", players_data
+                self.buckets["bronze"],
+                "raw/players/date=2023-12-25/data.parquet",
+                players_df,
             ):
                 logger.error("Failed to upload players data to bronze layer")
                 return False
 
-            # Store games data
-            games_data = {
-                "ingestion_metadata": {
-                    "timestamp": ingestion_timestamp,
-                    "source": "mock_generator",
-                    "layer": "bronze",
-                },
-                "games": [game.model_dump() for game in dataset["games"]],
-            }
+            # Convert games to DataFrame and store as Parquet
+            games_data = []
+            for game in dataset["games"]:
+                game_dict = game.model_dump()
+                game_dict.update(
+                    {
+                        "ingestion_timestamp": ingestion_timestamp,
+                        "source": "mock_generator",
+                        "layer": "bronze",
+                    }
+                )
+                games_data.append(game_dict)
 
+            games_df = pd.DataFrame(games_data)
             if not self.s3_utils.put_object(
-                self.buckets["bronze"], "raw/games/games.json", games_data
+                self.buckets["bronze"],
+                "raw/games/date=2023-12-25/data.parquet",
+                games_df,
             ):
                 logger.error("Failed to upload games data to bronze layer")
                 return False
@@ -168,25 +186,26 @@ class PipelineTestRunner:
         try:
             logger.info("Starting silver layer data transformation...")
 
-            # Read bronze data
-            teams_raw = self.s3_utils.get_object(
-                self.buckets["bronze"], "raw/teams/teams.json", "json"
+            # Read bronze data from Parquet files
+            teams_df = self.s3_utils.get_object(
+                self.buckets["bronze"],
+                "raw/teams/date=2023-12-25/data.parquet",
+                "dataframe",
             )
-            players_raw = self.s3_utils.get_object(
-                self.buckets["bronze"], "raw/players/players.json", "json"
+            players_df = self.s3_utils.get_object(
+                self.buckets["bronze"],
+                "raw/players/date=2023-12-25/data.parquet",
+                "dataframe",
             )
-            games_raw = self.s3_utils.get_object(
-                self.buckets["bronze"], "raw/games/games.json", "json"
+            games_df = self.s3_utils.get_object(
+                self.buckets["bronze"],
+                "raw/games/date=2023-12-25/data.parquet",
+                "dataframe",
             )
 
-            if not all([teams_raw, players_raw, games_raw]):
+            if any(df is None for df in [teams_df, players_df, games_df]):
                 logger.error("Failed to read bronze layer data")
                 return False
-
-            # Transform to DataFrames for processing
-            teams_df = pd.DataFrame(teams_raw["teams"])
-            players_df = pd.DataFrame(players_raw["players"])
-            games_df = pd.DataFrame(games_raw["games"])
 
             # Apply transformations (simulate data cleaning)
             transformation_timestamp = datetime.utcnow().isoformat()
@@ -418,16 +437,19 @@ class PipelineTestRunner:
         try:
             # Verify bronze layer
             bronze_objects = [
-                "raw/teams/teams.json",
-                "raw/players/players.json",
-                "raw/games/games.json",
+                "raw/teams/date=2023-12-25/data.parquet",
+                "raw/players/date=2023-12-25/data.parquet",
+                "raw/games/date=2023-12-25/data.parquet",
             ]
 
             bronze_valid = True
             bronze_details = {}
             for obj_key in bronze_objects:
-                obj_exists = bool(
-                    self.s3_utils.get_object(self.buckets["bronze"], obj_key, "json")
+                obj_exists = (
+                    self.s3_utils.get_object(
+                        self.buckets["bronze"], obj_key, "dataframe"
+                    )
+                    is not None
                 )
                 bronze_details[obj_key] = obj_exists
                 if not obj_exists:

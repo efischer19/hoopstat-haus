@@ -3,12 +3,16 @@ Bronze Layer Ingestion Application for NBA Statistics.
 
 This application ingests NBA data from the NBA API and stores it in the bronze
 layer of our data lake following the medallion architecture pattern.
+Date-scoped runner that fetches NBA data for a specific date.
 """
 
 import sys
+from datetime import datetime
 
 import click
 from hoopstat_observability import get_logger
+
+from .ingestion import DateScopedIngestion
 
 logger = get_logger(__name__)
 
@@ -23,20 +27,31 @@ def cli(debug: bool) -> None:
 
 @cli.command()
 @click.option(
-    "--season", default="2024-25", help="NBA season to ingest (e.g., 2024-25)"
+    "--date",
+    type=click.DateTime(formats=["%Y-%m-%d"]),
+    default=None,
+    help="Date to ingest (YYYY-MM-DD), defaults to today (UTC)",
 )
 @click.option("--dry-run", is_flag=True, help="Run without making changes")
-def ingest(season: str, dry_run: bool) -> None:
-    """Ingest NBA data for the specified season."""
-    logger.info(f"Starting bronze layer ingestion for season: {season}")
+def ingest(date: datetime | None, dry_run: bool) -> None:
+    """Ingest NBA data for the specified date."""
+    # Default to today (UTC) if no date provided
+    target_date = date.date() if date else datetime.utcnow().date()
+
+    logger.info(f"Starting bronze layer ingestion for date: {target_date}")
 
     if dry_run:
         logger.info("Dry run mode - no data will be written")
 
     try:
-        # TODO: Implement actual ingestion logic
-        # This is a minimal structure to get the app working
-        logger.info("Bronze layer ingestion completed successfully")
+        ingestion = DateScopedIngestion()
+        success = ingestion.run(target_date=target_date, dry_run=dry_run)
+
+        if success:
+            logger.info("Bronze layer ingestion completed successfully")
+        else:
+            logger.error("Bronze layer ingestion failed")
+            sys.exit(1)
 
     except Exception as e:
         logger.error(f"Bronze layer ingestion failed: {e}")
@@ -49,7 +64,8 @@ def status() -> None:
     logger.info("Checking bronze layer ingestion status...")
 
     try:
-        # TODO: Implement status checking logic
+        # Check if we can create ingestion instance (validates config)
+        DateScopedIngestion()
         logger.info("Bronze layer ingestion pipeline is ready")
 
     except Exception as e:

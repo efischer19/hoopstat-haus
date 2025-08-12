@@ -5,7 +5,7 @@ Tests for the rate limiter functionality.
 import time
 from unittest.mock import patch
 
-from hoopstat_nba_ingestion.rate_limiter import RateLimiter
+from hoopstat_nba_api.rate_limiter import RateLimiter
 
 
 class TestRateLimiter:

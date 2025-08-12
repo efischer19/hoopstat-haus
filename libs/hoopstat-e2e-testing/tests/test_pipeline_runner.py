@@ -66,27 +66,30 @@ class TestPipelineTestRunner:
         # Verify data exists
         bronze_bucket = pipeline_runner.buckets["bronze"]
         expected_objects = [
-            "raw/teams/teams.json",
-            "raw/players/players.json",
-            "raw/games/games.json",
+            "raw/teams/date=2023-12-25/data.parquet",
+            "raw/players/date=2023-12-25/data.parquet",
+            "raw/games/date=2023-12-25/data.parquet",
         ]
 
         for obj_key in expected_objects:
-            data = pipeline_runner.s3_utils.get_object(bronze_bucket, obj_key, "json")
+            data = pipeline_runner.s3_utils.get_object(
+                bronze_bucket, obj_key, "dataframe"
+            )
             assert data is not None
-            assert "ingestion_metadata" in data
-            assert data["ingestion_metadata"]["layer"] == "bronze"
+            assert "ingestion_timestamp" in data.columns
+            assert "layer" in data.columns
+            assert (data["layer"] == "bronze").all()
 
         # Verify data content
         teams_data = pipeline_runner.s3_utils.get_object(
-            bronze_bucket, "raw/teams/teams.json", "json"
+            bronze_bucket, "raw/teams/date=2023-12-25/data.parquet", "dataframe"
         )
-        assert len(teams_data["teams"]) == 2
+        assert len(teams_data) == 2
 
         players_data = pipeline_runner.s3_utils.get_object(
-            bronze_bucket, "raw/players/players.json", "json"
+            bronze_bucket, "raw/players/date=2023-12-25/data.parquet", "dataframe"
         )
-        assert len(players_data["players"]) == 6  # 2 teams * 3 players each
+        assert len(players_data) == 6  # 2 teams * 3 players each
 
         # Clean up
         pipeline_runner.cleanup_environment()
@@ -204,9 +207,9 @@ class TestPipelineTestRunner:
         # Check bronze layer
         assert results["bronze_layer"]["status"] == "valid"
         bronze_details = results["bronze_layer"]["details"]
-        assert bronze_details["raw/teams/teams.json"] is True
-        assert bronze_details["raw/players/players.json"] is True
-        assert bronze_details["raw/games/games.json"] is True
+        assert bronze_details["raw/teams/date=2023-12-25/data.parquet"] is True
+        assert bronze_details["raw/players/date=2023-12-25/data.parquet"] is True
+        assert bronze_details["raw/games/date=2023-12-25/data.parquet"] is True
 
         # Check silver layer
         assert results["silver_layer"]["status"] == "valid"

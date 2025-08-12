@@ -1,35 +1,23 @@
 [tool.poetry]
-name = "bronze-ingestion"
+name = "hoopstat-s3"
 version = "0.1.0"
-description = "Bronze layer ingestion pipeline for NBA statistics"
+description = "S3 storage and Parquet data processing library for NBA data"
 authors = ["Hoopstat Haus Team"]
 readme = "README.md"
-packages = [{include = "app"}]
+packages = [{include = "hoopstat_s3"}]
 
 [tool.poetry.dependencies]
 python = "^3.12"
-nba-api = "^1.5.2"
-boto3 = "^1.40.2"
+boto3 = "^1.35.0"
+pyarrow = "^17.0.0"
 pandas = "^2.0.0"
-pyarrow = "^21.0.0"
-tenacity = "^9.0.0"
-click = "^8.1.0"
-jsonschema = "^4.21.0"
-hoopstat-observability = {path = "../../libs/hoopstat-observability", develop = true}
-hoopstat-data = {path = "../../libs/hoopstat-data", develop = true}
-hoopstat-config = {path = "../../libs/hoopstat-config", develop = true}
-hoopstat-nba_api = {path = "../../libs/hoopstat-nba_api", develop = true}
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^8.4.1"
-ruff = "^0.12.7"
+ruff = "^0.12.3"
 black = "^25.1.0"
 pytest-cov = "^6.2.1"
-moto = "^5.1.9"
-pytest-mock = "^3.12.0"
-
-[tool.poetry.scripts]
-start = "app.main:main"
+moto = "^5.0.0"
 
 [build-system]
 requires = ["poetry-core"]
@@ -68,7 +56,7 @@ python_functions = ["test_*"]
 addopts = "--strict-markers --disable-warnings"
 
 [tool.coverage.run]
-source = ["app"]
+source = ["hoopstat_s3"]
 omit = ["tests/*"]
 
 [tool.coverage.report]

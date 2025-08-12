@@ -7,8 +7,9 @@ from unittest.mock import Mock, patch
 
 import boto3
 import pytest
-from hoopstat_nba_ingestion.s3_uploader import S3Uploader, S3UploadError
 from moto import mock_aws
+
+from hoopstat_s3.s3_uploader import S3Uploader, S3UploadError
 
 
 class TestS3Uploader:
@@ -46,7 +47,7 @@ class TestS3Uploader:
         with patch.object(S3Uploader, "__init__", lambda x, **kwargs: None):
             uploader = S3Uploader.__new__(S3Uploader)
 
-            with patch("hoopstat_nba_ingestion.s3_uploader.datetime") as mock_datetime:
+            with patch("hoopstat_s3.s3_uploader.datetime") as mock_datetime:
                 mock_datetime.now.return_value.hour = 14
 
                 path = uploader._generate_partition_path("players", date(2024, 3, 1))

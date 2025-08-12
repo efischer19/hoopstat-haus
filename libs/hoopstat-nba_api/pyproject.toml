@@ -1,25 +1,21 @@
 [tool.poetry]
-name = "hoopstat-nba-ingestion"
+name = "hoopstat-nba-api"
 version = "0.1.0"
-description = "NBA API data ingestion library with rate limiting, Parquet conversion, and S3 upload capabilities"
+description = "NBA API client library with rate limiting and error handling"
 authors = ["Hoopstat Haus Team"]
 readme = "README.md"
-packages = [{include = "hoopstat_nba_ingestion", from = "nba-api"}]
+packages = [{include = "hoopstat_nba_api"}]
 
 [tool.poetry.dependencies]
 python = "^3.12"
 nba-api = "^1.5.2"
-pyarrow = "^17.0.0"
-boto3 = "^1.35.0"
 requests = "^2.31.0"
-pydantic = "^2.0.0"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^8.4.1"
 ruff = "^0.12.3"
 black = "^25.1.0"
 pytest-cov = "^6.2.1"
-moto = "^5.0.0"
 
 [build-system]
 requires = ["poetry-core"]
@@ -58,7 +54,7 @@ python_functions = ["test_*"]
 addopts = "--strict-markers --disable-warnings"
 
 [tool.coverage.run]
-source = ["nba-api/hoopstat_nba_ingestion"]
+source = ["hoopstat_nba_api"]
 omit = ["tests/*"]
 
 [tool.coverage.report]

@@ -20,17 +20,14 @@ locals {
 }
 
 
-# Note: GitHub Actions IAM role is managed outside of Terraform
+# Note: GitHub Actions admin IAM role is managed outside of Terraform
 # to avoid circular dependency during bootstrap process.
-# The role should be created manually with the following permissions:
+# The admin role (hoopstat-haus-github-actions) is used exclusively for infrastructure operations.
+# 
+# The operations role (hoopstat-haus-operations) defined below is used for day-to-day CI/CD operations
+# and has least-privilege permissions that explicitly deny administrative actions.
 #
-# Required permissions for hoopstat-haus-github-actions role:
-# - S3: GetObject, PutObject, DeleteObject, ListBucket on the main bucket
-# - S3: GetObject, PutObject, DeleteObject, ListBucket on medallion architecture buckets
-#   (hoopstat-haus-bronze, hoopstat-haus-silver, hoopstat-haus-gold, hoopstat-haus-access-logs)
-# - ECR: BatchCheckLayerAvailability, GetDownloadUrlForLayer, BatchGetImage, 
-#        GetAuthorizationToken, PutImage, InitiateLayerUpload, UploadLayerPart, CompleteLayerUpload
-# - CloudWatch Logs: CreateLogGroup, CreateLogStream, PutLogEvents, DescribeLogGroups, DescribeLogStreams
+# This two-role model separates infrastructure administration from runtime operations.
 
 # S3 Bucket for application data and artifacts
 resource "aws_s3_bucket" "main" {
@@ -655,6 +652,193 @@ resource "aws_s3_bucket_logging" "gold" {
 
   target_bucket = aws_s3_bucket.access_logs.id
   target_prefix = "gold/"
+}
+
+# ============================================================================
+# GitHub Actions Operations Role (ADR-011)
+# ============================================================================
+
+# IAM role for GitHub Actions day-to-day operations (separate from admin role)
+resource "aws_iam_role" "github_actions_operations" {
+  name = "${var.project_name}-operations"
+
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Principal = {
+          Federated = local.github_oidc_provider_arn
+        }
+        Action = "sts:AssumeRoleWithWebIdentity"
+        Condition = {
+          StringEquals = {
+            "token.actions.githubusercontent.com:aud" = "sts.amazonaws.com"
+          }
+          StringLike = {
+            "token.actions.githubusercontent.com:sub" = "repo:${var.github_repo}:*"
+          }
+        }
+      }
+    ]
+  })
+
+  tags = {
+    Name    = "${var.project_name}-operations-role"
+    Purpose = "GitHub Actions day-to-day operations with least-privilege access"
+    Type    = "operations"
+  }
+}
+
+# ECR permissions for container operations
+resource "aws_iam_role_policy" "github_actions_operations_ecr" {
+  name = "${var.project_name}-operations-ecr"
+  role = aws_iam_role.github_actions_operations.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Action = [
+          "ecr:GetAuthorizationToken"
+        ]
+        Resource = "*"
+      },
+      {
+        Effect = "Allow"
+        Action = [
+          "ecr:BatchCheckLayerAvailability",
+          "ecr:GetDownloadUrlForLayer",
+          "ecr:BatchGetImage",
+          "ecr:PutImage",
+          "ecr:InitiateLayerUpload",
+          "ecr:UploadLayerPart",
+          "ecr:CompleteLayerUpload"
+        ]
+        Resource = aws_ecr_repository.main.arn
+      }
+    ]
+  })
+}
+
+# S3 object operations for medallion architecture buckets
+resource "aws_iam_role_policy" "github_actions_operations_s3" {
+  name = "${var.project_name}-operations-s3"
+  role = aws_iam_role.github_actions_operations.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Action = [
+          "s3:ListBucket",
+          "s3:GetBucketLocation"
+        ]
+        Resource = [
+          aws_s3_bucket.main.arn,
+          aws_s3_bucket.bronze.arn,
+          aws_s3_bucket.silver.arn,
+          aws_s3_bucket.gold.arn,
+          aws_s3_bucket.access_logs.arn
+        ]
+      },
+      {
+        Effect = "Allow"
+        Action = [
+          "s3:GetObject",
+          "s3:PutObject",
+          "s3:DeleteObject"
+        ]
+        Resource = [
+          "${aws_s3_bucket.main.arn}/*",
+          "${aws_s3_bucket.bronze.arn}/*",
+          "${aws_s3_bucket.silver.arn}/*",
+          "${aws_s3_bucket.gold.arn}/*",
+          "${aws_s3_bucket.access_logs.arn}/*"
+        ]
+      }
+    ]
+  })
+}
+
+# CloudWatch Logs permissions for application logging
+resource "aws_iam_role_policy" "github_actions_operations_logs" {
+  name = "${var.project_name}-operations-logs"
+  role = aws_iam_role.github_actions_operations.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Action = [
+          "logs:CreateLogStream",
+          "logs:PutLogEvents",
+          "logs:DescribeLogGroups",
+          "logs:DescribeLogStreams"
+        ]
+        Resource = [
+          "${aws_cloudwatch_log_group.applications.arn}:*",
+          "${aws_cloudwatch_log_group.data_pipeline.arn}:*",
+          "${aws_cloudwatch_log_group.infrastructure.arn}:*"
+        ]
+      }
+    ]
+  })
+}
+
+# Explicit denials for administrative actions
+resource "aws_iam_role_policy" "github_actions_operations_denials" {
+  name = "${var.project_name}-operations-denials"
+  role = aws_iam_role.github_actions_operations.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Deny"
+        Action = [
+          # S3 bucket management
+          "s3:CreateBucket",
+          "s3:DeleteBucket",
+          "s3:PutBucketPolicy",
+          "s3:DeleteBucketPolicy",
+          "s3:PutBucketVersioning",
+          "s3:PutBucketEncryption",
+          "s3:PutBucketLifecycle*",
+          "s3:PutBucketLogging",
+          "s3:PutBucketPublicAccessBlock",
+          # ECR repository management
+          "ecr:CreateRepository",
+          "ecr:DeleteRepository",
+          "ecr:PutRepositoryPolicy",
+          "ecr:DeleteRepositoryPolicy",
+          "ecr:PutLifecyclePolicy",
+          "ecr:DeleteLifecyclePolicy",
+          # IAM operations
+          "iam:Create*",
+          "iam:Delete*",
+          "iam:Put*",
+          "iam:Attach*",
+          "iam:Detach*",
+          "iam:Update*",
+          # CloudWatch management operations
+          "logs:CreateLogGroup",
+          "logs:DeleteLogGroup",
+          "logs:PutRetentionPolicy",
+          "logs:DeleteRetentionPolicy",
+          "logs:PutMetricFilter",
+          "logs:DeleteMetricFilter",
+          "cloudwatch:PutMetricAlarm",
+          "cloudwatch:DeleteAlarms",
+          "cloudwatch:PutMetricFilter"
+        ]
+        Resource = "*"
+      }
+    ]
+  })
 }
 
 # ============================================================================

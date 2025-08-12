@@ -14,6 +14,11 @@ The daily ingestion workflow (`daily-ingestion.yml`) automatically executes the 
 
 The fixed UTC schedule ensures consistent execution regardless of daylight saving time changes.
 
+### Automatic Date Selection
+
+- **Scheduled runs**: Automatically use yesterday's date (UTC) to capture completed games
+- **Manual runs**: Use specified date parameter or default to 2024-12-25 for testing
+
 ## Architecture
 
 ```
@@ -34,18 +39,18 @@ The workflow can be manually triggered via GitHub Actions UI or CLI:
 1. Go to **Actions** → **Daily Bronze Ingestion**
 2. Click **Run workflow**
 3. Configure parameters:
-   - **Season**: NBA season (e.g., "2024-25")
+   - **Date**: Target date for ingestion (YYYY-MM-DD, defaults to 2024-12-25)
    - **Dry Run**: Test mode without data changes
    - **Force Run**: Run even if no games scheduled
 
 ### Via GitHub CLI
 ```bash
-# Basic execution
+# Basic execution (uses default date)
 gh workflow run daily-ingestion.yml
 
 # With custom parameters
 gh workflow run daily-ingestion.yml \
-  --field season="2024-25" \
+  --field date="2024-12-25" \
   --field dry_run=true \
   --field force_run=false
 ```
@@ -54,7 +59,7 @@ gh workflow run daily-ingestion.yml \
 
 | Parameter | Type | Default | Description |
 |-----------|------|---------|-------------|
-| `season` | string | `2024-25` | NBA season to ingest |
+| `date` | string | `2024-12-25` | Date to ingest (YYYY-MM-DD) |
 | `dry_run` | boolean | `false` | Run without making changes |
 | `force_run` | boolean | `false` | Force run even if no games scheduled |
 
@@ -137,7 +142,7 @@ This workflow coordinates with the deployment infrastructure:
 
 ### Seasonal Updates
 - **Cron Schedule**: Fixed UTC time (no DST adjustments needed)
-- **NBA Season**: Update default season parameter annually
+- **Default Date**: Update default date parameter for testing/manual runs
 - **Holiday Handling**: Manual force_run parameter for special cases
 
 ### Performance Optimization

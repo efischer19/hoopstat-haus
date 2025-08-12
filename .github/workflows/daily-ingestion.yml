@@ -9,10 +9,10 @@ name: Daily Bronze Ingestion
     - cron: '30 9 * * *'
   workflow_dispatch:
     inputs:
-      season:
-        description: 'NBA season to ingest (e.g., 2024-25)'
+      date:
+        description: 'Date to ingest (YYYY-MM-DD)'
         required: false
-        default: '2024-25'
+        default: '2024-12-25'
         type: string
       dry_run:
         description: 'Run in dry-run mode (no data changes)'
@@ -74,7 +74,18 @@ jobs:
         id: payload
         run: |
           # Prepare the payload for Lambda invocation
-          SEASON="${{ inputs.season || '2024-25' }}"
+          
+          # For scheduled runs, use yesterday's date
+          # For manual runs, use the provided date or default
+          if [ "${{ github.event_name }}" = "schedule" ]; then
+            # Calculate yesterday's date in UTC
+            DATE=$(date -u -d "yesterday" +%Y-%m-%d)
+            echo "📅 Scheduled run - using yesterday's date: $DATE"
+          else
+            DATE="${{ inputs.date || '2024-12-25' }}"
+            echo "📅 Manual run - using specified date: $DATE"
+          fi
+          
           DRY_RUN="${{ inputs.dry_run || 'false' }}"
           FORCE_RUN="${{ inputs.force_run || 'false' }}"
           
@@ -84,7 +95,7 @@ jobs:
             "source": "github-actions-daily",
             "trigger_type": "${{ github.event_name }}",
             "parameters": {
-              "season": "$SEASON",
+              "date": "$DATE",
               "dry_run": $DRY_RUN,
               "force_run": $FORCE_RUN
             },
@@ -105,6 +116,7 @@ jobs:
           echo "$PAYLOAD" > /tmp/lambda_payload.json
           
           echo "payload_file=/tmp/lambda_payload.json" >> $GITHUB_OUTPUT
+          echo "target_date=$DATE" >> $GITHUB_OUTPUT
 
       - name: Invoke bronze ingestion Lambda function
         id: invoke
@@ -196,7 +208,7 @@ jobs:
           echo "**Execution Details:**" >> $GITHUB_STEP_SUMMARY
           echo "- Function: \`$FUNCTION_NAME\`" >> $GITHUB_STEP_SUMMARY
           echo "- Trigger: ${{ github.event_name }}" >> $GITHUB_STEP_SUMMARY
-          echo "- Season: ${{ inputs.season || '2024-25' }}" >> $GITHUB_STEP_SUMMARY
+          echo "- Date: ${{ steps.payload.outputs.target_date }}" >> $GITHUB_STEP_SUMMARY
           echo "- Dry Run: ${{ inputs.dry_run || 'false' }}" >> $GITHUB_STEP_SUMMARY
           echo "- Execution Time: $(date -u +%Y-%m-%dT%H:%M:%SZ)" >> $GITHUB_STEP_SUMMARY
           

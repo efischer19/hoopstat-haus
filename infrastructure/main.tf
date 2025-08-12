@@ -1217,7 +1217,6 @@ resource "aws_lambda_function" "bronze_ingestion" {
     variables = {
       LOG_LEVEL     = "INFO"
       APP_NAME      = "bronze-ingestion"
-      AWS_REGION    = var.aws_region
       BRONZE_BUCKET = aws_s3_bucket.bronze.bucket
     }
   }
@@ -1252,7 +1251,6 @@ resource "aws_lambda_function" "mcp_server" {
     variables = {
       LOG_LEVEL   = "INFO"
       APP_NAME    = "mcp-server"
-      AWS_REGION  = var.aws_region
       GOLD_BUCKET = aws_s3_bucket.gold.bucket
     }
   }

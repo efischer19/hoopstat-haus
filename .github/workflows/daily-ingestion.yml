@@ -1,0 +1,253 @@
+---
+name: Daily Bronze Ingestion
+
+"on":
+  schedule:
+    # Run at 4:30 AM ET daily
+    # 9:30 AM UTC (4:30 AM EST) / 8:30 AM UTC (4:30 AM EDT)
+    # Using 9:30 AM UTC as baseline - will adjust manually for DST
+    - cron: '30 9 * * *'
+  workflow_dispatch:
+    inputs:
+      date:
+        description: 'Date to ingest (YYYY-MM-DD)'
+        required: false
+        default: '2024-12-25'
+        type: string
+      dry_run:
+        description: 'Run in dry-run mode (no data changes)'
+        required: false
+        default: false
+        type: boolean
+      force_run:
+        description: 'Force run even if no games scheduled'
+        required: false
+        default: false
+        type: boolean
+
+permissions:
+  id-token: write
+  contents: read
+
+env:
+  AWS_REGION: us-east-1
+  FUNCTION_NAME: hoopstat-haus-bronze-ingestion
+
+jobs:
+  daily-ingestion:
+    name: Execute Daily Bronze Ingestion
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::${{ secrets.AWS_ACCOUNT_ID }}:role/hoopstat-haus-github-actions
+          role-session-name: GitHubActions-DailyIngestion-${{ github.run_id }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Check Lambda function exists
+        run: |
+          echo "🔍 Checking if Lambda function exists..."
+          
+          if aws lambda get-function \
+              --function-name $FUNCTION_NAME \
+              --region $AWS_REGION >/dev/null 2>&1; then
+            echo "✅ Lambda function found: $FUNCTION_NAME"
+            
+            FUNCTION_QUERY='Configuration.[FunctionName,State,LastModified,Runtime,Timeout,MemorySize]'
+            aws lambda get-function \
+              --function-name $FUNCTION_NAME \
+              --region $AWS_REGION \
+              --query "$FUNCTION_QUERY" \
+              --output table
+          else
+            echo "❌ Lambda function not found: $FUNCTION_NAME"
+            echo "🔧 Please ensure the function is deployed via the deploy workflow"
+            exit 1
+          fi
+
+      - name: Prepare invocation payload
+        id: payload
+        run: |
+          # Prepare the payload for Lambda invocation
+          
+          # For scheduled runs, use yesterday's date
+          # For manual runs, use the provided date or default
+          if [ "${{ github.event_name }}" = "schedule" ]; then
+            # Calculate yesterday's date in UTC
+            DATE=$(date -u -d "yesterday" +%Y-%m-%d)
+            echo "📅 Scheduled run - using yesterday's date: $DATE"
+          else
+            DATE="${{ inputs.date || '2024-12-25' }}"
+            echo "📅 Manual run - using specified date: $DATE"
+          fi
+          
+          DRY_RUN="${{ inputs.dry_run || 'false' }}"
+          FORCE_RUN="${{ inputs.force_run || 'false' }}"
+          
+          # Create JSON payload
+          PAYLOAD=$(cat << EOF
+          {
+            "source": "github-actions-daily",
+            "trigger_type": "${{ github.event_name }}",
+            "parameters": {
+              "date": "$DATE",
+              "dry_run": $DRY_RUN,
+              "force_run": $FORCE_RUN
+            },
+            "metadata": {
+              "workflow_run_id": "${{ github.run_id }}",
+              "workflow_run_number": "${{ github.run_number }}",
+              "repository": "${{ github.repository }}",
+              "triggered_at": "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+            }
+          }
+          EOF
+          )
+          
+          echo "📋 Invocation payload:"
+          echo "$PAYLOAD" | jq '.'
+          
+          # Save payload to file for Lambda invocation
+          echo "$PAYLOAD" > /tmp/lambda_payload.json
+          
+          echo "payload_file=/tmp/lambda_payload.json" >> $GITHUB_OUTPUT
+          echo "target_date=$DATE" >> $GITHUB_OUTPUT
+
+      - name: Invoke bronze ingestion Lambda function
+        id: invoke
+        run: |
+          echo "🚀 Invoking bronze ingestion Lambda function..."
+          echo "📍 Function: $FUNCTION_NAME"
+          echo "📍 Region: $AWS_REGION"
+          
+          # Invoke Lambda function asynchronously (best for long-running data processing)
+          aws lambda invoke \
+            --function-name $FUNCTION_NAME \
+            --invocation-type Event \
+            --payload file://${{ steps.payload.outputs.payload_file }} \
+            --region $AWS_REGION \
+            --cli-binary-format raw-in-base64-out \
+            /tmp/lambda_response.json
+          
+          INVOKE_RESULT=$?
+          
+          if [ $INVOKE_RESULT -eq 0 ]; then
+            echo "✅ Lambda function invoked successfully"
+            
+            # Extract request ID from response
+            REQUEST_ID=$(cat /tmp/lambda_response.json | \
+              jq -r '.ResponseMetadata.RequestId // "unknown"')
+            echo "📋 Request ID: $REQUEST_ID"
+            echo "request_id=$REQUEST_ID" >> $GITHUB_OUTPUT
+            
+            # For asynchronous invocation, we don't get immediate execution results
+            echo "ℹ️  Function invoked asynchronously"
+            echo "    Check CloudWatch logs for execution results"
+            LAMBDA_URL="https://console.aws.amazon.com/lambda/home?region=$AWS_REGION#/functions/$FUNCTION_NAME"
+            echo "📊 Monitor execution at: $LAMBDA_URL"
+            
+          else
+            echo "❌ Failed to invoke Lambda function"
+            echo "📋 Response file contents:"
+            cat /tmp/lambda_response.json || echo "No response file found"
+            exit 1
+          fi
+
+      - name: Wait and check execution status
+        run: |
+          echo "⏳ Waiting for function execution to start..."
+          sleep 30
+          
+          echo "🔍 Checking recent Lambda function logs..."
+          
+          # Get recent log events to verify execution started
+          LOG_GROUP="/hoopstat-haus/data-pipeline"
+          
+          # Check if log group exists and get recent logs
+          if aws logs describe-log-groups \
+              --log-group-name-prefix "$LOG_GROUP" \
+              --region $AWS_REGION \
+              --query 'logGroups[0].logGroupName' \
+              --output text | grep -q "$LOG_GROUP"; then
+            
+            echo "📋 Recent log events from $LOG_GROUP:"
+            
+            # Get logs from the last 5 minutes
+            START_TIME=$(($(date +%s) - 300))
+            START_TIME_MS=$((START_TIME * 1000))
+            
+            QUERY='events[?contains(message, `bronze-ingestion`) || contains(message, `ERROR`) || contains(message, `Starting`)].message'
+            aws logs filter-log-events \
+              --log-group-name "$LOG_GROUP" \
+              --start-time $START_TIME_MS \
+              --region $AWS_REGION \
+              --query "$QUERY" \
+              --output table || echo "No recent log events found"
+              
+          else
+            echo "ℹ️  Log group $LOG_GROUP not found"
+            echo "    Function may not have executed yet"
+          fi
+          
+            echo "💡 For complete execution logs, check CloudWatch Logs:"
+            CLOUDWATCH_URL="https://console.aws.amazon.com/cloudwatch/home?region=$AWS_REGION#logsV2:log-groups/log-group/$LOG_GROUP"
+            echo "   $CLOUDWATCH_URL"
+
+      - name: Set up notification summary
+        id: summary
+        if: always()
+        run: |
+          echo "📋 Daily Bronze Ingestion Summary" >> $GITHUB_STEP_SUMMARY
+          echo "=====================================+" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Execution Details:**" >> $GITHUB_STEP_SUMMARY
+          echo "- Function: \`$FUNCTION_NAME\`" >> $GITHUB_STEP_SUMMARY
+          echo "- Trigger: ${{ github.event_name }}" >> $GITHUB_STEP_SUMMARY
+          echo "- Date: ${{ steps.payload.outputs.target_date }}" >> $GITHUB_STEP_SUMMARY
+          echo "- Dry Run: ${{ inputs.dry_run || 'false' }}" >> $GITHUB_STEP_SUMMARY
+          echo "- Execution Time: $(date -u +%Y-%m-%dT%H:%M:%SZ)" >> $GITHUB_STEP_SUMMARY
+          
+          if [ "${{ steps.invoke.outcome }}" = "success" ]; then
+            echo "- Status: ✅ **Successfully Invoked**" >> $GITHUB_STEP_SUMMARY
+            echo "- Request ID: \`${{ steps.invoke.outputs.request_id }}\`" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "**Next Steps:**" >> $GITHUB_STEP_SUMMARY
+            CLOUDWATCH_URL="https://console.aws.amazon.com/cloudwatch/home?region=$AWS_REGION#logsV2:log-groups/log-group//hoopstat-haus/data-pipeline"
+            LAMBDA_URL="https://console.aws.amazon.com/lambda/home?region=$AWS_REGION#/functions/$FUNCTION_NAME"
+            echo "- Monitor execution in [CloudWatch Logs]($CLOUDWATCH_URL)" >> $GITHUB_STEP_SUMMARY
+            echo "- Check [Lambda Function]($LAMBDA_URL) for detailed metrics" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "- Status: ❌ **Invocation Failed**" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "**Troubleshooting:**" >> $GITHUB_STEP_SUMMARY
+            echo "- Check that the Lambda function is deployed via deploy workflow" >> $GITHUB_STEP_SUMMARY
+            echo "- Verify AWS credentials and permissions are correct" >> $GITHUB_STEP_SUMMARY
+            echo "- Review the workflow logs above for specific error details" >> $GITHUB_STEP_SUMMARY
+          fi
+
+      - name: Report execution status
+        if: always()
+        run: |
+          echo "🏁 Daily bronze ingestion workflow completed"
+          echo "📊 Workflow Status: ${{ job.status }}"
+          
+          if [ "${{ steps.invoke.outcome }}" = "success" ]; then
+            echo "✅ Lambda function invocation successful"
+            echo "🔗 Request ID: ${{ steps.invoke.outputs.request_id }}"
+            exit 0
+          else
+            echo "❌ Lambda function invocation failed"
+            echo "💡 Check the workflow logs and Lambda function status"
+            exit 1
+          fi
+
+      - name: Cleanup temporary files
+        if: always()
+        run: |
+          # Clean up temporary files
+          rm -f /tmp/lambda_payload.json /tmp/lambda_response.json

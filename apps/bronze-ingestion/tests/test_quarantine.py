@@ -16,7 +16,7 @@ class TestDataQuarantine:
         """Set up test fixtures."""
         self.mock_s3_manager = Mock()
         self.mock_s3_manager.bucket_name = "test-bucket"
-        self.mock_s3_manager.client = Mock()
+        self.mock_s3_manager.s3_client = Mock()
         self.quarantine = DataQuarantine(self.mock_s3_manager)
 
     def test_quarantine_data_success(self):
@@ -36,7 +36,7 @@ class TestDataQuarantine:
             )
 
         # Check that S3 put_object was called
-        self.mock_s3_manager.client.put_object.assert_called_once()
+        self.mock_s3_manager.s3_client.put_object.assert_called_once()
 
         # Verify the quarantine key format
         assert "quarantine/year=2023/month=12/day=25" in quarantine_key
@@ -92,8 +92,8 @@ class TestDataQuarantine:
         self.quarantine._store_quarantine_record(record, key)
 
         # Verify S3 put_object call
-        self.mock_s3_manager.client.put_object.assert_called_once()
-        call_args = self.mock_s3_manager.client.put_object.call_args
+        self.mock_s3_manager.s3_client.put_object.assert_called_once()
+        call_args = self.mock_s3_manager.s3_client.put_object.call_args
 
         assert call_args[1]["Bucket"] == "test-bucket"
         assert call_args[1]["Key"] == key
@@ -106,7 +106,7 @@ class TestDataQuarantine:
 
     def test_store_quarantine_record_s3_error(self):
         """Test handling S3 errors during quarantine storage."""
-        self.mock_s3_manager.client.put_object.side_effect = Exception("S3 Error")
+        self.mock_s3_manager.s3_client.put_object.side_effect = Exception("S3 Error")
 
         record = {
             "data": {"test": "data"},
@@ -140,7 +140,7 @@ class TestDataQuarantine:
             ]
         }
 
-        self.mock_s3_manager.client.list_objects_v2.return_value = mock_response
+        self.mock_s3_manager.s3_client.list_objects_v2.return_value = mock_response
 
         result = self.quarantine.list_quarantined_data(date(2023, 12, 25))
 
@@ -160,12 +160,12 @@ class TestDataQuarantine:
         target_date = date(2023, 12, 25)
         data_type = "schedule"
 
-        self.mock_s3_manager.client.list_objects_v2.return_value = {"Contents": []}
+        self.mock_s3_manager.s3_client.list_objects_v2.return_value = {"Contents": []}
 
         self.quarantine.list_quarantined_data(target_date, data_type)
 
         # Verify the prefix includes date and type filters
-        call_args = self.mock_s3_manager.client.list_objects_v2.call_args
+        call_args = self.mock_s3_manager.s3_client.list_objects_v2.call_args
         prefix = call_args[1]["Prefix"]
 
         assert "year=2023" in prefix
@@ -175,7 +175,9 @@ class TestDataQuarantine:
 
     def test_list_quarantined_data_s3_error(self):
         """Test handling S3 errors when listing quarantined data."""
-        self.mock_s3_manager.client.list_objects_v2.side_effect = Exception("S3 Error")
+        self.mock_s3_manager.s3_client.list_objects_v2.side_effect = Exception(
+            "S3 Error"
+        )
 
         result = self.quarantine.list_quarantined_data()
 
@@ -248,7 +250,7 @@ class TestDataQuarantine:
 
     def test_quarantine_data_exception_handling(self):
         """Test exception handling during quarantine process."""
-        self.mock_s3_manager.client.put_object.side_effect = Exception("S3 Error")
+        self.mock_s3_manager.s3_client.put_object.side_effect = Exception("S3 Error")
 
         test_data = {"invalid": "data"}
         validation_result = {"valid": False, "issues": ["Test error"]}

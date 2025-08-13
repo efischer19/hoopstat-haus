@@ -712,6 +712,7 @@ resource "aws_iam_role_policy" "github_actions_operations_ecr" {
           "ecr:GetDownloadUrlForLayer",
           "ecr:BatchGetImage",
           "ecr:DescribeImages",
+          "ecr:DescribeRepositories",
           "ecr:PutImage",
           "ecr:InitiateLayerUpload",
           "ecr:UploadLayerPart",

@@ -73,7 +73,7 @@ jobs:
             # Build matrix of changed deployable apps
             app_matrix_items=""
             found_deployable=false
-            
+
             for app in $changed_app_files; do
               if [ -f "apps/$app/Dockerfile" ]; then
                 if [ -n "$app_matrix_items" ]; then
@@ -144,7 +144,7 @@ jobs:
           IMAGE_TAG: ${{ steps.vars.outputs.image_tag }}
         run: |
           echo "🔍 Checking if image exists in ECR..."
-          
+
           # Check if the image exists
           if aws ecr describe-images \
               --repository-name $ECR_REPOSITORY \
@@ -170,7 +170,7 @@ jobs:
         run: |
           echo "📥 Pulling image from ECR..."
           docker pull $ECR_REGISTRY/$ECR_REPOSITORY:$APP_NAME-$IMAGE_TAG
-          
+
           echo "🧪 Testing image health..."
           # Run a basic health check on the image
           docker run --rm --name test-$APP_NAME \
@@ -179,7 +179,7 @@ jobs:
             echo "❌ Image health check failed"
             exit 1
           }
-          
+
           echo "✅ Image health check passed"
 
       - name: Deploy to AWS Lambda
@@ -191,74 +191,103 @@ jobs:
         run: |
           echo "🚀 Deploying $APP_NAME to AWS Lambda in $ENVIRONMENT..."
           echo "📍 Image: $ECR_REGISTRY/$ECR_REPOSITORY:$APP_NAME-$IMAGE_TAG"
-          
+
           # Lambda function name follows the pattern: hoopstat-haus-{app-name}
           FUNCTION_NAME="hoopstat-haus-$APP_NAME"
           IMAGE_URI="$ECR_REGISTRY/$ECR_REPOSITORY:$APP_NAME-$IMAGE_TAG"
-          
-          echo "🔄 Updating Lambda function: $FUNCTION_NAME"
-          echo "📦 New image URI: $IMAGE_URI"
-          
-          # Update Lambda function code with new container image
-          aws lambda update-function-code \
-            --function-name "$FUNCTION_NAME" \
-            --image-uri "$IMAGE_URI" \
-            --region "$AWS_REGION" \
-            --output json > lambda_update_result.json
-          
-          # Check if update was successful
-          if [ $? -eq 0 ]; then
-            echo "✅ Lambda function code updated successfully"
-            
-            # Extract some information from the response
-            LAST_MODIFIED=$(cat lambda_update_result.json | jq -r '.LastModified')
-            CODE_SHA256=$(cat lambda_update_result.json | jq -r '.CodeSha256')
-            FUNCTION_ARN=$(cat lambda_update_result.json | jq -r '.FunctionArn')
-            
-            echo "📋 Update Details:"
-            echo "  Function ARN: $FUNCTION_ARN"
-            echo "  Last Modified: $LAST_MODIFIED"
-            echo "  Code SHA256: $CODE_SHA256"
-            
-            # Wait for function to be active
-            echo "⏳ Waiting for function to become active..."
-            aws lambda wait function-updated \
+
+          echo "🔍 Checking if Lambda function exists: $FUNCTION_NAME"
+
+          # Check if Lambda function exists
+          if aws lambda get-function \
               --function-name "$FUNCTION_NAME" \
-              --region "$AWS_REGION"
-            
+              --region "$AWS_REGION" >/dev/null 2>&1; then
+
+            echo "✅ Lambda function exists, proceeding with update"
+            echo "🔄 Updating Lambda function: $FUNCTION_NAME"
+            echo "📦 New image URI: $IMAGE_URI"
+
+            # Update Lambda function code with new container image
+            aws lambda update-function-code \
+              --function-name "$FUNCTION_NAME" \
+              --image-uri "$IMAGE_URI" \
+              --region "$AWS_REGION" \
+              --output json > lambda_update_result.json
+
+            # Check if update was successful
             if [ $? -eq 0 ]; then
-              echo "✅ Lambda function is now active and ready"
-              
-              # Optional: Run a test invocation for API service functions
-              if [[ "$APP_NAME" == "mcp-server" ]]; then
-                echo "🧪 Running test invocation..."
-                TEST_PAYLOAD='{"test": true, "message": "deployment verification"}'
-                
-                aws lambda invoke \
-                  --function-name "$FUNCTION_NAME" \
-                  --payload "$TEST_PAYLOAD" \
-                  --region "$AWS_REGION" \
-                  --log-type Tail \
-                  test_response.json
-                
-                if [ $? -eq 0 ]; then
-                  echo "✅ Test invocation successful"
-                  echo "📋 Response:"
-                  cat test_response.json | jq '.'
+              echo "✅ Lambda function code updated successfully"
+
+              # Extract some information from the response
+              LAST_MODIFIED=$(cat lambda_update_result.json | jq -r '.LastModified')
+              CODE_SHA256=$(cat lambda_update_result.json | jq -r '.CodeSha256')
+              FUNCTION_ARN=$(cat lambda_update_result.json | jq -r '.FunctionArn')
+
+              echo "📋 Update Details:"
+              echo "  Function ARN: $FUNCTION_ARN"
+              echo "  Last Modified: $LAST_MODIFIED"
+              echo "  Code SHA256: $CODE_SHA256"
+
+              # Wait for function to be active
+              echo "⏳ Waiting for function to become active..."
+              aws lambda wait function-updated \
+                --function-name "$FUNCTION_NAME" \
+                --region "$AWS_REGION"
+
+              if [ $? -eq 0 ]; then
+                echo "✅ Lambda function is now active and ready"
+
+                # Optional: Run a test invocation for API service functions
+                if [[ "$APP_NAME" == "mcp-server" ]]; then
+                  echo "🧪 Running test invocation..."
+                  TEST_PAYLOAD='{"test": true, "message": "deployment verification"}'
+
+                  aws lambda invoke \
+                    --function-name "$FUNCTION_NAME" \
+                    --payload "$TEST_PAYLOAD" \
+                    --region "$AWS_REGION" \
+                    --log-type Tail \
+                    test_response.json
+
+                  if [ $? -eq 0 ]; then
+                    echo "✅ Test invocation successful"
+                    echo "📋 Response:"
+                    cat test_response.json | jq '.'
+                  else
+                    echo "⚠️  Test invocation failed - function may need manual verification"
+                  fi
                 else
-                  echo "⚠️  Test invocation failed - function may need manual verification"
+                  echo "ℹ️  Skipping test invocation for data processing function"
                 fi
+
               else
-                echo "ℹ️  Skipping test invocation for data processing function"
+                echo "❌ Function update did not complete successfully"
+                exit 1
               fi
-              
             else
-              echo "❌ Function update did not complete successfully"
+              echo "❌ Failed to update Lambda function code"
+              cat lambda_update_result.json || echo "No response file created"
               exit 1
             fi
+
           else
-            echo "❌ Failed to update Lambda function code"
-            cat lambda_update_result.json || echo "No response file created"
+            echo "❌ Lambda function does not exist: $FUNCTION_NAME"
+            echo ""
+            echo "🏗️  Initial Lambda function deployment requires infrastructure setup:"
+            echo "   1. Ensure Terraform infrastructure has been applied"
+            echo "   2. Verify that the Lambda function is created with initial container image"
+            echo "   3. Run this deployment workflow again"
+            echo ""
+            echo "📋 Expected Lambda function: arn:aws:lambda:$AWS_REGION:*:function:$FUNCTION_NAME"
+            echo ""
+            echo "🔧 To deploy infrastructure:"
+            echo "   cd infrastructure/"
+            echo "   terraform init"
+            echo "   terraform plan"
+            echo "   terraform apply"
+            echo ""
+            echo "📝 Note: Initial Lambda function creation requires placeholder images in ECR."
+            echo "   The infrastructure creates functions, then this workflow updates them."
             exit 1
           fi
 
@@ -271,7 +300,7 @@ jobs:
           echo "📋 Deployment Summary"
           echo "=================="
           echo "Application: $APP_NAME"
-          echo "Environment: $ENVIRONMENT" 
+          echo "Environment: $ENVIRONMENT"
           echo "Image Tag: $IMAGE_TAG"
           echo "Triggered by: ${{ github.event_name }}"
           echo "Status: ✅ Success"

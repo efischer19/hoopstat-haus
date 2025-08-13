@@ -66,7 +66,6 @@ The extracted feature requests are organized into the following categories:
 - `frontend` - UI/UX and client-side features
 - `etl-pipeline` - Data processing and transformation features
 - `mcp-server` - Model Context Protocol server features
-- `data-backfill` - Historical data backfill features
 - `aws-integration` - AWS infrastructure and integration features
 
 ## Available Priorities

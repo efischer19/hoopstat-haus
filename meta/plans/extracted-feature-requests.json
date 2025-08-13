@@ -5,7 +5,6 @@
       "meta/plans/thin-client-frontend-design.md",
       "meta/plans/bronze-to-silver-etl-pipeline.md",
       "meta/plans/mcp-server-architecture.md",
-      "meta/plans/historical-data-backfill-strategy.md",
       "meta/plans/aws-secrets-integration-setup.md",
       "meta/plans/bronze-layer-ingestion.md",
       "meta/plans/silver-to-gold-etl-jobs.md",
@@ -14,12 +13,11 @@
       "meta/plans/medallion-data-architecture.md"
     ],
     "extraction_method": "AI-driven analysis",
-    "total_features": 74,
+    "total_features": 65,
     "feature_categories": [
       "frontend",
-      "etl-pipeline", 
+      "etl-pipeline",
       "mcp-server",
-      "data-backfill",
       "aws-integration",
       "bronze-ingestion",
       "silver-to-gold-etl",
@@ -38,12 +36,17 @@
       "epic": "Foundation and Core Infrastructure",
       "source_document": "meta/plans/thin-client-frontend-design.md",
       "source_section": "Phase 1: Foundation and Core Infrastructure",
-      "github_labels": ["feature", "frontend", "setup", "high-priority"],
+      "github_labels": [
+        "feature",
+        "frontend",
+        "setup",
+        "high-priority"
+      ],
       "estimated_effort": "1-2 weeks",
       "description": "Set up the foundational frontend development environment with modern tooling, including framework selection, build configuration, and development workflow automation.",
       "acceptance_criteria": [
         "Frontend framework selected and justified (React/Vue/Svelte + static generation)",
-        "Development environment configured with hot reload and debugging support", 
+        "Development environment configured with hot reload and debugging support",
         "Build system configured for production optimization and static generation",
         "ESLint, Prettier, and TypeScript configuration established",
         "Basic project structure following established patterns",
@@ -64,7 +67,7 @@
       ]
     },
     {
-      "id": "frontend-002", 
+      "id": "frontend-002",
       "title": "Establish design system and core component library",
       "category": "frontend",
       "priority": "high",
@@ -72,7 +75,12 @@
       "epic": "Foundation and Core Infrastructure",
       "source_document": "meta/plans/thin-client-frontend-design.md",
       "source_section": "Phase 1: Foundation and Core Infrastructure",
-      "github_labels": ["feature", "frontend", "design-system", "high-priority"],
+      "github_labels": [
+        "feature",
+        "frontend",
+        "design-system",
+        "high-priority"
+      ],
       "estimated_effort": "1-2 weeks",
       "description": "Create a comprehensive design system with reusable components that ensure consistency, accessibility, and scalability across the application.",
       "acceptance_criteria": [
@@ -94,13 +102,18 @@
     {
       "id": "frontend-003",
       "title": "Create simple static application foundation without authentication",
-      "category": "frontend", 
+      "category": "frontend",
       "priority": "high",
       "complexity": "low",
       "epic": "Foundation and Core Infrastructure",
       "source_document": "meta/plans/thin-client-frontend-design.md",
       "source_section": "Phase 1: Foundation and Core Infrastructure",
-      "github_labels": ["feature", "frontend", "mvp", "high-priority"],
+      "github_labels": [
+        "feature",
+        "frontend",
+        "mvp",
+        "high-priority"
+      ],
       "estimated_effort": "1 week",
       "description": "Develop basic static web application foundation focused on anonymous access and minimal complexity.",
       "acceptance_criteria": [
@@ -122,11 +135,15 @@
       "title": "Develop simple basketball query input interface",
       "category": "frontend",
       "priority": "medium",
-      "complexity": "low", 
+      "complexity": "low",
       "epic": "Core Conversational Interface",
       "source_document": "meta/plans/thin-client-frontend-design.md",
       "source_section": "Phase 2: Core Conversational Interface",
-      "github_labels": ["feature", "frontend", "user-interface"],
+      "github_labels": [
+        "feature",
+        "frontend",
+        "user-interface"
+      ],
       "estimated_effort": "1 week",
       "description": "Create basic text input interface for basketball questions with simple suggestions and example queries.",
       "acceptance_criteria": [
@@ -149,10 +166,15 @@
       "category": "frontend",
       "priority": "high",
       "complexity": "high",
-      "epic": "Core Conversational Interface", 
+      "epic": "Core Conversational Interface",
       "source_document": "meta/plans/thin-client-frontend-design.md",
       "source_section": "Phase 2: Core Conversational Interface",
-      "github_labels": ["feature", "frontend", "ai-integration", "high-priority"],
+      "github_labels": [
+        "feature",
+        "frontend",
+        "ai-integration",
+        "high-priority"
+      ],
       "estimated_effort": "2 weeks",
       "description": "Implement basic integration with Amazon Bedrock for simple request-response pattern without streaming.",
       "acceptance_criteria": [
@@ -172,14 +194,19 @@
     },
     {
       "id": "frontend-006",
-      "title": "Implement MCP server integration for basketball statistics", 
+      "title": "Implement MCP server integration for basketball statistics",
       "category": "frontend",
       "priority": "high",
       "complexity": "high",
       "epic": "Core Conversational Interface",
       "source_document": "meta/plans/thin-client-frontend-design.md",
       "source_section": "Phase 2: Core Conversational Interface",
-      "github_labels": ["feature", "frontend", "mcp-integration", "high-priority"],
+      "github_labels": [
+        "feature",
+        "frontend",
+        "mcp-integration",
+        "high-priority"
+      ],
       "estimated_effort": "2 weeks",
       "description": "Develop the integration layer with the MCP server to fetch basketball statistics and data in response to AI-generated queries.",
       "acceptance_criteria": [
@@ -192,7 +219,7 @@
       ],
       "technical_requirements": [
         "MCP client library implementation or integration",
-        "Data transformation pipeline from raw stats to presentation format", 
+        "Data transformation pipeline from raw stats to presentation format",
         "Efficient caching layer with configurable TTL policies",
         "Request deduplication for simultaneous identical queries",
         "Integration testing with actual MCP server endpoints"
@@ -207,8 +234,12 @@
       "epic": "Data Presentation and User Experience",
       "source_document": "meta/plans/thin-client-frontend-design.md",
       "source_section": "Phase 3: Data Presentation and User Experience",
-      "github_labels": ["feature", "frontend", "ui-display"],
-      "estimated_effort": "1 week", 
+      "github_labels": [
+        "feature",
+        "frontend",
+        "ui-display"
+      ],
+      "estimated_effort": "1 week",
       "description": "Create simple, readable text display for AI-generated basketball insights without complex visualizations.",
       "acceptance_criteria": [
         "Clean, readable text formatting for AI responses",
@@ -228,12 +259,16 @@
       "id": "frontend-008",
       "title": "Develop simple response layout system",
       "category": "frontend",
-      "priority": "medium", 
+      "priority": "medium",
       "complexity": "low",
       "epic": "Data Presentation and User Experience",
       "source_document": "meta/plans/thin-client-frontend-design.md",
       "source_section": "Phase 3: Data Presentation and User Experience",
-      "github_labels": ["feature", "frontend", "layout"],
+      "github_labels": [
+        "feature",
+        "frontend",
+        "layout"
+      ],
       "estimated_effort": "1 week",
       "description": "Build basic layout system that organizes AI text responses in a clean, readable format.",
       "acceptance_criteria": [
@@ -255,10 +290,15 @@
       "category": "etl-pipeline",
       "priority": "high",
       "complexity": "high",
-      "epic": "Foundation and Schema Framework", 
+      "epic": "Foundation and Schema Framework",
       "source_document": "meta/plans/bronze-to-silver-etl-pipeline.md",
       "source_section": "Phase 1: Foundation and Schema Framework",
-      "github_labels": ["feature", "etl", "schema-validation", "high-priority"],
+      "github_labels": [
+        "feature",
+        "etl",
+        "schema-validation",
+        "high-priority"
+      ],
       "estimated_effort": "2 weeks",
       "description": "Create a comprehensive schema validation framework using Pydantic models to enforce data quality and consistency in the Bronze-to-Silver ETL pipeline.",
       "acceptance_criteria": [
@@ -288,11 +328,16 @@
       "title": "Implement data cleaning and standardization rules for NBA data",
       "category": "etl-pipeline",
       "priority": "high",
-      "complexity": "medium", 
+      "complexity": "medium",
       "epic": "Foundation and Schema Framework",
       "source_document": "meta/plans/bronze-to-silver-etl-pipeline.md",
       "source_section": "Phase 1: Foundation and Schema Framework",
-      "github_labels": ["feature", "etl", "data-cleaning", "high-priority"],
+      "github_labels": [
+        "feature",
+        "etl",
+        "data-cleaning",
+        "high-priority"
+      ],
       "estimated_effort": "2 weeks",
       "description": "Build a configurable rules engine that applies data cleaning, standardization, and conforming transformations to raw NBA data from the Bronze layer.",
       "acceptance_criteria": [
@@ -324,9 +369,14 @@
       "priority": "high",
       "complexity": "high",
       "epic": "Core ETL Pipeline",
-      "source_document": "meta/plans/bronze-to-silver-etl-pipeline.md", 
+      "source_document": "meta/plans/bronze-to-silver-etl-pipeline.md",
       "source_section": "Phase 2: Core ETL Pipeline",
-      "github_labels": ["feature", "etl", "deduplication", "high-priority"],
+      "github_labels": [
+        "feature",
+        "etl",
+        "deduplication",
+        "high-priority"
+      ],
       "estimated_effort": "2 weeks",
       "description": "Create a sophisticated deduplication system that identifies and resolves duplicate records using NBA-specific business rules and fuzzy matching algorithms.",
       "acceptance_criteria": [
@@ -359,13 +409,18 @@
       "epic": "Core ETL Pipeline",
       "source_document": "meta/plans/bronze-to-silver-etl-pipeline.md",
       "source_section": "Phase 2: Core ETL Pipeline",
-      "github_labels": ["feature", "etl", "pipeline", "high-priority"],
+      "github_labels": [
+        "feature",
+        "etl",
+        "pipeline",
+        "high-priority"
+      ],
       "estimated_effort": "3 weeks",
       "description": "Create the main ETL pipeline that orchestrates data extraction from Bronze layer, applies transformations, and loads clean data to Silver layer with comprehensive error handling.",
       "acceptance_criteria": [
         "Implement incremental processing with change detection",
         "Add support for full refresh and date-range processing modes",
-        "Create atomic transaction support for data consistency", 
+        "Create atomic transaction support for data consistency",
         "Implement partition-aware processing for performance",
         "Add comprehensive pipeline metrics and monitoring",
         "Create data quality scoring and validation checkpoints"
@@ -392,7 +447,11 @@
       "epic": "Error Handling and Quality Assurance",
       "source_document": "meta/plans/bronze-to-silver-etl-pipeline.md",
       "source_section": "Phase 3: Error Handling and Quality Assurance",
-      "github_labels": ["feature", "etl", "error-handling"],
+      "github_labels": [
+        "feature",
+        "etl",
+        "error-handling"
+      ],
       "estimated_effort": "2 weeks",
       "description": "Build a robust error handling framework that classifies errors, routes failed records to appropriate dead letter queues, and provides automatic recovery mechanisms.",
       "acceptance_criteria": [
@@ -425,7 +484,12 @@
       "epic": "Error Handling and Quality Assurance",
       "source_document": "meta/plans/bronze-to-silver-etl-pipeline.md",
       "source_section": "Phase 3: Error Handling and Quality Assurance",
-      "github_labels": ["feature", "etl", "data-quality", "monitoring"],
+      "github_labels": [
+        "feature",
+        "etl",
+        "data-quality",
+        "monitoring"
+      ],
       "estimated_effort": "2 weeks",
       "description": "Create a data quality monitoring framework that tracks pipeline health, data completeness, accuracy, and consistency across all Silver layer datasets.",
       "acceptance_criteria": [
@@ -458,7 +522,12 @@
       "epic": "Automation and Operations",
       "source_document": "meta/plans/bronze-to-silver-etl-pipeline.md",
       "source_section": "Phase 4: Automation and Operations",
-      "github_labels": ["feature", "etl", "github-actions", "automation"],
+      "github_labels": [
+        "feature",
+        "etl",
+        "github-actions",
+        "automation"
+      ],
       "estimated_effort": "1-2 weeks",
       "description": "Create comprehensive GitHub Actions workflows that automate the Bronze-to-Silver ETL pipeline with proper error handling, retry logic, and notification systems.",
       "acceptance_criteria": [
@@ -491,7 +560,12 @@
       "epic": "Automation and Operations",
       "source_document": "meta/plans/bronze-to-silver-etl-pipeline.md",
       "source_section": "Phase 4: Automation and Operations",
-      "github_labels": ["feature", "etl", "observability", "monitoring"],
+      "github_labels": [
+        "feature",
+        "etl",
+        "observability",
+        "monitoring"
+      ],
       "estimated_effort": "2 weeks",
       "description": "Build monitoring, logging, and observability infrastructure that provides full visibility into ETL pipeline performance, health, and data quality trends.",
       "acceptance_criteria": [
@@ -524,7 +598,12 @@
       "epic": "MCP Protocol Foundation",
       "source_document": "meta/plans/mcp-server-architecture.md",
       "source_section": "Epic 1: MCP Protocol Foundation",
-      "github_labels": ["feature", "mcp-server", "protocol", "high-priority"],
+      "github_labels": [
+        "feature",
+        "mcp-server",
+        "protocol",
+        "high-priority"
+      ],
       "estimated_effort": "2-3 weeks",
       "description": "Implement the core Model Context Protocol specifications and server framework for exposing Gold layer basketball data to AI agents.",
       "acceptance_criteria": [
@@ -554,7 +633,12 @@
       "epic": "AWS Infrastructure Foundation",
       "source_document": "meta/plans/mcp-server-architecture.md",
       "source_section": "Epic 2: AWS Infrastructure Foundation",
-      "github_labels": ["feature", "mcp-server", "aws-infrastructure", "high-priority"],
+      "github_labels": [
+        "feature",
+        "mcp-server",
+        "aws-infrastructure",
+        "high-priority"
+      ],
       "estimated_effort": "1-2 weeks",
       "description": "Establish the AWS serverless infrastructure for hosting the MCP server including API Gateway, Lambda, and IAM configuration.",
       "acceptance_criteria": [
@@ -585,7 +669,12 @@
       "epic": "Data Access Layer Implementation",
       "source_document": "meta/plans/mcp-server-architecture.md",
       "source_section": "Epic 3: Data Access Layer Implementation",
-      "github_labels": ["feature", "mcp-server", "data-access", "high-priority"],
+      "github_labels": [
+        "feature",
+        "mcp-server",
+        "data-access",
+        "high-priority"
+      ],
       "estimated_effort": "2 weeks",
       "description": "Implement efficient querying and processing of Gold layer Parquet data for MCP responses.",
       "acceptance_criteria": [
@@ -614,7 +703,12 @@
       "epic": "Basketball Analytics Endpoints",
       "source_document": "meta/plans/mcp-server-architecture.md",
       "source_section": "Epic 4: Basketball Analytics Endpoints",
-      "github_labels": ["feature", "mcp-server", "basketball-analytics", "high-priority"],
+      "github_labels": [
+        "feature",
+        "mcp-server",
+        "basketball-analytics",
+        "high-priority"
+      ],
       "estimated_effort": "1-2 weeks",
       "description": "Implement MCP endpoint for retrieving season statistics for any NBA player with fuzzy matching and comprehensive data.",
       "acceptance_criteria": [
@@ -643,7 +737,13 @@
       "epic": "Security and Authentication",
       "source_document": "meta/plans/mcp-server-architecture.md",
       "source_section": "Epic 5: Security and Authentication",
-      "github_labels": ["feature", "mcp-server", "authentication", "security", "high-priority"],
+      "github_labels": [
+        "feature",
+        "mcp-server",
+        "authentication",
+        "security",
+        "high-priority"
+      ],
       "estimated_effort": "1-2 weeks",
       "description": "Implement robust security measures including API key authentication and rate limiting for the MCP server.",
       "acceptance_criteria": [
@@ -674,7 +774,12 @@
       "epic": "Monitoring and Observability",
       "source_document": "meta/plans/mcp-server-architecture.md",
       "source_section": "Epic 6: Monitoring and Observability",
-      "github_labels": ["feature", "mcp-server", "monitoring", "observability"],
+      "github_labels": [
+        "feature",
+        "mcp-server",
+        "monitoring",
+        "observability"
+      ],
       "estimated_effort": "1-2 weeks",
       "description": "Implement comprehensive monitoring and logging for operational visibility into MCP server performance and usage.",
       "acceptance_criteria": [
@@ -697,250 +802,6 @@
       ]
     },
     {
-      "id": "backfill-001",
-      "title": "Create containerized NBA 2024-25 season data backfill application",
-      "category": "data-backfill",
-      "priority": "high",
-      "complexity": "medium",
-      "epic": "Historical Data Backfill Foundation",
-      "source_document": "meta/plans/historical-data-backfill-strategy.md",
-      "source_section": "Phase-Based Implementation Roadmap",
-      "github_labels": ["feature", "data-backfill", "containerization", "high-priority"],
-      "estimated_effort": "1-2 weeks",
-      "description": "Build a containerized Python application specifically designed to backfill NBA 2024-25 season data from NBA API to Bronze layer storage.",
-      "acceptance_criteria": [
-        "Containerized Python application with proper dependency management",
-        "Integration with NBA API for 2024-25 season data retrieval",
-        "Configurable data collection parameters (date ranges, data types)",
-        "Proper error handling and logging throughout the process",
-        "Integration with Bronze layer S3 storage for data persistence",
-        "Performance optimization for large-scale data collection"
-      ],
-      "technical_requirements": [
-        "Docker containerization following project standards",
-        "NBA API client with rate limiting and authentication",
-        "AWS S3 integration for Bronze layer data storage",
-        "Comprehensive logging using JSON structured format",
-        "Memory-efficient processing for large datasets"
-      ]
-    },
-    {
-      "id": "backfill-002", 
-      "title": "Implement checkpoint-based state management for backfill resumability",
-      "category": "data-backfill",
-      "priority": "high",
-      "complexity": "medium",
-      "epic": "Backfill State Management",
-      "source_document": "meta/plans/historical-data-backfill-strategy.md",
-      "source_section": "Phase-Based Implementation Roadmap",
-      "github_labels": ["feature", "data-backfill", "state-management"],
-      "estimated_effort": "1 week",
-      "description": "Build checkpoint-based state management system that allows backfill operations to resume from interruption points.",
-      "acceptance_criteria": [
-        "Persistent checkpoint storage for tracking progress",
-        "Automatic resume capability from last successful checkpoint",
-        "Granular checkpointing at game and date levels",
-        "State validation to ensure data consistency",
-        "Recovery mechanisms for corrupted checkpoints",
-        "Progress reporting and status monitoring"
-      ],
-      "technical_requirements": [
-        "Persistent state storage using S3 or DynamoDB",
-        "Atomic checkpoint operations for consistency",
-        "State validation and integrity checking",
-        "Configurable checkpoint frequency"
-      ]
-    },
-    {
-      "id": "backfill-003",
-      "title": "Implement comprehensive error handling with smart retry logic",
-      "category": "data-backfill",
-      "priority": "medium",
-      "complexity": "medium",
-      "epic": "Error Handling and Resilience",
-      "source_document": "meta/plans/historical-data-backfill-strategy.md",
-      "source_section": "Phase-Based Implementation Roadmap",
-      "github_labels": ["feature", "data-backfill", "error-handling"],
-      "estimated_effort": "1 week",
-      "description": "Build robust error handling framework with intelligent retry logic for various failure scenarios.",
-      "acceptance_criteria": [
-        "Categorized error handling for different failure types",
-        "Exponential backoff with jitter for retries",
-        "Configurable retry limits and strategies",
-        "Error logging and metrics collection",
-        "Dead letter queue for unrecoverable failures",
-        "Automatic recovery for transient issues"
-      ],
-      "technical_requirements": [
-        "Error classification and handling strategies",
-        "Retry logic with configurable parameters",
-        "Integration with monitoring and alerting systems",
-        "Persistent error tracking and reporting"
-      ]
-    },
-    {
-      "id": "backfill-004",
-      "title": "Implement adaptive rate limiting with NBA API health monitoring",
-      "category": "data-backfill",
-      "priority": "medium",
-      "complexity": "medium",
-      "epic": "Performance Optimization",
-      "source_document": "meta/plans/historical-data-backfill-strategy.md",
-      "source_section": "Phase-Based Implementation Roadmap",
-      "github_labels": ["feature", "data-backfill", "rate-limiting"],
-      "estimated_effort": "1 week",
-      "description": "Create adaptive rate limiting system that monitors NBA API health and adjusts request rates accordingly.",
-      "acceptance_criteria": [
-        "Dynamic rate limiting based on API response times",
-        "NBA API health monitoring and status detection",
-        "Automatic rate adjustment for optimal throughput",
-        "Rate limiting metrics and reporting",
-        "Integration with error handling for rate limit violations",
-        "Configurable rate limiting parameters and thresholds"
-      ],
-      "technical_requirements": [
-        "API health monitoring and metrics collection",
-        "Dynamic rate adjustment algorithms",
-        "Integration with retry and error handling systems",
-        "Performance monitoring and optimization"
-      ]
-    },
-    {
-      "id": "backfill-005",
-      "title": "Build data quality validation framework for NBA season data",
-      "category": "data-backfill",
-      "priority": "medium",
-      "complexity": "medium",
-      "epic": "Data Quality Assurance",
-      "source_document": "meta/plans/historical-data-backfill-strategy.md",
-      "source_section": "Phase-Based Implementation Roadmap",
-      "github_labels": ["feature", "data-backfill", "data-quality"],
-      "estimated_effort": "1-2 weeks",
-      "description": "Implement comprehensive data quality validation framework specifically for NBA season data.",
-      "acceptance_criteria": [
-        "Data completeness validation for games and statistics",
-        "Business rule validation for NBA-specific constraints",
-        "Data consistency checks across related entities",
-        "Quality scoring and metrics calculation",
-        "Validation reporting and issue identification",
-        "Integration with backfill process for quality gates"
-      ],
-      "technical_requirements": [
-        "NBA-specific business rule validation",
-        "Data quality metrics and scoring algorithms",
-        "Integration with backfill pipeline",
-        "Quality reporting and alerting capabilities"
-      ]
-    },
-    {
-      "id": "backfill-006",
-      "title": "Implement comprehensive monitoring and alerting for backfill operations",
-      "category": "data-backfill",
-      "priority": "medium",
-      "complexity": "medium",
-      "epic": "Monitoring and Operations",
-      "source_document": "meta/plans/historical-data-backfill-strategy.md",
-      "source_section": "Phase-Based Implementation Roadmap",
-      "github_labels": ["feature", "data-backfill", "monitoring"],
-      "estimated_effort": "1 week",
-      "description": "Build comprehensive monitoring and alerting system for backfill operations with progress tracking and issue detection.",
-      "acceptance_criteria": [
-        "Real-time progress monitoring and reporting",
-        "Performance metrics collection and analysis",
-        "Automated alerting for failures and anomalies",
-        "Dashboard for backfill status and health",
-        "Integration with existing monitoring infrastructure",
-        "Historical metrics and trend analysis"
-      ],
-      "technical_requirements": [
-        "Integration with AWS CloudWatch and monitoring services",
-        "Real-time metrics collection and reporting",
-        "Alerting configuration for various failure scenarios",
-        "Dashboard development for operational visibility"
-      ]
-    },
-    {
-      "id": "backfill-007",
-      "title": "Optimize backfill performance with concurrent processing",
-      "category": "data-backfill",
-      "priority": "low",
-      "complexity": "high",
-      "epic": "Performance Optimization",
-      "source_document": "meta/plans/historical-data-backfill-strategy.md",
-      "source_section": "Phase-Based Implementation Roadmap",
-      "github_labels": ["feature", "data-backfill", "performance"],
-      "estimated_effort": "1-2 weeks",
-      "description": "Implement concurrent processing optimizations to improve backfill performance while respecting API limits.",
-      "acceptance_criteria": [
-        "Concurrent processing of independent data streams",
-        "Thread pool management with configurable concurrency",
-        "Resource utilization optimization",
-        "Performance benchmarking and tuning",
-        "Memory management for large-scale processing",
-        "Integration with rate limiting and error handling"
-      ],
-      "technical_requirements": [
-        "Thread pool and concurrency management",
-        "Resource optimization for memory and CPU usage",
-        "Performance monitoring and tuning capabilities",
-        "Integration with existing rate limiting systems"
-      ]
-    },
-    {
-      "id": "backfill-008",
-      "title": "Create comprehensive validation suite for complete 2024-25 season dataset",
-      "category": "data-backfill",
-      "priority": "medium",
-      "complexity": "medium",
-      "epic": "Validation and Quality Assurance",
-      "source_document": "meta/plans/historical-data-backfill-strategy.md",
-      "source_section": "Phase-Based Implementation Roadmap",
-      "github_labels": ["feature", "data-backfill", "validation"],
-      "estimated_effort": "1 week",
-      "description": "Build comprehensive validation suite to verify completeness and quality of the entire 2024-25 season dataset.",
-      "acceptance_criteria": [
-        "Complete season data validation against NBA official records",
-        "Statistical consistency checks across all games and players",
-        "Data completeness verification for all expected entities",
-        "Quality metrics and scoring for the entire dataset",
-        "Validation reporting with detailed findings",
-        "Integration with data quality monitoring systems"
-      ],
-      "technical_requirements": [
-        "Comprehensive validation rules for NBA season data",
-        "Statistical analysis and consistency checking",
-        "Integration with existing data quality frameworks",
-        "Detailed reporting and metrics generation"
-      ]
-    },
-    {
-      "id": "backfill-009",
-      "title": "Integrate season backfill with ongoing data pipeline operations",
-      "category": "data-backfill",
-      "priority": "medium",
-      "complexity": "medium",
-      "epic": "Pipeline Integration",
-      "source_document": "meta/plans/historical-data-backfill-strategy.md",
-      "source_section": "Phase-Based Implementation Roadmap",
-      "github_labels": ["feature", "data-backfill", "pipeline-integration"],
-      "estimated_effort": "1-2 weeks",
-      "description": "Integrate completed season backfill data with ongoing data pipeline operations for seamless data flow.",
-      "acceptance_criteria": [
-        "Seamless handoff from backfill to ongoing data pipeline",
-        "Data format consistency between backfill and pipeline",
-        "Integration with Bronze-to-Silver ETL processing",
-        "Coordination with incremental data processing",
-        "Validation of integrated data flow",
-        "Documentation of integration patterns and procedures"
-      ],
-      "technical_requirements": [
-        "Data format standardization across systems",
-        "Integration with existing ETL pipeline components",
-        "Coordination mechanisms for data handoff",
-        "Testing and validation of integrated workflows"
-      ]
-    },
-    {
       "id": "aws-001",
       "title": "Set up AWS OIDC authentication for GitHub Actions",
       "category": "aws-integration",
@@ -949,7 +810,12 @@
       "epic": "AWS Authentication & Identity Management",
       "source_document": "meta/plans/aws-secrets-integration-setup.md",
       "source_section": "Epic 1: AWS Authentication & Identity Management",
-      "github_labels": ["feature", "aws-integration", "authentication", "high-priority"],
+      "github_labels": [
+        "feature",
+        "aws-integration",
+        "authentication",
+        "high-priority"
+      ],
       "estimated_effort": "1 week",
       "description": "Establish secure authentication between GitHub Actions and AWS using OIDC without storing long-lived credentials.",
       "acceptance_criteria": [
@@ -976,7 +842,12 @@
       "epic": "Container Registry & Image Management",
       "source_document": "meta/plans/aws-secrets-integration-setup.md",
       "source_section": "Epic 2: Container Registry & Image Management",
-      "github_labels": ["feature", "aws-integration", "ecr", "containers"],
+      "github_labels": [
+        "feature",
+        "aws-integration",
+        "ecr",
+        "containers"
+      ],
       "estimated_effort": "1 week",
       "description": "Set up AWS ECR for storing and managing Docker images built by CI/CD pipeline.",
       "acceptance_criteria": [
@@ -1003,7 +874,12 @@
       "epic": "Secrets Management Integration",
       "source_document": "meta/plans/aws-secrets-integration-setup.md",
       "source_section": "Epic 3: Secrets Management Integration",
-      "github_labels": ["feature", "aws-integration", "secrets-management", "high-priority"],
+      "github_labels": [
+        "feature",
+        "aws-integration",
+        "secrets-management",
+        "high-priority"
+      ],
       "estimated_effort": "1-2 weeks",
       "description": "Implement AWS Secrets Manager for secure storage and retrieval of application configuration and secrets.",
       "acceptance_criteria": [
@@ -1030,7 +906,12 @@
       "epic": "S3 Access & Data Management",
       "source_document": "meta/plans/aws-secrets-integration-setup.md",
       "source_section": "Epic 4: S3 Access & Data Management",
-      "github_labels": ["feature", "aws-integration", "s3", "data-management"],
+      "github_labels": [
+        "feature",
+        "aws-integration",
+        "s3",
+        "data-management"
+      ],
       "estimated_effort": "1 week",
       "description": "Set up S3 buckets with proper access policies for secure data storage and retrieval.",
       "acceptance_criteria": [
@@ -1057,7 +938,12 @@
       "epic": "Deployment Infrastructure & Orchestration",
       "source_document": "meta/plans/aws-secrets-integration-setup.md",
       "source_section": "Epic 5: Deployment Infrastructure & Orchestration",
-      "github_labels": ["feature", "aws-integration", "lambda", "deployment"],
+      "github_labels": [
+        "feature",
+        "aws-integration",
+        "lambda",
+        "deployment"
+      ],
       "estimated_effort": "1-2 weeks",
       "description": "Configure AWS Lambda resources for running Dockerized applications with automated deployment from GitHub Actions.",
       "acceptance_criteria": [
@@ -1084,7 +970,12 @@
       "epic": "Monitoring & Observability Integration",
       "source_document": "meta/plans/aws-secrets-integration-setup.md",
       "source_section": "Epic 6: Monitoring & Observability Integration",
-      "github_labels": ["feature", "aws-integration", "cloudwatch", "monitoring"],
+      "github_labels": [
+        "feature",
+        "aws-integration",
+        "cloudwatch",
+        "monitoring"
+      ],
       "estimated_effort": "1-2 weeks",
       "description": "Extend existing structured logging to work with AWS CloudWatch and monitoring services.",
       "acceptance_criteria": [
@@ -1111,7 +1002,12 @@
       "epic": "Bronze Data Ingestion - Daily Updates",
       "source_document": "meta/plans/bronze-layer-ingestion.md",
       "source_section": "Phase 1: Foundation and Core Ingestion",
-      "github_labels": ["feature", "bronze-ingestion", "setup", "high-priority"],
+      "github_labels": [
+        "feature",
+        "bronze-ingestion",
+        "setup",
+        "high-priority"
+      ],
       "estimated_effort": "1-2 weeks",
       "description": "Set up the basic application structure for the bronze ingestion pipeline following the established monorepo patterns.",
       "acceptance_criteria": [
@@ -1137,7 +1033,12 @@
       "epic": "Bronze Data Ingestion - Daily Updates",
       "source_document": "meta/plans/bronze-layer-ingestion.md",
       "source_section": "Phase 1: Foundation and Core Ingestion",
-      "github_labels": ["feature", "bronze-ingestion", "nba-api", "high-priority"],
+      "github_labels": [
+        "feature",
+        "bronze-ingestion",
+        "nba-api",
+        "high-priority"
+      ],
       "estimated_effort": "2 weeks",
       "description": "Create the core functionality to fetch and store raw NBA data from the nba-api library.",
       "acceptance_criteria": [
@@ -1163,7 +1064,12 @@
       "epic": "Bronze Data Ingestion - Daily Updates",
       "source_document": "meta/plans/bronze-layer-ingestion.md",
       "source_section": "Phase 1: Foundation and Core Ingestion",
-      "github_labels": ["feature", "bronze-ingestion", "github-actions", "high-priority"],
+      "github_labels": [
+        "feature",
+        "bronze-ingestion",
+        "github-actions",
+        "high-priority"
+      ],
       "estimated_effort": "1 week",
       "description": "Set up automated daily scheduling for the ingestion pipeline using GitHub Actions.",
       "acceptance_criteria": [
@@ -1189,7 +1095,12 @@
       "epic": "Bronze Data Ingestion - Daily Updates",
       "source_document": "meta/plans/bronze-layer-ingestion.md",
       "source_section": "Phase 1: Foundation and Core Ingestion",
-      "github_labels": ["feature", "bronze-ingestion", "data-quality", "high-priority"],
+      "github_labels": [
+        "feature",
+        "bronze-ingestion",
+        "data-quality",
+        "high-priority"
+      ],
       "estimated_effort": "1-2 weeks",
       "description": "Implement essential data validation to ensure ingested data meets basic quality standards.",
       "acceptance_criteria": [
@@ -1215,7 +1126,11 @@
       "epic": "Bronze Data Ingestion - Daily Updates",
       "source_document": "meta/plans/bronze-layer-ingestion.md",
       "source_section": "Phase 2: Reliability and Monitoring",
-      "github_labels": ["feature", "bronze-ingestion", "error-handling"],
+      "github_labels": [
+        "feature",
+        "bronze-ingestion",
+        "error-handling"
+      ],
       "estimated_effort": "2 weeks",
       "description": "Implement robust error handling and recovery mechanisms for production reliability.",
       "acceptance_criteria": [
@@ -1241,7 +1156,11 @@
       "epic": "Bronze Data Ingestion - Daily Updates",
       "source_document": "meta/plans/bronze-layer-ingestion.md",
       "source_section": "Phase 2: Reliability and Monitoring",
-      "github_labels": ["feature", "bronze-ingestion", "monitoring"],
+      "github_labels": [
+        "feature",
+        "bronze-ingestion",
+        "monitoring"
+      ],
       "estimated_effort": "2 weeks",
       "description": "Build comprehensive monitoring and alerting for pipeline health and data quality.",
       "acceptance_criteria": [
@@ -1267,7 +1186,11 @@
       "epic": "Bronze Data Ingestion - Daily Updates",
       "source_document": "meta/plans/bronze-layer-ingestion.md",
       "source_section": "Phase 3: Optimization and Advanced Features",
-      "github_labels": ["feature", "bronze-ingestion", "optimization"],
+      "github_labels": [
+        "feature",
+        "bronze-ingestion",
+        "optimization"
+      ],
       "estimated_effort": "1-2 weeks",
       "description": "Optimize ingestion frequency based on actual NBA game schedule to reduce unnecessary API calls.",
       "acceptance_criteria": [
@@ -1293,7 +1216,11 @@
       "epic": "Bronze Data Ingestion - Daily Updates",
       "source_document": "meta/plans/bronze-layer-ingestion.md",
       "source_section": "Phase 3: Optimization and Advanced Features",
-      "github_labels": ["feature", "bronze-ingestion", "optimization"],
+      "github_labels": [
+        "feature",
+        "bronze-ingestion",
+        "optimization"
+      ],
       "estimated_effort": "2 weeks",
       "description": "Implement incremental ingestion patterns to improve efficiency and reduce redundant data processing.",
       "acceptance_criteria": [
@@ -1319,7 +1246,12 @@
       "epic": "Silver to Gold ETL Jobs",
       "source_document": "meta/plans/silver-to-gold-etl-jobs.md",
       "source_section": "Phase 1: Foundation",
-      "github_labels": ["feature", "silver-to-gold-etl", "lambda", "high-priority"],
+      "github_labels": [
+        "feature",
+        "silver-to-gold-etl",
+        "lambda",
+        "high-priority"
+      ],
       "estimated_effort": "1-2 weeks",
       "description": "Create a simple Lambda function that aggregates Silver layer player game data into basic Gold layer daily statistics.",
       "acceptance_criteria": [
@@ -1346,7 +1278,12 @@
       "epic": "Silver to Gold ETL Jobs",
       "source_document": "meta/plans/silver-to-gold-etl-jobs.md",
       "source_section": "Phase 1: Foundation",
-      "github_labels": ["feature", "silver-to-gold-etl", "orchestration", "high-priority"],
+      "github_labels": [
+        "feature",
+        "silver-to-gold-etl",
+        "orchestration",
+        "high-priority"
+      ],
       "estimated_effort": "1 week",
       "description": "Set up S3 event triggers to automatically initiate Gold layer processing when new Silver layer data arrives.",
       "acceptance_criteria": [
@@ -1372,7 +1309,11 @@
       "epic": "Silver to Gold ETL Jobs",
       "source_document": "meta/plans/silver-to-gold-etl-jobs.md",
       "source_section": "Phase 1: Foundation",
-      "github_labels": ["feature", "silver-to-gold-etl", "data-modeling"],
+      "github_labels": [
+        "feature",
+        "silver-to-gold-etl",
+        "data-modeling"
+      ],
       "estimated_effort": "1 week",
       "description": "Design and implement optimal partitioning strategy for Gold layer data to support fast MCP server queries.",
       "acceptance_criteria": [
@@ -1398,7 +1339,11 @@
       "epic": "Silver to Gold ETL Jobs",
       "source_document": "meta/plans/silver-to-gold-etl-jobs.md",
       "source_section": "Phase 2: Validation",
-      "github_labels": ["feature", "silver-to-gold-etl", "monitoring"],
+      "github_labels": [
+        "feature",
+        "silver-to-gold-etl",
+        "monitoring"
+      ],
       "estimated_effort": "1-2 weeks",
       "description": "Build monitoring and error handling framework for Silver to Gold ETL operations.",
       "acceptance_criteria": [
@@ -1424,7 +1369,11 @@
       "epic": "Silver to Gold ETL Jobs",
       "source_document": "meta/plans/silver-to-gold-etl-jobs.md",
       "source_section": "Phase 3: Extension",
-      "github_labels": ["feature", "silver-to-gold-etl", "team-stats"],
+      "github_labels": [
+        "feature",
+        "silver-to-gold-etl",
+        "team-stats"
+      ],
       "estimated_effort": "1-2 weeks",
       "description": "Extend ETL processing to include team-level statistics and aggregations.",
       "acceptance_criteria": [
@@ -1450,7 +1399,11 @@
       "epic": "Silver to Gold ETL Jobs",
       "source_document": "meta/plans/silver-to-gold-etl-jobs.md",
       "source_section": "Phase 3: Extension",
-      "github_labels": ["feature", "silver-to-gold-etl", "advanced-analytics"],
+      "github_labels": [
+        "feature",
+        "silver-to-gold-etl",
+        "advanced-analytics"
+      ],
       "estimated_effort": "2-3 weeks",
       "description": "Add advanced basketball analytics calculations such as PER, Win Shares, and other sophisticated metrics.",
       "acceptance_criteria": [
@@ -1476,13 +1429,18 @@
       "epic": "E2E Test Setup",
       "source_document": "meta/plans/e2e-integration-test-workflow.md",
       "source_section": "Phase 1: Foundation",
-      "github_labels": ["feature", "e2e-testing", "localstack", "high-priority"],
+      "github_labels": [
+        "feature",
+        "e2e-testing",
+        "localstack",
+        "high-priority"
+      ],
       "estimated_effort": "3-5 days",
       "description": "Create a Docker Compose-based testing framework using Localstack to simulate AWS S3 for local and CI pipeline testing.",
       "acceptance_criteria": [
         "Docker Compose configuration with localstack S3 simulation",
         "Test utility functions for S3 bucket operations (create, read, write, delete)",
-        "Basic pipeline test that creates bronze → silver → gold data flow",
+        "Basic pipeline test that creates bronze \u2192 silver \u2192 gold data flow",
         "CI integration that runs tests in isolated Docker environment",
         "Documentation for local development setup and usage"
       ],
@@ -1502,7 +1460,12 @@
       "epic": "E2E Test Setup",
       "source_document": "meta/plans/e2e-integration-test-workflow.md",
       "source_section": "Phase 1: Foundation",
-      "github_labels": ["feature", "e2e-testing", "mock-data", "high-priority"],
+      "github_labels": [
+        "feature",
+        "e2e-testing",
+        "mock-data",
+        "high-priority"
+      ],
       "estimated_effort": "2-4 days",
       "description": "Implement a comprehensive mock data generation system that creates realistic NBA statistics for testing purposes.",
       "acceptance_criteria": [
@@ -1529,7 +1492,12 @@
       "epic": "E2E Test Setup",
       "source_document": "meta/plans/e2e-integration-test-workflow.md",
       "source_section": "Phase 1: Foundation",
-      "github_labels": ["feature", "e2e-testing", "bronze-validation", "high-priority"],
+      "github_labels": [
+        "feature",
+        "e2e-testing",
+        "bronze-validation",
+        "high-priority"
+      ],
       "estimated_effort": "2-3 days",
       "description": "Create automated tests that validate the bronze layer data ingestion process from mock NBA API data to S3 Parquet storage.",
       "acceptance_criteria": [
@@ -1557,7 +1525,11 @@
       "epic": "E2E Test Setup",
       "source_document": "meta/plans/e2e-integration-test-workflow.md",
       "source_section": "Phase 2: Core Pipeline Testing",
-      "github_labels": ["feature", "e2e-testing", "silver-validation"],
+      "github_labels": [
+        "feature",
+        "e2e-testing",
+        "silver-validation"
+      ],
       "estimated_effort": "3-4 days",
       "description": "Implement comprehensive testing for bronze to silver layer data transformations, including cleaning, normalization, and business rule applications.",
       "acceptance_criteria": [
@@ -1585,7 +1557,11 @@
       "epic": "E2E Test Setup",
       "source_document": "meta/plans/e2e-integration-test-workflow.md",
       "source_section": "Phase 2: Core Pipeline Testing",
-      "github_labels": ["feature", "e2e-testing", "gold-validation"],
+      "github_labels": [
+        "feature",
+        "e2e-testing",
+        "gold-validation"
+      ],
       "estimated_effort": "3-4 days",
       "description": "Create tests that validate the silver to gold layer aggregations, ensuring business metrics are calculated correctly and query performance is optimized.",
       "acceptance_criteria": [
@@ -1613,7 +1589,11 @@
       "epic": "E2E Test Setup",
       "source_document": "meta/plans/e2e-integration-test-workflow.md",
       "source_section": "Phase 2: Core Pipeline Testing",
-      "github_labels": ["feature", "e2e-testing", "mcp-validation"],
+      "github_labels": [
+        "feature",
+        "e2e-testing",
+        "mcp-validation"
+      ],
       "estimated_effort": "4-5 days",
       "description": "Implement end-to-end testing for the MCP server that validates data serving accuracy, API functionality, and protocol compliance.",
       "acceptance_criteria": [
@@ -1641,7 +1621,11 @@
       "epic": "E2E Test Setup",
       "source_document": "meta/plans/e2e-integration-test-workflow.md",
       "source_section": "Phase 3: Advanced Testing Features",
-      "github_labels": ["feature", "e2e-testing", "github-actions"],
+      "github_labels": [
+        "feature",
+        "e2e-testing",
+        "github-actions"
+      ],
       "estimated_effort": "2-3 days",
       "description": "Extend the existing infrastructure deployment workflow (ADR-017) to include comprehensive end-to-end testing pipeline integration.",
       "acceptance_criteria": [
@@ -1669,7 +1653,11 @@
       "epic": "E2E Test Setup",
       "source_document": "meta/plans/e2e-integration-test-workflow.md",
       "source_section": "Phase 3: Advanced Testing Features",
-      "github_labels": ["feature", "e2e-testing", "performance"],
+      "github_labels": [
+        "feature",
+        "e2e-testing",
+        "performance"
+      ],
       "estimated_effort": "2-3 days",
       "description": "Create automated performance testing that detects regressions in data pipeline processing speed, memory usage, and API response times.",
       "acceptance_criteria": [
@@ -1697,7 +1685,12 @@
       "epic": "Shared Library Infrastructure Foundation",
       "source_document": "meta/plans/python-library-code-sharing.md",
       "source_section": "Epic 1: Shared Library Infrastructure Foundation, User Story 1.1",
-      "github_labels": ["feature", "shared-libraries", "infrastructure", "high-priority"],
+      "github_labels": [
+        "feature",
+        "shared-libraries",
+        "infrastructure",
+        "high-priority"
+      ],
       "estimated_effort": "3-5 days",
       "description": "Establish the technical foundation for shared Python libraries by creating a standardized directory structure and organization principles.",
       "acceptance_criteria": [
@@ -1723,7 +1716,12 @@
       "epic": "Shared Library Infrastructure Foundation",
       "source_document": "meta/plans/python-library-code-sharing.md",
       "source_section": "Epic 1: Shared Library Infrastructure Foundation, User Story 1.2",
-      "github_labels": ["feature", "shared-libraries", "template", "high-priority"],
+      "github_labels": [
+        "feature",
+        "shared-libraries",
+        "template",
+        "high-priority"
+      ],
       "estimated_effort": "5-7 days",
       "description": "Create a standardized template for new shared libraries that follows consistent patterns, tooling, and best practices.",
       "acceptance_criteria": [
@@ -1751,7 +1749,11 @@
       "epic": "Shared Library Infrastructure Foundation",
       "source_document": "meta/plans/python-library-code-sharing.md",
       "source_section": "Epic 1: Shared Library Infrastructure Foundation, User Story 1.3",
-      "github_labels": ["feature", "shared-libraries", "versioning"],
+      "github_labels": [
+        "feature",
+        "shared-libraries",
+        "versioning"
+      ],
       "estimated_effort": "3-5 days",
       "description": "Define a clear versioning strategy and dependency management approach for shared libraries in the monorepo context.",
       "acceptance_criteria": [
@@ -1777,7 +1779,12 @@
       "epic": "Development Workflow Integration",
       "source_document": "meta/plans/python-library-code-sharing.md",
       "source_section": "Epic 2: Development Workflow Integration, User Story 2.1",
-      "github_labels": ["feature", "shared-libraries", "development-workflow", "high-priority"],
+      "github_labels": [
+        "feature",
+        "shared-libraries",
+        "development-workflow",
+        "high-priority"
+      ],
       "estimated_effort": "5-7 days",
       "description": "Enable seamless local development with shared libraries, allowing efficient development and testing of applications with shared dependencies.",
       "acceptance_criteria": [
@@ -1803,7 +1810,12 @@
       "epic": "Development Workflow Integration",
       "source_document": "meta/plans/python-library-code-sharing.md",
       "source_section": "Epic 2: Development Workflow Integration, User Story 2.2",
-      "github_labels": ["feature", "shared-libraries", "ci-cd", "high-priority"],
+      "github_labels": [
+        "feature",
+        "shared-libraries",
+        "ci-cd",
+        "high-priority"
+      ],
       "estimated_effort": "1-2 weeks",
       "description": "Implement automated testing and build orchestration that validates shared library compatibility and prevents breaking changes.",
       "acceptance_criteria": [
@@ -1830,7 +1842,11 @@
       "epic": "Development Workflow Integration",
       "source_document": "meta/plans/python-library-code-sharing.md",
       "source_section": "Epic 2: Development Workflow Integration, User Story 2.3",
-      "github_labels": ["feature", "shared-libraries", "documentation"],
+      "github_labels": [
+        "feature",
+        "shared-libraries",
+        "documentation"
+      ],
       "estimated_effort": "1 week",
       "description": "Create automatically generated documentation for shared libraries to improve discoverability and usage.",
       "acceptance_criteria": [
@@ -1856,7 +1872,12 @@
       "epic": "Common Library Implementation",
       "source_document": "meta/plans/python-library-code-sharing.md",
       "source_section": "Epic 3: Common Library Implementation, User Story 3.1",
-      "github_labels": ["feature", "shared-libraries", "configuration", "high-priority"],
+      "github_labels": [
+        "feature",
+        "shared-libraries",
+        "configuration",
+        "high-priority"
+      ],
       "estimated_effort": "1-2 weeks",
       "description": "Create a standardized configuration management library that all applications can use for consistent configuration handling.",
       "acceptance_criteria": [
@@ -1884,7 +1905,12 @@
       "epic": "Common Library Implementation",
       "source_document": "meta/plans/python-library-code-sharing.md",
       "source_section": "Epic 3: Common Library Implementation, User Story 3.2",
-      "github_labels": ["feature", "shared-libraries", "observability", "high-priority"],
+      "github_labels": [
+        "feature",
+        "shared-libraries",
+        "observability",
+        "high-priority"
+      ],
       "estimated_effort": "1-2 weeks",
       "description": "Implement a standardized logging and observability library to ensure consistent, structured logs and monitoring across all applications.",
       "acceptance_criteria": [
@@ -1912,7 +1938,11 @@
       "epic": "Common Library Implementation",
       "source_document": "meta/plans/python-library-code-sharing.md",
       "source_section": "Epic 3: Common Library Implementation, User Story 3.3",
-      "github_labels": ["feature", "shared-libraries", "data-processing"],
+      "github_labels": [
+        "feature",
+        "shared-libraries",
+        "data-processing"
+      ],
       "estimated_effort": "1-2 weeks",
       "description": "Create common data processing utilities to ensure consistent basketball statistics processing across applications.",
       "acceptance_criteria": [
@@ -1940,7 +1970,11 @@
       "epic": "Migration and Adoption",
       "source_document": "meta/plans/python-library-code-sharing.md",
       "source_section": "Epic 4: Migration and Adoption, User Story 4.1",
-      "github_labels": ["feature", "shared-libraries", "migration"],
+      "github_labels": [
+        "feature",
+        "shared-libraries",
+        "migration"
+      ],
       "estimated_effort": "1 week",
       "description": "Audit existing applications to identify duplicated code and prioritize extraction into shared libraries.",
       "acceptance_criteria": [
@@ -1966,7 +2000,11 @@
       "epic": "Migration and Adoption",
       "source_document": "meta/plans/python-library-code-sharing.md",
       "source_section": "Epic 4: Migration and Adoption, User Story 4.2",
-      "github_labels": ["feature", "shared-libraries", "refactoring"],
+      "github_labels": [
+        "feature",
+        "shared-libraries",
+        "refactoring"
+      ],
       "estimated_effort": "2-3 weeks",
       "description": "Update existing applications to use shared libraries, achieving DRY principle and consistency goals.",
       "acceptance_criteria": [
@@ -1993,7 +2031,12 @@
       "epic": "Data Platform Foundation",
       "source_document": "meta/plans/medallion-data-architecture.md",
       "source_section": "Phase 1: Foundation & Bronze Layer",
-      "github_labels": ["feature", "data-architecture", "infrastructure", "high-priority"],
+      "github_labels": [
+        "feature",
+        "data-architecture",
+        "infrastructure",
+        "high-priority"
+      ],
       "estimated_effort": "3-5 days",
       "description": "Set up S3 buckets for the three-tier Medallion Architecture (Bronze/Silver/Gold) with proper lifecycle policies and configurations.",
       "acceptance_criteria": [
@@ -2021,7 +2064,11 @@
       "epic": "Data Governance and Quality",
       "source_document": "meta/plans/medallion-data-architecture.md",
       "source_section": "Required ADRs for Implementation",
-      "github_labels": ["feature", "data-architecture", "governance"],
+      "github_labels": [
+        "feature",
+        "data-architecture",
+        "governance"
+      ],
       "estimated_effort": "2-3 weeks",
       "description": "Create comprehensive data lineage tracking and metadata management system across all data layers.",
       "acceptance_criteria": [
@@ -2049,7 +2096,12 @@
       "epic": "Data Governance and Quality",
       "source_document": "meta/plans/medallion-data-architecture.md",
       "source_section": "Required ADRs for Implementation, ADR-021",
-      "github_labels": ["feature", "data-architecture", "security", "high-priority"],
+      "github_labels": [
+        "feature",
+        "data-architecture",
+        "security",
+        "high-priority"
+      ],
       "estimated_effort": "1-2 weeks",
       "description": "Implement security framework with encryption, access controls, and audit logging for all data layers.",
       "acceptance_criteria": [
@@ -2077,7 +2129,11 @@
       "epic": "Pipeline Automation and Operations",
       "source_document": "meta/plans/medallion-data-architecture.md",
       "source_section": "Required ADRs for Implementation, ADR-020",
-      "github_labels": ["feature", "data-architecture", "orchestration"],
+      "github_labels": [
+        "feature",
+        "data-architecture",
+        "orchestration"
+      ],
       "estimated_effort": "2-3 weeks",
       "description": "Create orchestration platform for automated data processing with dependency handling and error recovery.",
       "acceptance_criteria": [

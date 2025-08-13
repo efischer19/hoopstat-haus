@@ -62,9 +62,23 @@ The deployment workflow (`.github/workflows/deploy.yml`) automatically:
 
 1. **Detects Changes**: Identifies modified apps with Dockerfiles
 2. **Verifies Images**: Ensures container images exist in ECR
-3. **Updates Functions**: Deploys new container images to Lambda
-4. **Tests Deployment**: Performs health checks for API services
-5. **Monitors Status**: Waits for functions to become active
+3. **Checks Function Existence**: Verifies Lambda function exists before attempting update
+4. **Updates Functions**: Deploys new container images to existing Lambda functions
+5. **Tests Deployment**: Performs health checks for API services
+6. **Monitors Status**: Waits for functions to become active
+
+#### Initial Deployment Requirements
+
+The deployment workflow is designed to **update existing Lambda functions**, not create new ones. For initial deployment:
+
+1. **Infrastructure First**: Deploy Terraform infrastructure to create Lambda functions
+2. **Container Images**: Ensure initial container images exist in ECR
+3. **Deployment**: Run the deployment workflow to update function code
+
+If a Lambda function doesn't exist, the workflow will:
+- Detect the missing function
+- Provide clear error messages with guidance
+- Exit with helpful instructions for infrastructure deployment
 
 ### Manual Deployment
 
@@ -80,6 +94,36 @@ gh workflow run deploy.yml \
 # Via GitHub UI
 # Go to Actions > Deploy Applications > Run workflow
 ```
+
+### Initial Setup Process
+
+For the first deployment of a new Lambda function:
+
+1. **Deploy Infrastructure**:
+   ```bash
+   cd infrastructure/
+   terraform init
+   terraform plan
+   terraform apply
+   ```
+
+2. **Build and Push Initial Image**:
+   ```bash
+   # Build the application container
+   docker build -t myapp apps/myapp/
+   
+   # Tag for ECR
+   docker tag myapp:latest $ECR_REGISTRY/$ECR_REPOSITORY:myapp-latest
+   
+   # Push to ECR
+   docker push $ECR_REGISTRY/$ECR_REPOSITORY:myapp-latest
+   ```
+
+3. **Update Lambda Function**:
+   ```bash
+   # Use the deployment workflow
+   gh workflow run deploy.yml --field application=myapp
+   ```
 
 ### Image Tagging Convention
 

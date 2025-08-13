@@ -802,7 +802,8 @@ resource "aws_iam_role_policy" "github_actions_operations_lambda" {
         Action = [
           "lambda:UpdateFunctionCode",
           "lambda:GetFunction",
-          "lambda:InvokeFunction"
+          "lambda:InvokeFunction",
+          "lambda:GetFunctionConfiguration"
         ]
         Resource = [
           "arn:aws:lambda:${var.aws_region}:${data.aws_caller_identity.current.account_id}:function:${var.project_name}-bronze-ingestion",

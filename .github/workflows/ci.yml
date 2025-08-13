@@ -23,8 +23,7 @@ name: CI
         type: choice
         options:
           - bronze-ingestion
-          - example-calculator-app
-          - nba-season-backfill
+          - mcp-server
 
 permissions:
   id-token: write

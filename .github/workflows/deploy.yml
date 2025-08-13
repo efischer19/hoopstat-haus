@@ -40,17 +40,25 @@ env:
 jobs:
   detect-deployable-apps:
     runs-on: ubuntu-latest
-    if: github.event_name == 'push'
     outputs:
-      app-matrix: ${{ steps.changes.outputs.app-matrix }}
-      has-deployable-changes: ${{ steps.changes.outputs.has-deployable-changes }}
+      app-matrix: ${{ steps.dispatch-defaults.outputs.app-matrix || steps.changes.outputs.app-matrix }}
+      has-deployable-changes: ${{ steps.dispatch-defaults.outputs.has-deployable-changes || steps.changes.outputs.has-deployable-changes }}
     steps:
+      - name: Set defaults for workflow_dispatch
+        if: github.event_name == 'workflow_dispatch'
+        id: dispatch-defaults
+        run: |
+          echo "has-deployable-changes=true" >> $GITHUB_OUTPUT
+          echo "app-matrix={\"include\":[{\"app\":\"${{ inputs.application }}\"}]}" >> $GITHUB_OUTPUT
+
       - name: Checkout code
+        if: github.event_name == 'push'
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
       - name: Detect deployable applications
+        if: github.event_name == 'push'
         id: changes
         run: |
           # Get list of changed files in apps directory
@@ -94,10 +102,10 @@ jobs:
     needs: detect-deployable-apps
     if: |
       (github.event_name == 'push' && needs.detect-deployable-apps.outputs.has-deployable-changes == 'true') ||
-      github.event_name == 'workflow_dispatch'
+      (github.event_name == 'workflow_dispatch' && needs.detect-deployable-apps.outputs.has-deployable-changes == 'true')
     strategy:
       fail-fast: false
-      matrix: ${{ github.event_name == 'push' && fromJson(needs.detect-deployable-apps.outputs.app-matrix) || '' }}
+      matrix: ${{ fromJson(needs.detect-deployable-apps.outputs.app-matrix) }}
 
     steps:
       - name: Set deployment variables

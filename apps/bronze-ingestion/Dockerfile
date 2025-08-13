@@ -63,7 +63,15 @@ COPY apps/bronze-ingestion/ .
 # Copy libs directory to maintain relative path dependencies
 COPY libs/ ../libs/
 
-# Install only production dependencies (Poetry handles path deps automatically)
+# Create and activate a virtual environment for cleaner dependency management
+RUN python -m venv /opt/venv
+ENV PATH="/opt/venv/bin:$PATH"
+
+# Configure Poetry to use the existing virtual environment
+ENV POETRY_VENV_IN_PROJECT=0 \
+    POETRY_VIRTUALENVS_CREATE=false
+
+# Install only production dependencies in the virtual environment
 RUN poetry install --only=main && rm -rf $POETRY_CACHE_DIR
 
 # =============================================================================
@@ -82,9 +90,8 @@ RUN groupadd -r appuser && useradd -r -g appuser appuser
 # Set work directory
 WORKDIR /app
 
-# Copy Python environment from dependencies stage
-COPY --from=dependencies /usr/local/lib/python3.12/site-packages /usr/local/lib/python3.12/site-packages
-COPY --from=dependencies /usr/local/bin /usr/local/bin
+# Copy the virtual environment from dependencies stage
+COPY --from=dependencies /opt/venv /opt/venv
 
 # Copy shared libraries (maintaining editable install compatibility)
 COPY --from=dependencies /libs /libs

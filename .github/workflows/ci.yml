@@ -15,6 +15,15 @@ name: CI
       - 'apps/**'
       - 'libs/**'
       - '.github/workflows/ci.yml'
+  workflow_dispatch:
+    inputs:
+      app:
+        description: 'Application to build and push to ECR'
+        required: true
+        type: choice
+        options:
+          - bronze-ingestion
+          - mcp-server
 
 permissions:
   id-token: write
@@ -81,17 +90,29 @@ jobs:
   detect-changes:
     runs-on: ubuntu-latest
     outputs:
-      app-matrix: ${{ steps.changes.outputs.app-matrix }}
-      lib-matrix: ${{ steps.changes.outputs.lib-matrix }}
-      has-app-changes: ${{ steps.changes.outputs.has-app-changes }}
-      has-lib-changes: ${{ steps.changes.outputs.has-lib-changes }}
+      app-matrix: ${{ steps.dispatch-defaults.outputs.app-matrix || steps.changes.outputs.app-matrix }}
+      lib-matrix: ${{ steps.dispatch-defaults.outputs.lib-matrix || steps.changes.outputs.lib-matrix }}
+      has-app-changes: ${{ steps.dispatch-defaults.outputs.has-app-changes || steps.changes.outputs.has-app-changes }}
+      has-lib-changes: ${{ steps.dispatch-defaults.outputs.has-lib-changes || steps.changes.outputs.has-lib-changes }}
     steps:
+      - name: Set defaults for workflow_dispatch
+        if: github.event_name == 'workflow_dispatch'
+        id: dispatch-defaults
+        run: |
+          echo "has-app-changes=true" >> $GITHUB_OUTPUT
+          echo "app-matrix={\"include\":[{\"app\":\"${{ inputs.app }}\"}]}" >> $GITHUB_OUTPUT
+          echo "has-lib-changes=false" >> $GITHUB_OUTPUT
+          echo "lib-matrix={\"include\":[]}" >> $GITHUB_OUTPUT
+          echo "Manual trigger for app: ${{ inputs.app }}"
+
       - name: Checkout code
+        if: github.event_name != 'workflow_dispatch'
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
       - name: Detect changed apps and libraries
+        if: github.event_name != 'workflow_dispatch'
         id: changes
         run: |
           # Get list of changed files in apps and libs directories
@@ -287,7 +308,7 @@ jobs:
           fi
 
       - name: Configure AWS credentials
-        if: steps.deployment-check.outputs.deployable == 'true' && github.event_name == 'push' && github.ref == 'refs/heads/main'
+        if: steps.deployment-check.outputs.deployable == 'true' && (github.event_name == 'workflow_dispatch' || (github.event_name == 'push' && github.ref == 'refs/heads/main'))
         uses: aws-actions/configure-aws-credentials@v4
         with:
           role-to-assume: arn:aws:iam::${{ secrets.AWS_ACCOUNT_ID }}:role/hoopstat-haus-operations
@@ -295,7 +316,7 @@ jobs:
           aws-region: us-east-1
 
       - name: Login to Amazon ECR
-        if: steps.deployment-check.outputs.deployable == 'true' && github.event_name == 'push' && github.ref == 'refs/heads/main'
+        if: steps.deployment-check.outputs.deployable == 'true' && (github.event_name == 'workflow_dispatch' || (github.event_name == 'push' && github.ref == 'refs/heads/main'))
         id: login-ecr
         uses: aws-actions/amazon-ecr-login@v2
 
@@ -320,7 +341,7 @@ jobs:
           fi
 
       - name: Tag and push image to ECR
-        if: steps.deployment-check.outputs.deployable == 'true' && github.event_name == 'push' && github.ref == 'refs/heads/main'
+        if: steps.deployment-check.outputs.deployable == 'true' && (github.event_name == 'workflow_dispatch' || (github.event_name == 'push' && github.ref == 'refs/heads/main'))
         env:
           ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
           ECR_REPOSITORY: hoopstat-haus/prod

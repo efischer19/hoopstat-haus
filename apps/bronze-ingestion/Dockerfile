@@ -109,3 +109,28 @@ CMD ["python", "-m", "app.main"]
 
 # Expose port (if this becomes a web service)
 # EXPOSE 8000
+
+# =============================================================================
+# Lambda stage: AWS Lambda Runtime Interface Emulator compatible
+# =============================================================================
+FROM public.ecr.aws/lambda/python:3.12 AS lambda
+
+# Set environment variables for Lambda
+ENV PYTHONUNBUFFERED=1 \
+    PYTHONDONTWRITEBYTECODE=1
+
+# Copy the virtual environment from dependencies stage
+COPY --from=dependencies /opt/venv /opt/venv
+
+# Ensure Lambda runtime can find installed packages
+ENV PATH="/opt/venv/bin:$PATH" \
+    PYTHONPATH="/opt/venv/lib/python3.12/site-packages:$PYTHONPATH"
+
+# Copy shared libraries (maintaining editable install compatibility)
+COPY --from=dependencies /libs /libs
+
+# Copy application code to Lambda function directory
+COPY --from=dependencies /app/app ${LAMBDA_TASK_ROOT}/app
+
+# Set the Lambda handler
+CMD ["app.lambda_handler.lambda_handler"]

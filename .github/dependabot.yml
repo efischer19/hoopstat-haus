@@ -22,16 +22,7 @@ updates:
         patterns:
           - "*"
 
-  # Monitor pip dependencies in nba-season-backfill
-  - package-ecosystem: "pip"
-    directory: "/apps/nba-season-backfill"
-    schedule:
-      interval: "weekly"
-    open-pull-requests-limit: 10
-    groups:
-      pip:
-        patterns:
-          - "*"
+
 
   # Monitor pip dependencies in mcp-server
   - package-ecosystem: "pip"

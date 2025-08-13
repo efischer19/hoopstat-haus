@@ -57,22 +57,17 @@ CMD ["poetry", "run", "python", "-m", "app.main"]
 # =============================================================================
 FROM base AS dependencies
 
-# Copy the entire app directory to maintain relative path structure
+# Copy the application and library files [cite: 108, 109]
 COPY apps/bronze-ingestion/ .
-
-# Copy libs directory to maintain relative path dependencies
 COPY libs/ ../libs/
 
-# Create and activate a virtual environment for cleaner dependency management
+# Create a virtual environment 
 RUN python -m venv /opt/venv
-ENV PATH="/opt/venv/bin:$PATH"
 
-# Configure Poetry to use the existing virtual environment
-ENV POETRY_VENV_IN_PROJECT=0 \
-    POETRY_VIRTUALENVS_CREATE=false
-
-# Install only production dependencies in the virtual environment
-RUN poetry install --only=main && rm -rf $POETRY_CACHE_DIR
+# Activate the virtual environment and install dependencies into it
+RUN . /opt/venv/bin/activate && \
+    poetry install --only=main --no-root && \
+    rm -rf $POETRY_CACHE_DIR
 
 # =============================================================================
 # Production stage: Minimal production image

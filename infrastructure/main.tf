@@ -691,6 +691,8 @@ resource "aws_iam_role" "github_actions_operations" {
 }
 
 # ECR permissions for container operations
+# Includes DescribeRepositories permission which is required alongside DescribeImages
+# for deployment workflows to verify image existence before updating Lambda functions
 resource "aws_iam_role_policy" "github_actions_operations_ecr" {
   name = "${var.project_name}-operations-ecr"
   role = aws_iam_role.github_actions_operations.id
@@ -712,6 +714,7 @@ resource "aws_iam_role_policy" "github_actions_operations_ecr" {
           "ecr:GetDownloadUrlForLayer",
           "ecr:BatchGetImage",
           "ecr:DescribeImages",
+          "ecr:DescribeRepositories",
           "ecr:PutImage",
           "ecr:InitiateLayerUpload",
           "ecr:UploadLayerPart",

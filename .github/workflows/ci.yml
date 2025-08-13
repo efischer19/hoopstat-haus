@@ -261,16 +261,6 @@ jobs:
           virtualenvs-create: true
           virtualenvs-in-project: true
 
-      - name: Cache Poetry dependencies
-        uses: actions/cache@v3
-        with:
-          path: apps/${{ matrix.app }}/.venv
-          key: >-
-            poetry-app-${{ matrix.app }}-${{ runner.os }}-
-            ${{ hashFiles('apps/${{ matrix.app }}/poetry.lock') }}
-          restore-keys: |
-            poetry-app-${{ matrix.app }}-${{ runner.os }}-
-
       - name: Install dependencies
         working-directory: apps/${{ matrix.app }}
         run: poetry install

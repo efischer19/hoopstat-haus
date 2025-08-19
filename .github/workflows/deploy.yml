@@ -155,10 +155,11 @@ jobs:
           else
             echo "❌ Image not found: $ECR_REGISTRY/$ECR_REPOSITORY:$APP_NAME-$IMAGE_TAG"
             echo "Available images for $APP_NAME:"
+            # Use a more robust query that handles null imageTags
             aws ecr describe-images \
               --repository-name $ECR_REPOSITORY \
-              --query "imageDetails[?starts_with(imageTag, '$APP_NAME-')].imageTags[]" \
-              --output table || echo "No images found"
+              --query "imageDetails[?imageTags!=null && length(imageTags[?starts_with(@, '$APP_NAME-')]) > \`0\`].imageTags[]" \
+              --output table 2>/dev/null || echo "No images found for $APP_NAME"
             exit 1
           fi
 

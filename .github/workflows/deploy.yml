@@ -145,41 +145,53 @@ jobs:
         run: |
           echo "🔍 Checking if image exists in ECR..."
 
-          # Check if the image exists
+          # First try to find the specific image tag
           if aws ecr describe-images \
               --repository-name $ECR_REPOSITORY \
               --image-ids imageTag=$APP_NAME-$IMAGE_TAG \
               --region $AWS_REGION >/dev/null 2>&1; then
             echo "✅ Image found: $ECR_REGISTRY/$ECR_REPOSITORY:$APP_NAME-$IMAGE_TAG"
-            echo "image_exists=true" >> $GITHUB_ENV
+            echo "FINAL_IMAGE_TAG=$APP_NAME-$IMAGE_TAG" >> $GITHUB_ENV
           else
-            echo "❌ Image not found: $ECR_REGISTRY/$ECR_REPOSITORY:$APP_NAME-$IMAGE_TAG"
-            echo "Available images for $APP_NAME:"
-            aws ecr describe-images \
-              --repository-name $ECR_REPOSITORY \
-              --query "imageDetails[?starts_with(imageTag, '$APP_NAME-')].imageTags[]" \
-              --output table || echo "No images found"
-            exit 1
+            echo "⚠️  Specific image not found: $ECR_REGISTRY/$ECR_REPOSITORY:$APP_NAME-$IMAGE_TAG"
+            echo "🔍 Checking for latest image..."
+            
+            # Fallback to latest tag
+            if aws ecr describe-images \
+                --repository-name $ECR_REPOSITORY \
+                --image-ids imageTag=$APP_NAME-latest \
+                --region $AWS_REGION >/dev/null 2>&1; then
+              echo "✅ Using latest image: $ECR_REGISTRY/$ECR_REPOSITORY:$APP_NAME-latest"
+              echo "FINAL_IMAGE_TAG=$APP_NAME-latest" >> $GITHUB_ENV
+            else
+              echo "❌ No images found for $APP_NAME"
+              echo "Available images for $APP_NAME:"
+              # Use a more robust query that handles null imageTags
+              aws ecr describe-images \
+                --repository-name $ECR_REPOSITORY \
+                --query "imageDetails[?imageTags!=null && length(imageTags[?starts_with(@, '$APP_NAME-')]) > \`0\`].imageTags[]" \
+                --output table 2>/dev/null || echo "No images found for $APP_NAME"
+              exit 1
+            fi
           fi
 
       - name: Pull and test image
         env:
           ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
           APP_NAME: ${{ steps.vars.outputs.app }}
-          IMAGE_TAG: ${{ steps.vars.outputs.image_tag }}
         run: |
           echo "📥 Pulling image from ECR..."
-          docker pull $ECR_REGISTRY/$ECR_REPOSITORY:$APP_NAME-$IMAGE_TAG
+          docker pull $ECR_REGISTRY/$ECR_REPOSITORY:$FINAL_IMAGE_TAG
 
           echo "🧪 Testing image health..."
           
           # Check if this is a Lambda-based application by looking for the lambda entrypoint
-          if docker run --rm $ECR_REGISTRY/$ECR_REPOSITORY:$APP_NAME-$IMAGE_TAG \
+          if docker run --rm $ECR_REGISTRY/$ECR_REPOSITORY:$FINAL_IMAGE_TAG \
               sh -c 'ls /lambda-entrypoint.sh 2>/dev/null || echo "not-lambda"' | grep -q "not-lambda"; then
             echo "🐍 Regular Python application detected"
             # Run a basic health check for regular Python applications
             docker run --rm --name test-$APP_NAME \
-              $ECR_REGISTRY/$ECR_REPOSITORY:$APP_NAME-$IMAGE_TAG \
+              $ECR_REGISTRY/$ECR_REPOSITORY:$FINAL_IMAGE_TAG \
               python -c "
                 try:
                     import app.main
@@ -195,7 +207,7 @@ jobs:
             echo "🚀 Lambda application detected"
             # For Lambda functions, test the handler import and basic functionality
             docker run --rm --name test-$APP_NAME \
-              $ECR_REGISTRY/$ECR_REPOSITORY:$APP_NAME-$IMAGE_TAG \
+              $ECR_REGISTRY/$ECR_REPOSITORY:$FINAL_IMAGE_TAG \
               python -c "
                 try:
                     from app.lambda_handler import lambda_handler
@@ -223,15 +235,14 @@ jobs:
         env:
           APP_NAME: ${{ steps.vars.outputs.app }}
           ENVIRONMENT: ${{ steps.vars.outputs.environment }}
-          IMAGE_TAG: ${{ steps.vars.outputs.image_tag }}
           ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
         run: |
           echo "🚀 Deploying $APP_NAME to AWS Lambda in $ENVIRONMENT..."
-          echo "📍 Image: $ECR_REGISTRY/$ECR_REPOSITORY:$APP_NAME-$IMAGE_TAG"
+          echo "📍 Image: $ECR_REGISTRY/$ECR_REPOSITORY:$FINAL_IMAGE_TAG"
 
           # Lambda function name follows the pattern: hoopstat-haus-{app-name}
           FUNCTION_NAME="hoopstat-haus-$APP_NAME"
-          IMAGE_URI="$ECR_REGISTRY/$ECR_REPOSITORY:$APP_NAME-$IMAGE_TAG"
+          IMAGE_URI="$ECR_REGISTRY/$ECR_REPOSITORY:$FINAL_IMAGE_TAG"
 
           echo "🔍 Checking if Lambda function exists: $FUNCTION_NAME"
 
@@ -333,12 +344,15 @@ jobs:
           APP_NAME: ${{ steps.vars.outputs.app }}
           ENVIRONMENT: ${{ steps.vars.outputs.environment }}
           IMAGE_TAG: ${{ steps.vars.outputs.image_tag }}
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
         run: |
           echo "📋 Deployment Summary"
           echo "=================="
           echo "Application: $APP_NAME"
           echo "Environment: $ENVIRONMENT"
-          echo "Image Tag: $IMAGE_TAG"
+          echo "Requested Image Tag: $IMAGE_TAG"
+          echo "Final Image Tag: $FINAL_IMAGE_TAG"
+          echo "Final Image: $ECR_REGISTRY/$ECR_REPOSITORY:$FINAL_IMAGE_TAG"
           echo "Triggered by: ${{ github.event_name }}"
           echo "Status: ✅ Success"
 

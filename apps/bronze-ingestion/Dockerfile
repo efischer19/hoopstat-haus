@@ -122,12 +122,22 @@ ENV PYTHONUNBUFFERED=1 \
 # Copy the virtual environment from dependencies stage
 COPY --from=dependencies /opt/venv /opt/venv
 
-# Ensure Lambda runtime can find installed packages
-ENV PATH="/opt/venv/bin:$PATH" \
-    PYTHONPATH="/opt/venv/lib/python3.12/site-packages:/libs/hoopstat-observability:/libs/hoopstat-data:/libs/hoopstat-config:/libs/hoopstat-nba_api"
+# Copy shared libraries - copy all hoopstat packages to a flat structure for simple imports
+COPY --from=dependencies /libs /tmp/libs
+RUN mkdir -p /libs && \
+    for lib_dir in /tmp/libs/hoopstat-*; do \
+        if [ -d "$lib_dir" ]; then \
+            lib_name=$(basename "$lib_dir" | sed 's/-/_/g'); \
+            if [ -d "$lib_dir/$lib_name" ]; then \
+                cp -r "$lib_dir/$lib_name" "/libs/"; \
+            fi; \
+        fi; \
+    done && \
+    rm -rf /tmp/libs
 
-# Copy shared libraries (maintaining editable install compatibility)
-COPY --from=dependencies /libs /libs
+# Ensure Lambda runtime can find installed packages and all shared libraries
+ENV PATH="/opt/venv/bin:$PATH" \
+    PYTHONPATH="/opt/venv/lib/python3.12/site-packages:/libs"
 
 # Copy application code to Lambda function directory
 COPY --from=dependencies /app/app ${LAMBDA_TASK_ROOT}/app

@@ -124,7 +124,7 @@ COPY --from=dependencies /opt/venv /opt/venv
 
 # Ensure Lambda runtime can find installed packages
 ENV PATH="/opt/venv/bin:$PATH" \
-    PYTHONPATH="/opt/venv/lib/python3.12/site-packages:$PYTHONPATH"
+    PYTHONPATH="/opt/venv/lib/python3.12/site-packages:/libs/hoopstat-observability:/libs/hoopstat-data:/libs/hoopstat-config:/libs/hoopstat-nba_api"
 
 # Copy shared libraries (maintaining editable install compatibility)
 COPY --from=dependencies /libs /libs

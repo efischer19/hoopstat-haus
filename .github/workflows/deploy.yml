@@ -169,8 +169,8 @@ jobs:
               # Use a more robust query that handles null imageTags and filters them out
               aws ecr describe-images \
                 --repository-name $ECR_REPOSITORY \
-                --query "imageDetails[?imageTags!=null].imageTags[?starts_with(@, '$APP_NAME-')]" \
-                --output table 2>/dev/null || echo "No images found for $APP_NAME"
+                --query "imageDetails[?imageTags!=null].imageTags[]" \
+                --output text 2>/dev/null | grep "^$APP_NAME-" || echo "No images found for $APP_NAME"
               exit 1
             fi
           fi

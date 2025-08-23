@@ -169,8 +169,8 @@ jobs:
               # Use a more robust query that handles null imageTags and filters them out
               aws ecr describe-images \
                 --repository-name $ECR_REPOSITORY \
-                --query "imageDetails[?imageTags!=null].imageTags[]" \
-                --output text 2>/dev/null | grep "^$APP_NAME-" || echo "No images found for $APP_NAME"
+                --query "imageDetails[?imageTags!=null].imageTags[?starts_with(@, '$APP_NAME-')]" \
+                --output text 2>/dev/null | tr '\t' '\n' | sort || echo "No images found"
               exit 1
             fi
           fi
@@ -191,45 +191,27 @@ jobs:
               -c 'ls /lambda-entrypoint.sh 2>/dev/null || echo "not-lambda"' | grep -q "not-lambda"; then
             echo "🐍 Regular Python application detected"
             # Run a basic health check for regular Python applications
-            docker run --rm --name test-$APP_NAME \
+            if docker run --rm --name test-$APP_NAME \
               $ECR_REGISTRY/$ECR_REPOSITORY:$FINAL_IMAGE_TAG \
-              python -c "
-try:
-    import app.main
-    print('Health check passed - app.main imported successfully')
-except Exception as e:
-    print(f'Health check failed: {e}')
-    exit(1)
-" || {
+              python -c 'import app.main; print("Health check passed - app.main imported successfully")'; then
+              echo "✅ Regular Python application health check passed"
+            else
               echo "❌ Image health check failed"
               exit 1
-            }
+            fi
           else
             echo "🚀 Lambda application detected"
             # For Lambda functions, test the handler import and basic functionality
             # Use --entrypoint to override the Lambda entrypoint for health checks
-            docker run --rm --name test-$APP_NAME \
+            if docker run --rm --name test-$APP_NAME \
               --entrypoint python \
               $ECR_REGISTRY/$ECR_REPOSITORY:$FINAL_IMAGE_TAG \
-              -c "
-try:
-    from app.lambda_handler import lambda_handler
-    # Check if lambda_handler is callable
-    if callable(lambda_handler):
-        print('Lambda handler health check passed - handler is importable and callable')
-    else:
-        print('Lambda handler is not callable')
-        exit(1)
-except ImportError as e:
-    print(f'Lambda handler import failed: {e}')
-    exit(1)
-except Exception as e:
-    print(f'Lambda handler health check failed: {e}')
-    exit(1)
-" || {
+              -c 'from app.lambda_handler import lambda_handler; print("Lambda handler health check passed - handler is importable and callable") if callable(lambda_handler) else exit(1)'; then
+              echo "✅ Lambda application health check passed"
+            else
               echo "❌ Lambda handler health check failed"
               exit 1
-            }
+            fi
           fi
 
           echo "✅ Image health check passed"

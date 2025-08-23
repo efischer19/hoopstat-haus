@@ -10,6 +10,7 @@ from hoopstat_nba_api import NBAClient
 from hoopstat_observability import get_logger
 from tenacity import retry, stop_after_attempt, wait_exponential
 
+from .bronze_summary import BronzeSummaryManager
 from .config import BronzeIngestionConfig
 from .quarantine import DataQuarantine
 from .s3_manager import BronzeS3Manager
@@ -30,6 +31,7 @@ class DateScopedIngestion:
         )
         self.validator = DataValidator()
         self.quarantine = DataQuarantine(self.s3_manager)
+        self.summary_manager = BronzeSummaryManager(self.s3_manager)
 
     def run(self, target_date: date, dry_run: bool = False) -> bool:
         """
@@ -51,6 +53,11 @@ class DateScopedIngestion:
             # Step 2: Early exit if no games for this date
             if not games:
                 logger.info(f"No games found for {target_date}, exiting successfully")
+
+                # Still update bronze summary even with no games (unless dry run)
+                if not dry_run:
+                    self.summary_manager.update_bronze_summary(target_date, 0, 0)
+
                 return True
 
             logger.info(f"Found {len(games)} games for {target_date}")
@@ -81,6 +88,12 @@ class DateScopedIngestion:
 
             # Step 6: Log final ingestion metrics
             self._log_ingestion_summary(target_date, len(games), successful_box_scores)
+
+            # Step 7: Generate and store bronze layer summary (unless dry run)
+            if not dry_run:
+                self.summary_manager.update_bronze_summary(
+                    target_date, len(games), successful_box_scores
+                )
 
             logger.info(f"Ingestion completed for {target_date}")
             return True

@@ -15,10 +15,10 @@ pyarrow = "^21.0.0"
 tenacity = "^9.0.0"
 click = "^8.1.0"
 jsonschema = "^4.25.1"
-hoopstat-observability = {path = "../../libs/hoopstat-observability", develop = true}
-hoopstat-data = {path = "../../libs/hoopstat-data", develop = true}
-hoopstat-config = {path = "../../libs/hoopstat-config", develop = true}
-hoopstat-nba_api = {path = "../../libs/hoopstat-nba_api", develop = true}
+hoopstat-observability = {path = "../../libs/hoopstat-observability", develop = false}
+hoopstat-data = {path = "../../libs/hoopstat-data", develop = false}
+hoopstat-config = {path = "../../libs/hoopstat-config", develop = false}
+hoopstat-nba_api = {path = "../../libs/hoopstat-nba_api", develop = false}
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^8.4.1"

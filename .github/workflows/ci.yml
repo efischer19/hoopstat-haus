@@ -115,11 +115,36 @@ jobs:
         if: github.event_name != 'workflow_dispatch'
         id: changes
         run: |
-          # Get list of changed files in apps and libs directories
-          changed_app_files=$(git diff --name-only origin/main...HEAD | \
-            grep '^apps/' | cut -d'/' -f2 | sort -u)
-          changed_lib_files=$(git diff --name-only origin/main...HEAD | \
-            grep '^libs/' | cut -d'/' -f2 | sort -u)
+          set -eo pipefail
+          echo "🔎 Determining changed paths for ${{ github.event_name }}..."
+
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            BASE_SHA="${{ github.event.pull_request.base.sha }}"
+            HEAD_SHA="${{ github.event.pull_request.head.sha }}"
+          else
+            BASE_SHA="${{ github.event.before }}"
+            HEAD_SHA="${{ github.sha }}"
+          fi
+
+          echo "BASE_SHA=$BASE_SHA"
+          echo "HEAD_SHA=$HEAD_SHA"
+
+          if [ -z "$BASE_SHA" ] || echo "$BASE_SHA" | grep -q '^0\{40\}$'; then
+            echo "⚠️  No valid BASE_SHA; using previous commit as base"
+            BASE_SHA=$(git rev-parse HEAD~1 || true)
+          fi
+
+          if [ -z "$BASE_SHA" ]; then
+            echo "⚠️  Treating as initial commit; listing files under apps/ and libs/"
+            changed_app_files=$(git ls-files 'apps/*' | cut -d'/' -f2 | sort -u)
+            changed_lib_files=$(git ls-files 'libs/*' | cut -d'/' -f2 | sort -u)
+          else
+            echo "🔁 Diffing changes between $BASE_SHA..$HEAD_SHA"
+            changed_app_files=$(git diff --name-only "$BASE_SHA" "$HEAD_SHA" | grep '^apps/' || true)
+            changed_app_files=$(echo "$changed_app_files" | cut -d'/' -f2 | sort -u)
+            changed_lib_files=$(git diff --name-only "$BASE_SHA" "$HEAD_SHA" | grep '^libs/' || true)
+            changed_lib_files=$(echo "$changed_lib_files" | cut -d'/' -f2 | sort -u)
+          fi
 
           # Process apps
           if [ -z "$changed_app_files" ]; then

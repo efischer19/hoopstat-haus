@@ -44,7 +44,7 @@ FROM public.ecr.aws/lambda/python:3.12
 # Bring in the virtualenv with all installed dependencies
 COPY --from=builder /opt/venv /opt/venv
 ENV PATH="/opt/venv/bin:$PATH" \
-    PYTHONPATH="/opt/venv/lib/python3.12/site-packages:$PYTHONPATH"
+    PYTHONPATH="/opt/venv/lib/python3.12/site-packages:/src/libs:$PYTHONPATH"
 
 # Ensure `python` command exists for CI health checks (Lambda base guarantees python3)
 RUN ln -sf $(which python3) /usr/local/bin/python || true

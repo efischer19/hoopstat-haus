@@ -1,136 +1,64 @@
-# Multi-stage Dockerfile for Bronze Layer Ingestion Application
-# This Dockerfile demonstrates best practices for containerizing Python applications
-# in the Hoopstat Haus project.
+# Minimal Lambda-first Dockerfile for bronze-ingestion
+# - Builder stage installs runtime dependencies into /opt/venv using Poetry
+# - Final stage uses AWS Lambda Python base image and sets the handler
 #
-# IMPORTANT: When building apps with shared library dependencies from libs/,
-# this Dockerfile expects to be built from the repository root context:
-#   docker build -f apps/bronze-ingestion/Dockerfile -t bronze-ingestion:latest .
-#
-# The CI automatically detects shared dependencies and uses repo root context.
+# Build context must be the repo root so Poetry can resolve local path deps in libs/
+#   docker build -f apps/bronze-ingestion/Dockerfile -t bronze-ingestion:dev .
 
-# =============================================================================
-# Base stage: Common base for all subsequent stages
-# =============================================================================
-FROM python:3.12-slim AS base
+# ---------------------------------------------------
+# Builder: install runtime deps into a virtualenv
+# ---------------------------------------------------
+FROM python:3.12-slim AS builder
 
-# Set environment variables
 ENV PYTHONUNBUFFERED=1 \
-    PYTHONDONTWRITEBYTECODE=1 \
     PIP_NO_CACHE_DIR=1 \
-    PIP_DISABLE_PIP_VERSION_CHECK=1
+    POETRY_NO_INTERACTION=1
 
-# Install system dependencies
-RUN apt-get update && apt-get install -y \
+# Only what's needed to install dependencies
+RUN apt-get update && apt-get install -y --no-install-recommends \
     curl \
     && rm -rf /var/lib/apt/lists/*
 
-# Install Poetry with --trusted-host for environments with SSL issues
-RUN pip install --trusted-host pypi.org --trusted-host pypi.python.org --trusted-host files.pythonhosted.org poetry
+RUN pip install --upgrade pip && pip install poetry
 
-# Configure Poetry: Don't create virtual environment (we're in a container)
-ENV POETRY_VENV_IN_PROJECT=0 \
-    POETRY_NO_INTERACTION=1 \
-    POETRY_CACHE_DIR=/tmp/poetry_cache
+WORKDIR /src
 
-# Set work directory to match app structure when building from repo root
-WORKDIR /app
+# Copy dependency manifests first for better caching
+COPY apps/bronze-ingestion/pyproject.toml apps/bronze-ingestion/poetry.lock ./apps/bronze-ingestion/
+# Copy shared libraries because pyproject.toml references them via local path deps
+COPY libs/ ./libs/
 
-# =============================================================================
-# Development stage: For local development with dev dependencies
-# =============================================================================
-FROM base AS development
-
-# Copy the entire app directory to maintain relative path structure
-COPY apps/bronze-ingestion/ .
-
-# Copy libs directory to maintain relative path dependencies
-COPY libs/ ../libs/
-
-# Install dependencies including dev dependencies (Poetry handles path deps automatically)
-RUN poetry install && rm -rf $POETRY_CACHE_DIR
-
-# Default command for development
-CMD ["poetry", "run", "python", "-m", "app.main"]
-
-# =============================================================================
-# Dependencies stage: Install only production dependencies
-# =============================================================================
-FROM base AS dependencies
-
-# Copy the application and library files [cite: 108, 109]
-COPY apps/bronze-ingestion/ .
-COPY libs/ ../libs/
-
-# Create a virtual environment 
+# Create virtual environment and install only runtime deps
 RUN python -m venv /opt/venv
+ENV PATH="/opt/venv/bin:$PATH"
+RUN cd apps/bronze-ingestion && poetry install --only=main --no-root
 
-# Activate the virtual environment and install dependencies into it
-RUN . /opt/venv/bin/activate && \
-    poetry install --only=main --no-root && \
-    rm -rf $POETRY_CACHE_DIR
+# Now copy the application source
+COPY apps/bronze-ingestion/app ./apps/bronze-ingestion/app
 
-# =============================================================================
-# Production stage: Minimal production image
-# =============================================================================
-FROM python:3.12-slim AS production
+# ---------------------------------------------------
+# Final: AWS Lambda Python base image
+# ---------------------------------------------------
+FROM public.ecr.aws/lambda/python:3.12
 
-# Set environment variables for production
-ENV PYTHONUNBUFFERED=1 \
-    PYTHONDONTWRITEBYTECODE=1 \
-    PATH="/opt/venv/bin:$PATH"
-
-# Create non-root user for security
-RUN groupadd -r appuser && useradd -r -g appuser appuser
-
-# Set work directory
-WORKDIR /app
-
-# Copy the virtual environment from dependencies stage
-COPY --from=dependencies /opt/venv /opt/venv
-
-# Copy shared libraries (maintaining editable install compatibility)
-COPY --from=dependencies /libs /libs
-
-# Copy application code
-COPY --from=dependencies /app/app ./app
-
-# Change ownership to non-root user
-RUN chown -R appuser:appuser /app
-
-# Switch to non-root user
-USER appuser
-
-# Health check
-HEALTHCHECK --interval=30s --timeout=30s --start-period=5s --retries=3 \
-    CMD python -c "import app.main; print('OK')" || exit 1
-
-# Default command
-CMD ["python", "-m", "app.main"]
-
-# Expose port (if this becomes a web service)
-# EXPOSE 8000
-
-# =============================================================================
-# Lambda stage: AWS Lambda Runtime Interface Emulator compatible
-# =============================================================================
-FROM public.ecr.aws/lambda/python:3.12 AS lambda
-
-# Set environment variables for Lambda
-ENV PYTHONUNBUFFERED=1 \
-    PYTHONDONTWRITEBYTECODE=1
-
-# Copy the virtual environment from dependencies stage
-COPY --from=dependencies /opt/venv /opt/venv
-
-# Ensure Lambda runtime can find installed packages
+# Bring in the virtualenv with all installed dependencies
+COPY --from=builder /opt/venv /opt/venv
 ENV PATH="/opt/venv/bin:$PATH" \
     PYTHONPATH="/opt/venv/lib/python3.12/site-packages:$PYTHONPATH"
 
-# Copy shared libraries (maintaining editable install compatibility)
-COPY --from=dependencies /libs /libs
+# Ensure `python` command exists for CI health checks (Lambda base guarantees python3)
+RUN ln -sf $(which python3) /usr/local/bin/python || true
 
-# Copy application code to Lambda function directory
-COPY --from=dependencies /app/app ${LAMBDA_TASK_ROOT}/app
+# Copy application code into Lambda task root so `app` is importable
+WORKDIR ${LAMBDA_TASK_ROOT}
+COPY --from=builder /src/apps/bronze-ingestion/app ./app
 
-# Set the Lambda handler
+# If Poetry installed local path dependencies in editable mode, the egg-links
+# reference /src/libs. Copy libs to that absolute path so imports resolve.
+COPY --from=builder /src/libs /src/libs
+
+# Set the Lambda handler (module.function)
 CMD ["app.lambda_handler.lambda_handler"]
+
+# For local CLI runs, you can override entrypoint/cmd, e.g.:
+#   docker run --rm -it --entrypoint python <image> -m app.main --help

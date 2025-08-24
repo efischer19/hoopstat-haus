@@ -248,7 +248,7 @@ jobs:
             # For Lambda functions, test the handler import and basic functionality
             # Use --entrypoint to override the Lambda entrypoint for health checks
             if docker run --rm --name test-$APP_NAME \
-              --entrypoint /opt/venv/bin/python \
+              --entrypoint /var/lang/bin/python \
               $ECR_REGISTRY/$ECR_REPOSITORY:$FINAL_IMAGE_TAG \
               -c 'from app.lambda_handler import lambda_handler; print("Lambda handler health check passed - handler is importable and callable") if callable(lambda_handler) else exit(1)'; then
               echo "✅ Lambda application health check passed"

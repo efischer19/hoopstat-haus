@@ -200,7 +200,7 @@ jobs:
           else
             echo "❌ Specific image not found: $ECR_REGISTRY/$ECR_REPOSITORY:$APP_NAME-$IMAGE_TAG"
             if [ "$REQUIRE_EXACT" = true ]; then
-              echo "� Failing fast because required image tag is missing. Ensure CI pushed $APP_NAME-$IMAGE_TAG before deploy."
+              echo "💥 Failing fast because required image tag is missing. Ensure CI pushed $APP_NAME-$IMAGE_TAG before deploy."
               exit 1
             fi
 

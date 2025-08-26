@@ -12,7 +12,7 @@ example-math-utils = {path = "../../libs/example-math-utils", develop = true}
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^8.4.1"
-ruff = "^0.12.9"
+ruff = "^0.12.10"
 black = "^25.1.0"
 pytest-cov = "^6.2.1"
 

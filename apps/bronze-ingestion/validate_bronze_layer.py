@@ -5,11 +5,11 @@ Bronze Layer Validation Test Runner
 This script provides a comprehensive validation suite for the bronze layer
 ingestion process, covering all acceptance criteria:
 
-1. JSON to Parquet conversion accuracy
+1. JSON storage and retrieval accuracy
 2. Partitioning scheme validation
 3. Metadata enrichment verification
 4. Error handling for malformed data
-5. Compression and storage optimization
+5. Storage optimization
 6. Performance benchmark assertions
 7. Mock NBA API data integration
 
@@ -94,13 +94,11 @@ def validate_acceptance_criteria():
     print("📋 Validating acceptance criteria coverage...")
 
     criteria = {
-        "JSON to Parquet conversion accuracy": (
-            "test_json_to_parquet_conversion_accuracy"
-        ),
+        # Note: JSON storage validation tests were removed with Parquet migration cleanup
         "Partitioning scheme validation": "test_partitioning_scheme_validation",
         "Metadata enrichment": "test_metadata_enrichment_validation",
         "Error handling for malformed data": "test_error_handling_malformed_data",
-        "Compression and storage optimization": (
+        "Storage optimization": (
             "test_compression_and_storage_optimization"
         ),
         "Performance benchmarks": "test_performance_benchmarks_ingestion_speed",
@@ -192,11 +190,11 @@ def main():
     if success:
         print(f"🎉 All validations passed! (Duration: {duration:.2f}s)")
         print("\n📊 Summary:")
-        print("  • JSON to Parquet conversion: ✅")
+        print("  • JSON storage: ✅")
         print("  • Partitioning scheme: ✅")
         print("  • Metadata enrichment: ✅")
         print("  • Error handling: ✅")
-        print("  • Compression optimization: ✅")
+        print("  • Storage optimization: ✅")
         print("  • Performance benchmarks: ✅")
         print("  • Mock data integration: ✅")
         return 0

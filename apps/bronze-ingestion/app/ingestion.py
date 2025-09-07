@@ -64,7 +64,7 @@ class DateScopedIngestion:
             # Step 3: Validate completeness and data quality
             self._validate_ingestion_completeness(games, target_date)
 
-            # Step 4: Store schedule as Parquet (if validation passed)
+            # Step 4: Store schedule as JSON (if validation passed)
             if not dry_run:
                 self._store_schedule(games, target_date)
             else:

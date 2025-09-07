@@ -64,7 +64,7 @@ class DateScopedIngestion:
             # Step 3: Validate completeness and data quality
             self._validate_ingestion_completeness(games, target_date)
 
-            # Step 4: Store schedule as Parquet (if validation passed)
+            # Step 4: Store schedule as JSON (if validation passed)
             if not dry_run:
                 self._store_schedule(games, target_date)
             else:
@@ -232,7 +232,7 @@ class DateScopedIngestion:
             return None
 
     def _store_schedule(self, games: list[dict[str, Any]], target_date: date) -> None:
-        """Store schedule data as JSON in S3."""
+        """Store schedule data as JSON in S3 with date-based partitioning."""
         try:
             # Store as JSON (no DataFrame conversion needed)
             self.s3_manager.store_json(
@@ -247,7 +247,7 @@ class DateScopedIngestion:
     def _store_box_score(
         self, box_score: dict[str, Any], game_id: str, target_date: date
     ) -> None:
-        """Store box score data as JSON in S3."""
+        """Store box score data as JSON in S3 with date-based partitioning."""
         try:
             # Store raw nested box score structure as JSON
             self.s3_manager.store_json(

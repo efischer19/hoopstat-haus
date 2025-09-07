@@ -137,11 +137,11 @@ python validate_bronze_layer.py --check-criteria
 
 The validation suite ensures:
 
-- **JSON to Parquet Conversion**: Validates data accuracy during conversion
+- **JSON Storage Format**: Validates data accuracy and format consistency for JSON storage
 - **Partitioning Scheme**: Tests year/month/day/hour partitioning implementation  
 - **Metadata Enrichment**: Verifies ingestion timestamps and source system tags
 - **Error Handling**: Tests resilience against malformed data
-- **Compression Optimization**: Validates Parquet compression and storage efficiency
+- **Storage Optimization**: Validates JSON format efficiency and human-readable structure
 - **Performance Benchmarks**: Asserts ingestion speed and throughput requirements
 - **Mock Data Integration**: Tests with realistic NBA data simulation
 
@@ -248,7 +248,7 @@ This application follows the established patterns:
 - **Click CLI**: Command-line interface with multiple commands
 - **Error Handling**: Proper error handling with structured logging
 - **Retry Logic**: Uses `tenacity` for robust API calls
-- **Data Formats**: Stores data in JSON format for efficient processing and debugging
+- **Data Formats**: Stores data in JSON format for efficient processing and debugging. JSON provides human-readable data that's easy to inspect via AWS console, integrates seamlessly with AI assistants for data analysis, and simplifies development workflows without additional dependencies.
 
 ## Dependencies
 
@@ -256,7 +256,7 @@ This application follows the established patterns:
 - `nba-api`: NBA statistics API client
 - `boto3`: AWS S3 client
 - `pandas`: Data manipulation
-- `pyarrow`: Parquet file support
+- `pyarrow`: Optional Parquet file support (legacy format support)
 - `tenacity`: Retry logic
 - `click`: CLI framework
 - `jsonschema`: JSON schema validation

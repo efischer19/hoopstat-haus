@@ -101,7 +101,10 @@ class BronzeS3Manager:
 
     def store_json(self, data: dict, entity: str, target_date: date) -> str:
         """
-        Store dictionary as JSON in S3 with new key structure.
+        Store dictionary as JSON in S3 with date-based partitioning.
+
+        Uses human-readable JSON format for efficient debugging and data inspection.
+        Follows the bronze layer key structure for consistent data organization.
 
         Args:
             data: Dictionary to store as JSON

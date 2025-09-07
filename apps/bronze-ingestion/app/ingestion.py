@@ -5,7 +5,6 @@ Date-scoped ingestion logic for bronze layer.
 from datetime import date
 from typing import Any
 
-import pandas as pd
 from hoopstat_nba_api import NBAClient
 from hoopstat_observability import get_logger
 from tenacity import retry, stop_after_attempt, wait_exponential
@@ -248,47 +247,19 @@ class DateScopedIngestion:
     def _store_box_score(
         self, box_score: dict[str, Any], game_id: str, target_date: date
     ) -> None:
-        """Store box score data as Parquet in S3."""
+        """Store box score data as JSON in S3."""
         try:
-            # Flatten the nested box score structure for Parquet storage
-            flattened_data = self._flatten_box_score(box_score)
-
-            # Convert to DataFrame
-            df = pd.DataFrame([flattened_data])
-
-            # Store as Parquet with game_id in the key
-            self.s3_manager.store_parquet(
-                df,
+            # Store raw nested box score structure as JSON
+            self.s3_manager.store_json(
+                box_score,
                 entity="box_scores",
                 target_date=target_date,
-                partition_suffix=f"/{game_id}",
             )
             logger.debug(f"Stored box score for game {game_id}")
 
         except Exception as e:
             logger.error(f"Failed to store box score for game {game_id}: {e}")
             raise
-
-    def _flatten_box_score(self, box_score: dict[str, Any]) -> dict[str, Any]:
-        """Flatten nested box score structure for Parquet storage."""
-        flattened = {
-            "game_id": box_score.get("game_id"),
-            "fetch_date": box_score.get("fetch_date"),
-        }
-
-        # Extract key statistics from nested structure
-        # This is a simplified flattening - in production would need more
-        # sophisticated handling
-        if "resultSets" in box_score:
-            result_sets = box_score["resultSets"]
-            if result_sets and len(result_sets) > 0:
-                first_result = result_sets[0]
-                if "rowSet" in first_result and first_result["rowSet"]:
-                    # Add summary stats from first row of first result set
-                    flattened["result_set_name"] = first_result.get("name", "")
-                    flattened["row_count"] = len(first_result["rowSet"])
-
-        return flattened
 
     def _validate_ingestion_completeness(
         self, games: list[dict[str, Any]], target_date: date

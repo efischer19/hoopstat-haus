@@ -535,3 +535,128 @@ class TestBronzeLayerMockDataIntegration:
 
             # The error handling worked correctly - invalid data was quarantined
             # and processing continued gracefully without crashing
+
+    @mock_aws
+    def test_box_score_json_storage_integration(self):
+        """Test that box score data is correctly stored as JSON and is readable."""
+        import json
+
+        import boto3
+
+        # Create realistic box score data in NBA API format
+        test_box_score = {
+            "game_id": "0022300500",
+            "fetch_date": "2023-12-25T15:30:00Z",
+            "resultSets": [
+                {
+                    "name": "GameSummary",
+                    "headers": [
+                        "GAME_ID",
+                        "HOME_TEAM_ID",
+                        "VISITOR_TEAM_ID",
+                        "GAME_DATE_EST",
+                    ],
+                    "rowSet": [
+                        ["0022300500", 1610612747, 1610612738, "2023-12-25T00:00:00"]
+                    ],
+                },
+                {
+                    "name": "PlayerStats",
+                    "headers": [
+                        "PLAYER_ID",
+                        "PLAYER_NAME",
+                        "TEAM_ID",
+                        "PTS",
+                        "REB",
+                        "AST",
+                    ],
+                    "rowSet": [
+                        ["2544", "LeBron James", 1610612747, 25, 8, 6],
+                        ["201939", "Stephen Curry", 1610612738, 30, 5, 12],
+                    ],
+                },
+                {
+                    "name": "TeamStats",
+                    "headers": ["TEAM_ID", "TEAM_NAME", "PTS", "FGM", "FGA"],
+                    "rowSet": [
+                        [1610612747, "Los Angeles Lakers", 110, 42, 88],
+                        [1610612738, "Golden State Warriors", 108, 40, 85],
+                    ],
+                },
+            ],
+        }
+
+        test_games = [
+            {
+                "GAME_ID": "0022300500",
+                "GAME_DATE": "2023-12-25",
+                "TEAM_ID": 1610612747,
+                "TEAM_ABBREVIATION": "LAL",
+                "TEAM_NAME": "Los Angeles Lakers",
+                "MATCHUP": "LAL vs GSW",
+                "PTS": 110,
+            }
+        ]
+
+        # Set up S3 and ingestion
+        s3_client = boto3.client("s3", region_name="us-east-1")
+        bucket_name = "test-bronze-bucket"
+        s3_client.create_bucket(Bucket=bucket_name)
+
+        config = BronzeIngestionConfig(
+            bronze_bucket=bucket_name, aws_region="us-east-1"
+        )
+
+        with patch("app.ingestion.NBAClient") as mock_nba_client:
+            mock_client_instance = Mock()
+            mock_client_instance.get_games_for_date.return_value = test_games
+            mock_client_instance.get_box_score.return_value = test_box_score
+            mock_nba_client.return_value = mock_client_instance
+
+            ingestion = DateScopedIngestion(config)
+
+            # Run ingestion
+            target_date = date(2023, 12, 25)
+            result = ingestion.run(target_date, dry_run=False)
+
+            # Verify ingestion succeeded
+            assert result is True
+
+            # Verify box score data was stored as JSON
+            box_score_key = "raw/box_scores/date=2023-12-25/data.json"
+            response = s3_client.get_object(Bucket=bucket_name, Key=box_score_key)
+            stored_json = response["Body"].read().decode("utf-8")
+
+            # Parse and validate the JSON
+            stored_data = json.loads(stored_json)
+
+            # Verify the original nested structure is preserved
+            assert stored_data["game_id"] == "0022300500"
+            assert stored_data["fetch_date"] == "2023-12-25T15:30:00Z"
+            assert "resultSets" in stored_data
+            assert len(stored_data["resultSets"]) == 3
+
+            # Verify specific result sets are preserved
+            result_sets = stored_data["resultSets"]
+            result_set_names = [rs["name"] for rs in result_sets]
+            assert "GameSummary" in result_set_names
+            assert "PlayerStats" in result_set_names
+            assert "TeamStats" in result_set_names
+
+            # Verify nested data structure integrity
+            game_summary = next(rs for rs in result_sets if rs["name"] == "GameSummary")
+            assert "headers" in game_summary
+            assert "rowSet" in game_summary
+            assert game_summary["rowSet"][0][0] == "0022300500"  # Game ID
+
+            player_stats = next(rs for rs in result_sets if rs["name"] == "PlayerStats")
+            assert len(player_stats["rowSet"]) == 2  # Two players
+            assert player_stats["rowSet"][0][1] == "LeBron James"  # Player name
+            assert player_stats["rowSet"][0][4] == 25  # Points
+
+            # Verify S3 metadata
+            metadata = response["Metadata"]
+            assert metadata["entity"] == "box_scores"
+            assert metadata["date"] == "2023-12-25"
+            assert metadata["format"] == "json"
+            assert response["ContentType"] == "application/json"

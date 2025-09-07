@@ -1,13 +1,15 @@
 # Plan: MCP Server Architecture for AI-Native Data Access
 
-**Status:** Planning  
-**Date:** 2025-01-18  
+> **📝 NOTE:** This plan is being updated for the simplified roadmap (September 2025). References to Parquet storage will be updated to JSON format per ADR-025. Core MCP architecture remains valid.
+
+**Status:** Planning - Updated for MVP  
+**Date:** 2025-01-18 (Updated 2025-09-07)  
 **Author:** AI Contributor  
 **Scope:** Design and specify the Model Context Protocol (MCP) server architecture for exposing Gold layer basketball data to AI agents
 
 ## Executive Summary
 
-This plan outlines the technical architecture for implementing a Model Context Protocol (MCP) server that will serve as the AI-Native Access Layer for the Hoopstat Haus project. The MCP server will expose our processed basketball statistics stored as Parquet files in the Gold layer on S3, making this data accessible to AI agents and Large Language Models through a standardized protocol. This approach aligns with AWS best practices for [implementing conversational AI for S3 tables using Model Context Protocol](https://aws.amazon.com/blogs/storage/implementing-conversational-ai-for-s3-tables-using-model-context-protocol-mcp/).
+This plan outlines the technical architecture for implementing a Model Context Protocol (MCP) server that will serve as the AI-Native Access Layer for the Hoopstat Haus project. The MCP server will expose our processed basketball statistics stored as JSON files in the Gold layer on S3, making this data accessible to AI agents and Large Language Models through a standardized protocol. This approach aligns with AWS best practices for implementing conversational AI for S3 data.
 
 The solution will be implemented as a serverless Python application running on AWS Lambda, fronted by Amazon API Gateway, and secured with API key authentication. The initial implementation will focus on providing player season statistics, with the architecture designed to easily accommodate additional data endpoints as the system matures.
 
@@ -15,7 +17,7 @@ This MCP server represents the core value proposition of the Hoopstat Haus proje
 
 ## High-Level Feature Idea
 
-Create a serverless MCP server that exposes basketball statistics from our Gold layer (Parquet files on S3) to AI agents through a standardized protocol. The server will handle authentication, data querying, and response formatting according to MCP specifications, enabling AI agents to seamlessly access and analyze basketball data.
+Create a serverless MCP server that exposes basketball statistics from our Gold layer (JSON files on S3) to AI agents through a standardized protocol. The server will handle authentication, data querying, and response formatting according to MCP specifications, enabling AI agents to seamlessly access and analyze basketball data.
 
 ## Goals & Business Value
 

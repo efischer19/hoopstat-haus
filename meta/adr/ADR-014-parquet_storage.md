@@ -1,7 +1,9 @@
 ---
 title: "ADR-014: Data Storage Format for Intermediate Pipeline Artifacts"
-status: "Accepted"
+status: "Superseded"
 date: "2025-07-16"
+superseded_by: "ADR-025"
+superseded_date: "2025-09-07"
 tags:
   - "data-pipeline"
   - "data-storage"

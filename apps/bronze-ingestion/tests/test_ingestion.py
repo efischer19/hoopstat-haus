@@ -55,7 +55,6 @@ class TestDateScopedIngestion:
         # Assert success with early exit
         assert result is True
         mock_client_instance.get_games_for_date.assert_called_once_with(target_date)
-        mock_s3_instance.store_parquet.assert_not_called()
         mock_s3_instance.store_json.assert_not_called()
 
     @patch("app.ingestion.DataValidator")
@@ -140,7 +139,6 @@ class TestDateScopedIngestion:
         # Assert success but no S3 writes
         assert result is True
         mock_client_instance.get_games_for_date.assert_called_once_with(target_date)
-        mock_s3_instance.store_parquet.assert_not_called()
         mock_s3_instance.store_json.assert_not_called()
 
     @patch("app.ingestion.DataValidator")
@@ -220,7 +218,6 @@ class TestDateScopedIngestion:
 
         # Should store both schedule and box score as JSON
         assert mock_s3_instance.store_json.call_count == 2
-        assert mock_s3_instance.store_parquet.call_count == 0
 
         # Verify schedule storage call (JSON)
         schedule_call = mock_s3_instance.store_json.call_args_list[0]
@@ -270,7 +267,6 @@ class TestDateScopedIngestion:
 
         # Assert failure
         assert result is False
-        mock_s3_instance.store_parquet.assert_not_called()
 
     @patch("app.ingestion.DataValidator")
     @patch("app.ingestion.DataQuarantine")

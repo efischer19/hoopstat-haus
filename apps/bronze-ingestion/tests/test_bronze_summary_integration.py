@@ -103,7 +103,7 @@ class TestBronzeSummaryIntegration:
         ingestion.quarantine.should_quarantine.return_value = False
 
         # Mock S3 operations
-        ingestion.s3_manager.store_parquet.return_value = "test/key"
+        ingestion.s3_manager.store_json.return_value = "test/key"
 
         # Mock summary manager
         mock_summary_manager = ingestion.summary_manager
@@ -154,7 +154,7 @@ class TestBronzeSummaryIntegration:
         ingestion.quarantine.should_quarantine.return_value = False
 
         # Mock S3 operations
-        ingestion.s3_manager.store_parquet.return_value = "test/key"
+        ingestion.s3_manager.store_json.return_value = "test/key"
 
         # Mock summary manager
         mock_summary_manager = ingestion.summary_manager

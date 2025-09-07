@@ -1,31 +1,18 @@
 """
-S3 manager for bronze layer with ADR-014 compliant key structure.
+S3 manager for bronze layer with JSON storage (ADR-025).
 """
 
-import io
 import json
 from datetime import date
 
 import boto3
-import pandas as pd
 from hoopstat_observability import get_logger
-
-# Make pyarrow optional for backward compatibility
-try:
-    import pyarrow as pa
-    import pyarrow.parquet as pq
-
-    PYARROW_AVAILABLE = True
-except ImportError:
-    PYARROW_AVAILABLE = False
-    pa = None
-    pq = None
 
 logger = get_logger(__name__)
 
 
 class BronzeS3Manager:
-    """S3 manager for bronze layer with new key structure."""
+    """S3 manager for bronze layer with JSON storage (ADR-025)."""
 
     def __init__(self, bucket_name: str, region_name: str = "us-east-1"):
         """Initialize S3 manager."""
@@ -39,69 +26,9 @@ class BronzeS3Manager:
             logger.error(f"Failed to initialize S3 client: {e}")
             raise
 
-    def store_parquet(
-        self,
-        df: pd.DataFrame,
-        entity: str,
-        target_date: date,
-        partition_suffix: str = "",
-    ) -> str:
-        """
-        Store DataFrame as Parquet in S3 with new key structure.
-
-        Args:
-            df: DataFrame to store
-            entity: Entity type (schedule, box_scores, etc.)
-            target_date: Date for partitioning
-            partition_suffix: Optional suffix for the key (e.g., "/game_id")
-
-        Returns:
-            S3 key where data was stored
-
-        Raises:
-            ImportError: If pyarrow is not available
-        """
-        if not PYARROW_AVAILABLE:
-            raise ImportError(
-                "pyarrow is required for Parquet operations but is not installed. "
-                "Install it with: pip install pyarrow"
-            )
-
-        # New key structure: s3://<bronze-bucket>/raw/<entity>/date=YYYY-MM-DD/data.parquet
-        date_str = target_date.strftime("%Y-%m-%d")
-        key = f"raw/{entity}/date={date_str}{partition_suffix}/data.parquet"
-
-        try:
-            # Convert DataFrame to Parquet bytes
-            buffer = io.BytesIO()
-            table = pa.Table.from_pandas(df)
-            pq.write_table(table, buffer, compression="snappy")
-            parquet_bytes = buffer.getvalue()
-
-            # Upload to S3
-            self.s3_client.put_object(
-                Bucket=self.bucket_name,
-                Key=key,
-                Body=parquet_bytes,
-                ContentType="application/octet-stream",
-                Metadata={
-                    "entity": entity,
-                    "date": date_str,
-                    "format": "parquet",
-                    "rows": str(len(df)),
-                },
-            )
-
-            logger.info(f"Stored {len(df)} rows to s3://{self.bucket_name}/{key}")
-            return key
-
-        except Exception as e:
-            logger.error(f"Failed to store data to S3: {e}")
-            raise
-
     def store_json(self, data: dict, entity: str, target_date: date) -> str:
         """
-        Store dictionary as JSON in S3 with new key structure.
+        Store dictionary as JSON in S3 following ADR-025 JSON storage format.
 
         Args:
             data: Dictionary to store as JSON

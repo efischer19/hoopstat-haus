@@ -6,7 +6,7 @@ from unittest.mock import Mock, patch
 import pandas as pd
 import pytest
 
-from app.s3_manager import BronzeS3Manager
+from app.s3_manager import PYARROW_AVAILABLE, BronzeS3Manager
 
 
 class TestBronzeS3Manager:
@@ -24,6 +24,7 @@ class TestBronzeS3Manager:
         assert manager.region_name == "us-west-2"
         mock_boto_client.assert_called_once_with("s3", region_name="us-west-2")
 
+    @pytest.mark.skipif(not PYARROW_AVAILABLE, reason="pyarrow not available")
     @patch("app.s3_manager.boto3.client")
     def test_store_parquet(self, mock_boto_client):
         """Test storing DataFrame as Parquet."""
@@ -61,6 +62,7 @@ class TestBronzeS3Manager:
         assert metadata["format"] == "parquet"
         assert metadata["rows"] == "2"
 
+    @pytest.mark.skipif(not PYARROW_AVAILABLE, reason="pyarrow not available")
     @patch("app.s3_manager.boto3.client")
     def test_store_parquet_with_partition_suffix(self, mock_boto_client):
         """Test storing DataFrame with partition suffix."""
@@ -145,6 +147,7 @@ class TestBronzeS3Manager:
         # Verify the calls
         assert mock_client.list_objects_v2.call_count == 4
 
+    @pytest.mark.skipif(not PYARROW_AVAILABLE, reason="pyarrow not available")
     @patch("app.s3_manager.boto3.client")
     def test_store_parquet_s3_error(self, mock_boto_client):
         """Test handling of S3 errors during storage."""

@@ -8,3 +8,6 @@ contact_links:
   - name: "📖 Review Project Documentation"
     url: https://github.com/efischer19/hoopstat-haus/tree/main/meta
     about: "Check our development philosophy, ADRs, and ethics policies first."
+  - name: "📖 Project Roadmap"
+    url: https://github.com/efischer19/hoopstat-haus/blob/main/meta/SIMPLIFIED_ROADMAP.md
+    about: "Check our current MVP focus and development priorities."

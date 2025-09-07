@@ -1,5 +1,7 @@
 # Bronze Layer Ingestion: Daily Data Refresh Pipeline
 
+> **⚠️ SUPERSEDED:** This plan has been replaced by `bronze-layer-ingestion-simplified.md` as part of the September 2025 scope reduction. The original comprehensive approach below is preserved for reference but not currently being implemented.
+
 ## Executive Summary
 
 This plan defines the implementation strategy for a daily data ingestion pipeline that refreshes the Bronze layer of our Medallion Architecture with fresh NBA statistics. The pipeline will run automatically at 4-5 AM ET daily to ensure all previous day's games are completed and data is available, providing the foundation for fresh stats every day.

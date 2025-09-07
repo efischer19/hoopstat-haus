@@ -13,7 +13,32 @@ This application ingests NBA data and provides the foundation for downstream dat
 - Retry logic for reliable ingestion
 - Comprehensive observability and monitoring
 
-## Installation
+## Deployment Options
+
+### Option 1: Local Execution via Docker (Recommended)
+
+For environments where Lambda execution may be blocked (e.g., NBA API blocking AWS IPs), you can run bronze-ingestion locally using the same Docker image deployed to Lambda.
+
+**Prerequisites:**
+- Docker installed and running
+- AWS CLI configured with appropriate credentials
+- Access to the ECR repository
+
+**Setup:**
+```bash
+# One-time setup (creates execution environment)
+./setup-local.sh [optional_target_directory]
+
+# Follow the instructions to add to crontab for daily 4:30 AM execution
+```
+
+**How it works:**
+- Uses the same ECR Docker image built by CI/CD pipeline
+- Pulls latest image automatically on each run
+- Stores data to same S3 buckets as Lambda execution
+- Comprehensive logging in `[target_directory]/logs/`
+
+### Option 2: Local Development with Poetry
 
 This application uses Poetry for dependency management. From the app directory:
 
@@ -169,6 +194,52 @@ docker run bronze-ingestion:latest poetry run python -m app.main status
 docker run -it bronze-ingestion:dev bash
 ```
 
+## Local Execution Troubleshooting
+
+### Common Issues
+
+**Docker not running:**
+```bash
+# Start Docker (macOS/Windows)
+open /Applications/Docker.app
+
+# Check Docker status
+docker info
+```
+
+**AWS credentials not configured:**
+```bash
+# Configure AWS CLI
+aws configure
+
+# Verify credentials
+aws sts get-caller-identity
+```
+
+**ECR access denied:**
+```bash
+# Re-authenticate with ECR
+aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin $(aws sts get-caller-identity --query Account --output text).dkr.ecr.us-east-1.amazonaws.com
+```
+
+**Cron job not running:**
+```bash
+# Check cron service is running
+sudo service cron status
+
+# View system cron logs (location varies by system)
+sudo tail -f /var/log/cron
+
+# Test manual execution
+cd ~/bronze-ingestion-local && ./run-daily.sh
+```
+
+### Monitoring
+
+- **Daily logs:** `[target_directory]/logs/bronze-ingestion-YYYYMMDD.log`
+- **Cron logs:** System default cron logging location
+- **Test execution:** Run the daily script manually to verify functionality
+
 ## Architecture
 
 This application follows the established patterns:
@@ -177,7 +248,7 @@ This application follows the established patterns:
 - **Click CLI**: Command-line interface with multiple commands
 - **Error Handling**: Proper error handling with structured logging
 - **Retry Logic**: Uses `tenacity` for robust API calls
-- **Data Formats**: Stores data in Parquet format for efficient processing
+- **Data Formats**: Stores data in JSON format for efficient processing and debugging
 
 ## Dependencies
 

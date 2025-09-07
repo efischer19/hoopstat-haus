@@ -3,13 +3,23 @@ S3 manager for bronze layer with ADR-014 compliant key structure.
 """
 
 import io
+import json
 from datetime import date
 
 import boto3
 import pandas as pd
-import pyarrow as pa
-import pyarrow.parquet as pq
 from hoopstat_observability import get_logger
+
+# Make pyarrow optional for backward compatibility
+try:
+    import pyarrow as pa
+    import pyarrow.parquet as pq
+
+    PYARROW_AVAILABLE = True
+except ImportError:
+    PYARROW_AVAILABLE = False
+    pa = None
+    pq = None
 
 logger = get_logger(__name__)
 
@@ -47,7 +57,16 @@ class BronzeS3Manager:
 
         Returns:
             S3 key where data was stored
+
+        Raises:
+            ImportError: If pyarrow is not available
         """
+        if not PYARROW_AVAILABLE:
+            raise ImportError(
+                "pyarrow is required for Parquet operations but is not installed. "
+                "Install it with: pip install pyarrow"
+            )
+
         # New key structure: s3://<bronze-bucket>/raw/<entity>/date=YYYY-MM-DD/data.parquet
         date_str = target_date.strftime("%Y-%m-%d")
         key = f"raw/{entity}/date={date_str}{partition_suffix}/data.parquet"
@@ -78,6 +97,47 @@ class BronzeS3Manager:
 
         except Exception as e:
             logger.error(f"Failed to store data to S3: {e}")
+            raise
+
+    def store_json(self, data: dict, entity: str, target_date: date) -> str:
+        """
+        Store dictionary as JSON in S3 with new key structure.
+
+        Args:
+            data: Dictionary to store as JSON
+            entity: Entity type (schedule, box_scores, etc.)
+            target_date: Date for partitioning
+
+        Returns:
+            S3 key where data was stored
+        """
+        # Key structure: s3://<bronze-bucket>/raw/<entity>/date=YYYY-MM-DD/data.json
+        date_str = target_date.strftime("%Y-%m-%d")
+        key = f"raw/{entity}/date={date_str}/data.json"
+
+        try:
+            # Convert dictionary to JSON bytes
+            json_str = json.dumps(data, indent=2)
+            json_bytes = json_str.encode("utf-8")
+
+            # Upload to S3
+            self.s3_client.put_object(
+                Bucket=self.bucket_name,
+                Key=key,
+                Body=json_bytes,
+                ContentType="application/json",
+                Metadata={
+                    "entity": entity,
+                    "date": date_str,
+                    "format": "json",
+                },
+            )
+
+            logger.info(f"Stored JSON data to s3://{self.bucket_name}/{key}")
+            return key
+
+        except Exception as e:
+            logger.error(f"Failed to store JSON data to S3: {e}")
             raise
 
     def check_exists(self, entity: str, target_date: date) -> bool:

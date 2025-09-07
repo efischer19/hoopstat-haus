@@ -10,8 +10,17 @@ from datetime import date, datetime
 from io import BytesIO
 from unittest.mock import Mock, patch
 
-import pyarrow.parquet as pq
+import pytest
 from moto import mock_aws
+
+# Make pyarrow optional for backward compatibility
+try:
+    import pyarrow.parquet as pq
+
+    PYARROW_AVAILABLE = True
+except ImportError:
+    pq = None
+    PYARROW_AVAILABLE = False
 
 from app.config import BronzeIngestionConfig
 from app.ingestion import DateScopedIngestion
@@ -62,6 +71,7 @@ class TestBronzeLayerMockDataIntegration:
         }
 
     @mock_aws
+    @pytest.mark.skipif(not PYARROW_AVAILABLE, reason="pyarrow not available")
     def test_mock_data_integration_flow(self):
         """Test complete flow using mock data generation."""
         # Try to import mock data (may not be available in CI)
@@ -164,6 +174,7 @@ class TestBronzeLayerMockDataIntegration:
             assert "TEAM_NAME" in schedule_data.columns
 
     @mock_aws
+    @pytest.mark.skipif(not PYARROW_AVAILABLE, reason="pyarrow not available")
     def test_large_dataset_performance_validation(self):
         """Test performance with larger mock dataset."""
 
@@ -237,6 +248,7 @@ class TestBronzeLayerMockDataIntegration:
             assert ingestion_time < 15.0
 
     @mock_aws
+    @pytest.mark.skipif(not PYARROW_AVAILABLE, reason="pyarrow not available")
     def test_realistic_data_validation(self):
         """Test with realistic data shapes and types."""
         # Create realistic NBA game data that conforms to validation schema

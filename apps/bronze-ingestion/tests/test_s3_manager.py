@@ -6,7 +6,7 @@ from unittest.mock import Mock, patch
 import pandas as pd
 import pytest
 
-from app.s3_manager import BronzeS3Manager
+from app.s3_manager import PYARROW_AVAILABLE, BronzeS3Manager
 
 
 class TestBronzeS3Manager:
@@ -24,6 +24,7 @@ class TestBronzeS3Manager:
         assert manager.region_name == "us-west-2"
         mock_boto_client.assert_called_once_with("s3", region_name="us-west-2")
 
+    @pytest.mark.skipif(not PYARROW_AVAILABLE, reason="pyarrow not available")
     @patch("app.s3_manager.boto3.client")
     def test_store_parquet(self, mock_boto_client):
         """Test storing DataFrame as Parquet."""
@@ -61,6 +62,7 @@ class TestBronzeS3Manager:
         assert metadata["format"] == "parquet"
         assert metadata["rows"] == "2"
 
+    @pytest.mark.skipif(not PYARROW_AVAILABLE, reason="pyarrow not available")
     @patch("app.s3_manager.boto3.client")
     def test_store_parquet_with_partition_suffix(self, mock_boto_client):
         """Test storing DataFrame with partition suffix."""
@@ -145,6 +147,7 @@ class TestBronzeS3Manager:
         # Verify the calls
         assert mock_client.list_objects_v2.call_count == 4
 
+    @pytest.mark.skipif(not PYARROW_AVAILABLE, reason="pyarrow not available")
     @patch("app.s3_manager.boto3.client")
     def test_store_parquet_s3_error(self, mock_boto_client):
         """Test handling of S3 errors during storage."""
@@ -159,4 +162,87 @@ class TestBronzeS3Manager:
 
         # Should raise exception
         with pytest.raises(Exception, match="S3 Error"):
+            manager.store_parquet(df, "test", target_date)
+
+    @patch("app.s3_manager.boto3.client")
+    def test_store_json(self, mock_boto_client):
+        """Test storing dictionary as JSON."""
+        mock_client = Mock()
+        mock_boto_client.return_value = mock_client
+
+        manager = BronzeS3Manager("test-bucket")
+
+        # Create test data
+        test_data = {
+            "game_id": "12345",
+            "teams": ["LAL", "GSW"],
+            "scores": [100, 95],
+            "metadata": {"venue": "Staples Center", "attendance": 18997},
+        }
+
+        target_date = date(2023, 12, 25)
+
+        # Store the JSON data
+        key = manager.store_json(test_data, "games", target_date)
+
+        # Verify the key structure
+        expected_key = "raw/games/date=2023-12-25/data.json"
+        assert key == expected_key
+
+        # Verify S3 put_object was called
+        mock_client.put_object.assert_called_once()
+        call_args = mock_client.put_object.call_args
+
+        assert call_args[1]["Bucket"] == "test-bucket"
+        assert call_args[1]["Key"] == expected_key
+        assert call_args[1]["ContentType"] == "application/json"
+
+        # Verify metadata
+        metadata = call_args[1]["Metadata"]
+        assert metadata["entity"] == "games"
+        assert metadata["date"] == "2023-12-25"
+        assert metadata["format"] == "json"
+
+        # Verify the JSON content
+        body = call_args[1]["Body"]
+        # Decode bytes and parse JSON to verify it's valid
+        import json
+
+        parsed_data = json.loads(body.decode("utf-8"))
+        assert parsed_data["game_id"] == "12345"
+        assert parsed_data["teams"] == ["LAL", "GSW"]
+        assert parsed_data["metadata"]["venue"] == "Staples Center"
+
+    @patch("app.s3_manager.boto3.client")
+    def test_store_json_s3_error(self, mock_boto_client):
+        """Test handling of S3 errors during JSON storage."""
+        mock_client = Mock()
+        mock_client.put_object.side_effect = Exception("S3 JSON Error")
+        mock_boto_client.return_value = mock_client
+
+        manager = BronzeS3Manager("test-bucket")
+
+        test_data = {"test": "data"}
+        target_date = date(2023, 12, 25)
+
+        # Should raise exception
+        with pytest.raises(Exception, match="S3 JSON Error"):
+            manager.store_json(test_data, "test", target_date)
+
+    @patch("app.s3_manager.PYARROW_AVAILABLE", False)
+    @patch("app.s3_manager.boto3.client")
+    def test_store_parquet_without_pyarrow(self, mock_boto_client):
+        """Test that store_parquet raises ImportError when pyarrow is not available."""
+        mock_client = Mock()
+        mock_boto_client.return_value = mock_client
+
+        manager = BronzeS3Manager("test-bucket")
+
+        df = pd.DataFrame({"test": [1, 2, 3]})
+        target_date = date(2023, 12, 25)
+
+        # Should raise ImportError
+        with pytest.raises(
+            ImportError, match="pyarrow is required for Parquet operations"
+        ):
             manager.store_parquet(df, "test", target_date)

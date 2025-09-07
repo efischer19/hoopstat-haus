@@ -18,9 +18,17 @@ from io import BytesIO
 from unittest.mock import Mock, patch
 
 import pandas as pd
-import pyarrow.parquet as pq
 import pytest
 from moto import mock_aws
+
+# Make pyarrow optional for backward compatibility
+try:
+    import pyarrow.parquet as pq
+
+    PYARROW_AVAILABLE = True
+except ImportError:
+    pq = None
+    PYARROW_AVAILABLE = False
 
 from app.config import BronzeIngestionConfig
 from app.ingestion import DateScopedIngestion
@@ -130,6 +138,7 @@ class TestBronzeLayerValidation:
         }
 
     @mock_aws
+    @pytest.mark.skipif(not PYARROW_AVAILABLE, reason="pyarrow not available")
     def test_json_to_parquet_conversion_accuracy(self, mock_nba_api_response):
         """Test that JSON to Parquet conversion maintains data accuracy."""
         import boto3
@@ -172,6 +181,7 @@ class TestBronzeLayerValidation:
         assert retrieved_df["HOME_SCORE"].dtype == original_df["HOME_SCORE"].dtype
 
     @mock_aws
+    @pytest.mark.skipif(not PYARROW_AVAILABLE, reason="pyarrow not available")
     def test_partitioning_scheme_validation(self):
         """Test the partitioning scheme implementation (year/month/day/hour)."""
         import boto3
@@ -222,6 +232,7 @@ class TestBronzeLayerValidation:
             assert s3_manager.check_exists("games", test_date)
 
     @mock_aws
+    @pytest.mark.skipif(not PYARROW_AVAILABLE, reason="pyarrow not available")
     def test_metadata_enrichment_validation(self):
         """Test metadata enrichment with ingestion timestamps and source system tags."""
         import boto3
@@ -328,6 +339,7 @@ class TestBronzeLayerValidation:
             assert result is True
 
     @mock_aws
+    @pytest.mark.skipif(not PYARROW_AVAILABLE, reason="pyarrow not available")
     def test_compression_and_storage_optimization(self):
         """Test compression and storage optimization validation."""
         import boto3
@@ -380,6 +392,7 @@ class TestBronzeLayerValidation:
         assert compression_ratio < 1.0  # Should be compressed
 
     @mock_aws
+    @pytest.mark.skipif(not PYARROW_AVAILABLE, reason="pyarrow not available")
     def test_performance_benchmarks_ingestion_speed(self):
         """Test performance benchmarks for ingestion speed."""
         import boto3
@@ -458,6 +471,7 @@ class TestBronzeLayerValidation:
             assert s3_manager.check_exists("box_scores", target_date)
 
     @mock_aws
+    @pytest.mark.skipif(not PYARROW_AVAILABLE, reason="pyarrow not available")
     def test_end_to_end_ingestion_with_mock_data(self):
         """Test complete end-to-end ingestion flow with mock NBA API data."""
         import boto3
@@ -599,6 +613,7 @@ class TestBronzeLayerValidation:
             assert test_data[col].dtype == test_data_2[col].dtype
 
     @mock_aws
+    @pytest.mark.skipif(not PYARROW_AVAILABLE, reason="pyarrow not available")
     def test_incremental_ingestion_detection(self):
         """Test detection and handling of incremental ingestion scenarios."""
         import boto3

@@ -109,11 +109,11 @@ poetry run pytest --cov=app
 # Run specific test file
 poetry run pytest tests/test_main.py
 
-# Run bronze layer validation tests
-poetry run pytest tests/test_bronze_layer_validation.py
+# Run integration tests
+poetry run pytest tests/test_bronze_summary_integration.py
 
-# Run integration tests with mock data
-poetry run pytest tests/test_mock_data_integration.py
+# Run S3 manager tests
+poetry run pytest tests/test_s3_manager.py
 ```
 
 ### Bronze Layer Validation
@@ -138,12 +138,12 @@ python validate_bronze_layer.py --check-criteria
 The validation suite ensures:
 
 - **JSON Storage Format**: Validates data accuracy and format consistency for JSON storage
-- **Partitioning Scheme**: Tests year/month/day/hour partitioning implementation  
-- **Metadata Enrichment**: Verifies ingestion timestamps and source system tags
-- **Error Handling**: Tests resilience against malformed data
-- **Storage Optimization**: Validates JSON format efficiency and human-readable structure
-- **Performance Benchmarks**: Asserts ingestion speed and throughput requirements
-- **Mock Data Integration**: Tests with realistic NBA data simulation
+- **S3 Operations**: Tests bucket management, key generation, and data retrieval
+- **Data Validation**: Verifies JSON schema validation and quality checks  
+- **Error Handling**: Tests resilience against malformed data and quarantine functionality
+- **Ingestion Pipeline**: End-to-end validation of the complete ingestion workflow
+- **Bronze Summary Generation**: Tests summary creation and metadata enrichment
+- **Integration Testing**: Comprehensive integration tests across all components
 
 ### Code Quality
 

@@ -233,14 +233,11 @@ class DateScopedIngestion:
             return None
 
     def _store_schedule(self, games: list[dict[str, Any]], target_date: date) -> None:
-        """Store schedule data as Parquet in S3."""
+        """Store schedule data as JSON in S3."""
         try:
-            # Convert to DataFrame
-            df = pd.DataFrame(games)
-
-            # Store as Parquet
-            self.s3_manager.store_parquet(
-                df, entity="schedule", target_date=target_date
+            # Store as JSON (no DataFrame conversion needed)
+            self.s3_manager.store_json(
+                games, entity="schedule", target_date=target_date
             )
             logger.info(f"Stored schedule data for {target_date}")
 

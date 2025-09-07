@@ -652,7 +652,7 @@ class TestBronzeLayerMockDataIntegration:
             player_stats = next(rs for rs in result_sets if rs["name"] == "PlayerStats")
             assert len(player_stats["rowSet"]) == 2  # Two players
             assert player_stats["rowSet"][0][1] == "LeBron James"  # Player name
-            assert player_stats["rowSet"][0][4] == 25  # Points
+            assert player_stats["rowSet"][0][3] == 25  # Points (index 3, not 4)
 
             # Verify S3 metadata
             metadata = response["Metadata"]

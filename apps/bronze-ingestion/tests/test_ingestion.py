@@ -56,6 +56,7 @@ class TestDateScopedIngestion:
         assert result is True
         mock_client_instance.get_games_for_date.assert_called_once_with(target_date)
         mock_s3_instance.store_parquet.assert_not_called()
+        mock_s3_instance.store_json.assert_not_called()
 
     @patch("app.ingestion.DataValidator")
     @patch("app.ingestion.DataQuarantine")
@@ -140,6 +141,7 @@ class TestDateScopedIngestion:
         assert result is True
         mock_client_instance.get_games_for_date.assert_called_once_with(target_date)
         mock_s3_instance.store_parquet.assert_not_called()
+        mock_s3_instance.store_json.assert_not_called()
 
     @patch("app.ingestion.DataValidator")
     @patch("app.ingestion.DataQuarantine")
@@ -216,77 +218,19 @@ class TestDateScopedIngestion:
         assert result is True
         mock_client_instance.get_games_for_date.assert_called_once_with(target_date)
 
-        # Should store schedule as JSON and box score as Parquet
-        assert mock_s3_instance.store_json.call_count == 1
-        assert mock_s3_instance.store_parquet.call_count == 1
+        # Should store both schedule and box score as JSON
+        assert mock_s3_instance.store_json.call_count == 2
+        assert mock_s3_instance.store_parquet.call_count == 0
 
         # Verify schedule storage call (JSON)
         schedule_call = mock_s3_instance.store_json.call_args_list[0]
         assert schedule_call[1]["entity"] == "schedule"
         assert schedule_call[1]["target_date"] == target_date
 
-        # Verify box score storage call (Parquet)
-        box_score_call = mock_s3_instance.store_parquet.call_args_list[0]
+        # Verify box score storage call (JSON)
+        box_score_call = mock_s3_instance.store_json.call_args_list[1]
         assert box_score_call[1]["entity"] == "box_scores"
         assert box_score_call[1]["target_date"] == target_date
-        assert box_score_call[1]["partition_suffix"] == "/1234567890"
-
-    def test_flatten_box_score(self):
-        """Test box score flattening logic."""
-        config = BronzeIngestionConfig(
-            bronze_bucket="test-bucket", aws_region="us-east-1"
-        )
-
-        with (
-            patch("app.ingestion.DataValidator"),
-            patch("app.ingestion.DataQuarantine"),
-            patch("app.ingestion.NBAClient"),
-            patch("app.ingestion.BronzeS3Manager"),
-        ):
-            ingestion = DateScopedIngestion(config)
-
-            # Test with complete box score data
-            box_score = {
-                "game_id": "12345",
-                "fetch_date": "2023-12-25T10:00:00",
-                "resultSets": [
-                    {
-                        "name": "TeamStats",
-                        "rowSet": [["LAL", 100, 45, 20], ["GSW", 95, 40, 18]],
-                    }
-                ],
-            }
-
-            flattened = ingestion._flatten_box_score(box_score)
-
-            assert flattened["game_id"] == "12345"
-            assert flattened["fetch_date"] == "2023-12-25T10:00:00"
-            assert flattened["result_set_name"] == "TeamStats"
-            assert flattened["row_count"] == 2
-
-    def test_flatten_box_score_empty(self):
-        """Test box score flattening with minimal data."""
-        config = BronzeIngestionConfig(
-            bronze_bucket="test-bucket", aws_region="us-east-1"
-        )
-
-        with (
-            patch("app.ingestion.DataValidator"),
-            patch("app.ingestion.DataQuarantine"),
-            patch("app.ingestion.NBAClient"),
-            patch("app.ingestion.BronzeS3Manager"),
-        ):
-            ingestion = DateScopedIngestion(config)
-
-            # Test with minimal box score data
-            box_score = {"game_id": "12345", "fetch_date": "2023-12-25T10:00:00"}
-
-            flattened = ingestion._flatten_box_score(box_score)
-
-            assert flattened["game_id"] == "12345"
-            assert flattened["fetch_date"] == "2023-12-25T10:00:00"
-            assert "result_set_name" not in flattened
-            assert "row_count" not in flattened
 
     @patch("app.ingestion.DataValidator")
     @patch("app.ingestion.DataQuarantine")
@@ -383,11 +327,12 @@ class TestDateScopedIngestion:
 
         # Mock S3 manager to capture stored JSON data
         mock_s3_instance = Mock()
-        stored_json_data = None
+        stored_schedule_data = None
 
         def capture_json_storage(data, entity, target_date):
-            nonlocal stored_json_data
-            stored_json_data = data
+            nonlocal stored_schedule_data
+            if entity == "schedule":
+                stored_schedule_data = data
             return f"raw/{entity}/date={target_date.strftime('%Y-%m-%d')}/data.json"
 
         mock_s3_instance.store_json.side_effect = capture_json_storage
@@ -423,14 +368,14 @@ class TestDateScopedIngestion:
         # Assert success
         assert result is True
 
-        # Verify JSON storage was called
-        mock_s3_instance.store_json.assert_called_once()
+        # Verify JSON storage was called 3 times (1 schedule + 2 box scores)
+        assert mock_s3_instance.store_json.call_count == 3
 
         # Verify the stored data is the original games list (no DataFrame conversion)
-        assert stored_json_data == mock_games
+        assert stored_schedule_data == mock_games
 
         # Verify the stored data can be serialized to JSON and parsed back
-        json_str = json.dumps(stored_json_data)
+        json_str = json.dumps(stored_schedule_data)
         parsed_data = json.loads(json_str)
 
         # Verify the JSON structure is correct

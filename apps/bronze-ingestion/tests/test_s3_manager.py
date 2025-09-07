@@ -160,3 +160,70 @@ class TestBronzeS3Manager:
         # Should raise exception
         with pytest.raises(Exception, match="S3 Error"):
             manager.store_parquet(df, "test", target_date)
+
+    @patch("app.s3_manager.boto3.client")
+    def test_store_json(self, mock_boto_client):
+        """Test storing dictionary as JSON."""
+        mock_client = Mock()
+        mock_boto_client.return_value = mock_client
+
+        manager = BronzeS3Manager("test-bucket")
+
+        # Create test data
+        test_data = {
+            "game_id": "12345",
+            "teams": ["LAL", "GSW"],
+            "scores": [100, 95],
+            "metadata": {
+                "venue": "Staples Center",
+                "attendance": 18997
+            }
+        }
+
+        target_date = date(2023, 12, 25)
+
+        # Store the JSON data
+        key = manager.store_json(test_data, "games", target_date)
+
+        # Verify the key structure
+        expected_key = "raw/games/date=2023-12-25/data.json"
+        assert key == expected_key
+
+        # Verify S3 put_object was called
+        mock_client.put_object.assert_called_once()
+        call_args = mock_client.put_object.call_args
+
+        assert call_args[1]["Bucket"] == "test-bucket"
+        assert call_args[1]["Key"] == expected_key
+        assert call_args[1]["ContentType"] == "application/json"
+
+        # Verify metadata
+        metadata = call_args[1]["Metadata"]
+        assert metadata["entity"] == "games"
+        assert metadata["date"] == "2023-12-25"
+        assert metadata["format"] == "json"
+
+        # Verify the JSON content
+        body = call_args[1]["Body"]
+        # Decode bytes and parse JSON to verify it's valid
+        import json
+        parsed_data = json.loads(body.decode('utf-8'))
+        assert parsed_data["game_id"] == "12345"
+        assert parsed_data["teams"] == ["LAL", "GSW"]
+        assert parsed_data["metadata"]["venue"] == "Staples Center"
+
+    @patch("app.s3_manager.boto3.client")
+    def test_store_json_s3_error(self, mock_boto_client):
+        """Test handling of S3 errors during JSON storage."""
+        mock_client = Mock()
+        mock_client.put_object.side_effect = Exception("S3 JSON Error")
+        mock_boto_client.return_value = mock_client
+
+        manager = BronzeS3Manager("test-bucket")
+
+        test_data = {"test": "data"}
+        target_date = date(2023, 12, 25)
+
+        # Should raise exception
+        with pytest.raises(Exception, match="S3 JSON Error"):
+            manager.store_json(test_data, "test", target_date)

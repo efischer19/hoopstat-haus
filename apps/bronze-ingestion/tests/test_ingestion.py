@@ -216,16 +216,17 @@ class TestDateScopedIngestion:
         assert result is True
         mock_client_instance.get_games_for_date.assert_called_once_with(target_date)
 
-        # Should store schedule and box score
-        assert mock_s3_instance.store_parquet.call_count == 2
+        # Should store schedule as JSON and box score as Parquet
+        assert mock_s3_instance.store_json.call_count == 1
+        assert mock_s3_instance.store_parquet.call_count == 1
 
-        # Verify schedule storage call
-        schedule_call = mock_s3_instance.store_parquet.call_args_list[0]
+        # Verify schedule storage call (JSON)
+        schedule_call = mock_s3_instance.store_json.call_args_list[0]
         assert schedule_call[1]["entity"] == "schedule"
         assert schedule_call[1]["target_date"] == target_date
 
-        # Verify box score storage call
-        box_score_call = mock_s3_instance.store_parquet.call_args_list[1]
+        # Verify box score storage call (Parquet)
+        box_score_call = mock_s3_instance.store_parquet.call_args_list[0]
         assert box_score_call[1]["entity"] == "box_scores"
         assert box_score_call[1]["target_date"] == target_date
         assert box_score_call[1]["partition_suffix"] == "/1234567890"
@@ -326,3 +327,116 @@ class TestDateScopedIngestion:
         # Assert failure
         assert result is False
         mock_s3_instance.store_parquet.assert_not_called()
+
+    @patch("app.ingestion.DataValidator")
+    @patch("app.ingestion.DataQuarantine")
+    @patch("app.ingestion.NBAClient")
+    @patch("app.ingestion.BronzeS3Manager")
+    def test_schedule_json_storage_integration(
+        self, mock_s3_manager, mock_nba_client, mock_quarantine, mock_validator
+    ):
+        """Test that schedule data is stored as valid JSON and is readable."""
+        import json
+
+        # Mock configuration
+        config = BronzeIngestionConfig(
+            bronze_bucket="test-bucket", aws_region="us-east-1"
+        )
+
+        # Mock games data in NBA API format
+        mock_games = [
+            {
+                "GAME_ID": "1234567890",
+                "GAME_DATE": "2023-12-25",
+                "TEAM_ID": 1610612747,
+                "TEAM_ABBREVIATION": "LAL",
+                "TEAM_NAME": "Los Angeles Lakers",
+                "PTS": 110,
+            },
+            {
+                "GAME_ID": "1234567891",
+                "GAME_DATE": "2023-12-25",
+                "TEAM_ID": 1610612744,
+                "TEAM_ABBREVIATION": "GSW",
+                "TEAM_NAME": "Golden State Warriors",
+                "PTS": 105,
+            },
+        ]
+
+        # Mock box score data
+        mock_box_score = {
+            "resultSets": [
+                {
+                    "name": "PlayerStats",
+                    "headers": ["PLAYER_ID", "PLAYER_NAME", "PTS"],
+                    "rowSet": [["123", "Player 1", 25]],
+                }
+            ],
+            "parameters": {"GameID": "1234567890"},
+        }
+
+        # Mock NBA client
+        mock_client_instance = Mock()
+        mock_client_instance.get_games_for_date.return_value = mock_games
+        mock_client_instance.get_box_score.return_value = mock_box_score
+        mock_nba_client.return_value = mock_client_instance
+
+        # Mock S3 manager to capture stored JSON data
+        mock_s3_instance = Mock()
+        stored_json_data = None
+
+        def capture_json_storage(data, entity, target_date):
+            nonlocal stored_json_data
+            stored_json_data = data
+            return f"raw/{entity}/date={target_date.strftime('%Y-%m-%d')}/data.json"
+
+        mock_s3_instance.store_json.side_effect = capture_json_storage
+        mock_s3_manager.return_value = mock_s3_instance
+
+        # Mock validator
+        mock_validator_instance = Mock()
+        mock_validator_instance.validate_api_response.return_value = {
+            "valid": True,
+            "issues": [],
+            "metrics": {"schema_valid": True},
+        }
+        mock_validator_instance.validate_completeness.return_value = {
+            "complete": True,
+            "actual_count": 2,
+            "expected_count": None,
+            "issues": [],
+        }
+        mock_validator.return_value = mock_validator_instance
+
+        # Mock quarantine
+        mock_quarantine_instance = Mock()
+        mock_quarantine_instance.should_quarantine.return_value = False
+        mock_quarantine.return_value = mock_quarantine_instance
+
+        # Create ingestion instance
+        ingestion = DateScopedIngestion(config)
+
+        # Run ingestion
+        target_date = date(2023, 12, 25)
+        result = ingestion.run(target_date, dry_run=False)
+
+        # Assert success
+        assert result is True
+
+        # Verify JSON storage was called
+        mock_s3_instance.store_json.assert_called_once()
+
+        # Verify the stored data is the original games list (no DataFrame conversion)
+        assert stored_json_data == mock_games
+
+        # Verify the stored data can be serialized to JSON and parsed back
+        json_str = json.dumps(stored_json_data)
+        parsed_data = json.loads(json_str)
+
+        # Verify the JSON structure is correct
+        assert isinstance(parsed_data, list)
+        assert len(parsed_data) == 2
+        assert parsed_data[0]["GAME_ID"] == "1234567890"
+        assert parsed_data[0]["TEAM_ABBREVIATION"] == "LAL"
+        assert parsed_data[1]["GAME_ID"] == "1234567891"
+        assert parsed_data[1]["TEAM_ABBREVIATION"] == "GSW"

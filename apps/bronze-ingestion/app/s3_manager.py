@@ -8,9 +8,17 @@ from datetime import date
 
 import boto3
 import pandas as pd
-import pyarrow as pa
-import pyarrow.parquet as pq
 from hoopstat_observability import get_logger
+
+# Make pyarrow optional for backward compatibility
+try:
+    import pyarrow as pa
+    import pyarrow.parquet as pq
+    PYARROW_AVAILABLE = True
+except ImportError:
+    PYARROW_AVAILABLE = False
+    pa = None
+    pq = None
 
 logger = get_logger(__name__)
 
@@ -48,7 +56,16 @@ class BronzeS3Manager:
 
         Returns:
             S3 key where data was stored
+            
+        Raises:
+            ImportError: If pyarrow is not available
         """
+        if not PYARROW_AVAILABLE:
+            raise ImportError(
+                "pyarrow is required for Parquet operations but is not installed. "
+                "Install it with: pip install pyarrow"
+            )
+            
         # New key structure: s3://<bronze-bucket>/raw/<entity>/date=YYYY-MM-DD/data.parquet
         date_str = target_date.strftime("%Y-%m-%d")
         key = f"raw/{entity}/date={date_str}{partition_suffix}/data.parquet"

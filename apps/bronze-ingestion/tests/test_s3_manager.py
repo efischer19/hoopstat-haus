@@ -227,3 +227,19 @@ class TestBronzeS3Manager:
         # Should raise exception
         with pytest.raises(Exception, match="S3 JSON Error"):
             manager.store_json(test_data, "test", target_date)
+
+    @patch("app.s3_manager.PYARROW_AVAILABLE", False)
+    @patch("app.s3_manager.boto3.client")
+    def test_store_parquet_without_pyarrow(self, mock_boto_client):
+        """Test that store_parquet raises ImportError when pyarrow is not available."""
+        mock_client = Mock()
+        mock_boto_client.return_value = mock_client
+
+        manager = BronzeS3Manager("test-bucket")
+
+        df = pd.DataFrame({"test": [1, 2, 3]})
+        target_date = date(2023, 12, 25)
+
+        # Should raise ImportError
+        with pytest.raises(ImportError, match="pyarrow is required for Parquet operations"):
+            manager.store_parquet(df, "test", target_date)

@@ -1,0 +1,35 @@
+name: "✨ Feature Request"
+description: "Request a new feature or enhancement"
+title: "feat: [Brief description]"
+labels: ["enhancement"]
+assignees: []
+body:
+  - type: textarea
+    id: description
+    attributes:
+      label: "What do you want to build?"
+      description: "Simple description of the feature or change needed"
+      placeholder: "Add JSON storage method to S3Manager class"
+    validations:
+      required: true
+
+  - type: textarea
+    id: acceptance-criteria
+    attributes:
+      label: "Acceptance Criteria"
+      description: "How will we know this is done? Use checkboxes."
+      value: |
+        - [ ] 
+        - [ ] 
+        - [ ] 
+    validations:
+      required: true
+
+  - type: textarea
+    id: notes
+    attributes:
+      label: "Implementation Notes (Optional)"
+      description: "Any specific technical requirements, constraints, or context"
+      placeholder: "Should use same key structure as existing Parquet storage. Remove pyarrow dependency."
+    validations:
+      required: false

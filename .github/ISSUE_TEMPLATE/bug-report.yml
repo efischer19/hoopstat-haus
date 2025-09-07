@@ -1,0 +1,43 @@
+name: "🐛 Bug Report"
+description: "Report a bug or issue"
+title: "bug: [Brief description]"
+labels: ["bug"]
+assignees: []
+body:
+  - type: textarea
+    id: description
+    attributes:
+      label: "What's broken?"
+      description: "Clear description of the problem"
+      placeholder: "Pipeline fails with KeyError when processing certain player data"
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: "How to reproduce"
+      description: "Steps to reproduce the issue"
+      value: |
+        1. 
+        2. 
+        3. 
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: "Expected behavior"
+      description: "What should happen instead?"
+    validations:
+      required: true
+
+  - type: textarea
+    id: environment
+    attributes:
+      label: "Environment"
+      description: "Relevant details about your setup"
+      placeholder: "Local development, Python 3.12, latest main branch"
+    validations:
+      required: false

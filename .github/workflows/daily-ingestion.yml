@@ -1,12 +1,17 @@
 ---
 name: Daily Bronze Ingestion
 
+# NOTE: Scheduled execution is currently DISABLED due to NBA API blocking AWS Lambda IPs.
+# Bronze ingestion now runs locally via Docker (see apps/bronze-ingestion/setup-local.sh).
+# This workflow is kept for manual testing and emergency backup execution.
+
 "on":
-  schedule:
-    # Run at 4:30 AM ET daily
-    # 9:30 AM UTC (4:30 AM EST) / 8:30 AM UTC (4:30 AM EDT)
-    # Using 9:30 AM UTC as baseline - will adjust manually for DST
-    - cron: '30 9 * * *'
+  # DISABLED: Now using local Docker execution to avoid NBA API blocking AWS IPs
+  # schedule:
+  #   # Run at 4:30 AM ET daily  
+  #   # 9:30 AM UTC (4:30 AM EST) / 8:30 AM UTC (4:30 AM EDT)
+  #   # Using 9:30 AM UTC as baseline - will adjust manually for DST
+  #   - cron: '30 9 * * *'
   workflow_dispatch:
     inputs:
       date:

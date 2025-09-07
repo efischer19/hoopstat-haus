@@ -174,10 +174,7 @@ class TestBronzeS3Manager:
             "game_id": "12345",
             "teams": ["LAL", "GSW"],
             "scores": [100, 95],
-            "metadata": {
-                "venue": "Staples Center",
-                "attendance": 18997
-            }
+            "metadata": {"venue": "Staples Center", "attendance": 18997},
         }
 
         target_date = date(2023, 12, 25)
@@ -207,7 +204,8 @@ class TestBronzeS3Manager:
         body = call_args[1]["Body"]
         # Decode bytes and parse JSON to verify it's valid
         import json
-        parsed_data = json.loads(body.decode('utf-8'))
+
+        parsed_data = json.loads(body.decode("utf-8"))
         assert parsed_data["game_id"] == "12345"
         assert parsed_data["teams"] == ["LAL", "GSW"]
         assert parsed_data["metadata"]["venue"] == "Staples Center"
@@ -241,5 +239,7 @@ class TestBronzeS3Manager:
         target_date = date(2023, 12, 25)
 
         # Should raise ImportError
-        with pytest.raises(ImportError, match="pyarrow is required for Parquet operations"):
+        with pytest.raises(
+            ImportError, match="pyarrow is required for Parquet operations"
+        ):
             manager.store_parquet(df, "test", target_date)

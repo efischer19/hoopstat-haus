@@ -12,10 +12,10 @@ python = "^3.12"
 # example-shared-lib = {path = "../../libs/example-shared-lib", develop = true}
 
 [tool.poetry.group.dev.dependencies]
-pytest = "^8.4.1"
-ruff = "^0.12.10"
+pytest = "^8.4.2"
+ruff = "^0.12.12"
 black = "^25.1.0"
-pytest-cov = "^6.2.1"
+pytest-cov = "^6.3.0"
 
 [tool.poetry.scripts]
 start = "app.main:main"

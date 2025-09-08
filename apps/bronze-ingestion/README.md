@@ -109,11 +109,11 @@ poetry run pytest --cov=app
 # Run specific test file
 poetry run pytest tests/test_main.py
 
-# Run bronze layer validation tests
-poetry run pytest tests/test_bronze_layer_validation.py
+# Run integration tests
+poetry run pytest tests/test_bronze_summary_integration.py
 
-# Run integration tests with mock data
-poetry run pytest tests/test_mock_data_integration.py
+# Run S3 manager tests
+poetry run pytest tests/test_s3_manager.py
 ```
 
 ### Bronze Layer Validation
@@ -137,13 +137,13 @@ python validate_bronze_layer.py --check-criteria
 
 The validation suite ensures:
 
-- **JSON to Parquet Conversion**: Validates data accuracy during conversion
-- **Partitioning Scheme**: Tests year/month/day/hour partitioning implementation  
-- **Metadata Enrichment**: Verifies ingestion timestamps and source system tags
-- **Error Handling**: Tests resilience against malformed data
-- **Compression Optimization**: Validates Parquet compression and storage efficiency
-- **Performance Benchmarks**: Asserts ingestion speed and throughput requirements
-- **Mock Data Integration**: Tests with realistic NBA data simulation
+- **JSON Storage Format**: Validates data accuracy and format consistency for JSON storage
+- **S3 Operations**: Tests bucket management, key generation, and data retrieval
+- **Data Validation**: Verifies JSON schema validation and quality checks  
+- **Error Handling**: Tests resilience against malformed data and quarantine functionality
+- **Ingestion Pipeline**: End-to-end validation of the complete ingestion workflow
+- **Bronze Summary Generation**: Tests summary creation and metadata enrichment
+- **Integration Testing**: Comprehensive integration tests across all components
 
 ### Code Quality
 
@@ -248,7 +248,7 @@ This application follows the established patterns:
 - **Click CLI**: Command-line interface with multiple commands
 - **Error Handling**: Proper error handling with structured logging
 - **Retry Logic**: Uses `tenacity` for robust API calls
-- **Data Formats**: Stores data in JSON format for efficient processing and debugging
+- **Data Formats**: Stores data in JSON format for efficient processing and debugging. JSON provides human-readable data that's easy to inspect via AWS console, integrates seamlessly with AI assistants for data analysis, and simplifies development workflows without additional dependencies.
 
 ## Dependencies
 
@@ -256,7 +256,7 @@ This application follows the established patterns:
 - `nba-api`: NBA statistics API client
 - `boto3`: AWS S3 client
 - `pandas`: Data manipulation
-- `pyarrow`: Parquet file support
+- `pyarrow`: Optional Parquet file support (legacy format support)
 - `tenacity`: Retry logic
 - `click`: CLI framework
 - `jsonschema`: JSON schema validation

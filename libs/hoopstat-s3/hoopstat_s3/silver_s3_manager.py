@@ -40,8 +40,8 @@ class SilverS3Manager(S3Uploader):
     def __init__(
         self,
         bucket_name: str,
-        aws_access_key_id: str | None = Nonestr] = None,
-        aws_secret_access_key: str | None = Nonestr] = None,
+        aws_access_key_id: str | None = None,
+        aws_secret_access_key: str | None = None,
         region_name: str = "us-east-1",
     ):
         """
@@ -62,9 +62,7 @@ class SilverS3Manager(S3Uploader):
         )
         logger.info(f"Initialized Silver S3 Manager for bucket: {bucket_name}")
 
-    def read_bronze_json(
-        self, entity: str, target_date: date
-    ) -> str | None = Nonedict[str, Any]]:
+    def read_bronze_json(self, entity: str, target_date: date) -> dict[str, Any] | None:
         """
         Read Bronze JSON data from S3.
 
@@ -143,7 +141,8 @@ class SilverS3Manager(S3Uploader):
         # Idempotency check
         if check_exists and self._silver_data_exists(s3_key):
             logger.info(
-                f"Silver data already exists at s3://{self.bucket_name}/{s3_key}, skipping"
+                f"Silver data already exists at "
+                f"s3://{self.bucket_name}/{s3_key}, skipping"
             )
             return s3_key
 
@@ -238,7 +237,7 @@ class SilverS3Manager(S3Uploader):
             return False
 
     def _upload_to_s3(
-        self, data: bytes, s3_key: str, metadata: str | None = Nonedict[str, str]] = None
+        self, data: bytes, s3_key: str, metadata: dict[str, str] | None = None
     ) -> None:
         """
         Upload JSON data to S3 with error handling.
@@ -266,7 +265,8 @@ class SilverS3Manager(S3Uploader):
             )
 
             logger.info(
-                f"Successfully uploaded {len(data)} bytes to s3://{self.bucket_name}/{s3_key}"
+                f"Successfully uploaded {len(data)} bytes to "
+                f"s3://{self.bucket_name}/{s3_key}"
             )
 
         except (BotoCoreError, ClientError) as e:
@@ -335,7 +335,7 @@ class SilverS3Manager(S3Uploader):
             and "/date=" in s3_key
         )
 
-    def _extract_entity_info_from_key(self, s3_key: str) -> str | None = Nonedict[str, Any]]:
+    def _extract_entity_info_from_key(self, s3_key: str) -> dict[str, Any] | None:
         """
         Extract entity and date information from Bronze S3 key.
 
@@ -366,8 +366,8 @@ class SilverS3Manager(S3Uploader):
     def list_bronze_data(
         self,
         entity: str,
-        start_date: str | None = Nonedate] = None,
-        end_date: str | None = Nonedate] = None,
+        start_date: date | None = None,
+        end_date: date | None = None,
     ) -> list[dict[str, Any]]:
         """
         List available Bronze data for an entity within a date range.
@@ -421,8 +421,8 @@ class SilverS3Manager(S3Uploader):
     def list_silver_data(
         self,
         entity_type: str,
-        start_date: str | None = Nonedate] = None,
-        end_date: str | None = Nonedate] = None,
+        start_date: date | None = None,
+        end_date: date | None = None,
     ) -> list[dict[str, Any]]:
         """
         List available Silver data for an entity type within a date range.

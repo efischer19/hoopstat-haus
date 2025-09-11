@@ -23,8 +23,8 @@ pydantic = "^2.10.0"
 [tool.poetry.group.dev.dependencies]
 pytest = "^8.4.1"
 pytest-asyncio = "^1.1.0"
-pytest-cov = "^6.2.1"
-ruff = "^0.12.4"
+pytest-cov = "^7.0.0"
+ruff = "^0.13.0"
 black = "^25.1.0"
 moto = "^5.0.0"  # For mocking AWS services
 

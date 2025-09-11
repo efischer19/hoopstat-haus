@@ -1,6 +1,7 @@
 """Tests for the processors module."""
 
 from datetime import date
+from unittest.mock import patch, MagicMock
 
 from app.processors import SilverProcessor
 
@@ -13,16 +14,26 @@ class TestSilverProcessor:
         processor = SilverProcessor()
         assert processor is not None
 
-    def test_process_date_dry_run(self):
+    @patch('app.processors.SilverS3Manager')
+    def test_process_date_dry_run(self, mock_s3_manager):
         """Test processing a date in dry-run mode."""
+        # Mock S3Manager
+        mock_manager = MagicMock()
+        mock_s3_manager.return_value = mock_manager
+        
         processor = SilverProcessor(bronze_bucket="test-bronze-bucket")
         target_date = date(2024, 1, 1)
         # This will fail because there's no S3 data, but that's expected
         result = processor.process_date(target_date, dry_run=True)
         assert result is False  # Expected to fail due to no data
 
-    def test_process_date_normal(self):
+    @patch('app.processors.SilverS3Manager')
+    def test_process_date_normal(self, mock_s3_manager):
         """Test processing a date in normal mode."""
+        # Mock S3Manager
+        mock_manager = MagicMock()
+        mock_s3_manager.return_value = mock_manager
+        
         processor = SilverProcessor(bronze_bucket="test-bronze-bucket")
         target_date = date(2024, 1, 1)
         # This will fail because there's no S3 data, but that's expected

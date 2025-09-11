@@ -8,6 +8,7 @@ when new Bronze layer data arrives.
 from typing import Any
 
 from hoopstat_observability import get_logger
+from hoopstat_s3 import SilverS3Manager
 
 from .processors import SilverProcessor
 
@@ -29,34 +30,48 @@ def lambda_handler(event: dict[str, Any], context: Any) -> dict[str, Any]:
     logger.info(f"Event: {event}")
 
     try:
-        # Parse S3 events
-        s3_records = parse_s3_events(event)
+        # Get bucket name from environment or use default
+        import os
+        bucket_name = os.getenv("BRONZE_BUCKET")
+        if not bucket_name:
+            logger.error("BRONZE_BUCKET environment variable not set")
+            return {"statusCode": 400, "message": "No bucket configured"}
 
-        if not s3_records:
-            logger.warning("No S3 records found in event")
-            return {"statusCode": 200, "message": "No records to process"}
+        # Initialize S3 manager for event parsing
+        s3_manager = SilverS3Manager(bucket_name)
+        
+        # Parse S3 events using SilverS3Manager
+        bronze_events = s3_manager.parse_s3_event(event)
 
-        # Process each S3 record
-        processor = SilverProcessor()
+        if not bronze_events:
+            logger.warning("No Bronze trigger events found in S3 event")
+            return {"statusCode": 200, "message": "No Bronze triggers to process"}
+
+        # Process each Bronze event
+        processor = SilverProcessor(bronze_bucket=bucket_name)
         results = []
 
-        for record in s3_records:
+        for bronze_event in bronze_events:
             try:
-                result = process_s3_record(processor, record)
+                result = process_bronze_event(processor, bronze_event)
                 results.append(result)
             except Exception as e:
-                logger.error(f"Failed to process S3 record {record}: {e}")
-                results.append({"record": record, "success": False, "error": str(e)})
+                logger.error(f"Failed to process Bronze event {bronze_event}: {e}")
+                results.append({
+                    "bronze_event": bronze_event, 
+                    "success": False, 
+                    "error": str(e)
+                })
 
         # Summarize results
         success_count = sum(1 for r in results if r.get("success", False))
         total_count = len(results)
 
-        logger.info(f"Processed {success_count}/{total_count} records successfully")
+        logger.info(f"Processed {success_count}/{total_count} Bronze events successfully")
 
         return {
             "statusCode": 200,
-            "message": f"Processed {success_count}/{total_count} records",
+            "message": f"Processed {success_count}/{total_count} Bronze events",
             "results": results,
         }
 
@@ -65,68 +80,60 @@ def lambda_handler(event: dict[str, Any], context: Any) -> dict[str, Any]:
         return {"statusCode": 500, "message": f"Processing failed: {e}"}
 
 
-def parse_s3_events(event: dict[str, Any]) -> list[dict[str, Any]]:
-    """
-    Parse S3 event records from Lambda event.
-
-    Args:
-        event: Lambda event containing S3 records
-
-    Returns:
-        List of S3 record dictionaries
-    """
-    try:
-        records = event.get("Records", [])
-        s3_records = []
-
-        for record in records:
-            if record.get("eventSource") == "aws:s3":
-                s3_records.append(record)
-
-        logger.info(f"Found {len(s3_records)} S3 records")
-        return s3_records
-
-    except Exception as e:
-        logger.error(f"Failed to parse S3 events: {e}")
-        return []
-
-
-def process_s3_record(
-    processor: SilverProcessor, record: dict[str, Any]
+def process_bronze_event(
+    processor: SilverProcessor, bronze_event: dict[str, Any]
 ) -> dict[str, Any]:
     """
-    Process a single S3 event record.
+    Process a single Bronze event from S3.
 
     Args:
         processor: The Silver processor instance
-        record: S3 event record
+        bronze_event: Bronze event information from SilverS3Manager
 
     Returns:
         Processing result dictionary
     """
     try:
-        # Extract S3 bucket and key
-        s3_info = record.get("s3", {})
-        bucket = s3_info.get("bucket", {}).get("name")
-        key = s3_info.get("object", {}).get("key")
+        # Extract information from Bronze event
+        bucket = bronze_event.get("bucket")
+        key = bronze_event.get("key")
+        entity = bronze_event.get("entity")
+        target_date = bronze_event.get("date")
 
-        if not bucket or not key:
-            raise ValueError("Missing S3 bucket or key in record")
+        if not all([bucket, key, entity, target_date]):
+            raise ValueError("Missing required Bronze event information")
 
-        logger.info(f"Processing S3 object: s3://{bucket}/{key}")
+        logger.info(
+            f"Processing Bronze event: entity={entity}, date={target_date}, "
+            f"s3://{bucket}/{key}"
+        )
 
-        # TODO: Implement S3-specific processing logic in next PR
-        # This will include:
-        # 1. Determine if this is Bronze layer data we should process
-        # 2. Extract date/game info from S3 key
-        # 3. Trigger appropriate processing method
+        # Process the date using the Silver processor
+        success = processor.process_date(target_date, dry_run=False)
 
-        return {
-            "record": {"bucket": bucket, "key": key},
-            "success": True,
-            "message": "Skeleton processing completed",
-        }
+        if success:
+            return {
+                "bronze_event": {
+                    "bucket": bucket,
+                    "key": key,
+                    "entity": entity,
+                    "date": target_date.isoformat()
+                },
+                "success": True,
+                "message": f"Successfully processed {entity} data for {target_date}",
+            }
+        else:
+            return {
+                "bronze_event": {
+                    "bucket": bucket,
+                    "key": key,
+                    "entity": entity,
+                    "date": target_date.isoformat()
+                },
+                "success": False,
+                "message": f"Processing failed for {entity} data on {target_date}",
+            }
 
     except Exception as e:
-        logger.error(f"S3 record processing failed: {e}")
+        logger.error(f"Bronze event processing failed: {e}")
         raise

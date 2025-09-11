@@ -25,6 +25,7 @@ from hoopstat_data import (
     normalize_team_name,
 )
 from hoopstat_observability import get_logger
+from hoopstat_s3 import SilverS3Manager
 
 logger = get_logger(__name__)
 
@@ -435,16 +436,21 @@ class SilverProcessor:
         self.region_name = region_name
 
         if bronze_bucket:
+            # Use SilverS3Manager for both Bronze reading and Silver writing
+            self.s3_manager = SilverS3Manager(bronze_bucket, region_name=region_name)
+            
+            # Keep backward compatibility with existing BronzeToSilverProcessor
             self.bronze_to_silver_processor = BronzeToSilverProcessor(
                 bronze_bucket, region_name
             )
         else:
+            self.s3_manager = None
             self.bronze_to_silver_processor = None
             logger.warning(
                 "No Bronze bucket configured - some operations may not be available"
             )
 
-        logger.info("Silver processor initialized")
+        logger.info("Silver processor initialized with SilverS3Manager")
 
     def process_date(self, target_date: date, dry_run: bool = False) -> bool:
         """
@@ -508,14 +514,37 @@ class SilverProcessor:
                 )
             else:
                 logger.info("Processing and writing Silver layer data")
-                # TODO: Implement S3 writing in future PR
-                player_count = len(silver_data.get("player_stats", []))
-                team_count = len(silver_data.get("team_stats", []))
-                game_count = len(silver_data.get("game_stats", []))
-                logger.info(
-                    f"Successfully processed: {player_count} player stats, "
-                    f"{team_count} team stats, {game_count} game stats"
-                )
+                
+                # 5. Write Silver data to S3 using SilverS3Manager
+                if self.s3_manager:
+                    try:
+                        written_keys = self.s3_manager.write_partitioned_silver_data(
+                            silver_data, target_date, check_exists=True
+                        )
+                        
+                        player_count = len(silver_data.get("player_stats", []))
+                        team_count = len(silver_data.get("team_stats", []))
+                        game_count = len(silver_data.get("game_stats", []))
+                        
+                        logger.info(
+                            f"Successfully wrote Silver data for {target_date}: "
+                            f"{player_count} player stats, {team_count} team stats, "
+                            f"{game_count} game stats"
+                        )
+                        logger.info(f"Written to S3 keys: {list(written_keys.values())}")
+                        
+                    except Exception as e:
+                        logger.error(f"Failed to write Silver data to S3: {e}")
+                        return False
+                else:
+                    logger.warning("No S3 manager configured - Silver data not written")
+                    player_count = len(silver_data.get("player_stats", []))
+                    team_count = len(silver_data.get("team_stats", []))
+                    game_count = len(silver_data.get("game_stats", []))
+                    logger.info(
+                        f"Successfully processed: {player_count} player stats, "
+                        f"{team_count} team stats, {game_count} game stats"
+                    )
 
             return True
 

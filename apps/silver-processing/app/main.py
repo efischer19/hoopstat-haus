@@ -5,11 +5,14 @@ This application processes Bronze layer JSON data and transforms it into
 validated, cleaned Silver layer data following the medallion architecture pattern.
 """
 
+import os
 import sys
 from datetime import UTC, datetime
 
 import click
 from hoopstat_observability import get_logger
+
+from .processors import SilverProcessor
 
 logger = get_logger(__name__)
 
@@ -30,7 +33,12 @@ def cli(debug: bool) -> None:
     help="Date to process (YYYY-MM-DD), defaults to today (UTC)",
 )
 @click.option("--dry-run", is_flag=True, help="Run without making changes")
-def process(date: datetime | None, dry_run: bool) -> None:
+@click.option(
+    "--bronze-bucket",
+    type=str,
+    help="S3 bucket name for Bronze data (can also be set via BRONZE_BUCKET env var)",
+)
+def process(date: datetime | None, dry_run: bool, bronze_bucket: str | None) -> None:
     """Process Bronze layer data into Silver layer format."""
     # Default to today (UTC) if no date provided
     target_date = date.date() if date else datetime.now(UTC).date()
@@ -40,10 +48,27 @@ def process(date: datetime | None, dry_run: bool) -> None:
     if dry_run:
         logger.info("Dry run mode - no data will be written")
 
+    # Get bronze bucket from CLI option or environment variable
+    bucket_name = bronze_bucket or os.getenv("BRONZE_BUCKET")
+    if not bucket_name:
+        logger.error(
+            "Bronze bucket not specified. Use --bronze-bucket option or set "
+            "BRONZE_BUCKET environment variable"
+        )
+        sys.exit(1)
+
     try:
-        # TODO: Implement actual processing logic in upcoming PR
-        logger.info("Silver processing skeleton - implementation coming in next PR")
-        logger.info("Silver layer processing completed successfully")
+        # Initialize Silver processor with Bronze bucket
+        processor = SilverProcessor(bronze_bucket=bucket_name)
+
+        # Process the target date
+        success = processor.process_date(target_date, dry_run=dry_run)
+
+        if success:
+            logger.info("Silver layer processing completed successfully")
+        else:
+            logger.error("Silver layer processing failed")
+            sys.exit(1)
 
     except Exception as e:
         logger.error(f"Silver layer processing failed: {e}")

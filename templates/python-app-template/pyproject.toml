@@ -13,9 +13,9 @@ python = "^3.12"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^8.4.2"
-ruff = "^0.12.12"
+ruff = "^0.13.0"
 black = "^25.1.0"
-pytest-cov = "^6.3.0"
+pytest-cov = "^7.0.0"
 
 [tool.poetry.scripts]
 start = "app.main:main"

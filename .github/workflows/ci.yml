@@ -24,6 +24,7 @@ name: CI
         options:
           - bronze-ingestion
           - mcp-server
+          - silver-processing
 
 permissions:
   id-token: write

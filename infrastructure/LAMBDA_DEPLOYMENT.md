@@ -14,11 +14,12 @@ The infrastructure supports deploying containerized Python applications as AWS L
 
 ### Lambda Functions
 
-The infrastructure provisions 2 Lambda functions for existing containerized applications:
+The infrastructure provisions 3 Lambda functions for existing containerized applications:
 
 | Function Name | Purpose | Timeout | Memory | Log Group |
 |---------------|---------|---------|--------|-----------|
 | `hoopstat-haus-bronze-ingestion` | Data ingestion to bronze layer | 5min | 256MB | `/hoopstat-haus/data-pipeline` |
+| `hoopstat-haus-silver-processing` | Data processing from bronze to silver layer | 5min | 1024MB | `/hoopstat-haus/data-pipeline` |
 | `hoopstat-haus-mcp-server` | MCP server API | 30s | 256MB | `/hoopstat-haus/applications` |
 
 ### IAM Roles and Permissions
@@ -29,6 +30,7 @@ Grants Lambda functions access to:
 - **CloudWatch Logs**: Create log streams and put log events
 - **S3 Buckets**: Read/write access to medallion architecture buckets (bronze, silver, gold)
 - **ECR**: Pull container images for deployment
+- **SQS**: Send messages to dead letter queues for error handling
 
 #### Environment Variables
 
@@ -53,6 +55,24 @@ The infrastructure includes comprehensive monitoring:
 - Functions log to existing CloudWatch log groups
 - JSON log format for structured logging (per ADR-015)
 - Log retention policies already configured in infrastructure
+
+### S3 Event Triggers
+
+The infrastructure includes automatic S3 event-driven processing:
+
+#### Silver Processing Trigger
+- **Source**: Bronze bucket (`hoopstat-haus-bronze`)
+- **Events**: `s3:ObjectCreated:*`
+- **Filter**: 
+  - Prefix: `raw/box_scores/date=`
+  - Suffix: `/data.json`
+- **Target**: `hoopstat-haus-silver-processing` Lambda
+- **Purpose**: Automatically process new Bronze layer data into Silver layer
+
+#### Error Handling
+- **Dead Letter Queue**: `hoopstat-haus-silver-processing-dlq`
+- **Retention**: 14 days
+- **Visibility Timeout**: 6 minutes (longer than Lambda timeout)
 
 ## Deployment Process
 

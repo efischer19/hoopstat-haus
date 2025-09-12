@@ -32,6 +32,7 @@ def lambda_handler(event: dict[str, Any], context: Any) -> dict[str, Any]:
     try:
         # Get bucket name from environment or use default
         import os
+
         bucket_name = os.getenv("BRONZE_BUCKET")
         if not bucket_name:
             logger.error("BRONZE_BUCKET environment variable not set")
@@ -39,7 +40,7 @@ def lambda_handler(event: dict[str, Any], context: Any) -> dict[str, Any]:
 
         # Initialize S3 manager for event parsing
         s3_manager = SilverS3Manager(bucket_name)
-        
+
         # Parse S3 events using SilverS3Manager
         bronze_events = s3_manager.parse_s3_event(event)
 
@@ -57,17 +58,17 @@ def lambda_handler(event: dict[str, Any], context: Any) -> dict[str, Any]:
                 results.append(result)
             except Exception as e:
                 logger.error(f"Failed to process Bronze event {bronze_event}: {e}")
-                results.append({
-                    "bronze_event": bronze_event, 
-                    "success": False, 
-                    "error": str(e)
-                })
+                results.append(
+                    {"bronze_event": bronze_event, "success": False, "error": str(e)}
+                )
 
         # Summarize results
         success_count = sum(1 for r in results if r.get("success", False))
         total_count = len(results)
 
-        logger.info(f"Processed {success_count}/{total_count} Bronze events successfully")
+        logger.info(
+            f"Processed {success_count}/{total_count} Bronze events successfully"
+        )
 
         return {
             "statusCode": 200,
@@ -117,7 +118,7 @@ def process_bronze_event(
                     "bucket": bucket,
                     "key": key,
                     "entity": entity,
-                    "date": target_date.isoformat()
+                    "date": target_date.isoformat(),
                 },
                 "success": True,
                 "message": f"Successfully processed {entity} data for {target_date}",
@@ -128,7 +129,7 @@ def process_bronze_event(
                     "bucket": bucket,
                     "key": key,
                     "entity": entity,
-                    "date": target_date.isoformat()
+                    "date": target_date.isoformat(),
                 },
                 "success": False,
                 "message": f"Processing failed for {entity} data on {target_date}",

@@ -438,7 +438,7 @@ class SilverProcessor:
         if bronze_bucket:
             # Use SilverS3Manager for both Bronze reading and Silver writing
             self.s3_manager = SilverS3Manager(bronze_bucket, region_name=region_name)
-            
+
             # Keep backward compatibility with existing BronzeToSilverProcessor
             self.bronze_to_silver_processor = BronzeToSilverProcessor(
                 bronze_bucket, region_name
@@ -514,25 +514,27 @@ class SilverProcessor:
                 )
             else:
                 logger.info("Processing and writing Silver layer data")
-                
+
                 # 5. Write Silver data to S3 using SilverS3Manager
                 if self.s3_manager:
                     try:
                         written_keys = self.s3_manager.write_partitioned_silver_data(
                             silver_data, target_date, check_exists=True
                         )
-                        
+
                         player_count = len(silver_data.get("player_stats", []))
                         team_count = len(silver_data.get("team_stats", []))
                         game_count = len(silver_data.get("game_stats", []))
-                        
+
                         logger.info(
                             f"Successfully wrote Silver data for {target_date}: "
                             f"{player_count} player stats, {team_count} team stats, "
                             f"{game_count} game stats"
                         )
-                        logger.info(f"Written to S3 keys: {list(written_keys.values())}")
-                        
+                        logger.info(
+                            f"Written to S3 keys: {list(written_keys.values())}"
+                        )
+
                     except Exception as e:
                         logger.error(f"Failed to write Silver data to S3: {e}")
                         return False

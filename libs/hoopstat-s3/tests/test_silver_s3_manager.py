@@ -32,7 +32,9 @@ class TestSilverS3Manager:
 
     def test_init_with_invalid_bucket(self):
         """Test SilverS3Manager initialization with invalid bucket."""
-        with pytest.raises(Exception):  # S3UploadError from parent class
+        from hoopstat_s3 import S3UploadError
+
+        with pytest.raises(S3UploadError):
             SilverS3Manager(
                 bucket_name="nonexistent-bucket-12345", region_name="us-east-1"
             )
@@ -569,7 +571,8 @@ class TestSilverS3Manager:
 
         manager = SilverS3Manager("test-bucket")
 
-        # Test all supported entity types through write_silver_json (without actually writing)
+        # Test all supported entity types through write_silver_json
+        # (without actually writing)
         with patch.object(manager, "_upload_to_s3") as mock_upload:
             mock_upload.return_value = None
 

@@ -187,7 +187,8 @@ class SilverS3Manager(S3Uploader):
         Write partitioned Silver data for all entity types.
 
         Args:
-            silver_data: Dictionary containing lists of Silver model data organized by type
+            silver_data: Dictionary containing lists of Silver model data
+                organized by type
             target_date: Date for partitioning
             check_exists: Whether to check for existing data (idempotency)
 
@@ -320,7 +321,8 @@ class SilverS3Manager(S3Uploader):
 
     def _is_bronze_trigger_event(self, s3_key: str) -> bool:
         """
-        Check if S3 key represents a Bronze layer event that should trigger Silver processing.
+        Check if S3 key represents a Bronze layer event that should
+        trigger Silver processing.
 
         Args:
             s3_key: S3 object key
@@ -443,7 +445,8 @@ class SilverS3Manager(S3Uploader):
             for obj in objects:
                 key = obj.get("Key", "")
 
-                # Extract date from silver path: silver/{entity_type}/date=YYYY-MM-DD/{filename}
+                # Extract date from silver path:
+                # silver/{entity_type}/date=YYYY-MM-DD/{filename}
                 if "/date=" in key:
                     try:
                         date_part = key.split("/date=")[1].split("/")[0]

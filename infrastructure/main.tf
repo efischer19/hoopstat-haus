@@ -811,7 +811,8 @@ resource "aws_iam_role_policy" "github_actions_operations_lambda" {
         ]
         Resource = [
           "arn:aws:lambda:${var.aws_region}:${data.aws_caller_identity.current.account_id}:function:${var.project_name}-bronze-ingestion",
-          "arn:aws:lambda:${var.aws_region}:${data.aws_caller_identity.current.account_id}:function:${var.project_name}-mcp-server"
+          "arn:aws:lambda:${var.aws_region}:${data.aws_caller_identity.current.account_id}:function:${var.project_name}-mcp-server",
+          "arn:aws:lambda:${var.aws_region}:${data.aws_caller_identity.current.account_id}:function:${var.project_name}-silver-processing"
         ]
       }
     ]
@@ -1187,6 +1188,15 @@ resource "aws_iam_policy" "lambda_execution" {
           "ecr:GetAuthorizationToken"
         ]
         Resource = "*"
+      },
+      {
+        Effect = "Allow"
+        Action = [
+          "sqs:SendMessage"
+        ]
+        Resource = [
+          aws_sqs_queue.silver_processing_dlq.arn
+        ]
       }
     ]
   })
@@ -1276,11 +1286,65 @@ resource "aws_lambda_function" "mcp_server" {
   }
 }
 
+# Silver Processing Lambda Function
+resource "aws_lambda_function" "silver_processing" {
+  function_name = "${var.project_name}-silver-processing"
+  role          = aws_iam_role.lambda_execution.arn
+  package_type  = "Image"
+  image_uri     = "${aws_ecr_repository.main.repository_url}:silver-processing-latest"
+
+  timeout     = var.lambda_config.silver_processing.timeout
+  memory_size = var.lambda_config.silver_processing.memory_size
+
+  environment {
+    variables = {
+      LOG_LEVEL     = "INFO"
+      APP_NAME      = "silver-processing"
+      BRONZE_BUCKET = aws_s3_bucket.bronze.bucket
+      SILVER_BUCKET = aws_s3_bucket.silver.bucket
+    }
+  }
+
+  logging_config {
+    log_format = "JSON"
+    log_group  = aws_cloudwatch_log_group.data_pipeline.name
+  }
+
+  tags = {
+    Application = "silver-processing"
+    Type        = "data-pipeline"
+  }
+
+  # Lifecycle rule to ignore image_uri changes (managed by deployment workflow)
+  lifecycle {
+    ignore_changes = [image_uri]
+  }
+
+  # DLQ configuration
+  dead_letter_config {
+    target_arn = aws_sqs_queue.silver_processing_dlq.arn
+  }
+}
+
+# Dead Letter Queue for Silver Processing Lambda
+resource "aws_sqs_queue" "silver_processing_dlq" {
+  name                       = "${var.project_name}-silver-processing-dlq"
+  visibility_timeout_seconds = 360 # 6 minutes (longer than Lambda timeout)
+  message_retention_seconds  = 1209600 # 14 days
+
+  tags = {
+    Application = "silver-processing"
+    Type        = "dlq"
+    Purpose     = "Dead letter queue for failed silver processing Lambda invocations"
+  }
+}
+
 # Lambda-specific CloudWatch Alarms
 resource "aws_cloudwatch_metric_alarm" "lambda_errors" {
   for_each = {
-    bronze_ingestion = aws_lambda_function.bronze_ingestion.function_name
-    mcp_server       = aws_lambda_function.mcp_server.function_name
+    bronze_ingestion  = aws_lambda_function.bronze_ingestion.function_name
+    mcp_server        = aws_lambda_function.mcp_server.function_name
+    silver_processing = aws_lambda_function.silver_processing.function_name
   }
 
   alarm_name          = "lambda-errors-${each.key}"
@@ -1314,6 +1378,10 @@ resource "aws_cloudwatch_metric_alarm" "lambda_duration" {
       function_name = aws_lambda_function.mcp_server.function_name
       threshold     = 25000 # 25 seconds (83% of 30s timeout)
     }
+    silver_processing = {
+      function_name = aws_lambda_function.silver_processing.function_name
+      threshold     = 250000 # 4.17 minutes (83% of 5m timeout)
+    }
   }
 
   alarm_name          = "lambda-duration-${each.key}"
@@ -1339,8 +1407,9 @@ resource "aws_cloudwatch_metric_alarm" "lambda_duration" {
 
 resource "aws_cloudwatch_metric_alarm" "lambda_throttles" {
   for_each = {
-    bronze_ingestion = aws_lambda_function.bronze_ingestion.function_name
-    mcp_server       = aws_lambda_function.mcp_server.function_name
+    bronze_ingestion  = aws_lambda_function.bronze_ingestion.function_name
+    mcp_server        = aws_lambda_function.mcp_server.function_name
+    silver_processing = aws_lambda_function.silver_processing.function_name
   }
 
   alarm_name          = "lambda-throttles-${each.key}"
@@ -1362,4 +1431,31 @@ resource "aws_cloudwatch_metric_alarm" "lambda_throttles" {
     Type        = "lambda-throttles"
     Application = each.key
   }
+}
+
+# ============================================================================
+# S3 Event Notifications for Silver Processing
+# ============================================================================
+
+# Lambda permission for S3 to invoke silver-processing function
+resource "aws_lambda_permission" "s3_invoke_silver_processing" {
+  statement_id  = "AllowExecutionFromS3Bucket"
+  action        = "lambda:InvokeFunction"
+  function_name = aws_lambda_function.silver_processing.function_name
+  principal     = "s3.amazonaws.com"
+  source_arn    = aws_s3_bucket.bronze.arn
+}
+
+# S3 bucket notification for bronze bucket to trigger silver processing
+resource "aws_s3_bucket_notification" "bronze_bucket_notification" {
+  bucket = aws_s3_bucket.bronze.id
+
+  lambda_function {
+    lambda_function_arn = aws_lambda_function.silver_processing.arn
+    events              = ["s3:ObjectCreated:*"]
+    filter_prefix       = "raw/box_scores/date="
+    filter_suffix       = "/data.json"
+  }
+
+  depends_on = [aws_lambda_permission.s3_invoke_silver_processing]
 }

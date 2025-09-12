@@ -48,6 +48,10 @@ variable "lambda_config" {
       timeout     = number
       memory_size = number
     })
+    silver_processing = object({
+      timeout     = number
+      memory_size = number
+    })
   })
   default = {
     bronze_ingestion = {
@@ -57,6 +61,10 @@ variable "lambda_config" {
     mcp_server = {
       timeout     = 30
       memory_size = 256
+    }
+    silver_processing = {
+      timeout     = 300 # 5 minutes for data processing
+      memory_size = 1024 # 1GB for data processing workloads
     }
   }
 }

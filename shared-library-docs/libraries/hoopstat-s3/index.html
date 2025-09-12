@@ -16,7 +16,7 @@
       
       
       <link rel="icon" href="../../assets/images/favicon.png">
-      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.6.16">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.6.19">
     
     
       
@@ -783,18 +783,18 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#parquetconversionerror" class="md-nav__link">
+  <a href="#silvers3managererror" class="md-nav__link">
     <span class="md-ellipsis">
-      ParquetConversionError
+      SilverS3ManagerError
     </span>
   </a>
   
 </li>
         
           <li class="md-nav__item">
-  <a href="#parquetconverter" class="md-nav__link">
+  <a href="#silvers3manager" class="md-nav__link">
     <span class="md-ellipsis">
-      ParquetConverter
+      SilverS3Manager
     </span>
   </a>
   
@@ -818,6 +818,24 @@
   
 </li>
         
+          <li class="md-nav__item">
+  <a href="#parquetconversionerror" class="md-nav__link">
+    <span class="md-ellipsis">
+      ParquetConversionError
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#parquetconverter" class="md-nav__link">
+    <span class="md-ellipsis">
+      ParquetConverter
+    </span>
+  </a>
+  
+</li>
+        
       </ul>
     </nav>
   
@@ -834,45 +852,54 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#convert_to_parquet_bytes" class="md-nav__link">
+  <a href="#read_bronze_json" class="md-nav__link">
     <span class="md-ellipsis">
-      convert_to_parquet_bytes
+      read_bronze_json
     </span>
   </a>
   
 </li>
         
           <li class="md-nav__item">
-  <a href="#convert_games" class="md-nav__link">
+  <a href="#write_silver_json" class="md-nav__link">
     <span class="md-ellipsis">
-      convert_games
+      write_silver_json
     </span>
   </a>
   
 </li>
         
           <li class="md-nav__item">
-  <a href="#convert_box_score" class="md-nav__link">
+  <a href="#write_partitioned_silver_data" class="md-nav__link">
     <span class="md-ellipsis">
-      convert_box_score
+      write_partitioned_silver_data
     </span>
   </a>
   
 </li>
         
           <li class="md-nav__item">
-  <a href="#convert_player_info" class="md-nav__link">
+  <a href="#parse_s3_event" class="md-nav__link">
     <span class="md-ellipsis">
-      convert_player_info
+      parse_s3_event
     </span>
   </a>
   
 </li>
         
           <li class="md-nav__item">
-  <a href="#convert_standings" class="md-nav__link">
+  <a href="#list_bronze_data" class="md-nav__link">
     <span class="md-ellipsis">
-      convert_standings
+      list_bronze_data
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#list_silver_data" class="md-nav__link">
+    <span class="md-ellipsis">
+      list_silver_data
     </span>
   </a>
   
@@ -923,6 +950,51 @@
   
 </li>
         
+          <li class="md-nav__item">
+  <a href="#convert_to_parquet_bytes" class="md-nav__link">
+    <span class="md-ellipsis">
+      convert_to_parquet_bytes
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#convert_games" class="md-nav__link">
+    <span class="md-ellipsis">
+      convert_games
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#convert_box_score" class="md-nav__link">
+    <span class="md-ellipsis">
+      convert_box_score
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#convert_player_info" class="md-nav__link">
+    <span class="md-ellipsis">
+      convert_player_info
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#convert_standings" class="md-nav__link">
+    <span class="md-ellipsis">
+      convert_standings
+    </span>
+  </a>
+  
+</li>
+        
       </ul>
     </nav>
   
@@ -953,34 +1025,43 @@
 <p><strong>Version:</strong> 0.1.0</p>
 <h2 id="description">Description<a class="headerlink" href="#description" title="Permanent link">&para;</a></h2>
 <p>Hoopstat S3 Library</p>
-<p>A library for S3 storage and Parquet data processing for NBA data.</p>
+<p>A library for S3 storage and data processing for NBA data.
+Supports both Parquet (for production) and JSON (for MVP) formats.</p>
 <h2 id="installation">Installation<a class="headerlink" href="#installation" title="Permanent link">&para;</a></h2>
 <p>Add to your application's <code>pyproject.toml</code>:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="k">[tool.poetry.dependencies]</span>
 <a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="n">hoopstat-s3</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span><span class="n">path</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s2">&quot;../libs/hoopstat-s3&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">develop</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="kc">true</span><span class="p">}</span>
 </code></pre></div>
 <h2 id="usage">Usage<a class="headerlink" href="#usage" title="Permanent link">&para;</a></h2>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">hoopstat_s3</span><span class="w"> </span><span class="kn">import</span> <span class="n">ParquetConverter</span><span class="p">,</span> <span class="n">ParquetConversionError</span><span class="p">,</span> <span class="n">S3Uploader</span><span class="p">,</span> <span class="n">S3UploadError</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">hoopstat_s3</span><span class="w"> </span><span class="kn">import</span> <span class="n">ParquetConverter</span><span class="p">,</span> <span class="n">ParquetConversionError</span><span class="p">,</span> <span class="n">S3Uploader</span><span class="p">,</span> <span class="n">S3UploadError</span><span class="p">,</span> <span class="n">SilverS3Manager</span><span class="p">,</span> <span class="n">SilverS3ManagerError</span>
 </code></pre></div>
 <h2 id="api-reference">API Reference<a class="headerlink" href="#api-reference" title="Permanent link">&para;</a></h2>
 <h3 id="classes">Classes<a class="headerlink" href="#classes" title="Permanent link">&para;</a></h3>
-<h4 id="parquetconversionerror">ParquetConversionError<a class="headerlink" href="#parquetconversionerror" title="Permanent link">&para;</a></h4>
-<p>Custom exception for Parquet conversion errors.</p>
-<h4 id="parquetconverter">ParquetConverter<a class="headerlink" href="#parquetconverter" title="Permanent link">&para;</a></h4>
-<p>Convert NBA API JSON responses to Parquet format.</p>
-<p>Follows ADR-014 decision to use Apache Parquet for structured data storage.</p>
+<h4 id="silvers3managererror">SilverS3ManagerError<a class="headerlink" href="#silvers3managererror" title="Permanent link">&para;</a></h4>
+<p>Custom exception for Silver S3 Manager errors.</p>
+<h4 id="silvers3manager">SilverS3Manager<a class="headerlink" href="#silvers3manager" title="Permanent link">&para;</a></h4>
+<p>Silver S3 Manager for Bronze-to-Silver data processing.</p>
+<p>Extends the base S3Uploader to support:
+- Reading Bronze layer JSON data from paths: raw/{entity}/date=YYYY-MM-DD/data.json
+- Writing Silver layer JSON data to paths: silver/{entity_type}/date=YYYY-MM-DD/
+- Partitioned Silver storage for player_stats, team_stats, game_stats
+- S3 event handling for Lambda triggers
+- Idempotency checks
+- Proper metadata tagging</p>
 <p><strong>Methods:</strong></p>
 <ul>
-<li><code>convert_to_parquet_bytes(self, json_data: Any) -&gt; bytes</code></li>
-<li>Convert JSON data to Parquet format as bytes.</li>
-<li><code>convert_games(self, games_data: Any) -&gt; bytes</code></li>
-<li>Convert games data to Parquet format.</li>
-<li><code>convert_box_score(self, box_score_data: Any) -&gt; bytes</code></li>
-<li>Convert box score data to Parquet format.</li>
-<li><code>convert_player_info(self, player_data: Any) -&gt; bytes</code></li>
-<li>Convert player info to Parquet format.</li>
-<li><code>convert_standings(self, standings_data: Any) -&gt; bytes</code></li>
-<li>Convert league standings to Parquet format.</li>
+<li><code>read_bronze_json(self, entity: str, target_date: date) -&gt; Any</code></li>
+<li>Read Bronze JSON data from S3.</li>
+<li><code>write_silver_json(self, entity_type: str, data: Any, target_date: date, check_exists: bool) -&gt; str</code></li>
+<li>Write Silver JSON data to S3 with proper partitioning.</li>
+<li><code>write_partitioned_silver_data(self, silver_data: Any, target_date: date, check_exists: bool) -&gt; Any</code></li>
+<li>Write partitioned Silver data for all entity types.</li>
+<li><code>parse_s3_event(self, event: Any) -&gt; Any</code></li>
+<li>Parse S3 event records from Lambda event for Bronze data triggers.</li>
+<li><code>list_bronze_data(self, entity: str, start_date: Any, end_date: Any) -&gt; Any</code></li>
+<li>List available Bronze data for an entity within a date range.</li>
+<li><code>list_silver_data(self, entity_type: str, start_date: Any, end_date: Any) -&gt; Any</code></li>
+<li>List available Silver data for an entity type within a date range.</li>
 </ul>
 <h4 id="s3uploaderror">S3UploadError<a class="headerlink" href="#s3uploaderror" title="Permanent link">&para;</a></h4>
 <p>Custom exception for S3 upload errors.</p>
@@ -1001,51 +1082,92 @@ s3://bucket/nba-api/{data_type}/year={year}/month={month}/day={day}/hour={hour}/
 <li><code>list_objects(self, prefix: str, max_keys: int) -&gt; Any</code></li>
 <li>List objects in S3 bucket with given prefix.</li>
 </ul>
+<h4 id="parquetconversionerror">ParquetConversionError<a class="headerlink" href="#parquetconversionerror" title="Permanent link">&para;</a></h4>
+<p>Custom exception for Parquet conversion errors.</p>
+<h4 id="parquetconverter">ParquetConverter<a class="headerlink" href="#parquetconverter" title="Permanent link">&para;</a></h4>
+<p>Convert NBA API JSON responses to Parquet format.</p>
+<p>Follows ADR-014 decision to use Apache Parquet for structured data storage.</p>
+<p><strong>Methods:</strong></p>
+<ul>
+<li><code>convert_to_parquet_bytes(self, json_data: Any) -&gt; bytes</code></li>
+<li>Convert JSON data to Parquet format as bytes.</li>
+<li><code>convert_games(self, games_data: Any) -&gt; bytes</code></li>
+<li>Convert games data to Parquet format.</li>
+<li><code>convert_box_score(self, box_score_data: Any) -&gt; bytes</code></li>
+<li>Convert box score data to Parquet format.</li>
+<li><code>convert_player_info(self, player_data: Any) -&gt; bytes</code></li>
+<li>Convert player info to Parquet format.</li>
+<li><code>convert_standings(self, standings_data: Any) -&gt; bytes</code></li>
+<li>Convert league standings to Parquet format.</li>
+</ul>
 <h3 id="functions">Functions<a class="headerlink" href="#functions" title="Permanent link">&para;</a></h3>
-<h4 id="convert_to_parquet_bytes">convert_to_parquet_bytes<a class="headerlink" href="#convert_to_parquet_bytes" title="Permanent link">&para;</a></h4>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="n">convert_to_parquet_bytes</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">json_data</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bytes</span>
+<h4 id="read_bronze_json">read_bronze_json<a class="headerlink" href="#read_bronze_json" title="Permanent link">&para;</a></h4>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="n">read_bronze_json</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">entity</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">target_date</span><span class="p">:</span> <span class="n">date</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span>
 </code></pre></div>
-<p>Convert JSON data to Parquet format as bytes.</p>
+<p>Read Bronze JSON data from S3.</p>
 <p>Args:
-    json_data: JSON data from NBA API</p>
+    entity: Entity type (e.g., 'box_scores')
+    target_date: Date of the data</p>
 <p>Returns:
-    Parquet data as bytes</p>
+    Parsed JSON data or None if not found</p>
 <p>Raises:
-    ParquetConversionError: If conversion fails</p>
-<h4 id="convert_games">convert_games<a class="headerlink" href="#convert_games" title="Permanent link">&para;</a></h4>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="n">convert_games</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">games_data</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bytes</span>
+    SilverS3ManagerError: If read operation fails</p>
+<h4 id="write_silver_json">write_silver_json<a class="headerlink" href="#write_silver_json" title="Permanent link">&para;</a></h4>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="n">write_silver_json</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">entity_type</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">data</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">target_date</span><span class="p">:</span> <span class="n">date</span><span class="p">,</span> <span class="n">check_exists</span><span class="p">:</span> <span class="nb">bool</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span>
 </code></pre></div>
-<p>Convert games data to Parquet format.</p>
+<p>Write Silver JSON data to S3 with proper partitioning.</p>
 <p>Args:
-    games_data: List of game dictionaries</p>
+    entity_type: Type of entity (player_stats, team_stats, game_stats)
+    data: Silver layer data to write
+    target_date: Date for partitioning
+    check_exists: Whether to check for existing data (idempotency)</p>
 <p>Returns:
-    Parquet data as bytes</p>
-<h4 id="convert_box_score">convert_box_score<a class="headerlink" href="#convert_box_score" title="Permanent link">&para;</a></h4>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="n">convert_box_score</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">box_score_data</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bytes</span>
+    S3 key where data was written</p>
+<p>Raises:
+    SilverS3ManagerError: If write operation fails</p>
+<h4 id="write_partitioned_silver_data">write_partitioned_silver_data<a class="headerlink" href="#write_partitioned_silver_data" title="Permanent link">&para;</a></h4>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="n">write_partitioned_silver_data</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">silver_data</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">target_date</span><span class="p">:</span> <span class="n">date</span><span class="p">,</span> <span class="n">check_exists</span><span class="p">:</span> <span class="nb">bool</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span>
 </code></pre></div>
-<p>Convert box score data to Parquet format.</p>
+<p>Write partitioned Silver data for all entity types.</p>
 <p>Args:
-    box_score_data: Box score dictionary</p>
+    silver_data: Dictionary containing lists of Silver model data
+        organized by type
+    target_date: Date for partitioning
+    check_exists: Whether to check for existing data (idempotency)</p>
 <p>Returns:
-    Parquet data as bytes</p>
-<h4 id="convert_player_info">convert_player_info<a class="headerlink" href="#convert_player_info" title="Permanent link">&para;</a></h4>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="n">convert_player_info</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">player_data</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bytes</span>
+    Dictionary mapping entity_type to S3 key where data was written</p>
+<p>Raises:
+    SilverS3ManagerError: If any write operation fails</p>
+<h4 id="parse_s3_event">parse_s3_event<a class="headerlink" href="#parse_s3_event" title="Permanent link">&para;</a></h4>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="n">parse_s3_event</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">event</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span>
 </code></pre></div>
-<p>Convert player info to Parquet format.</p>
+<p>Parse S3 event records from Lambda event for Bronze data triggers.</p>
 <p>Args:
-    player_data: Player info dictionary</p>
+    event: Lambda event containing S3 records</p>
 <p>Returns:
-    Parquet data as bytes</p>
-<h4 id="convert_standings">convert_standings<a class="headerlink" href="#convert_standings" title="Permanent link">&para;</a></h4>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="n">convert_standings</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">standings_data</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bytes</span>
+    List of parsed Bronze data events that should trigger Silver processing</p>
+<h4 id="list_bronze_data">list_bronze_data<a class="headerlink" href="#list_bronze_data" title="Permanent link">&para;</a></h4>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="n">list_bronze_data</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">entity</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">start_date</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">end_date</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span>
 </code></pre></div>
-<p>Convert league standings to Parquet format.</p>
+<p>List available Bronze data for an entity within a date range.</p>
 <p>Args:
-    standings_data: Standings dictionary</p>
+    entity: Entity type (e.g., 'box_scores')
+    start_date: Start date for filtering (optional)
+    end_date: End date for filtering (optional)</p>
 <p>Returns:
-    Parquet data as bytes</p>
+    List of dictionaries with Bronze data information</p>
+<h4 id="list_silver_data">list_silver_data<a class="headerlink" href="#list_silver_data" title="Permanent link">&para;</a></h4>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a><span class="n">list_silver_data</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">entity_type</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">start_date</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">end_date</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span>
+</code></pre></div>
+<p>List available Silver data for an entity type within a date range.</p>
+<p>Args:
+    entity_type: Entity type (player_stats, team_stats, game_stats)
+    start_date: Start date for filtering (optional)
+    end_date: End date for filtering (optional)</p>
+<p>Returns:
+    List of dictionaries with Silver data information</p>
 <h4 id="upload_games">upload_games<a class="headerlink" href="#upload_games" title="Permanent link">&para;</a></h4>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a><span class="n">upload_games</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">parquet_data</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">,</span> <span class="n">target_date</span><span class="p">:</span> <span class="n">date</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a><span class="n">upload_games</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">parquet_data</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">,</span> <span class="n">target_date</span><span class="p">:</span> <span class="n">date</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span>
 </code></pre></div>
 <p>Upload games data to S3 with proper partitioning.</p>
 <p>Args:
@@ -1056,7 +1178,7 @@ s3://bucket/nba-api/{data_type}/year={year}/month={month}/day={day}/hour={hour}/
 <p>Raises:
     S3UploadError: If upload fails</p>
 <h4 id="upload_box_score">upload_box_score<a class="headerlink" href="#upload_box_score" title="Permanent link">&para;</a></h4>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a><span class="n">upload_box_score</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">parquet_data</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">,</span> <span class="n">game_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">target_date</span><span class="p">:</span> <span class="n">date</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a><span class="n">upload_box_score</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">parquet_data</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">,</span> <span class="n">game_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">target_date</span><span class="p">:</span> <span class="n">date</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span>
 </code></pre></div>
 <p>Upload box score data to S3 with proper partitioning.</p>
 <p>Args:
@@ -1066,7 +1188,7 @@ s3://bucket/nba-api/{data_type}/year={year}/month={month}/day={day}/hour={hour}/
 <p>Returns:
     S3 key where data was uploaded</p>
 <h4 id="upload_player_info">upload_player_info<a class="headerlink" href="#upload_player_info" title="Permanent link">&para;</a></h4>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a><span class="n">upload_player_info</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">parquet_data</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">,</span> <span class="n">player_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a><span class="n">upload_player_info</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">parquet_data</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">,</span> <span class="n">player_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span>
 </code></pre></div>
 <p>Upload player info to S3 with proper partitioning.</p>
 <p>Args:
@@ -1075,7 +1197,7 @@ s3://bucket/nba-api/{data_type}/year={year}/month={month}/day={day}/hour={hour}/
 <p>Returns:
     S3 key where data was uploaded</p>
 <h4 id="upload_standings">upload_standings<a class="headerlink" href="#upload_standings" title="Permanent link">&para;</a></h4>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a><span class="n">upload_standings</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">parquet_data</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a><span class="n">upload_standings</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">parquet_data</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span>
 </code></pre></div>
 <p>Upload league standings to S3 with proper partitioning.</p>
 <p>Args:
@@ -1083,7 +1205,7 @@ s3://bucket/nba-api/{data_type}/year={year}/month={month}/day={day}/hour={hour}/
 <p>Returns:
     S3 key where data was uploaded</p>
 <h4 id="list_objects">list_objects<a class="headerlink" href="#list_objects" title="Permanent link">&para;</a></h4>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a><span class="n">list_objects</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">prefix</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">max_keys</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a><span class="n">list_objects</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">prefix</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">max_keys</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span>
 </code></pre></div>
 <p>List objects in S3 bucket with given prefix.</p>
 <p>Args:
@@ -1091,6 +1213,48 @@ s3://bucket/nba-api/{data_type}/year={year}/month={month}/day={day}/hour={hour}/
     max_keys: Maximum number of keys to return</p>
 <p>Returns:
     List of object metadata dictionaries</p>
+<h4 id="convert_to_parquet_bytes">convert_to_parquet_bytes<a class="headerlink" href="#convert_to_parquet_bytes" title="Permanent link">&para;</a></h4>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a><span class="n">convert_to_parquet_bytes</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">json_data</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bytes</span>
+</code></pre></div>
+<p>Convert JSON data to Parquet format as bytes.</p>
+<p>Args:
+    json_data: JSON data from NBA API</p>
+<p>Returns:
+    Parquet data as bytes</p>
+<p>Raises:
+    ParquetConversionError: If conversion fails</p>
+<h4 id="convert_games">convert_games<a class="headerlink" href="#convert_games" title="Permanent link">&para;</a></h4>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a><span class="n">convert_games</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">games_data</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bytes</span>
+</code></pre></div>
+<p>Convert games data to Parquet format.</p>
+<p>Args:
+    games_data: List of game dictionaries</p>
+<p>Returns:
+    Parquet data as bytes</p>
+<h4 id="convert_box_score">convert_box_score<a class="headerlink" href="#convert_box_score" title="Permanent link">&para;</a></h4>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-15-1" name="__codelineno-15-1" href="#__codelineno-15-1"></a><span class="n">convert_box_score</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">box_score_data</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bytes</span>
+</code></pre></div>
+<p>Convert box score data to Parquet format.</p>
+<p>Args:
+    box_score_data: Box score dictionary</p>
+<p>Returns:
+    Parquet data as bytes</p>
+<h4 id="convert_player_info">convert_player_info<a class="headerlink" href="#convert_player_info" title="Permanent link">&para;</a></h4>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-16-1" name="__codelineno-16-1" href="#__codelineno-16-1"></a><span class="n">convert_player_info</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">player_data</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bytes</span>
+</code></pre></div>
+<p>Convert player info to Parquet format.</p>
+<p>Args:
+    player_data: Player info dictionary</p>
+<p>Returns:
+    Parquet data as bytes</p>
+<h4 id="convert_standings">convert_standings<a class="headerlink" href="#convert_standings" title="Permanent link">&para;</a></h4>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-17-1" name="__codelineno-17-1" href="#__codelineno-17-1"></a><span class="n">convert_standings</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">standings_data</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bytes</span>
+</code></pre></div>
+<p>Convert league standings to Parquet format.</p>
+<p>Args:
+    standings_data: Standings dictionary</p>
+<p>Returns:
+    Parquet data as bytes</p>
 
 
 
@@ -1127,7 +1291,8 @@ s3://bucket/nba-api/{data_type}/year={year}/month={month}/day={day}/hour={hour}/
   
 </div>
       
-        <div class="md-social">
+        
+<div class="md-social">
   
     
     
@@ -1154,10 +1319,10 @@ s3://bucket/nba-api/{data_type}/year={year}/month={month}/day={day}/hour={hour}/
     
     
       
-      <script id="__config" type="application/json">{"base": "../..", "features": ["navigation.tabs", "navigation.sections", "search.suggest", "search.highlight"], "search": "../../assets/javascripts/workers/search.d50fe291.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+      <script id="__config" type="application/json">{"base": "../..", "features": ["navigation.tabs", "navigation.sections", "search.suggest", "search.highlight"], "search": "../../assets/javascripts/workers/search.973d3a69.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
     
     
-      <script src="../../assets/javascripts/bundle.50899def.min.js"></script>
+      <script src="../../assets/javascripts/bundle.92b07e13.min.js"></script>
       
     
   </body>

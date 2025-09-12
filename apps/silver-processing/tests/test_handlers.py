@@ -1,65 +1,109 @@
 """Tests for the Lambda handlers module."""
 
+from datetime import date
+from unittest.mock import MagicMock, patch
+
 import pytest
 
-from app.handlers import lambda_handler, parse_s3_events, process_s3_record
-from app.processors import SilverProcessor
+from app.handlers import lambda_handler, process_bronze_event
 
 
 class TestLambdaHandler:
     """Test cases for Lambda event handlers."""
 
-    def test_lambda_handler_empty_event(self):
+    @patch("app.handlers.SilverS3Manager")
+    @patch.dict("os.environ", {"BRONZE_BUCKET": "test-bucket"})
+    def test_lambda_handler_empty_event(self, mock_s3_manager):
         """Test Lambda handler with empty event."""
+        # Mock S3 manager to return no Bronze events
+        mock_manager = MagicMock()
+        mock_manager.parse_s3_event.return_value = []
+        mock_s3_manager.return_value = mock_manager
+
         event = {}
         context = {}
         result = lambda_handler(event, context)
         assert result["statusCode"] == 200
-        assert "No records to process" in result["message"]
+        assert "No Bronze triggers to process" in result["message"]
 
-    def test_lambda_handler_no_s3_records(self):
-        """Test Lambda handler with non-S3 records."""
-        event = {"Records": [{"eventSource": "aws:sns"}]}
+    @patch.dict("os.environ", {}, clear=True)
+    def test_lambda_handler_no_bucket_configured(self):
+        """Test Lambda handler with no bucket configured."""
+        event = {}
         context = {}
         result = lambda_handler(event, context)
-        assert result["statusCode"] == 200
+        assert result["statusCode"] == 400
+        assert "No bucket configured" in result["message"]
 
-    def test_parse_s3_events_empty(self):
-        """Test parsing empty S3 events."""
-        event = {}
-        records = parse_s3_events(event)
-        assert records == []
-
-    def test_parse_s3_events_with_s3_records(self):
-        """Test parsing S3 events with valid records."""
-        event = {
-            "Records": [
-                {"eventSource": "aws:s3", "s3": {"bucket": {"name": "test"}}},
-                {"eventSource": "aws:sns"},  # Should be filtered out
-                {"eventSource": "aws:s3", "s3": {"bucket": {"name": "test2"}}},
-            ]
+    @patch("app.handlers.SilverS3Manager")
+    @patch.dict("os.environ", {"BRONZE_BUCKET": "test-bucket"})
+    def test_lambda_handler_with_bronze_events(self, mock_s3_manager):
+        """Test Lambda handler with Bronze trigger events."""
+        # Mock S3 manager to return Bronze events
+        mock_manager = MagicMock()
+        mock_bronze_event = {
+            "bucket": "test-bucket",
+            "key": "raw/box_scores/date=2024-01-15/data.json",
+            "entity": "box_scores",
+            "date": date(2024, 1, 15),
         }
-        records = parse_s3_events(event)
-        assert len(records) == 2
-        assert all(r["eventSource"] == "aws:s3" for r in records)
+        mock_manager.parse_s3_event.return_value = [mock_bronze_event]
+        mock_s3_manager.return_value = mock_manager
 
-    def test_process_s3_record_valid(self):
-        """Test processing a valid S3 record."""
-        processor = SilverProcessor()
-        record = {
-            "s3": {
-                "bucket": {"name": "test-bucket"},
-                "object": {"key": "test/key.json"},
-            }
+        # Mock the processor to succeed
+        with patch("app.handlers.SilverProcessor") as mock_processor_class:
+            mock_processor = MagicMock()
+            mock_processor.process_date.return_value = True
+            mock_processor_class.return_value = mock_processor
+
+            event = {"Records": [{"eventSource": "aws:s3"}]}
+            context = {}
+            result = lambda_handler(event, context)
+
+            assert result["statusCode"] == 200
+            assert "Processed 1/1 Bronze events" in result["message"]
+
+    def test_process_bronze_event_valid(self):
+        """Test processing a valid Bronze event."""
+        # Mock processor
+        processor = MagicMock()
+        processor.process_date.return_value = True
+
+        bronze_event = {
+            "bucket": "test-bucket",
+            "key": "raw/box_scores/date=2024-01-15/data.json",
+            "entity": "box_scores",
+            "date": date(2024, 1, 15),
         }
-        result = process_s3_record(processor, record)
+
+        result = process_bronze_event(processor, bronze_event)
         assert result["success"] is True
-        assert result["record"]["bucket"] == "test-bucket"
-        assert result["record"]["key"] == "test/key.json"
+        assert result["bronze_event"]["entity"] == "box_scores"
+        assert "Successfully processed" in result["message"]
 
-    def test_process_s3_record_missing_bucket(self):
-        """Test processing S3 record with missing bucket."""
-        processor = SilverProcessor()
-        record = {"s3": {"object": {"key": "test/key.json"}}}
-        with pytest.raises(ValueError, match="Missing S3 bucket or key"):
-            process_s3_record(processor, record)
+    def test_process_bronze_event_missing_info(self):
+        """Test processing Bronze event with missing information."""
+        processor = MagicMock()
+        bronze_event = {"bucket": "test-bucket"}  # Missing required fields
+
+        with pytest.raises(
+            ValueError, match="Missing required Bronze event information"
+        ):
+            process_bronze_event(processor, bronze_event)
+
+    def test_process_bronze_event_processing_failure(self):
+        """Test processing Bronze event when processing fails."""
+        # Mock processor to fail
+        processor = MagicMock()
+        processor.process_date.return_value = False
+
+        bronze_event = {
+            "bucket": "test-bucket",
+            "key": "raw/box_scores/date=2024-01-15/data.json",
+            "entity": "box_scores",
+            "date": date(2024, 1, 15),
+        }
+
+        result = process_bronze_event(processor, bronze_event)
+        assert result["success"] is False
+        assert "Processing failed" in result["message"]

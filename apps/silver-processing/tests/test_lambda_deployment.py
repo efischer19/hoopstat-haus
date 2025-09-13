@@ -83,10 +83,10 @@ class TestLambdaDeployment:
             dockerfile_content = f.read()
 
         # Check that the CMD points to the correct handler
-        assert 'CMD ["app.handlers.lambda_handler"]' in dockerfile_content
+        assert 'CMD ["app.lambda_handler.lambda_handler"]' in dockerfile_content
 
         # Verify the handler function exists and is callable
-        from app.handlers import lambda_handler
+        from app.lambda_handler import lambda_handler
 
         assert callable(lambda_handler)
 

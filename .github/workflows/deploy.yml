@@ -10,7 +10,6 @@ on:
         type: choice
         options:
           - bronze-ingestion
-          - mcp-server
           - silver-processing
       environment:
         description: 'Target environment'
@@ -314,20 +313,11 @@ jobs:
 
               if [ $? -eq 0 ]; then
                 echo "✅ Lambda function is now active and ready"
-
-                # Optional: Run a test invocation for API service functions
-                if [[ "$APP_NAME" == "mcp-server" ]]; then
-                  echo "🧪 Running test invocation..."
-                  TEST_PAYLOAD='{"test": true, "message": "deployment verification"}'
-
-                  aws lambda invoke \
-                    --function-name "$FUNCTION_NAME" \
-                    --payload "$TEST_PAYLOAD" \
-                    --region "$AWS_REGION" \
-                    --log-type Tail \
-                    test_response.json
-
-                  if [ $? -eq 0 ]; then
+                echo "🎉 Deployment completed successfully"
+              else
+                echo "❌ Function update failed or timed out"
+                exit 1
+              fi
                     echo "✅ Test invocation successful"
                     echo "📋 Response:"
                     cat test_response.json | jq '.'

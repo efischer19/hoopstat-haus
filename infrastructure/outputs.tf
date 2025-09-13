@@ -122,12 +122,6 @@ output "lambda_functions" {
       function_arn  = aws_lambda_function.bronze_ingestion.arn
       invoke_arn    = aws_lambda_function.bronze_ingestion.invoke_arn
     }
-    # mcp_server commented out until image is available
-    # mcp_server = {
-    #   function_name = aws_lambda_function.mcp_server.function_name
-    #   function_arn  = aws_lambda_function.mcp_server.arn
-    #   invoke_arn    = aws_lambda_function.mcp_server.invoke_arn
-    # }
   }
 }
 

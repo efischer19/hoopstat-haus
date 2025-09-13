@@ -54,7 +54,7 @@ The ADR framework combined with the extracted feature requests creates an except
 
 **Feature Request Generation Excellence:**
 - 42 well-structured feature requests with clear acceptance criteria
-- Consistent categorization (frontend, etl-pipeline, mcp-server, etc.) enables focused development
+- Consistent categorization (frontend, etl-pipeline, aws-integration, etc.) enables focused development
 - Priority and complexity estimates support sprint planning
 - Comprehensive GitHub issue creation script automates workflow initiation
 

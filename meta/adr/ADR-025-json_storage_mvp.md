@@ -1,8 +1,10 @@
 ---
 title: "ADR-025: JSON Storage for Simplified MVP Data Pipeline"
-status: "Accepted"
+status: "Superseded"
 date: "2025-09-07"
 supersedes: "ADR-014"
+superseded_by: "ADR-026"
+superseded_date: "2025-09-13"
 tags:
   - "data-pipeline"
   - "data-storage"

@@ -1,5 +1,9 @@
 # Plan: MCP Server Architecture for AI-Native Data Access
 
+> **⚠️ DEPRECATED:** This plan has been superseded by ADR-026 (S3 Tables + AWS MCP Server approach). The AWS MCP Server eliminates the need for custom MCP server implementation, providing zero-maintenance access to S3 Tables data.
+> 
+> **See:** [ADR-026: S3 Tables for Gold Layer](../adr/ADR-026-s3_tables_gold_layer.md) for the current approach.
+
 > **📝 NOTE:** This plan is being updated for the simplified roadmap (September 2025). References to Parquet storage will be updated to JSON format per ADR-025. Core MCP architecture remains valid.
 
 **Status:** Planning - Updated for MVP  

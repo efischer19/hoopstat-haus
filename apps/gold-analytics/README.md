@@ -9,10 +9,25 @@ This application processes Silver layer NBA data and transforms it into advanced
 ## Features
 
 ### Analytics Metrics
-- **Player Analytics**: True Shooting %, Player Efficiency Rating, Usage Rate
+- **Player Analytics**: True Shooting %, Player Efficiency Rating, Usage Rate, Effective FG%
 - **Team Analytics**: Offensive/Defensive Rating, Pace, Net Rating, Four Factors
 - **Season Aggregations**: Full season summaries for players and teams
 - **S3 Tables Integration**: Optimized storage using Apache Iceberg format
+
+### Apache Iceberg Integration
+- **PyIceberg Library**: Full Apache Iceberg support for Lambda environment
+- **Optimized Partitioning**: Season/month/team partitioning per ADR-026
+- **File Size Optimization**: Target 64-128MB files for query performance 
+- **Schema Evolution**: Support for future analytics additions
+- **Transaction Support**: Data consistency through Iceberg transactions
+- **Automatic Compaction**: S3 Tables handles long-term efficiency
+- **Error Handling**: Comprehensive logging for debugging
+
+### Performance Features
+- **Memory-Optimized Writes**: Streaming writes for Lambda constraints
+- **Chunked Processing**: Large datasets split for optimal file sizes
+- **Query Optimization**: Partition pruning for sub-second responses
+- **Decimal Precision**: Proper data types for analytics percentages
 
 ### Data Flow
 ```

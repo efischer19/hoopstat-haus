@@ -811,7 +811,7 @@ resource "aws_iam_role_policy" "github_actions_operations_lambda" {
         ]
         Resource = [
           "arn:aws:lambda:${var.aws_region}:${data.aws_caller_identity.current.account_id}:function:${var.project_name}-bronze-ingestion",
-          "arn:aws:lambda:${var.aws_region}:${data.aws_caller_identity.current.account_id}:function:${var.project_name}-mcp-server",
+          # "arn:aws:lambda:${var.aws_region}:${data.aws_caller_identity.current.account_id}:function:${var.project_name}-mcp-server",  # commented out
           "arn:aws:lambda:${var.aws_region}:${data.aws_caller_identity.current.account_id}:function:${var.project_name}-silver-processing"
         ]
       }
@@ -1188,15 +1188,6 @@ resource "aws_iam_policy" "lambda_execution" {
           "ecr:GetAuthorizationToken"
         ]
         Resource = "*"
-      },
-      {
-        Effect = "Allow"
-        Action = [
-          "sqs:SendMessage"
-        ]
-        Resource = [
-          aws_sqs_queue.silver_processing_dlq.arn
-        ]
       }
     ]
   })
@@ -1252,39 +1243,39 @@ resource "aws_lambda_function" "bronze_ingestion" {
   }
 }
 
-# MCP Server Lambda Function
-resource "aws_lambda_function" "mcp_server" {
-  function_name = "${var.project_name}-mcp-server"
-  role          = aws_iam_role.lambda_execution.arn
-  package_type  = "Image"
-  image_uri     = "${aws_ecr_repository.main.repository_url}:mcp-server-latest"
-
-  timeout     = var.lambda_config.mcp_server.timeout
-  memory_size = var.lambda_config.mcp_server.memory_size
-
-  environment {
-    variables = {
-      LOG_LEVEL   = "INFO"
-      APP_NAME    = "mcp-server"
-      GOLD_BUCKET = aws_s3_bucket.gold.bucket
-    }
-  }
-
-  logging_config {
-    log_format = "JSON"
-    log_group  = aws_cloudwatch_log_group.applications.name
-  }
-
-  tags = {
-    Application = "mcp-server"
-    Type        = "api-service"
-  }
-
-  # Lifecycle rule to ignore image_uri changes (managed by deployment workflow)
-  lifecycle {
-    ignore_changes = [image_uri]
-  }
-}
+# MCP Server Lambda Function - COMMENTED OUT until image is built
+# resource "aws_lambda_function" "mcp_server" {
+#   function_name = "${var.project_name}-mcp-server"
+#   role          = aws_iam_role.lambda_execution.arn
+#   package_type  = "Image"
+#   image_uri     = "${aws_ecr_repository.main.repository_url}:mcp-server-latest"
+#
+#   timeout     = var.lambda_config.mcp_server.timeout
+#   memory_size = var.lambda_config.mcp_server.memory_size
+#
+#   environment {
+#     variables = {
+#       LOG_LEVEL   = "INFO"
+#       APP_NAME    = "mcp-server"
+#       GOLD_BUCKET = aws_s3_bucket.gold.bucket
+#     }
+#   }
+#
+#   logging_config {
+#     log_format = "JSON"
+#     log_group  = aws_cloudwatch_log_group.applications.name
+#   }
+#
+#   tags = {
+#     Application = "mcp-server"
+#     Type        = "api-service"
+#   }
+#
+#   # Lifecycle rule to ignore image_uri changes (managed by deployment workflow)
+#   lifecycle {
+#     ignore_changes = [image_uri]
+#   }
+# }
 
 # Silver Processing Lambda Function
 resource "aws_lambda_function" "silver_processing" {
@@ -1320,30 +1311,15 @@ resource "aws_lambda_function" "silver_processing" {
     ignore_changes = [image_uri]
   }
 
-  # DLQ configuration
-  dead_letter_config {
-    target_arn = aws_sqs_queue.silver_processing_dlq.arn
-  }
+  # Simple error handling via CloudWatch logs and Lambda retries
 }
 
-# Dead Letter Queue for Silver Processing Lambda
-resource "aws_sqs_queue" "silver_processing_dlq" {
-  name                       = "${var.project_name}-silver-processing-dlq"
-  visibility_timeout_seconds = 360 # 6 minutes (longer than Lambda timeout)
-  message_retention_seconds  = 1209600 # 14 days
-
-  tags = {
-    Application = "silver-processing"
-    Type        = "dlq"
-    Purpose     = "Dead letter queue for failed silver processing Lambda invocations"
-  }
-}
 
 # Lambda-specific CloudWatch Alarms
 resource "aws_cloudwatch_metric_alarm" "lambda_errors" {
   for_each = {
     bronze_ingestion  = aws_lambda_function.bronze_ingestion.function_name
-    mcp_server        = aws_lambda_function.mcp_server.function_name
+    # mcp_server        = aws_lambda_function.mcp_server.function_name  # commented out
     silver_processing = aws_lambda_function.silver_processing.function_name
   }
 
@@ -1374,10 +1350,10 @@ resource "aws_cloudwatch_metric_alarm" "lambda_duration" {
       function_name = aws_lambda_function.bronze_ingestion.function_name
       threshold     = 250000 # 4.17 minutes (83% of 5m timeout)
     }
-    mcp_server = {
-      function_name = aws_lambda_function.mcp_server.function_name
-      threshold     = 25000 # 25 seconds (83% of 30s timeout)
-    }
+    # mcp_server = {  # commented out
+    #   function_name = aws_lambda_function.mcp_server.function_name
+    #   threshold     = 25000 # 25 seconds (83% of 30s timeout)
+    # }
     silver_processing = {
       function_name = aws_lambda_function.silver_processing.function_name
       threshold     = 250000 # 4.17 minutes (83% of 5m timeout)
@@ -1408,7 +1384,7 @@ resource "aws_cloudwatch_metric_alarm" "lambda_duration" {
 resource "aws_cloudwatch_metric_alarm" "lambda_throttles" {
   for_each = {
     bronze_ingestion  = aws_lambda_function.bronze_ingestion.function_name
-    mcp_server        = aws_lambda_function.mcp_server.function_name
+    # mcp_server        = aws_lambda_function.mcp_server.function_name  # commented out
     silver_processing = aws_lambda_function.silver_processing.function_name
   }
 

@@ -516,41 +516,171 @@ resource "aws_s3_bucket_lifecycle_configuration" "silver" {
 # S3 Tables for Gold Layer Analytics (ADR-026)
 # ============================================================================
 
-# NOTE: S3 Tables is a preview AWS service. These resources represent the intended
-# infrastructure design per ADR-026. Manual configuration may be required until
-# the AWS provider fully supports S3 Tables Terraform resources.
-#
-# Expected S3 Tables Configuration:
-# 
-# 1. Table Bucket: ${var.project_name}-gold-tables
-#    - Apache Iceberg format
-#    - Optimized for analytics workloads
-#    - Integrated with AWS MCP Server
-#
-# 2. Player Analytics Table: player_analytics
-#    - Schema: player_id, game_date, season, team_id, points, rebounds, assists,
-#              true_shooting_pct, player_efficiency_rating, usage_rate,
-#              effective_field_goal_pct, defensive_rating, offensive_rating
-#    - Partitioned by: game_date, player_id
-#
-# 3. Team Analytics Table: team_analytics  
-#    - Schema: team_id, game_date, season, opponent_team_id, offensive_rating,
-#              defensive_rating, net_rating, pace, effective_field_goal_pct,
-#              true_shooting_pct, turnover_rate, rebound_rate
-#    - Partitioned by: game_date, team_id
-#
-# 4. Table Bucket Policy: Public read access for data sharing
-#    - Allows GetTable, GetTableData, GetTableMetadata operations
-#    - Restricted by IP for security
-#
-# Manual Configuration Steps:
-# 1. Create S3 Tables bucket via AWS Console or AWS CLI
-# 2. Define table schemas with Apache Iceberg format
-# 3. Configure partitioning strategy for optimal query performance
-# 4. Set up IAM permissions for Lambda and MCP access
-# 5. Configure public read policy for data sharing
-#
-# Cost Analysis: ~$0.60/year additional cost as analyzed in ADR-026
+# S3 Tables Bucket for Gold Layer Apache Iceberg analytics
+resource "aws_s3tables_table_bucket" "gold_tables" {
+  name = "${var.project_name}-gold-tables"
+}
+
+# S3 Tables Namespace for basketball analytics
+resource "aws_s3tables_namespace" "basketball_analytics" {
+  namespace        = "basketball_analytics"
+  table_bucket_arn = aws_s3tables_table_bucket.gold_tables.arn
+}
+
+# Player Analytics Table with Apache Iceberg schema
+resource "aws_s3tables_table" "player_analytics" {
+  name             = "player_analytics"
+  namespace        = aws_s3tables_namespace.basketball_analytics.namespace
+  table_bucket_arn = aws_s3tables_table_bucket.gold_tables.arn
+  format           = "ICEBERG"
+
+  metadata {
+    iceberg {
+      schema {
+        field {
+          name     = "player_id"
+          type     = "int"
+          required = true
+        }
+        field {
+          name     = "game_date"
+          type     = "date"
+          required = true
+        }
+        field {
+          name     = "season"
+          type     = "string"
+          required = true
+        }
+        field {
+          name     = "team_id"
+          type     = "int"
+          required = true
+        }
+        field {
+          name     = "points"
+          type     = "int"
+          required = false
+        }
+        field {
+          name     = "rebounds"
+          type     = "int"
+          required = false
+        }
+        field {
+          name     = "assists"
+          type     = "int"
+          required = false
+        }
+        field {
+          name     = "true_shooting_pct"
+          type     = "double"
+          required = false
+        }
+        field {
+          name     = "player_efficiency_rating"
+          type     = "double"
+          required = false
+        }
+        field {
+          name     = "usage_rate"
+          type     = "double"
+          required = false
+        }
+        field {
+          name     = "effective_field_goal_pct"
+          type     = "double"
+          required = false
+        }
+        field {
+          name     = "defensive_rating"
+          type     = "double"
+          required = false
+        }
+        field {
+          name     = "offensive_rating"
+          type     = "double"
+          required = false
+        }
+      }
+    }
+  }
+}
+
+# Team Analytics Table with Apache Iceberg schema
+resource "aws_s3tables_table" "team_analytics" {
+  name             = "team_analytics"
+  namespace        = aws_s3tables_namespace.basketball_analytics.namespace
+  table_bucket_arn = aws_s3tables_table_bucket.gold_tables.arn
+  format           = "ICEBERG"
+
+  metadata {
+    iceberg {
+      schema {
+        field {
+          name     = "team_id"
+          type     = "int"
+          required = true
+        }
+        field {
+          name     = "game_date"
+          type     = "date"
+          required = true
+        }
+        field {
+          name     = "season"
+          type     = "string"
+          required = true
+        }
+        field {
+          name     = "opponent_team_id"
+          type     = "int"
+          required = true
+        }
+        field {
+          name     = "offensive_rating"
+          type     = "double"
+          required = false
+        }
+        field {
+          name     = "defensive_rating"
+          type     = "double"
+          required = false
+        }
+        field {
+          name     = "net_rating"
+          type     = "double"
+          required = false
+        }
+        field {
+          name     = "pace"
+          type     = "double"
+          required = false
+        }
+        field {
+          name     = "effective_field_goal_pct"
+          type     = "double"
+          required = false
+        }
+        field {
+          name     = "true_shooting_pct"
+          type     = "double"
+          required = false
+        }
+        field {
+          name     = "turnover_rate"
+          type     = "double"
+          required = false
+        }
+        field {
+          name     = "rebound_rate"
+          type     = "double"
+          required = false
+        }
+      }
+    }
+  }
+}
 
 
 
@@ -1068,8 +1198,8 @@ resource "aws_iam_role_policy" "gold_data_access" {
           "s3tables:ListTableBuckets"
         ]
         Resource = [
-          "arn:aws:s3tables:${var.aws_region}:${data.aws_caller_identity.current.account_id}:bucket/${var.project_name}-gold-tables",
-          "arn:aws:s3tables:${var.aws_region}:${data.aws_caller_identity.current.account_id}:bucket/${var.project_name}-gold-tables/*"
+          "arn:aws:s3tables:${var.aws_region}:${data.aws_caller_identity.current.account_id}:bucket/${aws_s3tables_table_bucket.gold_tables.name}",
+          "arn:aws:s3tables:${var.aws_region}:${data.aws_caller_identity.current.account_id}:bucket/${aws_s3tables_table_bucket.gold_tables.name}/*"
         ]
       },
       {
@@ -1163,8 +1293,8 @@ resource "aws_iam_policy" "lambda_execution" {
           "s3tables:GetTableBucket"
         ]
         Resource = [
-          "arn:aws:s3tables:${var.aws_region}:${data.aws_caller_identity.current.account_id}:bucket/${var.project_name}-gold-tables",
-          "arn:aws:s3tables:${var.aws_region}:${data.aws_caller_identity.current.account_id}:bucket/${var.project_name}-gold-tables/*"
+          "arn:aws:s3tables:${var.aws_region}:${data.aws_caller_identity.current.account_id}:bucket/${aws_s3tables_table_bucket.gold_tables.name}",
+          "arn:aws:s3tables:${var.aws_region}:${data.aws_caller_identity.current.account_id}:bucket/${aws_s3tables_table_bucket.gold_tables.name}/*"
         ]
       },
       {
@@ -1291,9 +1421,11 @@ resource "aws_lambda_function" "gold_processing" {
       LOG_LEVEL              = "INFO"
       APP_NAME               = "gold-processing"
       SILVER_BUCKET          = aws_s3_bucket.silver.bucket
-      S3_TABLES_BUCKET       = "${var.project_name}-gold-tables"
-      PLAYER_ANALYTICS_TABLE = "player_analytics"
-      TEAM_ANALYTICS_TABLE   = "team_analytics"
+      S3_TABLES_BUCKET       = aws_s3tables_table_bucket.gold_tables.name
+      S3_TABLES_BUCKET_ARN   = aws_s3tables_table_bucket.gold_tables.arn
+      NAMESPACE              = aws_s3tables_namespace.basketball_analytics.namespace
+      PLAYER_ANALYTICS_TABLE = aws_s3tables_table.player_analytics.name
+      TEAM_ANALYTICS_TABLE   = aws_s3tables_table.team_analytics.name
       AWS_REGION             = var.aws_region
     }
   }

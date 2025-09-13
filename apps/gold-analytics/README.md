@@ -10,7 +10,8 @@ This application processes Silver layer NBA data and transforms it into advanced
 
 ### Analytics Metrics
 - **Player Analytics**: True Shooting %, Player Efficiency Rating, Usage Rate
-- **Team Analytics**: Offensive/Defensive Rating, Pace, Net Rating
+- **Team Analytics**: Offensive/Defensive Rating, Pace, Net Rating, Four Factors
+- **Season Aggregations**: Full season summaries for players and teams
 - **S3 Tables Integration**: Optimized storage using Apache Iceberg format
 
 ### Data Flow
@@ -43,6 +44,16 @@ poetry run pytest
 # Process a specific date (dry run)
 poetry run start process --date 2024-01-15 --dry-run
 
+# Process player season aggregation
+poetry run start season-players --season 2023-24 --dry-run
+
+# Process team season aggregation
+poetry run start season-teams --season 2023-24 --dry-run
+
+# Process specific player or team
+poetry run start season-players --season 2023-24 --player-id 2544 --dry-run
+poetry run start season-teams --season 2023-24 --team-id 1610612747 --dry-run
+
 # Check status
 poetry run start status
 ```
@@ -61,8 +72,12 @@ Following the strategy from ADR-026:
 s3://bucket/gold_tables/
 ├── player_analytics/
 │   └── date=YYYY-MM-DD/player_id=*/analytics.parquet
-└── team_analytics/
-    └── date=YYYY-MM-DD/team_id=*/analytics.parquet
+├── player_season_summaries/
+│   └── season=YYYY-YY/player_id=*/season_stats.parquet
+├── team_analytics/
+│   └── date=YYYY-MM-DD/team_id=*/analytics.parquet
+└── team_season_summaries/
+    └── season=YYYY-YY/team_id=*/season_stats.parquet
 ```
 
 ### Lambda Deployment
@@ -97,6 +112,9 @@ Users can query the Gold analytics data using MCP clients:
 - "Show me LeBron's efficiency this week"
 - "What's the Lakers defensive rating this month?"
 - "Top 10 players by True Shooting % yesterday"
+- "Compare team offensive ratings for the 2023-24 season"
+- "Show home vs away splits for the Warriors"
+- "Display Four Factors for playoff teams"
 
 ## Related
 

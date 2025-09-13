@@ -122,6 +122,16 @@ output "lambda_functions" {
       function_arn  = aws_lambda_function.bronze_ingestion.arn
       invoke_arn    = aws_lambda_function.bronze_ingestion.invoke_arn
     }
+    silver_processing = {
+      function_name = aws_lambda_function.silver_processing.function_name
+      function_arn  = aws_lambda_function.silver_processing.arn
+      invoke_arn    = aws_lambda_function.silver_processing.invoke_arn
+    }
+    gold_processing = {
+      function_name = aws_lambda_function.gold_processing.function_name
+      function_arn  = aws_lambda_function.gold_processing.arn
+      invoke_arn    = aws_lambda_function.gold_processing.invoke_arn
+    }
   }
 }
 
@@ -130,5 +140,53 @@ output "lambda_execution_role" {
   value = {
     name = aws_iam_role.lambda_execution.name
     arn  = aws_iam_role.lambda_execution.arn
+  }
+}
+
+# ============================================================================
+# S3 Tables Outputs (ADR-026)
+# ============================================================================
+
+output "s3_tables_gold_analytics" {
+  description = "S3 Tables configuration for Gold layer analytics"
+  value = {
+    bucket = {
+      name = aws_s3tables_table_bucket.gold_tables.name
+      arn  = aws_s3tables_table_bucket.gold_tables.arn
+    }
+    tables = {
+      player_analytics = {
+        name = aws_s3tables_table.player_analytics.name
+        arn  = aws_s3tables_table.player_analytics.arn
+      }
+      team_analytics = {
+        name = aws_s3tables_table.team_analytics.name
+        arn  = aws_s3tables_table.team_analytics.arn
+      }
+    }
+    monitoring = {
+      log_group_name = aws_cloudwatch_log_group.s3_tables.name
+      log_group_arn  = aws_cloudwatch_log_group.s3_tables.arn
+    }
+  }
+}
+
+output "s3_tables_mcp_config" {
+  description = "MCP client configuration for S3 Tables access"
+  value = {
+    bucket_name = aws_s3tables_table_bucket.gold_tables.name
+    region      = var.aws_region
+    tables = [
+      aws_s3tables_table.player_analytics.name,
+      aws_s3tables_table.team_analytics.name
+    ]
+    mcp_server_config = {
+      command = "uvx"
+      args    = ["awslabs.s3-tables-mcp-server@latest", "--allow-read"]
+      env = {
+        AWS_REGION         = var.aws_region
+        S3_TABLES_BUCKET   = aws_s3tables_table_bucket.gold_tables.name
+      }
+    }
   }
 }

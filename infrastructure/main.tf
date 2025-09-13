@@ -512,19 +512,266 @@ resource "aws_s3_bucket_lifecycle_configuration" "silver" {
   }
 }
 
-# S3 Bucket for Gold Layer (Business/Analytics-Ready)
+# ============================================================================
+# S3 Tables for Gold Layer Analytics (ADR-026)
+# ============================================================================
+
+# S3 Tables Bucket for Gold Layer (Apache Iceberg Analytics)
+resource "aws_s3tables_table_bucket" "gold_tables" {
+  name = "${var.project_name}-gold-tables"
+
+  tags = {
+    Name      = "${var.project_name}-gold-tables-bucket"
+    DataLayer = "gold"
+    Purpose   = "Apache Iceberg analytics tables for MCP integration"
+    Retention = "indefinite"
+    ADR       = "ADR-026"
+  }
+}
+
+# Player Analytics Table (S3 Tables with Iceberg format)
+resource "aws_s3tables_table" "player_analytics" {
+  name        = "player_analytics"
+  bucket_arn  = aws_s3tables_table_bucket.gold_tables.arn
+  format      = "ICEBERG"
+  type        = "CUSTOMER"
+
+  schema = jsonencode({
+    type = "struct"
+    fields = [
+      {
+        id   = 1
+        name = "player_id"
+        type = "int"
+        required = true
+      },
+      {
+        id   = 2
+        name = "game_date"
+        type = "date"
+        required = true
+      },
+      {
+        id   = 3
+        name = "season"
+        type = "string"
+        required = true
+      },
+      {
+        id   = 4
+        name = "team_id"
+        type = "int"
+        required = true
+      },
+      {
+        id   = 5
+        name = "points"
+        type = "int"
+        required = false
+      },
+      {
+        id   = 6
+        name = "rebounds"
+        type = "int"
+        required = false
+      },
+      {
+        id   = 7
+        name = "assists"
+        type = "int"
+        required = false
+      },
+      {
+        id   = 8
+        name = "true_shooting_pct"
+        type = "decimal(5,3)"
+        required = false
+      },
+      {
+        id   = 9
+        name = "player_efficiency_rating"
+        type = "decimal(5,2)"
+        required = false
+      },
+      {
+        id   = 10
+        name = "usage_rate"
+        type = "decimal(5,3)"
+        required = false
+      },
+      {
+        id   = 11
+        name = "effective_field_goal_pct"
+        type = "decimal(5,3)"
+        required = false
+      },
+      {
+        id   = 12
+        name = "defensive_rating"
+        type = "decimal(6,2)"
+        required = false
+      },
+      {
+        id   = 13
+        name = "offensive_rating"
+        type = "decimal(6,2)"
+        required = false
+      }
+    ]
+  })
+
+  # Partitioning strategy per ADR-026: date=YYYY-MM-DD/player_id=*
+  partition_keys = ["game_date", "player_id"]
+
+  tags = {
+    Name        = "player-analytics-table"
+    TableType   = "analytics"
+    Purpose     = "Daily player performance metrics for MCP queries"
+    Partitioning = "date_player_id"
+    ADR         = "ADR-026"
+  }
+}
+
+# Team Analytics Table (S3 Tables with Iceberg format)
+resource "aws_s3tables_table" "team_analytics" {
+  name        = "team_analytics"
+  bucket_arn  = aws_s3tables_table_bucket.gold_tables.arn
+  format      = "ICEBERG"
+  type        = "CUSTOMER"
+
+  schema = jsonencode({
+    type = "struct"
+    fields = [
+      {
+        id   = 1
+        name = "team_id"
+        type = "int"
+        required = true
+      },
+      {
+        id   = 2
+        name = "game_date"
+        type = "date"
+        required = true
+      },
+      {
+        id   = 3
+        name = "season"
+        type = "string"
+        required = true
+      },
+      {
+        id   = 4
+        name = "opponent_team_id"
+        type = "int"
+        required = true
+      },
+      {
+        id   = 5
+        name = "offensive_rating"
+        type = "decimal(6,2)"
+        required = false
+      },
+      {
+        id   = 6
+        name = "defensive_rating"
+        type = "decimal(6,2)"
+        required = false
+      },
+      {
+        id   = 7
+        name = "net_rating"
+        type = "decimal(6,2)"
+        required = false
+      },
+      {
+        id   = 8
+        name = "pace"
+        type = "decimal(5,2)"
+        required = false
+      },
+      {
+        id   = 9
+        name = "effective_field_goal_pct"
+        type = "decimal(5,3)"
+        required = false
+      },
+      {
+        id   = 10
+        name = "true_shooting_pct"
+        type = "decimal(5,3)"
+        required = false
+      },
+      {
+        id   = 11
+        name = "turnover_rate"
+        type = "decimal(5,3)"
+        required = false
+      },
+      {
+        id   = 12
+        name = "rebound_rate"
+        type = "decimal(5,3)"
+        required = false
+      }
+    ]
+  })
+
+  # Partitioning strategy per ADR-026: date=YYYY-MM-DD/team_id=*
+  partition_keys = ["game_date", "team_id"]
+
+  tags = {
+    Name        = "team-analytics-table"
+    TableType   = "analytics"
+    Purpose     = "Daily team performance metrics for MCP queries"
+    Partitioning = "date_team_id"
+    ADR         = "ADR-026"
+  }
+}
+
+# S3 Tables Bucket Policy for public read access (future data sharing)
+resource "aws_s3tables_table_bucket_policy" "gold_tables_public_read" {
+  bucket = aws_s3tables_table_bucket.gold_tables.name
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Sid    = "PublicReadForDataSharing"
+        Effect = "Allow"
+        Principal = "*"
+        Action = [
+          "s3tables:GetTable",
+          "s3tables:GetTableData",
+          "s3tables:GetTableMetadata"
+        ]
+        Resource = [
+          "${aws_s3tables_table_bucket.gold_tables.arn}/*"
+        ]
+        Condition = {
+          IpAddress = {
+            "aws:SourceIp" = ["0.0.0.0/0"]
+          }
+        }
+      }
+    ]
+  })
+}
+
+# Legacy S3 Bucket for Gold Layer (kept for backward compatibility during migration)
 resource "aws_s3_bucket" "gold" {
   bucket = "${var.project_name}-gold"
 
   tags = {
     Name      = "${var.project_name}-gold-bucket"
     DataLayer = "gold"
-    Purpose   = "Business-ready aggregated datasets for analytics"
+    Purpose   = "Legacy gold bucket - migrating to S3 Tables per ADR-026"
     Retention = "indefinite"
+    Status    = "migrating-to-s3-tables"
   }
 }
 
-# S3 Bucket versioning for Gold layer
+# S3 Bucket versioning for legacy Gold layer
 resource "aws_s3_bucket_versioning" "gold" {
   bucket = aws_s3_bucket.gold.id
   versioning_configuration {
@@ -532,7 +779,7 @@ resource "aws_s3_bucket_versioning" "gold" {
   }
 }
 
-# S3 Bucket encryption for Gold layer
+# S3 Bucket encryption for legacy Gold layer
 resource "aws_s3_bucket_server_side_encryption_configuration" "gold" {
   bucket = aws_s3_bucket.gold.id
 
@@ -544,7 +791,7 @@ resource "aws_s3_bucket_server_side_encryption_configuration" "gold" {
   }
 }
 
-# S3 Bucket public access block for Gold layer
+# S3 Bucket public access block for legacy Gold layer
 resource "aws_s3_bucket_public_access_block" "gold" {
   bucket = aws_s3_bucket.gold.id
 
@@ -554,7 +801,7 @@ resource "aws_s3_bucket_public_access_block" "gold" {
   restrict_public_buckets = true
 }
 
-# Gold Layer Lifecycle Policy
+# Gold Layer Lifecycle Policy (legacy bucket)
 resource "aws_s3_bucket_lifecycle_configuration" "gold" {
   bucket = aws_s3_bucket.gold.id
 
@@ -811,7 +1058,8 @@ resource "aws_iam_role_policy" "github_actions_operations_lambda" {
         ]
         Resource = [
           "arn:aws:lambda:${var.aws_region}:${data.aws_caller_identity.current.account_id}:function:${var.project_name}-bronze-ingestion",
-          "arn:aws:lambda:${var.aws_region}:${data.aws_caller_identity.current.account_id}:function:${var.project_name}-silver-processing"
+          "arn:aws:lambda:${var.aws_region}:${data.aws_caller_identity.current.account_id}:function:${var.project_name}-silver-processing",
+          "arn:aws:lambda:${var.aws_region}:${data.aws_caller_identity.current.account_id}:function:${var.project_name}-gold-processing"
         ]
       }
     ]
@@ -1058,7 +1306,7 @@ resource "aws_iam_role" "gold_data_access" {
   }
 }
 
-# IAM Policy for Gold Layer
+# IAM Policy for Gold Layer (S3 Tables and legacy S3)
 resource "aws_iam_role_policy" "gold_data_access" {
   name = "${var.project_name}-gold-data-access-policy"
   role = aws_iam_role.gold_data_access.id
@@ -1090,6 +1338,27 @@ resource "aws_iam_role_policy" "gold_data_access" {
         Resource = [
           aws_s3_bucket.gold.arn,
           "${aws_s3_bucket.gold.arn}/*"
+        ]
+      },
+      {
+        Effect = "Allow"
+        Action = [
+          # S3 Tables permissions for Gold analytics
+          "s3tables:GetTable",
+          "s3tables:GetTableData",
+          "s3tables:GetTableMetadata",
+          "s3tables:PutTableData",
+          "s3tables:UpdateTableData",
+          "s3tables:DeleteTableData",
+          "s3tables:CreateTable",
+          "s3tables:UpdateTable",
+          "s3tables:ListTables",
+          "s3tables:GetTableBucket",
+          "s3tables:ListTableBuckets"
+        ]
+        Resource = [
+          aws_s3tables_table_bucket.gold_tables.arn,
+          "${aws_s3tables_table_bucket.gold_tables.arn}/*"
         ]
       },
       {
@@ -1131,10 +1400,10 @@ resource "aws_iam_role" "lambda_execution" {
   }
 }
 
-# IAM policy for Lambda execution (S3, CloudWatch, ECR access)
+# IAM policy for Lambda execution (S3, S3 Tables, CloudWatch, ECR access)
 resource "aws_iam_policy" "lambda_execution" {
   name        = "${var.project_name}-lambda-execution"
-  description = "IAM policy for Lambda function execution with S3 and CloudWatch access"
+  description = "IAM policy for Lambda function execution with S3, S3 Tables, and CloudWatch access"
 
   policy = jsonencode({
     Version = "2012-10-17"
@@ -1168,6 +1437,24 @@ resource "aws_iam_policy" "lambda_execution" {
           "${aws_s3_bucket.silver.arn}/*",
           aws_s3_bucket.gold.arn,
           "${aws_s3_bucket.gold.arn}/*"
+        ]
+      },
+      {
+        Effect = "Allow"
+        Action = [
+          # S3 Tables permissions for Gold layer processing
+          "s3tables:GetTable",
+          "s3tables:GetTableData",
+          "s3tables:GetTableMetadata",
+          "s3tables:PutTableData",
+          "s3tables:UpdateTableData",
+          "s3tables:DeleteTableData",
+          "s3tables:ListTables",
+          "s3tables:GetTableBucket"
+        ]
+        Resource = [
+          aws_s3tables_table_bucket.gold_tables.arn,
+          "${aws_s3tables_table_bucket.gold_tables.arn}/*"
         ]
       },
       {
@@ -1279,12 +1566,54 @@ resource "aws_lambda_function" "silver_processing" {
   # Simple error handling via CloudWatch logs and Lambda retries
 }
 
+# Gold Processing Lambda Function (S3 Tables Analytics)
+resource "aws_lambda_function" "gold_processing" {
+  function_name = "${var.project_name}-gold-processing"
+  role          = aws_iam_role.lambda_execution.arn
+  package_type  = "Image"
+  image_uri     = "${aws_ecr_repository.main.repository_url}:gold-processing-latest"
+
+  timeout     = var.lambda_config.gold_processing.timeout
+  memory_size = var.lambda_config.gold_processing.memory_size
+
+  environment {
+    variables = {
+      LOG_LEVEL            = "INFO"
+      APP_NAME             = "gold-processing"
+      SILVER_BUCKET        = aws_s3_bucket.silver.bucket
+      GOLD_BUCKET          = aws_s3_bucket.gold.bucket
+      S3_TABLES_BUCKET     = aws_s3tables_table_bucket.gold_tables.name
+      PLAYER_ANALYTICS_TABLE = aws_s3tables_table.player_analytics.name
+      TEAM_ANALYTICS_TABLE   = aws_s3tables_table.team_analytics.name
+      AWS_REGION           = var.aws_region
+    }
+  }
+
+  logging_config {
+    log_format = "JSON"
+    log_group  = aws_cloudwatch_log_group.data_pipeline.name
+  }
+
+  tags = {
+    Application = "gold-processing"
+    Type        = "data-pipeline"
+    Purpose     = "S3 Tables analytics processing per ADR-026"
+    ADR         = "ADR-026"
+  }
+
+  # Lifecycle rule to ignore image_uri changes (managed by deployment workflow)
+  lifecycle {
+    ignore_changes = [image_uri]
+  }
+}
+
 
 # Lambda-specific CloudWatch Alarms
 resource "aws_cloudwatch_metric_alarm" "lambda_errors" {
   for_each = {
     bronze_ingestion  = aws_lambda_function.bronze_ingestion.function_name
     silver_processing = aws_lambda_function.silver_processing.function_name
+    gold_processing   = aws_lambda_function.gold_processing.function_name
   }
 
   alarm_name          = "lambda-errors-${each.key}"
@@ -1318,6 +1647,10 @@ resource "aws_cloudwatch_metric_alarm" "lambda_duration" {
       function_name = aws_lambda_function.silver_processing.function_name
       threshold     = 250000 # 4.17 minutes (83% of 5m timeout)
     }
+    gold_processing = {
+      function_name = aws_lambda_function.gold_processing.function_name
+      threshold     = 500000 # 8.33 minutes (83% of 10m timeout)
+    }
   }
 
   alarm_name          = "lambda-duration-${each.key}"
@@ -1345,6 +1678,7 @@ resource "aws_cloudwatch_metric_alarm" "lambda_throttles" {
   for_each = {
     bronze_ingestion  = aws_lambda_function.bronze_ingestion.function_name
     silver_processing = aws_lambda_function.silver_processing.function_name
+    gold_processing   = aws_lambda_function.gold_processing.function_name
   }
 
   alarm_name          = "lambda-throttles-${each.key}"
@@ -1365,6 +1699,88 @@ resource "aws_cloudwatch_metric_alarm" "lambda_throttles" {
     Severity    = "critical"
     Type        = "lambda-throttles"
     Application = each.key
+  }
+}
+
+# ============================================================================
+# S3 Tables CloudWatch Monitoring (ADR-026)
+# ============================================================================
+
+# CloudWatch Log Group for S3 Tables operations
+resource "aws_cloudwatch_log_group" "s3_tables" {
+  name              = "/hoopstat-haus/s3-tables"
+  retention_in_days = var.log_retention_days.data_pipeline
+
+  tags = {
+    LogType = "s3-tables"
+    Purpose = "S3 Tables analytics operations monitoring"
+    ADR     = "ADR-026"
+  }
+}
+
+# Metric filter for S3 Tables query performance
+resource "aws_cloudwatch_log_metric_filter" "s3_tables_query_duration" {
+  name           = "s3-tables-query-duration"
+  log_group_name = aws_cloudwatch_log_group.s3_tables.name
+  pattern        = "[timestamp, level, message, table_name, query_duration_ms = *, records_returned, ...]"
+
+  metric_transformation {
+    name      = "S3TablesQueryDuration"
+    namespace = "HoopstatHaus/S3Tables"
+    value     = "$query_duration_ms"
+    unit      = "Milliseconds"
+  }
+}
+
+# Metric filter for S3 Tables data ingestion
+resource "aws_cloudwatch_log_metric_filter" "s3_tables_ingestion_records" {
+  name           = "s3-tables-ingestion-records"
+  log_group_name = aws_cloudwatch_log_group.s3_tables.name
+  pattern        = "[timestamp, level, message, table_name, records_ingested = *, ...]"
+
+  metric_transformation {
+    name      = "S3TablesIngestedRecords"
+    namespace = "HoopstatHaus/S3Tables"
+    value     = "$records_ingested"
+    unit      = "Count"
+  }
+}
+
+# CloudWatch Alarm for S3 Tables query performance
+resource "aws_cloudwatch_metric_alarm" "s3_tables_slow_queries" {
+  alarm_name          = "s3-tables-slow-queries"
+  comparison_operator = "GreaterThanThreshold"
+  evaluation_periods  = "2"
+  metric_name         = "S3TablesQueryDuration"
+  namespace           = "HoopstatHaus/S3Tables"
+  period              = "300"
+  statistic           = "Average"
+  threshold           = "5000" # 5 seconds for analytics queries
+  alarm_description   = "This metric monitors S3 Tables query performance"
+
+  tags = {
+    Severity = "warning"
+    Type     = "s3-tables-performance"
+    Service  = "analytics"
+  }
+}
+
+# CloudWatch Alarm for S3 Tables ingestion errors
+resource "aws_cloudwatch_metric_alarm" "s3_tables_ingestion_errors" {
+  alarm_name          = "s3-tables-ingestion-errors"
+  comparison_operator = "GreaterThanThreshold"
+  evaluation_periods  = "1"
+  metric_name         = "ErrorCount"
+  namespace           = "HoopstatHaus/S3Tables"
+  period              = "300"
+  statistic           = "Sum"
+  threshold           = "0"
+  alarm_description   = "This metric monitors S3 Tables ingestion errors"
+
+  tags = {
+    Severity = "critical"
+    Type     = "s3-tables-errors"
+    Service  = "analytics"
   }
 }
 

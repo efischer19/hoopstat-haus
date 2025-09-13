@@ -11,6 +11,7 @@ on:
         options:
           - bronze-ingestion
           - silver-processing
+          - gold-analytics
       environment:
         description: 'Target environment'
         required: true

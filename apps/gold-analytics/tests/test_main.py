@@ -1,5 +1,7 @@
 """Tests for the main CLI module."""
 
+from unittest.mock import patch
+
 from click.testing import CliRunner
 
 from app.main import cli
@@ -29,13 +31,17 @@ class TestCLI:
         assert result.exit_code == 0
         assert "Check the status" in result.output
 
-    def test_debug_flag(self):
+    @patch("app.iceberg_integration.IcebergS3TablesWriter")
+    def test_debug_flag(self, mock_iceberg_writer):
         """Test that debug flag is accepted."""
         runner = CliRunner()
-        result = runner.invoke(cli, ["--debug", "status"])
+        result = runner.invoke(
+            cli, ["--debug", "status", "--gold-bucket", "test-bucket"]
+        )
         assert result.exit_code == 0
 
-    def test_dry_run_flag(self):
+    @patch("app.processors.IcebergS3TablesWriter")
+    def test_dry_run_flag(self, mock_iceberg_writer):
         """Test that dry-run flag works."""
         runner = CliRunner()
         result = runner.invoke(

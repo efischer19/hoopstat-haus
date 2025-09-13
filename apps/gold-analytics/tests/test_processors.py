@@ -62,7 +62,8 @@ class TestGoldProcessor:
         assert "team_id" in stats.columns
         assert "points" in stats.columns
 
-    def test_calculate_player_analytics(self):
+    @patch("app.processors.IcebergS3TablesWriter")
+    def test_calculate_player_analytics(self, mock_iceberg_writer):
         """Test player analytics calculations."""
         processor = GoldProcessor(
             silver_bucket="test-silver-bucket", gold_bucket="test-gold-bucket"
@@ -115,7 +116,8 @@ class TestGoldProcessor:
         expected_apt = 5 / 3
         assert abs(analytics["assists_per_turnover"].iloc[0] - expected_apt) < 0.01
 
-    def test_process_season_aggregation_dry_run(self):
+    @patch("app.processors.IcebergS3TablesWriter")
+    def test_process_season_aggregation_dry_run(self, mock_iceberg_writer):
         """Test season aggregation processing in dry-run mode."""
         processor = GoldProcessor(
             silver_bucket="test-silver-bucket", gold_bucket="test-gold-bucket"
@@ -124,7 +126,8 @@ class TestGoldProcessor:
         result = processor.process_season_aggregation("2023-24", dry_run=True)
         assert result is True
 
-    def test_load_season_player_games_dry_run(self):
+    @patch("app.processors.IcebergS3TablesWriter")
+    def test_load_season_player_games_dry_run(self, mock_iceberg_writer):
         """Test loading season player games in dry-run mode."""
         processor = GoldProcessor(
             silver_bucket="test-silver-bucket", gold_bucket="test-gold-bucket"
@@ -143,7 +146,8 @@ class TestGoldProcessor:
         assert "player_1" in specific_data
         assert len(specific_data["player_1"]) == 2
 
-    def test_season_aggregation_integration(self):
+    @patch("app.processors.IcebergS3TablesWriter")
+    def test_season_aggregation_integration(self, mock_iceberg_writer):
         """Test the integration with PlayerSeasonAggregator."""
         processor = GoldProcessor(
             silver_bucket="test-silver-bucket", gold_bucket="test-gold-bucket"
@@ -153,7 +157,8 @@ class TestGoldProcessor:
         assert processor.season_aggregator is not None
         assert processor.season_aggregator.validation_mode == "lenient"
 
-    def test_calculate_team_analytics(self):
+    @patch("app.processors.IcebergS3TablesWriter")
+    def test_calculate_team_analytics(self, mock_iceberg_writer):
         """Test team analytics calculations (legacy test with basic data)."""
         processor = GoldProcessor(
             silver_bucket="test-silver-bucket", gold_bucket="test-gold-bucket"
@@ -178,7 +183,7 @@ class TestGoldProcessor:
         assert "possessions" in analytics.columns
         assert "offensive_rating" in analytics.columns
         assert "pace" in analytics.columns
-        assert "true_shooting_percentage" in analytics.columns
+        assert "true_shooting_pct" in analytics.columns
 
         # Verify possessions calculation: FGA - ORB + TOV + 0.44 * FTA
         expected_possessions = 85 - 12 + 15 + 0.44 * 20
@@ -188,7 +193,8 @@ class TestGoldProcessor:
         expected_ortg = (110 / expected_possessions) * 100
         assert abs(analytics["offensive_rating"].iloc[0] - expected_ortg) < 0.1
 
-    def test_load_silver_data_not_implemented(self):
+    @patch("app.processors.IcebergS3TablesWriter")
+    def test_load_silver_data_not_implemented(self, mock_iceberg_writer):
         """Test that non-dry-run data loading raises NotImplementedError."""
         processor = GoldProcessor(
             silver_bucket="test-silver-bucket", gold_bucket="test-gold-bucket"
@@ -201,7 +207,8 @@ class TestGoldProcessor:
         with pytest.raises(NotImplementedError):
             processor._load_silver_team_stats(target_date, dry_run=False)
 
-    def test_process_date_normal_mode_fails(self):
+    @patch("app.processors.IcebergS3TablesWriter")
+    def test_process_date_normal_mode_fails(self, mock_iceberg_writer):
         """Test that normal mode processing fails due to unimplemented data loading."""
         processor = GoldProcessor(
             silver_bucket="test-silver-bucket", gold_bucket="test-gold-bucket"
@@ -210,7 +217,8 @@ class TestGoldProcessor:
         result = processor.process_date(target_date, dry_run=False)
         assert result is False
 
-    def test_process_team_season_aggregation_dry_run(self):
+    @patch("app.processors.IcebergS3TablesWriter")
+    def test_process_team_season_aggregation_dry_run(self, mock_iceberg_writer):
         """Test team season aggregation in dry-run mode."""
         processor = GoldProcessor(
             silver_bucket="test-silver-bucket", gold_bucket="test-gold-bucket"
@@ -218,7 +226,8 @@ class TestGoldProcessor:
         result = processor.process_team_season_aggregation("2023-24", dry_run=True)
         assert result is True
 
-    def test_load_season_team_games_dry_run(self):
+    @patch("app.processors.IcebergS3TablesWriter")
+    def test_load_season_team_games_dry_run(self, mock_iceberg_writer):
         """Test loading team game data in dry-run mode."""
         processor = GoldProcessor(
             silver_bucket="test-silver-bucket", gold_bucket="test-gold-bucket"
@@ -237,7 +246,8 @@ class TestGoldProcessor:
         assert "1610612747" in specific_data
         assert len(specific_data["1610612747"]) == 2
 
-    def test_team_season_aggregation_integration(self):
+    @patch("app.processors.IcebergS3TablesWriter")
+    def test_team_season_aggregation_integration(self, mock_iceberg_writer):
         """Test the integration with TeamSeasonAggregator."""
         processor = GoldProcessor(
             silver_bucket="test-silver-bucket", gold_bucket="test-gold-bucket"
@@ -247,7 +257,8 @@ class TestGoldProcessor:
         assert processor.team_aggregator is not None
         assert processor.team_aggregator.validation_mode == "lenient"
 
-    def test_calculate_team_analytics_enhanced(self):
+    @patch("app.processors.IcebergS3TablesWriter")
+    def test_calculate_team_analytics_enhanced(self, mock_iceberg_writer):
         """Test enhanced team analytics calculations with new metrics."""
         processor = GoldProcessor(
             silver_bucket="test-silver-bucket", gold_bucket="test-gold-bucket"
@@ -284,11 +295,11 @@ class TestGoldProcessor:
             "defensive_rating",
             "net_rating",
             "pace",
-            "turnover_percentage",
-            "effective_field_goal_percentage",
-            "offensive_rebound_percentage",
+            "turnover_rate",
+            "effective_field_goal_pct",
+            "rebound_rate",
             "free_throw_rate",
-            "true_shooting_percentage",
+            "true_shooting_pct",
         ]
 
         for col in expected_columns:
@@ -307,9 +318,10 @@ class TestGoldProcessor:
 
         # Effective FG% should be (FGM + 0.5 * 3PM) / FGA
         expected_efg = (42 + 0.5 * 12) / 85
-        assert abs(row["effective_field_goal_percentage"] - expected_efg) < 0.001
+        assert abs(row["effective_field_goal_pct"] - expected_efg) < 0.001
 
-    def test_load_season_team_games_not_implemented(self):
+    @patch("app.processors.IcebergS3TablesWriter")
+    def test_load_season_team_games_not_implemented(self, mock_iceberg_writer):
         """Test that non-dry-run team game loading raises NotImplementedError."""
         processor = GoldProcessor(
             silver_bucket="test-silver-bucket", gold_bucket="test-gold-bucket"
@@ -318,7 +330,10 @@ class TestGoldProcessor:
         with pytest.raises(NotImplementedError):
             processor._load_season_team_games("2023-24", dry_run=False)
 
-    def test_process_team_season_aggregation_normal_mode_fails(self):
+    @patch("app.processors.IcebergS3TablesWriter")
+    def test_process_team_season_aggregation_normal_mode_fails(
+        self, mock_iceberg_writer
+    ):
         """Test normal mode team season processing fails due to unimplemented data."""
         processor = GoldProcessor(
             silver_bucket="test-silver-bucket", gold_bucket="test-gold-bucket"
@@ -429,7 +444,8 @@ class TestGoldProcessor:
         mock_writer.write_player_analytics.assert_not_called()
         mock_writer.write_team_analytics.assert_not_called()
 
-    def test_season_extraction_logic(self):
+    @patch("app.processors.IcebergS3TablesWriter")
+    def test_season_extraction_logic(self, mock_iceberg_writer):
         """Test NBA season extraction from target date."""
         processor = GoldProcessor(
             silver_bucket="test-silver-bucket", gold_bucket="test-gold-bucket"

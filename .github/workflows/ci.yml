@@ -23,7 +23,6 @@ name: CI
         type: choice
         options:
           - bronze-ingestion
-          - mcp-server
           - silver-processing
 
 permissions:

@@ -14,13 +14,12 @@ The infrastructure supports deploying containerized Python applications as AWS L
 
 ### Lambda Functions
 
-The infrastructure provisions 3 Lambda functions for existing containerized applications:
+The infrastructure provisions 2 Lambda functions for existing containerized applications:
 
 | Function Name | Purpose | Timeout | Memory | Log Group |
 |---------------|---------|---------|--------|-----------|
 | `hoopstat-haus-bronze-ingestion` | Data ingestion to bronze layer | 5min | 256MB | `/hoopstat-haus/data-pipeline` |
 | `hoopstat-haus-silver-processing` | Data processing from bronze to silver layer | 5min | 1024MB | `/hoopstat-haus/data-pipeline` |
-| `hoopstat-haus-mcp-server` | MCP server API | 30s | 256MB | `/hoopstat-haus/applications` |
 
 ### IAM Roles and Permissions
 
@@ -163,8 +162,8 @@ Example:
 
 Function configurations are optimized for cost:
 
-- **API Services** (mcp-server): 30s timeout, minimal memory
-- **Data Ingestion** (bronze-ingestion): Balanced configuration
+- **Data Ingestion** (bronze-ingestion): Balanced configuration for data processing
+- **Data Processing** (silver-processing): Higher memory for complex transformations
 
 ### Lifecycle Management
 
@@ -200,7 +199,7 @@ variable "lambda_config" {
       timeout     = number
       memory_size = number
     })
-    mcp_server = object({
+    silver_processing = object({
       timeout     = number
       memory_size = number
     })

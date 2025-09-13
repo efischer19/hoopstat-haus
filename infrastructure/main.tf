@@ -519,7 +519,7 @@ resource "aws_s3_bucket" "gold" {
   tags = {
     Name      = "${var.project_name}-gold-bucket"
     DataLayer = "gold"
-    Purpose   = "Business-ready aggregated datasets for MCP server"
+    Purpose   = "Business-ready aggregated datasets for analytics"
     Retention = "indefinite"
   }
 }
@@ -565,7 +565,7 @@ resource "aws_s3_bucket_lifecycle_configuration" "gold" {
     # Apply to all objects by default
     filter {}
 
-    # No storage class transitions - frequently accessed by MCP server
+    # No storage class transitions - frequently accessed for analytics
     # Indefinite retention for business data
 
     # Delete incomplete multipart uploads after 7 days
@@ -811,7 +811,6 @@ resource "aws_iam_role_policy" "github_actions_operations_lambda" {
         ]
         Resource = [
           "arn:aws:lambda:${var.aws_region}:${data.aws_caller_identity.current.account_id}:function:${var.project_name}-bronze-ingestion",
-          # "arn:aws:lambda:${var.aws_region}:${data.aws_caller_identity.current.account_id}:function:${var.project_name}-mcp-server",  # commented out
           "arn:aws:lambda:${var.aws_region}:${data.aws_caller_identity.current.account_id}:function:${var.project_name}-silver-processing"
         ]
       }
@@ -1055,7 +1054,7 @@ resource "aws_iam_role" "gold_data_access" {
   tags = {
     Name      = "${var.project_name}-gold-data-access-role"
     DataLayer = "gold"
-    Purpose   = "Business analytics and MCP server integration"
+    Purpose   = "Business analytics for S3 Tables integration"
   }
 }
 
@@ -1243,40 +1242,6 @@ resource "aws_lambda_function" "bronze_ingestion" {
   }
 }
 
-# MCP Server Lambda Function - COMMENTED OUT until image is built
-# resource "aws_lambda_function" "mcp_server" {
-#   function_name = "${var.project_name}-mcp-server"
-#   role          = aws_iam_role.lambda_execution.arn
-#   package_type  = "Image"
-#   image_uri     = "${aws_ecr_repository.main.repository_url}:mcp-server-latest"
-#
-#   timeout     = var.lambda_config.mcp_server.timeout
-#   memory_size = var.lambda_config.mcp_server.memory_size
-#
-#   environment {
-#     variables = {
-#       LOG_LEVEL   = "INFO"
-#       APP_NAME    = "mcp-server"
-#       GOLD_BUCKET = aws_s3_bucket.gold.bucket
-#     }
-#   }
-#
-#   logging_config {
-#     log_format = "JSON"
-#     log_group  = aws_cloudwatch_log_group.applications.name
-#   }
-#
-#   tags = {
-#     Application = "mcp-server"
-#     Type        = "api-service"
-#   }
-#
-#   # Lifecycle rule to ignore image_uri changes (managed by deployment workflow)
-#   lifecycle {
-#     ignore_changes = [image_uri]
-#   }
-# }
-
 # Silver Processing Lambda Function
 resource "aws_lambda_function" "silver_processing" {
   function_name = "${var.project_name}-silver-processing"
@@ -1319,7 +1284,6 @@ resource "aws_lambda_function" "silver_processing" {
 resource "aws_cloudwatch_metric_alarm" "lambda_errors" {
   for_each = {
     bronze_ingestion  = aws_lambda_function.bronze_ingestion.function_name
-    # mcp_server        = aws_lambda_function.mcp_server.function_name  # commented out
     silver_processing = aws_lambda_function.silver_processing.function_name
   }
 
@@ -1350,10 +1314,6 @@ resource "aws_cloudwatch_metric_alarm" "lambda_duration" {
       function_name = aws_lambda_function.bronze_ingestion.function_name
       threshold     = 250000 # 4.17 minutes (83% of 5m timeout)
     }
-    # mcp_server = {  # commented out
-    #   function_name = aws_lambda_function.mcp_server.function_name
-    #   threshold     = 25000 # 25 seconds (83% of 30s timeout)
-    # }
     silver_processing = {
       function_name = aws_lambda_function.silver_processing.function_name
       threshold     = 250000 # 4.17 minutes (83% of 5m timeout)
@@ -1384,7 +1344,6 @@ resource "aws_cloudwatch_metric_alarm" "lambda_duration" {
 resource "aws_cloudwatch_metric_alarm" "lambda_throttles" {
   for_each = {
     bronze_ingestion  = aws_lambda_function.bronze_ingestion.function_name
-    # mcp_server        = aws_lambda_function.mcp_server.function_name  # commented out
     silver_processing = aws_lambda_function.silver_processing.function_name
   }
 

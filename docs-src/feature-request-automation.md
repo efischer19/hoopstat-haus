@@ -65,7 +65,6 @@ The extracted feature requests are organized into the following categories:
 
 - `frontend` - UI/UX and client-side features
 - `etl-pipeline` - Data processing and transformation features
-- `mcp-server` - Model Context Protocol server features
 - `aws-integration` - AWS infrastructure and integration features
 
 ## Available Priorities
@@ -126,7 +125,7 @@ Issues are automatically labeled based on their characteristics:
 
 - `feature` - All feature requests
 - `high-priority` - High-priority features
-- Category-specific labels (`frontend`, `etl`, `mcp-server`, etc.)
+- Category-specific labels (`frontend`, `etl`, `aws-integration`, etc.)
 - Feature-type labels (`setup`, `authentication`, `monitoring`, etc.)
 
 ## Error Handling

@@ -42,7 +42,12 @@ from .partitioning import (
 from .quality import check_data_completeness, detect_outliers
 from .rules_engine import DataCleaningRulesEngine, TransformationResult
 from .transforms import (
+    PlayerSeasonAggregator,
+    calculate_assists_per_turnover,
     calculate_efficiency_rating,
+    calculate_points_per_shot,
+    calculate_true_shooting_percentage,
+    calculate_usage_rate,
     clean_and_transform_record,
     clean_batch,
     normalize_team_name,
@@ -89,10 +94,15 @@ __all__ = [
     # Transforms
     "normalize_team_name",
     "calculate_efficiency_rating",
+    "calculate_true_shooting_percentage",
+    "calculate_usage_rate",
+    "calculate_points_per_shot",
+    "calculate_assists_per_turnover",
     "standardize_position",
     "clean_and_transform_record",
     "clean_batch",
     "validate_and_standardize_season",
+    "PlayerSeasonAggregator",
     # Quality
     "check_data_completeness",
     "detect_outliers",

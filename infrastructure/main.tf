@@ -1183,8 +1183,7 @@ resource "aws_iam_role_policy" "gold_data_access" {
       {
         Effect = "Allow"
         Action = [
-          # S3 Tables permissions for Gold analytics (manual configuration required)
-          # These permissions will be used once S3 Tables resources are manually configured
+          # S3 Tables permissions for Gold analytics
           "s3tables:GetTable",
           "s3tables:GetTableData",
           "s3tables:GetTableMetadata",
@@ -1209,7 +1208,8 @@ resource "aws_iam_role_policy" "gold_data_access" {
           "logs:PutLogEvents"
         ]
         Resource = [
-          "${aws_cloudwatch_log_group.data_pipeline.arn}:*"
+          "${aws_cloudwatch_log_group.data_pipeline.arn}:*",
+          "${aws_cloudwatch_log_group.s3_tables.arn}:*"
         ]
       }
     ]
@@ -1281,8 +1281,7 @@ resource "aws_iam_policy" "lambda_execution" {
       {
         Effect = "Allow"
         Action = [
-          # S3 Tables permissions for Gold layer processing (manual configuration required)
-          # These permissions will be used once S3 Tables resources are manually configured
+          # S3 Tables permissions for Gold layer processing
           "s3tables:GetTable",
           "s3tables:GetTableData",
           "s3tables:GetTableMetadata",
@@ -1432,7 +1431,7 @@ resource "aws_lambda_function" "gold_processing" {
 
   logging_config {
     log_format = "JSON"
-    log_group  = aws_cloudwatch_log_group.data_pipeline.name
+    log_group  = aws_cloudwatch_log_group.s3_tables.name
   }
 
   tags = {
@@ -1547,27 +1546,88 @@ resource "aws_cloudwatch_metric_alarm" "lambda_throttles" {
 # S3 Tables CloudWatch Monitoring (ADR-026)
 # ============================================================================
 
-# NOTE: S3 Tables monitoring resources will be configured once S3 Tables
-# infrastructure is manually set up. The following represents the intended
-# monitoring strategy:
-#
-# 1. CloudWatch Log Group: /hoopstat-haus/s3-tables
-#    - Purpose: S3 Tables analytics operations monitoring  
-#    - Retention: 90 days (data pipeline retention policy)
-#
-# 2. Metric Filters:
-#    - S3TablesQueryDuration: Monitor query performance
-#    - S3TablesIngestedRecords: Track data ingestion volume
-#
-# 3. CloudWatch Alarms:
-#    - s3-tables-slow-queries: Alert on queries >5 seconds
-#    - s3-tables-ingestion-errors: Alert on ingestion failures
-#
-# Manual Configuration Required:
-# 1. Create log group for S3 Tables operations
-# 2. Set up metric filters for query performance tracking
-# 3. Configure alarms for operational monitoring
-# 4. Integrate with existing CloudWatch dashboard
+# ============================================================================
+# S3 Tables CloudWatch Monitoring
+# ============================================================================
+
+# CloudWatch Log Group for S3 Tables analytics operations monitoring
+resource "aws_cloudwatch_log_group" "s3_tables" {
+  name              = "/hoopstat-haus/s3-tables"
+  retention_in_days = var.log_retention_days.data_pipeline
+
+  tags = {
+    LogType = "s3-tables"
+    Purpose = "S3 Tables analytics operations monitoring"
+  }
+}
+
+# Metric filter to monitor query performance
+resource "aws_cloudwatch_log_metric_filter" "s3_tables_query_duration" {
+  name           = "s3-tables-query-duration"
+  log_group_name = aws_cloudwatch_log_group.s3_tables.name
+  pattern        = "[timestamp, level, message, operation=\"QUERY\", duration_in_seconds = *, table_name, ...]"
+
+  metric_transformation {
+    name      = "S3TablesQueryDuration"
+    namespace = "HoopstatHaus/S3Tables"
+    value     = "$duration_in_seconds"
+    unit      = "Seconds"
+  }
+}
+
+# Metric filter to track data ingestion volume
+resource "aws_cloudwatch_log_metric_filter" "s3_tables_ingested_records" {
+  name           = "s3-tables-ingested-records"
+  log_group_name = aws_cloudwatch_log_group.s3_tables.name
+  pattern        = "[timestamp, level, message, operation=\"INGEST\", duration_in_seconds, records_ingested = *, table_name, ...]"
+
+  metric_transformation {
+    name      = "S3TablesIngestedRecords"
+    namespace = "HoopstatHaus/S3Tables"
+    value     = "$records_ingested"
+    unit      = "Count"
+  }
+}
+
+# CloudWatch alarm for slow queries (>5 seconds)
+resource "aws_cloudwatch_metric_alarm" "s3_tables_slow_queries" {
+  alarm_name          = "s3-tables-slow-queries"
+  comparison_operator = "GreaterThanThreshold"
+  evaluation_periods  = "1"
+  metric_name         = "S3TablesQueryDuration"
+  namespace           = "HoopstatHaus/S3Tables"
+  period              = "300"
+  statistic           = "Average"
+  threshold           = "5"
+  alarm_description   = "This metric monitors S3 Tables queries taking longer than 5 seconds"
+
+  tags = {
+    Severity = "warning"
+    Type     = "performance"
+  }
+}
+
+# CloudWatch alarm for ingestion errors
+resource "aws_cloudwatch_metric_alarm" "s3_tables_ingestion_errors" {
+  alarm_name          = "s3-tables-ingestion-errors"
+  comparison_operator = "GreaterThanThreshold"
+  evaluation_periods  = "1"
+  metric_name         = "Errors"
+  namespace           = "AWS/Lambda"
+  period              = "300"
+  statistic           = "Sum"
+  threshold           = "1"
+  alarm_description   = "This metric monitors S3 Tables ingestion errors in gold processing function"
+
+  dimensions = {
+    FunctionName = aws_lambda_function.gold_processing.function_name
+  }
+
+  tags = {
+    Severity = "critical"
+    Type     = "ingestion-error"
+  }
+}
 
 # ============================================================================
 # S3 Event Notifications for Silver Processing

@@ -81,10 +81,6 @@ output "medallion_s3_buckets" {
       name = aws_s3_bucket.silver.bucket
       arn  = aws_s3_bucket.silver.arn
     }
-    gold = {
-      name = aws_s3_bucket.gold.bucket
-      arn  = aws_s3_bucket.gold.arn
-    }
     access_logs = {
       name = aws_s3_bucket.access_logs.bucket
       arn  = aws_s3_bucket.access_logs.arn
@@ -184,8 +180,8 @@ output "s3_tables_mcp_config" {
       command = "uvx"
       args    = ["awslabs.s3-tables-mcp-server@latest", "--allow-read"]
       env = {
-        AWS_REGION         = var.aws_region
-        S3_TABLES_BUCKET   = aws_s3tables_table_bucket.gold_tables.name
+        AWS_REGION       = var.aws_region
+        S3_TABLES_BUCKET = aws_s3tables_table_bucket.gold_tables.name
       }
     }
   }

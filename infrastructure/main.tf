@@ -531,90 +531,90 @@ resource "aws_s3tables_table_bucket" "gold_tables" {
 
 # Player Analytics Table (S3 Tables with Iceberg format)
 resource "aws_s3tables_table" "player_analytics" {
-  name        = "player_analytics"
-  bucket_arn  = aws_s3tables_table_bucket.gold_tables.arn
-  format      = "ICEBERG"
-  type        = "CUSTOMER"
+  name       = "player_analytics"
+  bucket_arn = aws_s3tables_table_bucket.gold_tables.arn
+  format     = "ICEBERG"
+  type       = "CUSTOMER"
 
   schema = jsonencode({
     type = "struct"
     fields = [
       {
-        id   = 1
-        name = "player_id"
-        type = "int"
+        id       = 1
+        name     = "player_id"
+        type     = "int"
         required = true
       },
       {
-        id   = 2
-        name = "game_date"
-        type = "date"
+        id       = 2
+        name     = "game_date"
+        type     = "date"
         required = true
       },
       {
-        id   = 3
-        name = "season"
-        type = "string"
+        id       = 3
+        name     = "season"
+        type     = "string"
         required = true
       },
       {
-        id   = 4
-        name = "team_id"
-        type = "int"
+        id       = 4
+        name     = "team_id"
+        type     = "int"
         required = true
       },
       {
-        id   = 5
-        name = "points"
-        type = "int"
+        id       = 5
+        name     = "points"
+        type     = "int"
         required = false
       },
       {
-        id   = 6
-        name = "rebounds"
-        type = "int"
+        id       = 6
+        name     = "rebounds"
+        type     = "int"
         required = false
       },
       {
-        id   = 7
-        name = "assists"
-        type = "int"
+        id       = 7
+        name     = "assists"
+        type     = "int"
         required = false
       },
       {
-        id   = 8
-        name = "true_shooting_pct"
-        type = "decimal(5,3)"
+        id       = 8
+        name     = "true_shooting_pct"
+        type     = "decimal(5,3)"
         required = false
       },
       {
-        id   = 9
-        name = "player_efficiency_rating"
-        type = "decimal(5,2)"
+        id       = 9
+        name     = "player_efficiency_rating"
+        type     = "decimal(5,2)"
         required = false
       },
       {
-        id   = 10
-        name = "usage_rate"
-        type = "decimal(5,3)"
+        id       = 10
+        name     = "usage_rate"
+        type     = "decimal(5,3)"
         required = false
       },
       {
-        id   = 11
-        name = "effective_field_goal_pct"
-        type = "decimal(5,3)"
+        id       = 11
+        name     = "effective_field_goal_pct"
+        type     = "decimal(5,3)"
         required = false
       },
       {
-        id   = 12
-        name = "defensive_rating"
-        type = "decimal(6,2)"
+        id       = 12
+        name     = "defensive_rating"
+        type     = "decimal(6,2)"
         required = false
       },
       {
-        id   = 13
-        name = "offensive_rating"
-        type = "decimal(6,2)"
+        id       = 13
+        name     = "offensive_rating"
+        type     = "decimal(6,2)"
         required = false
       }
     ]
@@ -624,94 +624,94 @@ resource "aws_s3tables_table" "player_analytics" {
   partition_keys = ["game_date", "player_id"]
 
   tags = {
-    Name        = "player-analytics-table"
-    TableType   = "analytics"
-    Purpose     = "Daily player performance metrics for MCP queries"
+    Name         = "player-analytics-table"
+    TableType    = "analytics"
+    Purpose      = "Daily player performance metrics for MCP queries"
     Partitioning = "date_player_id"
-    ADR         = "ADR-026"
+    ADR          = "ADR-026"
   }
 }
 
 # Team Analytics Table (S3 Tables with Iceberg format)
 resource "aws_s3tables_table" "team_analytics" {
-  name        = "team_analytics"
-  bucket_arn  = aws_s3tables_table_bucket.gold_tables.arn
-  format      = "ICEBERG"
-  type        = "CUSTOMER"
+  name       = "team_analytics"
+  bucket_arn = aws_s3tables_table_bucket.gold_tables.arn
+  format     = "ICEBERG"
+  type       = "CUSTOMER"
 
   schema = jsonencode({
     type = "struct"
     fields = [
       {
-        id   = 1
-        name = "team_id"
-        type = "int"
+        id       = 1
+        name     = "team_id"
+        type     = "int"
         required = true
       },
       {
-        id   = 2
-        name = "game_date"
-        type = "date"
+        id       = 2
+        name     = "game_date"
+        type     = "date"
         required = true
       },
       {
-        id   = 3
-        name = "season"
-        type = "string"
+        id       = 3
+        name     = "season"
+        type     = "string"
         required = true
       },
       {
-        id   = 4
-        name = "opponent_team_id"
-        type = "int"
+        id       = 4
+        name     = "opponent_team_id"
+        type     = "int"
         required = true
       },
       {
-        id   = 5
-        name = "offensive_rating"
-        type = "decimal(6,2)"
+        id       = 5
+        name     = "offensive_rating"
+        type     = "decimal(6,2)"
         required = false
       },
       {
-        id   = 6
-        name = "defensive_rating"
-        type = "decimal(6,2)"
+        id       = 6
+        name     = "defensive_rating"
+        type     = "decimal(6,2)"
         required = false
       },
       {
-        id   = 7
-        name = "net_rating"
-        type = "decimal(6,2)"
+        id       = 7
+        name     = "net_rating"
+        type     = "decimal(6,2)"
         required = false
       },
       {
-        id   = 8
-        name = "pace"
-        type = "decimal(5,2)"
+        id       = 8
+        name     = "pace"
+        type     = "decimal(5,2)"
         required = false
       },
       {
-        id   = 9
-        name = "effective_field_goal_pct"
-        type = "decimal(5,3)"
+        id       = 9
+        name     = "effective_field_goal_pct"
+        type     = "decimal(5,3)"
         required = false
       },
       {
-        id   = 10
-        name = "true_shooting_pct"
-        type = "decimal(5,3)"
+        id       = 10
+        name     = "true_shooting_pct"
+        type     = "decimal(5,3)"
         required = false
       },
       {
-        id   = 11
-        name = "turnover_rate"
-        type = "decimal(5,3)"
+        id       = 11
+        name     = "turnover_rate"
+        type     = "decimal(5,3)"
         required = false
       },
       {
-        id   = 12
-        name = "rebound_rate"
-        type = "decimal(5,3)"
+        id       = 12
+        name     = "rebound_rate"
+        type     = "decimal(5,3)"
         required = false
       }
     ]
@@ -721,11 +721,11 @@ resource "aws_s3tables_table" "team_analytics" {
   partition_keys = ["game_date", "team_id"]
 
   tags = {
-    Name        = "team-analytics-table"
-    TableType   = "analytics"
-    Purpose     = "Daily team performance metrics for MCP queries"
+    Name         = "team-analytics-table"
+    TableType    = "analytics"
+    Purpose      = "Daily team performance metrics for MCP queries"
     Partitioning = "date_team_id"
-    ADR         = "ADR-026"
+    ADR          = "ADR-026"
   }
 }
 
@@ -737,8 +737,8 @@ resource "aws_s3tables_table_bucket_policy" "gold_tables_public_read" {
     Version = "2012-10-17"
     Statement = [
       {
-        Sid    = "PublicReadForDataSharing"
-        Effect = "Allow"
+        Sid       = "PublicReadForDataSharing"
+        Effect    = "Allow"
         Principal = "*"
         Action = [
           "s3tables:GetTable",
@@ -758,69 +758,7 @@ resource "aws_s3tables_table_bucket_policy" "gold_tables_public_read" {
   })
 }
 
-# Legacy S3 Bucket for Gold Layer (kept for backward compatibility during migration)
-resource "aws_s3_bucket" "gold" {
-  bucket = "${var.project_name}-gold"
 
-  tags = {
-    Name      = "${var.project_name}-gold-bucket"
-    DataLayer = "gold"
-    Purpose   = "Legacy gold bucket - migrating to S3 Tables per ADR-026"
-    Retention = "indefinite"
-    Status    = "migrating-to-s3-tables"
-  }
-}
-
-# S3 Bucket versioning for legacy Gold layer
-resource "aws_s3_bucket_versioning" "gold" {
-  bucket = aws_s3_bucket.gold.id
-  versioning_configuration {
-    status = "Enabled"
-  }
-}
-
-# S3 Bucket encryption for legacy Gold layer
-resource "aws_s3_bucket_server_side_encryption_configuration" "gold" {
-  bucket = aws_s3_bucket.gold.id
-
-  rule {
-    apply_server_side_encryption_by_default {
-      sse_algorithm = "AES256"
-    }
-    bucket_key_enabled = true
-  }
-}
-
-# S3 Bucket public access block for legacy Gold layer
-resource "aws_s3_bucket_public_access_block" "gold" {
-  bucket = aws_s3_bucket.gold.id
-
-  block_public_acls       = true
-  block_public_policy     = true
-  ignore_public_acls      = true
-  restrict_public_buckets = true
-}
-
-# Gold Layer Lifecycle Policy (legacy bucket)
-resource "aws_s3_bucket_lifecycle_configuration" "gold" {
-  bucket = aws_s3_bucket.gold.id
-
-  rule {
-    id     = "gold_lifecycle"
-    status = "Enabled"
-
-    # Apply to all objects by default
-    filter {}
-
-    # No storage class transitions - frequently accessed for analytics
-    # Indefinite retention for business data
-
-    # Delete incomplete multipart uploads after 7 days
-    abort_incomplete_multipart_upload {
-      days_after_initiation = 7
-    }
-  }
-}
 
 # S3 bucket for access logs
 resource "aws_s3_bucket" "access_logs" {
@@ -893,13 +831,7 @@ resource "aws_s3_bucket_logging" "silver" {
   target_prefix = "silver/"
 }
 
-# S3 Bucket Logging for Gold Layer
-resource "aws_s3_bucket_logging" "gold" {
-  bucket = aws_s3_bucket.gold.id
 
-  target_bucket = aws_s3_bucket.access_logs.id
-  target_prefix = "gold/"
-}
 
 # ============================================================================
 # GitHub Actions Operations Role (ADR-011)
@@ -991,7 +923,6 @@ resource "aws_iam_role_policy" "github_actions_operations_s3" {
           aws_s3_bucket.main.arn,
           aws_s3_bucket.bronze.arn,
           aws_s3_bucket.silver.arn,
-          aws_s3_bucket.gold.arn,
           aws_s3_bucket.access_logs.arn
         ]
       },
@@ -1006,7 +937,6 @@ resource "aws_iam_role_policy" "github_actions_operations_s3" {
           "${aws_s3_bucket.main.arn}/*",
           "${aws_s3_bucket.bronze.arn}/*",
           "${aws_s3_bucket.silver.arn}/*",
-          "${aws_s3_bucket.gold.arn}/*",
           "${aws_s3_bucket.access_logs.arn}/*"
         ]
       }
@@ -1329,20 +1259,6 @@ resource "aws_iam_role_policy" "gold_data_access" {
       {
         Effect = "Allow"
         Action = [
-          "s3:GetObject",
-          "s3:PutObject",
-          "s3:DeleteObject",
-          "s3:ListBucket",
-          "s3:GetBucketLocation"
-        ]
-        Resource = [
-          aws_s3_bucket.gold.arn,
-          "${aws_s3_bucket.gold.arn}/*"
-        ]
-      },
-      {
-        Effect = "Allow"
-        Action = [
           # S3 Tables permissions for Gold analytics
           "s3tables:GetTable",
           "s3tables:GetTableData",
@@ -1434,9 +1350,7 @@ resource "aws_iam_policy" "lambda_execution" {
           aws_s3_bucket.bronze.arn,
           "${aws_s3_bucket.bronze.arn}/*",
           aws_s3_bucket.silver.arn,
-          "${aws_s3_bucket.silver.arn}/*",
-          aws_s3_bucket.gold.arn,
-          "${aws_s3_bucket.gold.arn}/*"
+          "${aws_s3_bucket.silver.arn}/*"
         ]
       },
       {
@@ -1578,14 +1492,13 @@ resource "aws_lambda_function" "gold_processing" {
 
   environment {
     variables = {
-      LOG_LEVEL            = "INFO"
-      APP_NAME             = "gold-processing"
-      SILVER_BUCKET        = aws_s3_bucket.silver.bucket
-      GOLD_BUCKET          = aws_s3_bucket.gold.bucket
-      S3_TABLES_BUCKET     = aws_s3tables_table_bucket.gold_tables.name
+      LOG_LEVEL              = "INFO"
+      APP_NAME               = "gold-processing"
+      SILVER_BUCKET          = aws_s3_bucket.silver.bucket
+      S3_TABLES_BUCKET       = aws_s3tables_table_bucket.gold_tables.name
       PLAYER_ANALYTICS_TABLE = aws_s3tables_table.player_analytics.name
       TEAM_ANALYTICS_TABLE   = aws_s3tables_table.team_analytics.name
-      AWS_REGION           = var.aws_region
+      AWS_REGION             = var.aws_region
     }
   }
 

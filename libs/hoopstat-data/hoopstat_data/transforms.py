@@ -521,6 +521,203 @@ def calculate_assists_per_turnover(assists: int, turnovers: int) -> float | None
     return round(assists / turnovers, 2)
 
 
+def calculate_possessions(
+    fga: int, fta: int, offensive_rebounds: int, turnovers: int
+) -> float | None:
+    """
+    Calculate possessions using the standard NBA formula.
+
+    Formula: FGA - ORB + TOV + 0.44 * FTA
+
+    Args:
+        fga: Field goal attempts
+        fta: Free throw attempts
+        offensive_rebounds: Offensive rebounds
+        turnovers: Turnovers
+
+    Returns:
+        Number of possessions, or None if invalid
+
+    Example:
+        >>> calculate_possessions(85, 25, 12, 15)
+        111.0
+    """
+    if any(x < 0 for x in [fga, fta, offensive_rebounds, turnovers]):
+        return None
+
+    possessions = fga - offensive_rebounds + turnovers + 0.44 * fta
+    return round(possessions, 1)
+
+
+def calculate_offensive_rating(points: int, possessions: float) -> float | None:
+    """
+    Calculate Offensive Rating (points per 100 possessions).
+
+    Args:
+        points: Points scored
+        possessions: Number of possessions
+
+    Returns:
+        Offensive rating, or None if invalid
+
+    Example:
+        >>> calculate_offensive_rating(110, 95.5)
+        115.2
+    """
+    if possessions <= 0 or points < 0:
+        return None
+
+    rating = (points / possessions) * 100
+    return round(rating, 1)
+
+
+def calculate_defensive_rating(points_allowed: int, possessions: float) -> float | None:
+    """
+    Calculate Defensive Rating (points allowed per 100 possessions).
+
+    Args:
+        points_allowed: Points allowed to opponent
+        possessions: Number of opponent possessions
+
+    Returns:
+        Defensive rating, or None if invalid
+
+    Example:
+        >>> calculate_defensive_rating(105, 98.2)
+        107.0
+    """
+    if possessions <= 0 or points_allowed < 0:
+        return None
+
+    rating = (points_allowed / possessions) * 100
+    return round(rating, 1)
+
+
+def calculate_pace(possessions: float, minutes_played: float = 48.0) -> float | None:
+    """
+    Calculate Pace (possessions per 48 minutes).
+
+    Args:
+        possessions: Number of possessions
+        minutes_played: Game minutes (default 48 for regulation)
+
+    Returns:
+        Pace, or None if invalid
+
+    Example:
+        >>> calculate_pace(95.5, 48.0)
+        95.5
+    """
+    if possessions <= 0 or minutes_played <= 0:
+        return None
+
+    pace = (possessions / minutes_played) * 48
+    return round(pace, 1)
+
+
+def calculate_effective_field_goal_percentage(
+    fgm: int, fga: int, tpm: int
+) -> float | None:
+    """
+    Calculate Effective Field Goal Percentage.
+
+    Formula: (FGM + 0.5 * 3PM) / FGA
+
+    Args:
+        fgm: Field goals made
+        fga: Field goal attempts
+        tpm: Three pointers made
+
+    Returns:
+        Effective FG%, or None if invalid
+
+    Example:
+        >>> calculate_effective_field_goal_percentage(42, 85, 12)
+        0.565
+    """
+    if fga <= 0 or fgm < 0 or tpm < 0 or fgm > fga:
+        return None
+
+    efg_pct = (fgm + 0.5 * tpm) / fga
+    return round(efg_pct, 3)
+
+
+def calculate_turnover_percentage(turnovers: int, possessions: float) -> float | None:
+    """
+    Calculate Turnover Percentage.
+
+    Formula: (TOV / Possessions) * 100
+
+    Args:
+        turnovers: Number of turnovers
+        possessions: Number of possessions
+
+    Returns:
+        Turnover percentage, or None if invalid
+
+    Example:
+        >>> calculate_turnover_percentage(15, 95.5)
+        15.7
+    """
+    if possessions <= 0 or turnovers < 0:
+        return None
+
+    tov_pct = (turnovers / possessions) * 100
+    return round(tov_pct, 1)
+
+
+def calculate_offensive_rebound_percentage(
+    offensive_rebounds: int, team_fga: int, team_fgm: int
+) -> float | None:
+    """
+    Calculate Offensive Rebound Percentage.
+
+    Formula: ORB / (FGA - FGM) * 100
+
+    Args:
+        offensive_rebounds: Offensive rebounds
+        team_fga: Team field goal attempts
+        team_fgm: Team field goals made
+
+    Returns:
+        Offensive rebound percentage, or None if invalid
+
+    Example:
+        >>> calculate_offensive_rebound_percentage(12, 85, 42)
+        27.9
+    """
+    missed_shots = team_fga - team_fgm
+    if missed_shots <= 0 or offensive_rebounds < 0:
+        return None
+
+    orb_pct = (offensive_rebounds / missed_shots) * 100
+    return round(orb_pct, 1)
+
+
+def calculate_free_throw_rate(fta: int, fga: int) -> float | None:
+    """
+    Calculate Free Throw Rate.
+
+    Formula: FTA / FGA
+
+    Args:
+        fta: Free throw attempts
+        fga: Field goal attempts
+
+    Returns:
+        Free throw rate, or None if invalid
+
+    Example:
+        >>> calculate_free_throw_rate(25, 85)
+        0.294
+    """
+    if fga <= 0 or fta < 0:
+        return None
+
+    ft_rate = fta / fga
+    return round(ft_rate, 3)
+
+
 class PlayerSeasonAggregator:
     """
     Aggregates Silver layer player statistics into Gold layer season summaries.
@@ -815,6 +1012,387 @@ class PlayerSeasonAggregator:
                     hasattr(game.get(field), "__iter__")
                     and len(str(game.get(field)).strip()) == 0
                 )
+            )
+            if missing_critical >= 2:  # More than half of critical fields missing
+                missing_count += 1
+
+        return missing_count
+
+    def _empty_season_stats(self, season: str, season_type: str) -> dict:
+        """Return empty season stats structure for invalid data."""
+        return {
+            "season": season,
+            "season_type": season_type,
+            "total_games": 0,
+            "data_quality_score": 0.0,
+            "error": "Insufficient or invalid data for aggregation",
+        }
+
+
+class TeamSeasonAggregator:
+    """
+    Aggregates Silver layer team statistics into Gold layer season summaries.
+
+    Handles team-level analytics including efficiency ratings, Four Factors,
+    pace calculations, and home/away splits with comprehensive metrics.
+    """
+
+    def __init__(self, validation_mode: str = "strict"):
+        """
+        Initialize the team aggregator.
+
+        Args:
+            validation_mode: Validation strictness ("strict" or "lenient")
+        """
+        self.validation_mode = validation_mode
+
+    def aggregate_season_stats(
+        self, team_games: list[dict], season: str, season_type: str = "regular"
+    ) -> dict:
+        """
+        Aggregate a team's season statistics from individual game records.
+
+        Args:
+            team_games: List of team game statistics (Silver layer format)
+            season: Season identifier (e.g., "2023-24")
+            season_type: "regular" or "playoff"
+
+        Returns:
+            Dictionary with aggregated season statistics and advanced metrics
+
+        Example:
+            >>> games = [
+            ...     {
+            ...         "team_id": "1610612747", "points": 110, "points_allowed": 105,
+            ...         "field_goals_made": 42, "field_goals_attempted": 85,
+            ...         "offensive_rebounds": 12, "turnovers": 15, ...
+            ...     },
+            ...     ...
+            ... ]
+            >>> aggregator = TeamSeasonAggregator()
+            >>> season_stats = aggregator.aggregate_season_stats(games, "2023-24")
+        """
+        if not team_games:
+            return self._empty_season_stats(season, season_type)
+
+        # Convert to pandas for efficient aggregation
+        import pandas as pd
+
+        df = pd.DataFrame(team_games)
+
+        # Validate minimum data requirements
+        if not self._validate_minimum_data(df):
+            return self._empty_season_stats(season, season_type)
+
+        # Calculate basic aggregations
+        totals = self._calculate_totals(df)
+        averages = self._calculate_averages(df, totals["total_games"])
+
+        # Calculate advanced metrics
+        efficiency_metrics = self._calculate_efficiency_metrics(totals, df)
+        four_factors = self._calculate_four_factors(totals)
+        shooting_metrics = self._calculate_shooting_metrics(totals)
+
+        # Calculate splits
+        home_away_splits = self._calculate_home_away_splits(df)
+        monthly_splits = self._calculate_monthly_splits(df)
+
+        # Combine all statistics
+        season_stats = {
+            # Metadata
+            "team_id": df.iloc[0].get("team_id"),
+            "team_name": df.iloc[0].get("team_name"),
+            "season": season,
+            "season_type": season_type,
+            # Basic totals and averages
+            **totals,
+            **averages,
+            # Advanced metrics
+            **efficiency_metrics,
+            **four_factors,
+            **shooting_metrics,
+            # Splits
+            "home_away_splits": home_away_splits,
+            "monthly_splits": monthly_splits,
+            # Data quality
+            "data_quality_score": self._calculate_data_quality_score(df),
+            "games_with_missing_data": self._count_games_with_missing_data(df),
+        }
+
+        return season_stats
+
+    def _validate_minimum_data(self, df: "pd.DataFrame") -> bool:
+        """Validate minimum data requirements for aggregation."""
+        required_fields = ["points", "points_allowed", "field_goals_attempted"]
+
+        # Check if required fields exist
+        missing_fields = [field for field in required_fields if field not in df.columns]
+        if missing_fields and self.validation_mode == "strict":
+            return False
+
+        # Check for minimum games
+        if len(df) == 0:
+            return False
+
+        return True
+
+    def _calculate_totals(self, df: "pd.DataFrame") -> dict:
+        """Calculate season totals."""
+        numeric_stats = [
+            "points",
+            "points_allowed",
+            "field_goals_made",
+            "field_goals_attempted",
+            "three_pointers_made",
+            "three_pointers_attempted",
+            "free_throws_made",
+            "free_throws_attempted",
+            "offensive_rebounds",
+            "defensive_rebounds",
+            "total_rebounds",
+            "assists",
+            "steals",
+            "blocks",
+            "turnovers",
+        ]
+
+        totals = {"total_games": len(df)}
+
+        # Calculate sums for available numeric stats
+        for stat in numeric_stats:
+            if stat in df.columns:
+                totals[f"total_{stat}"] = df[stat].fillna(0).sum()
+
+        return totals
+
+    def _calculate_averages(self, df: "pd.DataFrame", total_games: int) -> dict:
+        """Calculate per-game averages."""
+        if total_games == 0:
+            return {}
+
+        averages = {}
+        basic_stats = [
+            "points",
+            "points_allowed",
+            "field_goals_made",
+            "field_goals_attempted",
+            "assists",
+            "total_rebounds",
+            "turnovers",
+        ]
+
+        for stat in basic_stats:
+            if stat in df.columns:
+                avg_value = df[stat].fillna(0).mean()
+                averages[f"{stat}_per_game"] = round(avg_value, 1)
+
+        return averages
+
+    def _calculate_efficiency_metrics(self, totals: dict, df: "pd.DataFrame") -> dict:
+        """Calculate team efficiency metrics."""
+        metrics = {}
+
+        # Calculate possessions for each game and get average
+        game_possessions = []
+        for _, game in df.iterrows():
+            possessions = calculate_possessions(
+                game.get("field_goals_attempted", 0),
+                game.get("free_throws_attempted", 0),
+                game.get("offensive_rebounds", 0),
+                game.get("turnovers", 0),
+            )
+            if possessions:
+                game_possessions.append(possessions)
+
+        if game_possessions:
+            avg_possessions = sum(game_possessions) / len(game_possessions)
+            metrics["average_possessions_per_game"] = round(avg_possessions, 1)
+
+            # Offensive Rating
+            total_points = totals.get("total_points", 0)
+            total_possessions = sum(game_possessions)
+            if total_possessions > 0:
+                off_rating = calculate_offensive_rating(total_points, total_possessions)
+                if off_rating:
+                    metrics["offensive_rating"] = off_rating
+
+            # Defensive Rating (using points allowed and opponent possessions)
+            total_points_allowed = totals.get("total_points_allowed", 0)
+            # Estimate opponent possessions (simplified)
+            opp_possessions = total_possessions  # Approximately equal in regulation
+            def_rating = calculate_defensive_rating(
+                total_points_allowed, opp_possessions
+            )
+            if def_rating:
+                metrics["defensive_rating"] = def_rating
+
+            # Net Rating
+            if "offensive_rating" in metrics and "defensive_rating" in metrics:
+                metrics["net_rating"] = round(
+                    metrics["offensive_rating"] - metrics["defensive_rating"], 1
+                )
+
+            # Pace
+            pace = calculate_pace(avg_possessions)
+            if pace:
+                metrics["pace"] = pace
+
+        return metrics
+
+    def _calculate_four_factors(self, totals: dict) -> dict:
+        """Calculate the Four Factors."""
+        factors = {}
+
+        # Effective Field Goal Percentage
+        fgm = totals.get("total_field_goals_made", 0)
+        fga = totals.get("total_field_goals_attempted", 0)
+        tpm = totals.get("total_three_pointers_made", 0)
+
+        efg_pct = calculate_effective_field_goal_percentage(fgm, fga, tpm)
+        if efg_pct:
+            factors["effective_field_goal_percentage"] = efg_pct
+
+        # Turnover Percentage (estimated based on average possessions)
+        turnovers = totals.get("total_turnovers", 0)
+        games = totals.get("total_games", 1)
+        # Rough estimate of possessions per game
+        est_possessions_per_game = 95  # League average
+        total_possessions = est_possessions_per_game * games
+
+        tov_pct = calculate_turnover_percentage(turnovers, total_possessions)
+        if tov_pct:
+            factors["turnover_percentage"] = tov_pct
+
+        # Offensive Rebound Percentage
+        orb = totals.get("total_offensive_rebounds", 0)
+        orb_pct = calculate_offensive_rebound_percentage(orb, fga, fgm)
+        if orb_pct:
+            factors["offensive_rebound_percentage"] = orb_pct
+
+        # Free Throw Rate
+        fta = totals.get("total_free_throws_attempted", 0)
+        ft_rate = calculate_free_throw_rate(fta, fga)
+        if ft_rate:
+            factors["free_throw_rate"] = ft_rate
+
+        return factors
+
+    def _calculate_shooting_metrics(self, totals: dict) -> dict:
+        """Calculate shooting efficiency metrics."""
+        metrics = {}
+
+        # True Shooting Percentage
+        points = totals.get("total_points", 0)
+        fga = totals.get("total_field_goals_attempted", 0)
+        fta = totals.get("total_free_throws_attempted", 0)
+
+        ts_pct = calculate_true_shooting_percentage(points, fga, fta)
+        if ts_pct:
+            metrics["true_shooting_percentage"] = ts_pct
+
+        # Basic shooting percentages
+        fgm = totals.get("total_field_goals_made", 0)
+        if fga > 0:
+            metrics["field_goal_percentage"] = round(fgm / fga, 3)
+
+        tpm = totals.get("total_three_pointers_made", 0)
+        tpa = totals.get("total_three_pointers_attempted", 0)
+        if tpa > 0:
+            metrics["three_point_percentage"] = round(tpm / tpa, 3)
+
+        ftm = totals.get("total_free_throws_made", 0)
+        if fta > 0:
+            metrics["free_throw_percentage"] = round(ftm / fta, 3)
+
+        return metrics
+
+    def _calculate_home_away_splits(self, df: "pd.DataFrame") -> dict:
+        """Calculate home/away performance splits."""
+        import pandas as pd
+
+        splits = {"home": {}, "away": {}}
+
+        if "is_home" in df.columns:
+            for venue in ["home", "away"]:
+                venue_df = df[df["is_home"] == (venue == "home")]
+                if len(venue_df) > 0:
+                    splits[venue] = {
+                        "games": len(venue_df),
+                        "wins": venue_df.get("win", pd.Series([False])).sum(),
+                        "points_per_game": round(venue_df["points"].mean(), 1),
+                        "points_allowed_per_game": round(
+                            venue_df["points_allowed"].mean(), 1
+                        ),
+                    }
+                    # Calculate win percentage
+                    if splits[venue]["games"] > 0:
+                        splits[venue]["win_percentage"] = round(
+                            splits[venue]["wins"] / splits[venue]["games"], 3
+                        )
+
+        return splits
+
+    def _calculate_monthly_splits(self, df: "pd.DataFrame") -> dict:
+        """Calculate monthly performance splits."""
+        splits = {}
+
+        if "game_date" in df.columns:
+            import pandas as pd
+
+            # Convert game_date to datetime if it's not already
+            df_copy = df.copy()
+            if not pd.api.types.is_datetime64_any_dtype(df_copy["game_date"]):
+                df_copy["game_date"] = pd.to_datetime(df_copy["game_date"])
+
+            # Group by month
+            df_copy["month"] = df_copy["game_date"].dt.strftime("%Y-%m")
+
+            for month, month_df in df_copy.groupby("month"):
+                splits[month] = {
+                    "games": len(month_df),
+                    "wins": month_df.get("win", pd.Series([False])).sum(),
+                    "points_per_game": round(month_df["points"].mean(), 1),
+                    "points_allowed_per_game": round(
+                        month_df["points_allowed"].mean(), 1
+                    ),
+                }
+                # Calculate win percentage
+                if splits[month]["games"] > 0:
+                    splits[month]["win_percentage"] = round(
+                        splits[month]["wins"] / splits[month]["games"], 3
+                    )
+
+        return splits
+
+    def _calculate_data_quality_score(self, df: "pd.DataFrame") -> float:
+        """Calculate overall data quality score for the season."""
+        from .quality import calculate_data_quality_score
+
+        # Calculate average data quality across all games
+        quality_scores = []
+        for _, game in df.iterrows():
+            game_dict = game.to_dict()
+            score = calculate_data_quality_score(game_dict)
+            quality_scores.append(score)
+
+        return (
+            round(sum(quality_scores) / len(quality_scores), 3)
+            if quality_scores
+            else 0.0
+        )
+
+    def _count_games_with_missing_data(self, df: "pd.DataFrame") -> int:
+        """Count games with significant missing data."""
+        import pandas as pd
+
+        critical_fields = ["points", "points_allowed", "field_goals_attempted"]
+        missing_count = 0
+
+        for _, game in df.iterrows():
+            missing_critical = sum(
+                1
+                for field in critical_fields
+                if game.get(field) is None or pd.isna(game.get(field))
             )
             if missing_critical >= 2:  # More than half of critical fields missing
                 missing_count += 1

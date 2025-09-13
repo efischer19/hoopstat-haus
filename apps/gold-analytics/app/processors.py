@@ -8,7 +8,7 @@ advanced analytics metrics and player season aggregations.
 from datetime import date
 
 import pandas as pd
-from hoopstat_data.transforms import PlayerSeasonAggregator
+from hoopstat_data.transforms import PlayerSeasonAggregator, TeamSeasonAggregator
 from hoopstat_observability import get_logger
 
 logger = get_logger(__name__)
@@ -33,6 +33,7 @@ class GoldProcessor:
         self.silver_bucket = silver_bucket
         self.gold_bucket = gold_bucket
         self.season_aggregator = PlayerSeasonAggregator(validation_mode="lenient")
+        self.team_aggregator = TeamSeasonAggregator(validation_mode="lenient")
         logger.info(
             f"Initialized GoldProcessor with silver_bucket={silver_bucket}, "
             f"gold_bucket={gold_bucket}"
@@ -89,6 +90,145 @@ class GoldProcessor:
         except Exception as e:
             logger.error(f"Failed to process season aggregation for {season}: {e}")
             return False
+
+    def process_team_season_aggregation(
+        self, season: str, team_id: str | None = None, dry_run: bool = False
+    ) -> bool:
+        """
+        Process season-level team statistics aggregation.
+
+        Args:
+            season: Season to process (e.g., "2023-24")
+            team_id: Specific team to process, or None for all teams
+            dry_run: If True, log operations without making changes
+
+        Returns:
+            True if processing succeeded, False otherwise
+        """
+        logger.info(f"Processing team season aggregation for season: {season}")
+
+        if dry_run:
+            logger.info("Dry run mode - no data will be stored")
+
+        try:
+            # Load all team game stats for the season
+            team_games_data = self._load_season_team_games(season, team_id, dry_run)
+
+            if not team_games_data:
+                logger.warning(f"No team game data found for season {season}")
+                return True
+
+            # Group by team and aggregate
+            aggregated_seasons = {}
+            for team, games in team_games_data.items():
+                season_stats = self.team_aggregator.aggregate_season_stats(
+                    games, season, "regular"
+                )
+                if season_stats.get("total_games", 0) > 0:
+                    aggregated_seasons[team] = season_stats
+
+            if not dry_run and aggregated_seasons:
+                self._store_team_season_aggregations(aggregated_seasons, season)
+            else:
+                logger.info(
+                    f"Would store team season stats for {len(aggregated_seasons)} teams"
+                )
+
+            logger.info(f"Successfully processed team season aggregation for {season}")
+            return True
+
+        except Exception as e:
+            logger.error(f"Failed to process team season aggregation for {season}: {e}")
+            return False
+
+    def _load_season_team_games(
+        self, season: str, team_id: str | None = None, dry_run: bool = False
+    ) -> dict[str, list[dict]]:
+        """
+        Load all team game statistics for a season.
+
+        Args:
+            season: Season to load data for
+            team_id: Specific team to load, or None for all teams
+            dry_run: If True, return mock data
+
+        Returns:
+            Dictionary mapping team_id to list of game statistics
+        """
+        if dry_run:
+            # Mock season data for testing
+            mock_games = [
+                {
+                    "team_id": "1610612747",  # Lakers
+                    "team_name": "Los Angeles Lakers",
+                    "points": 110,
+                    "points_allowed": 105,
+                    "field_goals_made": 42,
+                    "field_goals_attempted": 85,
+                    "three_pointers_made": 12,
+                    "three_pointers_attempted": 35,
+                    "free_throws_made": 14,
+                    "free_throws_attempted": 18,
+                    "offensive_rebounds": 12,
+                    "defensive_rebounds": 32,
+                    "total_rebounds": 44,
+                    "assists": 25,
+                    "steals": 8,
+                    "blocks": 5,
+                    "turnovers": 15,
+                    "is_home": True,
+                    "win": True,
+                    "game_date": "2024-01-15",
+                },
+                {
+                    "team_id": "1610612747",  # Lakers
+                    "team_name": "Los Angeles Lakers",
+                    "points": 98,
+                    "points_allowed": 102,
+                    "field_goals_made": 38,
+                    "field_goals_attempted": 88,
+                    "three_pointers_made": 8,
+                    "three_pointers_attempted": 32,
+                    "free_throws_made": 14,
+                    "free_throws_attempted": 20,
+                    "offensive_rebounds": 10,
+                    "defensive_rebounds": 35,
+                    "total_rebounds": 45,
+                    "assists": 22,
+                    "steals": 6,
+                    "blocks": 3,
+                    "turnovers": 18,
+                    "is_home": False,
+                    "win": False,
+                    "game_date": "2024-01-18",
+                },
+            ]
+
+            if team_id:
+                return {team_id: mock_games}
+            else:
+                return {"1610612747": mock_games, "1610612738": mock_games[:1]}
+
+        # TODO: Implement actual S3 data loading
+        logger.info(f"Loading season team games for {season}")
+        raise NotImplementedError("Season team game loading not yet implemented")
+
+    def _store_team_season_aggregations(
+        self, aggregated_seasons: dict[str, dict], season: str
+    ) -> None:
+        """
+        Store aggregated team season statistics.
+
+        Args:
+            aggregated_seasons: Dictionary mapping team_id to season stats
+            season: Season being processed
+        """
+        # TODO: Implement actual storage
+        logger.info(
+            f"Storing team season aggregations for {len(aggregated_seasons)} teams "
+            f"in season {season}"
+        )
+        # Placeholder for actual storage implementation
 
     def _load_season_player_games(
         self, season: str, player_id: str | None = None, dry_run: bool = False
@@ -355,26 +495,99 @@ class GoldProcessor:
         Returns:
             DataFrame with calculated analytics metrics
         """
-        analytics = team_stats.copy()
-
-        # Offensive Rating: Points per 100 possessions
-        analytics["offensive_rating"] = (
-            analytics["points"] / analytics["possessions"]
-        ) * 100
-
-        # Defensive Rating (simplified - would need opponent data)
-        # For now, use a placeholder calculation
-        analytics["defensive_rating"] = 110.0  # League average placeholder
-
-        # Pace: Possessions per game (already have possessions)
-        analytics["pace"] = analytics["possessions"]
-
-        # True Shooting Percentage for teams
-        analytics["true_shooting_pct"] = analytics["points"] / (
-            2 * analytics["field_goals_attempted"]
+        from hoopstat_data.transforms import (
+            calculate_defensive_rating,
+            calculate_effective_field_goal_percentage,
+            calculate_free_throw_rate,
+            calculate_offensive_rating,
+            calculate_offensive_rebound_percentage,
+            calculate_pace,
+            calculate_possessions,
+            calculate_true_shooting_percentage,
+            calculate_turnover_percentage,
         )
 
-        logger.info(f"Calculated analytics for {len(analytics)} teams")
+        analytics = team_stats.copy()
+
+        for idx, row in analytics.iterrows():
+            # Calculate possessions
+            possessions = calculate_possessions(
+                row.get("field_goals_attempted", 0),
+                row.get("free_throws_attempted", 0),
+                row.get("offensive_rebounds", 0),
+                row.get("turnovers", 0),
+            )
+
+            if possessions:
+                analytics.at[idx, "possessions"] = possessions
+
+                # Offensive Rating: Points per 100 possessions
+                off_rating = calculate_offensive_rating(
+                    row.get("points", 0), possessions
+                )
+                if off_rating:
+                    analytics.at[idx, "offensive_rating"] = off_rating
+
+                # Defensive Rating (using points allowed)
+                def_rating = calculate_defensive_rating(
+                    row.get("points_allowed", 0), possessions
+                )
+                if def_rating:
+                    analytics.at[idx, "defensive_rating"] = def_rating
+
+                # Net Rating
+                if off_rating and def_rating:
+                    analytics.at[idx, "net_rating"] = round(off_rating - def_rating, 1)
+
+                # Pace
+                pace = calculate_pace(possessions)
+                if pace:
+                    analytics.at[idx, "pace"] = pace
+
+                # Turnover Percentage
+                tov_pct = calculate_turnover_percentage(
+                    row.get("turnovers", 0), possessions
+                )
+                if tov_pct:
+                    analytics.at[idx, "turnover_percentage"] = tov_pct
+
+            # Four Factors
+            # Effective Field Goal Percentage
+            efg_pct = calculate_effective_field_goal_percentage(
+                row.get("field_goals_made", 0),
+                row.get("field_goals_attempted", 0),
+                row.get("three_pointers_made", 0),
+            )
+            if efg_pct:
+                analytics.at[idx, "effective_field_goal_percentage"] = efg_pct
+
+            # Offensive Rebound Percentage
+            orb_pct = calculate_offensive_rebound_percentage(
+                row.get("offensive_rebounds", 0),
+                row.get("field_goals_attempted", 0),
+                row.get("field_goals_made", 0),
+            )
+            if orb_pct:
+                analytics.at[idx, "offensive_rebound_percentage"] = orb_pct
+
+            # Free Throw Rate
+            ft_rate = calculate_free_throw_rate(
+                row.get("free_throws_attempted", 0),
+                row.get("field_goals_attempted", 0),
+            )
+            if ft_rate:
+                analytics.at[idx, "free_throw_rate"] = ft_rate
+
+            # True Shooting Percentage
+            ts_pct = calculate_true_shooting_percentage(
+                row.get("points", 0),
+                row.get("field_goals_attempted", 0),
+                row.get("free_throws_attempted", 0),
+            )
+            if ts_pct:
+                analytics.at[idx, "true_shooting_percentage"] = ts_pct
+
+        logger.info(f"Calculated enhanced analytics for {len(analytics)} teams")
         return analytics
 
     def _store_player_analytics(

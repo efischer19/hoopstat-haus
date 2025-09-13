@@ -110,6 +110,160 @@ def status() -> None:
         sys.exit(1)
 
 
+@cli.command()
+@click.option(
+    "--season",
+    type=str,
+    required=True,
+    help="Season to process (e.g., '2023-24')",
+)
+@click.option(
+    "--player-id",
+    type=str,
+    help="Specific player ID to process (optional, processes all if not specified)",
+)
+@click.option("--dry-run", is_flag=True, help="Run without making changes")
+@click.option(
+    "--silver-bucket",
+    type=str,
+    help="S3 bucket name for Silver data (can also be set via SILVER_BUCKET env var)",
+)
+@click.option(
+    "--gold-bucket",
+    type=str,
+    help="S3 bucket name for Gold S3 Tables (can also be set via GOLD_BUCKET env var)",
+)
+def season_players(
+    season: str,
+    player_id: str | None,
+    dry_run: bool,
+    silver_bucket: str | None,
+    gold_bucket: str | None,
+) -> None:
+    """Process player season aggregations from Silver layer data."""
+    logger.info(f"Starting player season aggregation for season: {season}")
+
+    if player_id:
+        logger.info(f"Processing specific player: {player_id}")
+
+    if dry_run:
+        logger.info("Dry run mode - no data will be written")
+
+    # Get bucket names
+    silver_bucket_name = silver_bucket or os.getenv("SILVER_BUCKET")
+    gold_bucket_name = gold_bucket or os.getenv("GOLD_BUCKET")
+
+    if not silver_bucket_name:
+        logger.error(
+            "Silver bucket not specified. Use --silver-bucket option or set "
+            "SILVER_BUCKET environment variable"
+        )
+        sys.exit(1)
+
+    if not gold_bucket_name:
+        logger.error(
+            "Gold bucket not specified. Use --gold-bucket option or set "
+            "GOLD_BUCKET environment variable"
+        )
+        sys.exit(1)
+
+    try:
+        processor = GoldProcessor(
+            silver_bucket=silver_bucket_name, gold_bucket=gold_bucket_name
+        )
+
+        success = processor.process_season_aggregation(
+            season=season, player_id=player_id, dry_run=dry_run
+        )
+
+        if success:
+            logger.info("Player season aggregation completed successfully")
+        else:
+            logger.error("Player season aggregation failed")
+            sys.exit(1)
+
+    except Exception as e:
+        logger.error(f"Player season aggregation failed: {e}")
+        sys.exit(1)
+
+
+@cli.command()
+@click.option(
+    "--season",
+    type=str,
+    required=True,
+    help="Season to process (e.g., '2023-24')",
+)
+@click.option(
+    "--team-id",
+    type=str,
+    help="Specific team ID to process (optional, processes all if not specified)",
+)
+@click.option("--dry-run", is_flag=True, help="Run without making changes")
+@click.option(
+    "--silver-bucket",
+    type=str,
+    help="S3 bucket name for Silver data (can also be set via SILVER_BUCKET env var)",
+)
+@click.option(
+    "--gold-bucket",
+    type=str,
+    help="S3 bucket name for Gold S3 Tables (can also be set via GOLD_BUCKET env var)",
+)
+def season_teams(
+    season: str,
+    team_id: str | None,
+    dry_run: bool,
+    silver_bucket: str | None,
+    gold_bucket: str | None,
+) -> None:
+    """Process team season aggregations from Silver layer data."""
+    logger.info(f"Starting team season aggregation for season: {season}")
+
+    if team_id:
+        logger.info(f"Processing specific team: {team_id}")
+
+    if dry_run:
+        logger.info("Dry run mode - no data will be written")
+
+    # Get bucket names
+    silver_bucket_name = silver_bucket or os.getenv("SILVER_BUCKET")
+    gold_bucket_name = gold_bucket or os.getenv("GOLD_BUCKET")
+
+    if not silver_bucket_name:
+        logger.error(
+            "Silver bucket not specified. Use --silver-bucket option or set "
+            "SILVER_BUCKET environment variable"
+        )
+        sys.exit(1)
+
+    if not gold_bucket_name:
+        logger.error(
+            "Gold bucket not specified. Use --gold-bucket option or set "
+            "GOLD_BUCKET environment variable"
+        )
+        sys.exit(1)
+
+    try:
+        processor = GoldProcessor(
+            silver_bucket=silver_bucket_name, gold_bucket=gold_bucket_name
+        )
+
+        success = processor.process_team_season_aggregation(
+            season=season, team_id=team_id, dry_run=dry_run
+        )
+
+        if success:
+            logger.info("Team season aggregation completed successfully")
+        else:
+            logger.error("Team season aggregation failed")
+            sys.exit(1)
+
+    except Exception as e:
+        logger.error(f"Team season aggregation failed: {e}")
+        sys.exit(1)
+
+
 def main() -> None:
     """Main entry point for the gold layer analytics application."""
     cli()

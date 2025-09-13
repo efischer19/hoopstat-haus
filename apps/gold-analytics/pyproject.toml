@@ -13,9 +13,9 @@ boto3 = "^1.35.0"
 pyarrow = "^17.0.0"
 pandas = "^2.2.0"
 hoopstat-observability = {path = "../../libs/hoopstat-observability", develop = false}
-hoopstat-data = {path = "../../libs/hoopstat-data", develop = false}
 hoopstat-config = {path = "../../libs/hoopstat-config", develop = false}
 hoopstat-s3 = {path = "../../libs/hoopstat-s3", develop = false}
+hoopstat-data = {path = "../../libs/hoopstat-data"}
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^8.4.2"

@@ -9,7 +9,7 @@ packages = [{include = "app"}]
 [tool.poetry.dependencies]
 python = "^3.12"
 nba-api = "^1.5.2"
-boto3 = "^1.40.28"
+boto3 = "^1.40.30"
 pandas = "^2.3.2"
 tenacity = "^9.0.0"
 click = "^8.1.0"

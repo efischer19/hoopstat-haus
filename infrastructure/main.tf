@@ -1257,7 +1257,8 @@ resource "aws_iam_policy" "lambda_execution" {
         ]
         Resource = [
           "${aws_cloudwatch_log_group.applications.arn}:*",
-          "${aws_cloudwatch_log_group.data_pipeline.arn}:*"
+          "${aws_cloudwatch_log_group.data_pipeline.arn}:*",
+          "${aws_cloudwatch_log_group.s3_tables.arn}:*"
         ]
       },
       {
@@ -1489,7 +1490,7 @@ resource "aws_cloudwatch_metric_alarm" "lambda_duration" {
     }
     gold_processing = {
       function_name = aws_lambda_function.gold_processing.function_name
-      threshold     = 500000 # 8.33 minutes (83% of 10m timeout)
+      threshold     = 250000 # 4.17 minutes (83% of 5m timeout)
     }
   }
 

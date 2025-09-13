@@ -11,6 +11,8 @@ import pandas as pd
 from hoopstat_data.transforms import PlayerSeasonAggregator, TeamSeasonAggregator
 from hoopstat_observability import get_logger
 
+from .iceberg_integration import IcebergS3TablesWriter
+
 logger = get_logger(__name__)
 
 
@@ -34,6 +36,10 @@ class GoldProcessor:
         self.gold_bucket = gold_bucket
         self.season_aggregator = PlayerSeasonAggregator(validation_mode="lenient")
         self.team_aggregator = TeamSeasonAggregator(validation_mode="lenient")
+
+        # Initialize Iceberg writer for S3 Tables
+        self.iceberg_writer = IcebergS3TablesWriter(gold_bucket)
+
         logger.info(
             f"Initialized GoldProcessor with silver_bucket={silver_bucket}, "
             f"gold_bucket={gold_bucket}"
@@ -428,13 +434,36 @@ class GoldProcessor:
         """
         from hoopstat_data.transforms import (
             calculate_assists_per_turnover,
+            calculate_effective_field_goal_percentage,
             calculate_efficiency_rating,
+            calculate_offensive_rating,
             calculate_points_per_shot,
             calculate_true_shooting_percentage,
             calculate_usage_rate,
         )
 
         analytics = player_stats.copy()
+
+        # Ensure required columns exist with defaults
+        required_columns = {
+            "player_id": "unknown",
+            "team_id": 0,
+            "points": 0,
+            "rebounds": 0,
+            "assists": 0,
+            "field_goals_made": 0,
+            "field_goals_attempted": 0,
+            "three_pointers_made": 0,
+            "three_pointers_attempted": 0,
+            "free_throws_made": 0,
+            "free_throws_attempted": 0,
+            "turnovers": 0,
+            "minutes_played": 1,
+        }
+
+        for col, default_val in required_columns.items():
+            if col not in analytics.columns:
+                analytics[col] = default_val
 
         # Apply vectorized calculations using the new functions
         for idx, row in analytics.iterrows():
@@ -482,6 +511,33 @@ class GoldProcessor:
             if usage_rate is not None:
                 analytics.at[idx, "usage_rate"] = usage_rate
 
+            # Effective Field Goal Percentage
+            efg_pct = calculate_effective_field_goal_percentage(
+                row.get("field_goals_made", 0),
+                row.get("field_goals_attempted", 0),
+                row.get("three_pointers_made", 0),
+            )
+            if efg_pct is not None:
+                analytics.at[idx, "effective_field_goal_pct"] = efg_pct
+
+            # Approximate defensive and offensive ratings for players
+            # Note: These are simplified approximations
+            possessions = max(
+                row.get("field_goals_attempted", 0)
+                + 0.44 * row.get("free_throws_attempted", 0)
+                + row.get("turnovers", 0),
+                1,
+            )
+
+            off_rating = calculate_offensive_rating(row.get("points", 0), possessions)
+            if off_rating:
+                analytics.at[idx, "offensive_rating"] = off_rating
+
+            # Defensive rating is complex for players - use a simplified version
+            analytics.at[idx, "defensive_rating"] = (
+                110.0  # League average approximation
+            )
+
         logger.info(f"Calculated enhanced analytics for {len(analytics)} players")
         return analytics
 
@@ -508,6 +564,28 @@ class GoldProcessor:
         )
 
         analytics = team_stats.copy()
+
+        # Ensure required columns exist with defaults
+        required_columns = {
+            "team_id": 0,
+            "opponent_team_id": 0,  # Required by schema
+            "points": 0,
+            "points_allowed": 0,
+            "field_goals_made": 0,
+            "field_goals_attempted": 0,
+            "three_pointers_made": 0,
+            "three_pointers_attempted": 0,
+            "free_throws_made": 0,
+            "free_throws_attempted": 0,
+            "offensive_rebounds": 0,
+            "defensive_rebounds": 0,
+            "total_rebounds": 0,
+            "turnovers": 0,
+        }
+
+        for col, default_val in required_columns.items():
+            if col not in analytics.columns:
+                analytics[col] = default_val
 
         for idx, row in analytics.iterrows():
             # Calculate possessions
@@ -549,7 +627,7 @@ class GoldProcessor:
                     row.get("turnovers", 0), possessions
                 )
                 if tov_pct:
-                    analytics.at[idx, "turnover_percentage"] = tov_pct
+                    analytics.at[idx, "turnover_rate"] = tov_pct
 
             # Four Factors
             # Effective Field Goal Percentage
@@ -559,16 +637,16 @@ class GoldProcessor:
                 row.get("three_pointers_made", 0),
             )
             if efg_pct:
-                analytics.at[idx, "effective_field_goal_percentage"] = efg_pct
+                analytics.at[idx, "effective_field_goal_pct"] = efg_pct
 
-            # Offensive Rebound Percentage
+            # Rebound Rate (using offensive rebound percentage as proxy)
             orb_pct = calculate_offensive_rebound_percentage(
                 row.get("offensive_rebounds", 0),
                 row.get("field_goals_attempted", 0),
                 row.get("field_goals_made", 0),
             )
             if orb_pct:
-                analytics.at[idx, "offensive_rebound_percentage"] = orb_pct
+                analytics.at[idx, "rebound_rate"] = orb_pct
 
             # Free Throw Rate
             ft_rate = calculate_free_throw_rate(
@@ -585,7 +663,7 @@ class GoldProcessor:
                 row.get("free_throws_attempted", 0),
             )
             if ts_pct:
-                analytics.at[idx, "true_shooting_percentage"] = ts_pct
+                analytics.at[idx, "true_shooting_pct"] = ts_pct
 
         logger.info(f"Calculated enhanced analytics for {len(analytics)} teams")
         return analytics
@@ -600,11 +678,29 @@ class GoldProcessor:
             analytics: Player analytics data
             target_date: Date being processed
         """
-        # TODO: Implement storage integration
+        if analytics.empty:
+            logger.info("No player analytics data to store")
+            return
+
+        # Extract season from target_date (assume current NBA season logic)
+        # NBA season spans Oct-June, so if month >= 10, it's the start of season
+        if target_date.month >= 10:
+            season = f"{target_date.year}-{str(target_date.year + 1)[2:]}"
+        else:
+            season = f"{target_date.year - 1}-{str(target_date.year)[2:]}"
+
         logger.info(
-            f"Storing {len(analytics)} player analytics records for date {target_date}"
+            f"Storing {len(analytics)} player analytics records for "
+            f"date {target_date}, season {season}"
         )
-        # Placeholder for storage implementation
+
+        # Use Iceberg writer with proper error handling
+        success = self.iceberg_writer.write_player_analytics(
+            analytics, target_date, season
+        )
+
+        if not success:
+            raise RuntimeError("Failed to store player analytics to S3 Tables")
 
     def _store_team_analytics(self, analytics: pd.DataFrame, target_date: date) -> None:
         """
@@ -614,8 +710,25 @@ class GoldProcessor:
             analytics: Team analytics data
             target_date: Date being processed
         """
-        # TODO: Implement storage integration
+        if analytics.empty:
+            logger.info("No team analytics data to store")
+            return
+
+        # Extract season from target_date (assume current NBA season logic)
+        if target_date.month >= 10:
+            season = f"{target_date.year}-{str(target_date.year + 1)[2:]}"
+        else:
+            season = f"{target_date.year - 1}-{str(target_date.year)[2:]}"
+
         logger.info(
-            f"Storing {len(analytics)} team analytics records for date {target_date}"
+            f"Storing {len(analytics)} team analytics records for date {target_date}, "
+            f"season {season}"
         )
-        # Placeholder for storage implementation
+
+        # Use Iceberg writer with proper error handling
+        success = self.iceberg_writer.write_team_analytics(
+            analytics, target_date, season
+        )
+
+        if not success:
+            raise RuntimeError("Failed to store team analytics to S3 Tables")

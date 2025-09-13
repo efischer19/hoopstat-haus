@@ -97,13 +97,65 @@ def process(
 
 
 @cli.command()
-def status() -> None:
+@click.option(
+    "--gold-bucket",
+    type=str,
+    help="S3 bucket name for Gold S3 Tables (can also be set via GOLD_BUCKET env var)",
+)
+def status(gold_bucket: str | None) -> None:
     """Check the status of the gold layer analytics pipeline."""
     logger.info("Checking gold layer analytics status...")
 
+    # Get gold bucket from CLI option or environment variable
+    gold_bucket_name = gold_bucket or os.getenv("GOLD_BUCKET")
+    if not gold_bucket_name:
+        logger.error(
+            "Gold bucket not specified. Use --gold-bucket option or set "
+            "GOLD_BUCKET environment variable"
+        )
+        sys.exit(1)
+
     try:
-        # TODO: Implement status checks for S3 Tables in upcoming PR
-        logger.info("Gold layer analytics pipeline is ready")
+        from .iceberg_integration import IcebergS3TablesWriter
+
+        # Initialize Iceberg writer and check table health
+        iceberg_writer = IcebergS3TablesWriter(gold_bucket_name)
+
+        # Check both analytics tables
+        player_health = iceberg_writer.check_table_health(
+            "basketball_analytics.player_analytics"
+        )
+        team_health = iceberg_writer.check_table_health(
+            "basketball_analytics.team_analytics"
+        )
+
+        logger.info("=== S3 Tables Health Check ===")
+        logger.info(
+            f"Player Analytics Table: {'✓' if player_health['exists'] else '✗'}"
+        )
+        if player_health.get("error"):
+            logger.error(f"  Error: {player_health['error']}")
+        elif player_health["exists"]:
+            logger.info(
+                f"  Schema version: {player_health.get('schema_version', 'unknown')}"
+            )
+            logger.info(f"  Snapshot ID: {player_health.get('snapshot_id', 'none')}")
+
+        logger.info(f"Team Analytics Table: {'✓' if team_health['exists'] else '✗'}")
+        if team_health.get("error"):
+            logger.error(f"  Error: {team_health['error']}")
+        elif team_health["exists"]:
+            logger.info(
+                f"  Schema version: {team_health.get('schema_version', 'unknown')}"
+            )
+            logger.info(f"  Snapshot ID: {team_health.get('snapshot_id', 'none')}")
+
+        if player_health["exists"] and team_health["exists"]:
+            logger.info("Gold layer analytics pipeline is ready ✓")
+        else:
+            logger.warning(
+                "Some S3 Tables are not available - first write will create them"
+            )
 
     except Exception as e:
         logger.error(f"Status check failed: {e}")

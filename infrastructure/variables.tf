@@ -48,6 +48,10 @@ variable "lambda_config" {
       timeout     = number
       memory_size = number
     })
+    gold_processing = object({
+      timeout     = number
+      memory_size = number
+    })
   })
   default = {
     bronze_ingestion = {
@@ -55,8 +59,12 @@ variable "lambda_config" {
       memory_size = 256
     }
     silver_processing = {
-      timeout     = 300 # 5 minutes for data processing
+      timeout     = 300  # 5 minutes for data processing
       memory_size = 1024 # 1GB for data processing workloads
+    }
+    gold_processing = {
+      timeout     = 600  # 10 minutes for analytics calculations
+      memory_size = 2048 # 2GB for S3 Tables and analytics processing
     }
   }
 }

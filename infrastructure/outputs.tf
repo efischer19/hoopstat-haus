@@ -81,10 +81,6 @@ output "medallion_s3_buckets" {
       name = aws_s3_bucket.silver.bucket
       arn  = aws_s3_bucket.silver.arn
     }
-    gold = {
-      name = aws_s3_bucket.gold.bucket
-      arn  = aws_s3_bucket.gold.arn
-    }
     access_logs = {
       name = aws_s3_bucket.access_logs.bucket
       arn  = aws_s3_bucket.access_logs.arn
@@ -122,6 +118,16 @@ output "lambda_functions" {
       function_arn  = aws_lambda_function.bronze_ingestion.arn
       invoke_arn    = aws_lambda_function.bronze_ingestion.invoke_arn
     }
+    silver_processing = {
+      function_name = aws_lambda_function.silver_processing.function_name
+      function_arn  = aws_lambda_function.silver_processing.arn
+      invoke_arn    = aws_lambda_function.silver_processing.invoke_arn
+    }
+    gold_processing = {
+      function_name = aws_lambda_function.gold_processing.function_name
+      function_arn  = aws_lambda_function.gold_processing.arn
+      invoke_arn    = aws_lambda_function.gold_processing.invoke_arn
+    }
   }
 }
 
@@ -130,5 +136,42 @@ output "lambda_execution_role" {
   value = {
     name = aws_iam_role.lambda_execution.name
     arn  = aws_iam_role.lambda_execution.arn
+  }
+}
+
+# ============================================================================
+# S3 Tables Outputs (ADR-026)
+# ============================================================================
+
+output "s3_tables_gold_analytics" {
+  description = "S3 Tables configuration for Gold layer analytics"
+  value = {
+    table_bucket = {
+      name = aws_s3tables_table_bucket.gold_tables.name
+      arn  = aws_s3tables_table_bucket.gold_tables.arn
+    }
+    namespace = {
+      name = aws_s3tables_namespace.basketball_analytics.namespace
+    }
+    tables = {
+      player_analytics = {
+        name = aws_s3tables_table.player_analytics.name
+        arn  = aws_s3tables_table.player_analytics.arn
+      }
+      team_analytics = {
+        name = aws_s3tables_table.team_analytics.name
+        arn  = aws_s3tables_table.team_analytics.arn
+      }
+    }
+    region = var.aws_region
+    mcp_server_config = {
+      command = "uvx"
+      args    = ["awslabs.s3-tables-mcp-server@latest", "--allow-read"]
+      env = {
+        AWS_REGION       = var.aws_region
+        S3_TABLES_BUCKET = aws_s3tables_table_bucket.gold_tables.name
+      }
+    }
+    adr_reference = "ADR-026"
   }
 }

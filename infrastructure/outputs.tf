@@ -143,46 +143,44 @@ output "lambda_execution_role" {
 # S3 Tables Outputs (ADR-026)
 # ============================================================================
 
-output "s3_tables_gold_analytics" {
-  description = "S3 Tables configuration for Gold layer analytics"
-  value = {
-    bucket = {
-      name = aws_s3tables_table_bucket.gold_tables.name
-      arn  = aws_s3tables_table_bucket.gold_tables.arn
-    }
-    tables = {
-      player_analytics = {
-        name = aws_s3tables_table.player_analytics.name
-        arn  = aws_s3tables_table.player_analytics.arn
-      }
-      team_analytics = {
-        name = aws_s3tables_table.team_analytics.name
-        arn  = aws_s3tables_table.team_analytics.arn
-      }
-    }
-    monitoring = {
-      log_group_name = aws_cloudwatch_log_group.s3_tables.name
-      log_group_arn  = aws_cloudwatch_log_group.s3_tables.arn
-    }
-  }
-}
+# ============================================================================
+# S3 Tables Outputs (ADR-026)
+# ============================================================================
 
-output "s3_tables_mcp_config" {
-  description = "MCP client configuration for S3 Tables access"
+# NOTE: S3 Tables outputs will be configured once S3 Tables infrastructure
+# is manually set up per ADR-026. The following represents the intended
+# output structure for MCP integration:
+#
+# Expected S3 Tables Configuration:
+# - Bucket Name: ${var.project_name}-gold-tables
+# - Region: ${var.aws_region}
+# - Tables: player_analytics, team_analytics
+# - MCP Server Config: uvx awslabs.s3-tables-mcp-server@latest --allow-read
+#
+# Manual Configuration Required:
+# 1. Create S3 Tables bucket and tables
+# 2. Update outputs with actual resource ARNs
+# 3. Configure MCP client environment variables
+# 4. Test MCP integration with sample queries
+
+output "s3_tables_gold_analytics_config" {
+  description = "S3 Tables configuration for Gold layer analytics (manual setup required)"
   value = {
-    bucket_name = aws_s3tables_table_bucket.gold_tables.name
-    region      = var.aws_region
-    tables = [
-      aws_s3tables_table.player_analytics.name,
-      aws_s3tables_table.team_analytics.name
+    intended_bucket_name = "${var.project_name}-gold-tables"
+    intended_tables = [
+      "player_analytics",
+      "team_analytics"
     ]
+    region = var.aws_region
     mcp_server_config = {
       command = "uvx"
       args    = ["awslabs.s3-tables-mcp-server@latest", "--allow-read"]
       env = {
         AWS_REGION       = var.aws_region
-        S3_TABLES_BUCKET = aws_s3tables_table_bucket.gold_tables.name
+        S3_TABLES_BUCKET = "${var.project_name}-gold-tables"
       }
     }
+    manual_setup_required = true
+    adr_reference         = "ADR-026"
   }
 }

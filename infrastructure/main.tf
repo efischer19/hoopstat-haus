@@ -516,247 +516,41 @@ resource "aws_s3_bucket_lifecycle_configuration" "silver" {
 # S3 Tables for Gold Layer Analytics (ADR-026)
 # ============================================================================
 
-# S3 Tables Bucket for Gold Layer (Apache Iceberg Analytics)
-resource "aws_s3tables_table_bucket" "gold_tables" {
-  name = "${var.project_name}-gold-tables"
-
-  tags = {
-    Name      = "${var.project_name}-gold-tables-bucket"
-    DataLayer = "gold"
-    Purpose   = "Apache Iceberg analytics tables for MCP integration"
-    Retention = "indefinite"
-    ADR       = "ADR-026"
-  }
-}
-
-# Player Analytics Table (S3 Tables with Iceberg format)
-resource "aws_s3tables_table" "player_analytics" {
-  name       = "player_analytics"
-  bucket_arn = aws_s3tables_table_bucket.gold_tables.arn
-  format     = "ICEBERG"
-  type       = "CUSTOMER"
-
-  schema = jsonencode({
-    type = "struct"
-    fields = [
-      {
-        id       = 1
-        name     = "player_id"
-        type     = "int"
-        required = true
-      },
-      {
-        id       = 2
-        name     = "game_date"
-        type     = "date"
-        required = true
-      },
-      {
-        id       = 3
-        name     = "season"
-        type     = "string"
-        required = true
-      },
-      {
-        id       = 4
-        name     = "team_id"
-        type     = "int"
-        required = true
-      },
-      {
-        id       = 5
-        name     = "points"
-        type     = "int"
-        required = false
-      },
-      {
-        id       = 6
-        name     = "rebounds"
-        type     = "int"
-        required = false
-      },
-      {
-        id       = 7
-        name     = "assists"
-        type     = "int"
-        required = false
-      },
-      {
-        id       = 8
-        name     = "true_shooting_pct"
-        type     = "decimal(5,3)"
-        required = false
-      },
-      {
-        id       = 9
-        name     = "player_efficiency_rating"
-        type     = "decimal(5,2)"
-        required = false
-      },
-      {
-        id       = 10
-        name     = "usage_rate"
-        type     = "decimal(5,3)"
-        required = false
-      },
-      {
-        id       = 11
-        name     = "effective_field_goal_pct"
-        type     = "decimal(5,3)"
-        required = false
-      },
-      {
-        id       = 12
-        name     = "defensive_rating"
-        type     = "decimal(6,2)"
-        required = false
-      },
-      {
-        id       = 13
-        name     = "offensive_rating"
-        type     = "decimal(6,2)"
-        required = false
-      }
-    ]
-  })
-
-  # Partitioning strategy per ADR-026: date=YYYY-MM-DD/player_id=*
-  partition_keys = ["game_date", "player_id"]
-
-  tags = {
-    Name         = "player-analytics-table"
-    TableType    = "analytics"
-    Purpose      = "Daily player performance metrics for MCP queries"
-    Partitioning = "date_player_id"
-    ADR          = "ADR-026"
-  }
-}
-
-# Team Analytics Table (S3 Tables with Iceberg format)
-resource "aws_s3tables_table" "team_analytics" {
-  name       = "team_analytics"
-  bucket_arn = aws_s3tables_table_bucket.gold_tables.arn
-  format     = "ICEBERG"
-  type       = "CUSTOMER"
-
-  schema = jsonencode({
-    type = "struct"
-    fields = [
-      {
-        id       = 1
-        name     = "team_id"
-        type     = "int"
-        required = true
-      },
-      {
-        id       = 2
-        name     = "game_date"
-        type     = "date"
-        required = true
-      },
-      {
-        id       = 3
-        name     = "season"
-        type     = "string"
-        required = true
-      },
-      {
-        id       = 4
-        name     = "opponent_team_id"
-        type     = "int"
-        required = true
-      },
-      {
-        id       = 5
-        name     = "offensive_rating"
-        type     = "decimal(6,2)"
-        required = false
-      },
-      {
-        id       = 6
-        name     = "defensive_rating"
-        type     = "decimal(6,2)"
-        required = false
-      },
-      {
-        id       = 7
-        name     = "net_rating"
-        type     = "decimal(6,2)"
-        required = false
-      },
-      {
-        id       = 8
-        name     = "pace"
-        type     = "decimal(5,2)"
-        required = false
-      },
-      {
-        id       = 9
-        name     = "effective_field_goal_pct"
-        type     = "decimal(5,3)"
-        required = false
-      },
-      {
-        id       = 10
-        name     = "true_shooting_pct"
-        type     = "decimal(5,3)"
-        required = false
-      },
-      {
-        id       = 11
-        name     = "turnover_rate"
-        type     = "decimal(5,3)"
-        required = false
-      },
-      {
-        id       = 12
-        name     = "rebound_rate"
-        type     = "decimal(5,3)"
-        required = false
-      }
-    ]
-  })
-
-  # Partitioning strategy per ADR-026: date=YYYY-MM-DD/team_id=*
-  partition_keys = ["game_date", "team_id"]
-
-  tags = {
-    Name         = "team-analytics-table"
-    TableType    = "analytics"
-    Purpose      = "Daily team performance metrics for MCP queries"
-    Partitioning = "date_team_id"
-    ADR          = "ADR-026"
-  }
-}
-
-# S3 Tables Bucket Policy for public read access (future data sharing)
-resource "aws_s3tables_table_bucket_policy" "gold_tables_public_read" {
-  bucket = aws_s3tables_table_bucket.gold_tables.name
-
-  policy = jsonencode({
-    Version = "2012-10-17"
-    Statement = [
-      {
-        Sid       = "PublicReadForDataSharing"
-        Effect    = "Allow"
-        Principal = "*"
-        Action = [
-          "s3tables:GetTable",
-          "s3tables:GetTableData",
-          "s3tables:GetTableMetadata"
-        ]
-        Resource = [
-          "${aws_s3tables_table_bucket.gold_tables.arn}/*"
-        ]
-        Condition = {
-          IpAddress = {
-            "aws:SourceIp" = ["0.0.0.0/0"]
-          }
-        }
-      }
-    ]
-  })
-}
+# NOTE: S3 Tables is a preview AWS service. These resources represent the intended
+# infrastructure design per ADR-026. Manual configuration may be required until
+# the AWS provider fully supports S3 Tables Terraform resources.
+#
+# Expected S3 Tables Configuration:
+# 
+# 1. Table Bucket: ${var.project_name}-gold-tables
+#    - Apache Iceberg format
+#    - Optimized for analytics workloads
+#    - Integrated with AWS MCP Server
+#
+# 2. Player Analytics Table: player_analytics
+#    - Schema: player_id, game_date, season, team_id, points, rebounds, assists,
+#              true_shooting_pct, player_efficiency_rating, usage_rate,
+#              effective_field_goal_pct, defensive_rating, offensive_rating
+#    - Partitioned by: game_date, player_id
+#
+# 3. Team Analytics Table: team_analytics  
+#    - Schema: team_id, game_date, season, opponent_team_id, offensive_rating,
+#              defensive_rating, net_rating, pace, effective_field_goal_pct,
+#              true_shooting_pct, turnover_rate, rebound_rate
+#    - Partitioned by: game_date, team_id
+#
+# 4. Table Bucket Policy: Public read access for data sharing
+#    - Allows GetTable, GetTableData, GetTableMetadata operations
+#    - Restricted by IP for security
+#
+# Manual Configuration Steps:
+# 1. Create S3 Tables bucket via AWS Console or AWS CLI
+# 2. Define table schemas with Apache Iceberg format
+# 3. Configure partitioning strategy for optimal query performance
+# 4. Set up IAM permissions for Lambda and MCP access
+# 5. Configure public read policy for data sharing
+#
+# Cost Analysis: ~$0.60/year additional cost as analyzed in ADR-026
 
 
 
@@ -1259,7 +1053,8 @@ resource "aws_iam_role_policy" "gold_data_access" {
       {
         Effect = "Allow"
         Action = [
-          # S3 Tables permissions for Gold analytics
+          # S3 Tables permissions for Gold analytics (manual configuration required)
+          # These permissions will be used once S3 Tables resources are manually configured
           "s3tables:GetTable",
           "s3tables:GetTableData",
           "s3tables:GetTableMetadata",
@@ -1273,8 +1068,8 @@ resource "aws_iam_role_policy" "gold_data_access" {
           "s3tables:ListTableBuckets"
         ]
         Resource = [
-          aws_s3tables_table_bucket.gold_tables.arn,
-          "${aws_s3tables_table_bucket.gold_tables.arn}/*"
+          "arn:aws:s3tables:${var.aws_region}:${data.aws_caller_identity.current.account_id}:bucket/${var.project_name}-gold-tables",
+          "arn:aws:s3tables:${var.aws_region}:${data.aws_caller_identity.current.account_id}:bucket/${var.project_name}-gold-tables/*"
         ]
       },
       {
@@ -1356,7 +1151,8 @@ resource "aws_iam_policy" "lambda_execution" {
       {
         Effect = "Allow"
         Action = [
-          # S3 Tables permissions for Gold layer processing
+          # S3 Tables permissions for Gold layer processing (manual configuration required)
+          # These permissions will be used once S3 Tables resources are manually configured
           "s3tables:GetTable",
           "s3tables:GetTableData",
           "s3tables:GetTableMetadata",
@@ -1367,8 +1163,8 @@ resource "aws_iam_policy" "lambda_execution" {
           "s3tables:GetTableBucket"
         ]
         Resource = [
-          aws_s3tables_table_bucket.gold_tables.arn,
-          "${aws_s3tables_table_bucket.gold_tables.arn}/*"
+          "arn:aws:s3tables:${var.aws_region}:${data.aws_caller_identity.current.account_id}:bucket/${var.project_name}-gold-tables",
+          "arn:aws:s3tables:${var.aws_region}:${data.aws_caller_identity.current.account_id}:bucket/${var.project_name}-gold-tables/*"
         ]
       },
       {
@@ -1495,9 +1291,9 @@ resource "aws_lambda_function" "gold_processing" {
       LOG_LEVEL              = "INFO"
       APP_NAME               = "gold-processing"
       SILVER_BUCKET          = aws_s3_bucket.silver.bucket
-      S3_TABLES_BUCKET       = aws_s3tables_table_bucket.gold_tables.name
-      PLAYER_ANALYTICS_TABLE = aws_s3tables_table.player_analytics.name
-      TEAM_ANALYTICS_TABLE   = aws_s3tables_table.team_analytics.name
+      S3_TABLES_BUCKET       = "${var.project_name}-gold-tables"
+      PLAYER_ANALYTICS_TABLE = "player_analytics"
+      TEAM_ANALYTICS_TABLE   = "team_analytics"
       AWS_REGION             = var.aws_region
     }
   }
@@ -1619,83 +1415,27 @@ resource "aws_cloudwatch_metric_alarm" "lambda_throttles" {
 # S3 Tables CloudWatch Monitoring (ADR-026)
 # ============================================================================
 
-# CloudWatch Log Group for S3 Tables operations
-resource "aws_cloudwatch_log_group" "s3_tables" {
-  name              = "/hoopstat-haus/s3-tables"
-  retention_in_days = var.log_retention_days.data_pipeline
-
-  tags = {
-    LogType = "s3-tables"
-    Purpose = "S3 Tables analytics operations monitoring"
-    ADR     = "ADR-026"
-  }
-}
-
-# Metric filter for S3 Tables query performance
-resource "aws_cloudwatch_log_metric_filter" "s3_tables_query_duration" {
-  name           = "s3-tables-query-duration"
-  log_group_name = aws_cloudwatch_log_group.s3_tables.name
-  pattern        = "[timestamp, level, message, table_name, query_duration_ms = *, records_returned, ...]"
-
-  metric_transformation {
-    name      = "S3TablesQueryDuration"
-    namespace = "HoopstatHaus/S3Tables"
-    value     = "$query_duration_ms"
-    unit      = "Milliseconds"
-  }
-}
-
-# Metric filter for S3 Tables data ingestion
-resource "aws_cloudwatch_log_metric_filter" "s3_tables_ingestion_records" {
-  name           = "s3-tables-ingestion-records"
-  log_group_name = aws_cloudwatch_log_group.s3_tables.name
-  pattern        = "[timestamp, level, message, table_name, records_ingested = *, ...]"
-
-  metric_transformation {
-    name      = "S3TablesIngestedRecords"
-    namespace = "HoopstatHaus/S3Tables"
-    value     = "$records_ingested"
-    unit      = "Count"
-  }
-}
-
-# CloudWatch Alarm for S3 Tables query performance
-resource "aws_cloudwatch_metric_alarm" "s3_tables_slow_queries" {
-  alarm_name          = "s3-tables-slow-queries"
-  comparison_operator = "GreaterThanThreshold"
-  evaluation_periods  = "2"
-  metric_name         = "S3TablesQueryDuration"
-  namespace           = "HoopstatHaus/S3Tables"
-  period              = "300"
-  statistic           = "Average"
-  threshold           = "5000" # 5 seconds for analytics queries
-  alarm_description   = "This metric monitors S3 Tables query performance"
-
-  tags = {
-    Severity = "warning"
-    Type     = "s3-tables-performance"
-    Service  = "analytics"
-  }
-}
-
-# CloudWatch Alarm for S3 Tables ingestion errors
-resource "aws_cloudwatch_metric_alarm" "s3_tables_ingestion_errors" {
-  alarm_name          = "s3-tables-ingestion-errors"
-  comparison_operator = "GreaterThanThreshold"
-  evaluation_periods  = "1"
-  metric_name         = "ErrorCount"
-  namespace           = "HoopstatHaus/S3Tables"
-  period              = "300"
-  statistic           = "Sum"
-  threshold           = "0"
-  alarm_description   = "This metric monitors S3 Tables ingestion errors"
-
-  tags = {
-    Severity = "critical"
-    Type     = "s3-tables-errors"
-    Service  = "analytics"
-  }
-}
+# NOTE: S3 Tables monitoring resources will be configured once S3 Tables
+# infrastructure is manually set up. The following represents the intended
+# monitoring strategy:
+#
+# 1. CloudWatch Log Group: /hoopstat-haus/s3-tables
+#    - Purpose: S3 Tables analytics operations monitoring  
+#    - Retention: 90 days (data pipeline retention policy)
+#
+# 2. Metric Filters:
+#    - S3TablesQueryDuration: Monitor query performance
+#    - S3TablesIngestedRecords: Track data ingestion volume
+#
+# 3. CloudWatch Alarms:
+#    - s3-tables-slow-queries: Alert on queries >5 seconds
+#    - s3-tables-ingestion-errors: Alert on ingestion failures
+#
+# Manual Configuration Required:
+# 1. Create log group for S3 Tables operations
+# 2. Set up metric filters for query performance tracking
+# 3. Configure alarms for operational monitoring
+# 4. Integrate with existing CloudWatch dashboard
 
 # ============================================================================
 # S3 Event Notifications for Silver Processing

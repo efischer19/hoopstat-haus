@@ -93,11 +93,15 @@ class TestGoldProcessor:
 
         # PER calculation: (25 + 8 + 5 + 2 + 1 - 3) / 35
         expected_per = (25 + 8 + 5 + 2 + 1 - 3) / 35
-        assert abs(analytics["player_efficiency_rating"].iloc[0] - expected_per) < 0.01  # Allow for rounding
+        assert (
+            abs(analytics["player_efficiency_rating"].iloc[0] - expected_per) < 0.01
+        )  # Allow for rounding
 
         # Points per shot: 25 / (18 + 4)
         expected_pps = 25 / (18 + 4)
-        assert abs(analytics["points_per_shot"].iloc[0] - expected_pps) < 0.01  # Allow for rounding
+        assert (
+            abs(analytics["points_per_shot"].iloc[0] - expected_pps) < 0.01
+        )  # Allow for rounding
 
         # Assists per turnover: 5 / 3
         expected_apt = 5 / 3

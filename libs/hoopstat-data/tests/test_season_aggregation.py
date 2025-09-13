@@ -366,8 +366,8 @@ class TestPlayerSeasonAggregator:
             [good_game, poor_game], "2023-24"
         )
         assert mixed_result["data_quality_score"] < good_result["data_quality_score"]
-        # Note: The current missing data function counts games with missing critical fields,
-        # not just any missing data, so we don't assert on games_with_missing_data here
+        # Note: The current missing data function counts games with missing critical
+        # fields, not just any missing data, so we don't assert on missing_data here
 
     def test_zero_division_edge_cases(self):
         """Test handling of zero division edge cases."""

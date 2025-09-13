@@ -29,4 +29,4 @@ WORKDIR ${LAMBDA_TASK_ROOT}
 COPY apps/silver-processing/app ./app
 
 # Lambda handler
-CMD ["app.handlers.lambda_handler"]
+CMD ["app.lambda_handler.lambda_handler"]

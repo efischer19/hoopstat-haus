@@ -1,0 +1,77 @@
+[tool.poetry]
+name = "gold-analytics"
+version = "0.1.0"
+description = "Gold layer analytics processing for NBA statistics using S3 Tables"
+authors = ["Hoopstat Haus Team"]
+readme = "README.md"
+packages = [{include = "app"}]
+
+[tool.poetry.dependencies]
+python = "^3.12"
+click = "^8.1.0"
+boto3 = "^1.35.0"
+pyarrow = "^17.0.0"
+pandas = "^2.2.0"
+hoopstat-observability = {path = "../../libs/hoopstat-observability", develop = false}
+hoopstat-data = {path = "../../libs/hoopstat-data", develop = false}
+hoopstat-config = {path = "../../libs/hoopstat-config", develop = false}
+hoopstat-s3 = {path = "../../libs/hoopstat-s3", develop = false}
+
+[tool.poetry.group.dev.dependencies]
+pytest = "^8.4.2"
+ruff = "^0.13.0"
+black = "^25.1.0"
+pytest-cov = "^7.0.0"
+moto = "^5.1.12"
+pytest-mock = "^3.15.0"
+
+[tool.poetry.scripts]
+start = "app.main:main"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
+
+# Ruff configuration
+[tool.ruff]
+target-version = "py312"
+line-length = 88
+
+[tool.ruff.lint]
+select = [
+    "E",  # pycodestyle errors
+    "W",  # pycodestyle warnings
+    "F",  # pyflakes
+    "I",  # isort
+    "B",  # flake8-bugbear
+    "C4", # flake8-comprehensions
+    "UP", # pyupgrade
+]
+ignore = []
+
+[tool.ruff.lint.mccabe]
+max-complexity = 10
+
+# Black configuration
+[tool.black]
+target-version = ["py312"]
+line-length = 88
+
+# Pytest configuration
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py", "*_test.py"]
+python_functions = ["test_*"]
+addopts = "--strict-markers --disable-warnings"
+
+[tool.coverage.run]
+source = ["app"]
+omit = ["tests/*"]
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "def __repr__",
+    "raise AssertionError",
+    "raise NotImplementedError",
+]

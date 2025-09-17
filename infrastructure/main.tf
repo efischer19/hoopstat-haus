@@ -1417,7 +1417,7 @@ resource "aws_lambda_function" "gold_processing" {
   function_name = "${var.project_name}-gold-processing"
   role          = aws_iam_role.lambda_execution.arn
   package_type  = "Image"
-  image_uri     = "${aws_ecr_repository.main.repository_url}:gold-processing-latest"
+  image_uri     = "${aws_ecr_repository.main.repository_url}:gold-analytics-latest"
 
   timeout     = var.lambda_config.gold_processing.timeout
   memory_size = var.lambda_config.gold_processing.memory_size

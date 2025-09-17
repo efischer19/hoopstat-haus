@@ -17,7 +17,7 @@ class TestGoldAnalyticsConfig:
             silver_bucket="test-silver",
             gold_bucket="test-gold"
         )
-        
+
         assert config.silver_bucket == "test-silver"
         assert config.gold_bucket == "test-gold"
         assert config.aws_region == "us-east-1"  # default
@@ -46,7 +46,7 @@ class TestLoadConfig:
     def test_load_config_from_environment(self):
         """Test loading config from environment variables."""
         config = load_config()
-        
+
         assert config.silver_bucket == "env-silver"
         assert config.gold_bucket == "env-gold"
         assert config.aws_region == "us-west-2"
@@ -54,13 +54,17 @@ class TestLoadConfig:
 
     def test_load_config_missing_silver_bucket(self):
         """Test load_config with missing SILVER_BUCKET."""
-        with pytest.raises(ValueError, match="SILVER_BUCKET environment variable is required"):
+        with pytest.raises(
+            ValueError, match="SILVER_BUCKET environment variable is required"
+        ):
             load_config()
 
     @patch.dict(os.environ, {"SILVER_BUCKET": "test-silver"}, clear=True)
     def test_load_config_missing_gold_bucket(self):
         """Test load_config with missing GOLD_BUCKET."""
-        with pytest.raises(ValueError, match="GOLD_BUCKET environment variable is required"):
+        with pytest.raises(
+            ValueError, match="GOLD_BUCKET environment variable is required"
+        ):
             load_config()
 
     @patch.dict(os.environ, {
@@ -70,7 +74,7 @@ class TestLoadConfig:
     def test_load_config_with_defaults(self):
         """Test load_config with default values."""
         config = load_config()
-        
+
         assert config.silver_bucket == "test-silver"
         assert config.gold_bucket == "test-gold"
         assert config.aws_region == "us-east-1"  # default

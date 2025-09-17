@@ -1432,7 +1432,6 @@ resource "aws_lambda_function" "gold_processing" {
       NAMESPACE              = aws_s3tables_namespace.basketball_analytics.namespace
       PLAYER_ANALYTICS_TABLE = aws_s3tables_table.player_analytics.name
       TEAM_ANALYTICS_TABLE   = aws_s3tables_table.team_analytics.name
-      AWS_REGION             = var.aws_region
     }
   }
 

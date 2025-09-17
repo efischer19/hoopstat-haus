@@ -516,6 +516,12 @@ resource "aws_s3_bucket_lifecycle_configuration" "silver" {
 # S3 Tables for Gold Layer Analytics (ADR-026)
 # ============================================================================
 
+# TEMPORARY: Import existing S3 Tables bucket to resolve state drift
+import {
+  to = aws_s3tables_table_bucket.gold_tables
+  id = "hoopstat-haus-gold-tables"
+}
+
 # S3 Tables Bucket for Gold Layer Apache Iceberg analytics
 resource "aws_s3tables_table_bucket" "gold_tables" {
   name = "${var.project_name}-gold-tables"

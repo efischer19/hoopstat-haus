@@ -195,15 +195,19 @@ class TestGoldProcessor:
 
     @patch("app.processors.IcebergS3TablesWriter")
     @patch("app.processors.S3DataDiscovery")
-    def test_load_silver_data_with_s3_discovery(self, mock_s3_discovery_class, mock_iceberg_writer):
+    def test_load_silver_data_with_s3_discovery(
+        self, mock_s3_discovery_class, mock_iceberg_writer
+    ):
         """Test that non-dry-run data loading uses S3 discovery."""
         # Setup mock S3 discovery
         mock_s3_discovery = MagicMock()
-        mock_s3_discovery.load_all_silver_data.return_value = pd.DataFrame({
-            "player_id": ["player_1", "player_2"],
-            "team_id": ["team_1", "team_2"],
-            "points": [25, 18],
-        })
+        mock_s3_discovery.load_all_silver_data.return_value = pd.DataFrame(
+            {
+                "player_id": ["player_1", "player_2"],
+                "team_id": ["team_1", "team_2"],
+                "points": [25, 18],
+            }
+        )
         mock_s3_discovery_class.return_value = mock_s3_discovery
 
         processor = GoldProcessor(
@@ -215,25 +219,33 @@ class TestGoldProcessor:
         result = processor._load_silver_player_stats(target_date, dry_run=False)
         assert len(result) == 2
         assert "player_id" in result.columns
-        mock_s3_discovery.load_all_silver_data.assert_called_with(target_date, "player_stats")
+        mock_s3_discovery.load_all_silver_data.assert_called_with(
+            target_date, "player_stats"
+        )
 
         # Test team stats loading
-        mock_s3_discovery.load_all_silver_data.return_value = pd.DataFrame({
-            "team_id": ["team_1", "team_2"],
-            "points": [110, 105],
-        })
+        mock_s3_discovery.load_all_silver_data.return_value = pd.DataFrame(
+            {
+                "team_id": ["team_1", "team_2"],
+                "points": [110, 105],
+            }
+        )
         result = processor._load_silver_team_stats(target_date, dry_run=False)
         assert len(result) == 2
         assert "team_id" in result.columns
 
     @patch("app.processors.IcebergS3TablesWriter")
     @patch("app.processors.S3DataDiscovery")
-    def test_process_date_normal_mode_fails(self, mock_s3_discovery_class, mock_iceberg_writer):
+    def test_process_date_normal_mode_fails(
+        self, mock_s3_discovery_class, mock_iceberg_writer
+    ):
         """Test that normal mode processing fails when S3 discovery fails."""
         # Setup mock S3 discovery to raise an exception
         mock_s3_discovery = MagicMock()
         mock_s3_discovery.check_data_freshness.return_value = True
-        mock_s3_discovery.load_all_silver_data.side_effect = Exception("S3 connection failed")
+        mock_s3_discovery.load_all_silver_data.side_effect = Exception(
+            "S3 connection failed"
+        )
         mock_s3_discovery_class.return_value = mock_s3_discovery
 
         processor = GoldProcessor(
@@ -348,16 +360,20 @@ class TestGoldProcessor:
 
     @patch("app.processors.IcebergS3TablesWriter")
     @patch("app.processors.S3DataDiscovery")
-    def test_load_season_team_games_with_s3_discovery(self, mock_s3_discovery_class, mock_iceberg_writer):
+    def test_load_season_team_games_with_s3_discovery(
+        self, mock_s3_discovery_class, mock_iceberg_writer
+    ):
         """Test that non-dry-run team game loading uses S3 discovery."""
         # Setup mock S3 discovery
         mock_s3_discovery = MagicMock()
         mock_s3_discovery.discover_dates_to_process.return_value = [date(2024, 1, 15)]
-        mock_s3_discovery.load_all_silver_data.return_value = pd.DataFrame({
-            "team_id": ["team_1", "team_2"],
-            "points": [110, 105],
-            "game_date": ["2024-01-15", "2024-01-15"],
-        })
+        mock_s3_discovery.load_all_silver_data.return_value = pd.DataFrame(
+            {
+                "team_id": ["team_1", "team_2"],
+                "points": [110, 105],
+                "game_date": ["2024-01-15", "2024-01-15"],
+            }
+        )
         mock_s3_discovery_class.return_value = mock_s3_discovery
 
         processor = GoldProcessor(
@@ -366,7 +382,9 @@ class TestGoldProcessor:
 
         result = processor._load_season_team_games("2023-24", dry_run=False)
         assert isinstance(result, dict)
-        assert "team_1" in result or "team_2" in result  # At least one team should be present
+        assert (
+            "team_1" in result or "team_2" in result
+        )  # At least one team should be present
 
     @patch("app.processors.IcebergS3TablesWriter")
     @patch("app.processors.S3DataDiscovery")
@@ -376,7 +394,7 @@ class TestGoldProcessor:
         """Test normal mode team season processing fails due to no data available."""
         # Setup mock S3 discovery to return no data
         mock_s3_discovery = MagicMock()
-        mock_s3_discovery.discover_dates_to_process.return_value = []  # No dates available
+        mock_s3_discovery.discover_dates_to_process.return_value = []  # No dates
         mock_s3_discovery_class.return_value = mock_s3_discovery
 
         processor = GoldProcessor(

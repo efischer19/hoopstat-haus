@@ -14,8 +14,7 @@ class TestGoldAnalyticsConfig:
     def test_config_initialization(self):
         """Test basic config initialization."""
         config = GoldAnalyticsConfig(
-            silver_bucket="test-silver",
-            gold_bucket="test-gold"
+            silver_bucket="test-silver", gold_bucket="test-gold"
         )
 
         assert config.silver_bucket == "test-silver"
@@ -37,12 +36,15 @@ class TestGoldAnalyticsConfig:
 class TestLoadConfig:
     """Test cases for the load_config function."""
 
-    @patch.dict(os.environ, {
-        "SILVER_BUCKET": "env-silver",
-        "GOLD_BUCKET": "env-gold",
-        "AWS_REGION": "us-west-2",
-        "MAX_RETRY_ATTEMPTS": "5"
-    })
+    @patch.dict(
+        os.environ,
+        {
+            "SILVER_BUCKET": "env-silver",
+            "GOLD_BUCKET": "env-gold",
+            "AWS_REGION": "us-west-2",
+            "MAX_RETRY_ATTEMPTS": "5",
+        },
+    )
     def test_load_config_from_environment(self):
         """Test loading config from environment variables."""
         config = load_config()
@@ -67,10 +69,11 @@ class TestLoadConfig:
         ):
             load_config()
 
-    @patch.dict(os.environ, {
-        "SILVER_BUCKET": "test-silver",
-        "GOLD_BUCKET": "test-gold"
-    }, clear=True)
+    @patch.dict(
+        os.environ,
+        {"SILVER_BUCKET": "test-silver", "GOLD_BUCKET": "test-gold"},
+        clear=True,
+    )
     def test_load_config_with_defaults(self):
         """Test load_config with default values."""
         config = load_config()

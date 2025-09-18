@@ -1153,8 +1153,7 @@ class GoldProcessor:
         summary = {
             "status": "success" if not failed_dates else "partial",
             "message": (
-                f"Processed {len(successful_dates)}/{len(new_dates)} "
-                f"dates successfully"
+                f"Processed {len(successful_dates)}/{len(new_dates)} dates successfully"
             ),
             "dates_processed": successful_dates,
             "dates_failed": failed_dates,

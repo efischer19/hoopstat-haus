@@ -17,6 +17,7 @@ hoopstat-observability = {path = "../../libs/hoopstat-observability", develop = 
 hoopstat-config = {path = "../../libs/hoopstat-config", develop = false}
 hoopstat-s3 = {path = "../../libs/hoopstat-s3", develop = false}
 hoopstat-data = {path = "../../libs/hoopstat-data"}
+tenacity = "^9.0.0"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^8.4.2"

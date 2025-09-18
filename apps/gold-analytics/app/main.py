@@ -12,6 +12,7 @@ from datetime import UTC, datetime
 import click
 from hoopstat_observability import get_logger
 
+from .config import load_config
 from .processors import GoldProcessor
 
 logger = get_logger(__name__)
@@ -313,6 +314,188 @@ def season_teams(
 
     except Exception as e:
         logger.error(f"Team season aggregation failed: {e}")
+        sys.exit(1)
+
+
+@cli.command()
+@click.option("--dry-run", is_flag=True, help="Run without making changes")
+@click.option(
+    "--lookback-days",
+    type=int,
+    default=7,
+    help="Number of days to look back for new data (default: 7)",
+)
+@click.option(
+    "--silver-bucket",
+    type=str,
+    help="S3 bucket name for Silver data (can also be set via SILVER_BUCKET env var)",
+)
+@click.option(
+    "--gold-bucket",
+    type=str,
+    help="S3 bucket name for Gold S3 Tables (can also be set via GOLD_BUCKET env var)",
+)
+def incremental(
+    dry_run: bool,
+    lookback_days: int,
+    silver_bucket: str | None,
+    gold_bucket: str | None,
+) -> None:
+    """Process incremental updates from Silver layer data."""
+    logger.info("Starting incremental Gold analytics processing")
+
+    if dry_run:
+        logger.info("Dry run mode - no data will be written")
+
+    # Get bucket names
+    silver_bucket_name = silver_bucket or os.getenv("SILVER_BUCKET")
+    gold_bucket_name = gold_bucket or os.getenv("GOLD_BUCKET")
+
+    if not silver_bucket_name:
+        logger.error(
+            "Silver bucket not specified. Use --silver-bucket option or set "
+            "SILVER_BUCKET environment variable"
+        )
+        sys.exit(1)
+
+    if not gold_bucket_name:
+        logger.error(
+            "Gold bucket not specified. Use --gold-bucket option or set "
+            "GOLD_BUCKET environment variable"
+        )
+        sys.exit(1)
+
+    try:
+        # Use configuration if available
+        try:
+            config = load_config()
+            processor = GoldProcessor(
+                silver_bucket=silver_bucket_name,
+                gold_bucket=gold_bucket_name,
+                config=config,
+            )
+        except ValueError:
+            # Fall back to basic initialization
+            processor = GoldProcessor(
+                silver_bucket=silver_bucket_name, gold_bucket=gold_bucket_name
+            )
+
+        # Process incremental updates
+        results = processor.process_incremental(dry_run=dry_run)
+
+        logger.info(f"Incremental processing results: {results['message']}")
+        if results["status"] == "success":
+            logger.info("Incremental Gold analytics processing completed successfully")
+        elif results["status"] == "partial":
+            logger.warning("Incremental processing completed with some failures")
+            if results.get("dates_failed"):
+                logger.warning(f"Failed dates: {results['dates_failed']}")
+        else:
+            logger.error("Incremental Gold analytics processing failed")
+            sys.exit(1)
+
+    except Exception as e:
+        logger.error(f"Incremental Gold analytics processing failed: {e}")
+        sys.exit(1)
+
+
+@cli.command()
+@click.option(
+    "--start-date",
+    type=click.DateTime(formats=["%Y-%m-%d"]),
+    required=True,
+    help="Start date for processing range (YYYY-MM-DD)",
+)
+@click.option(
+    "--end-date",
+    type=click.DateTime(formats=["%Y-%m-%d"]),
+    required=True,
+    help="End date for processing range (YYYY-MM-DD)",
+)
+@click.option("--dry-run", is_flag=True, help="Run without making changes")
+@click.option(
+    "--silver-bucket",
+    type=str,
+    help="S3 bucket name for Silver data (can also be set via SILVER_BUCKET env var)",
+)
+@click.option(
+    "--gold-bucket",
+    type=str,
+    help="S3 bucket name for Gold S3 Tables (can also be set via GOLD_BUCKET env var)",
+)
+def process_range(
+    start_date: datetime,
+    end_date: datetime,
+    dry_run: bool,
+    silver_bucket: str | None,
+    gold_bucket: str | None,
+) -> None:
+    """Process Gold analytics for a range of dates."""
+    start_date_obj = start_date.date()
+    end_date_obj = end_date.date()
+
+    logger.info(f"Processing Gold analytics from {start_date_obj} to {end_date_obj}")
+
+    if dry_run:
+        logger.info("Dry run mode - no data will be written")
+
+    # Get bucket names
+    silver_bucket_name = silver_bucket or os.getenv("SILVER_BUCKET")
+    gold_bucket_name = gold_bucket or os.getenv("GOLD_BUCKET")
+
+    if not silver_bucket_name:
+        logger.error(
+            "Silver bucket not specified. Use --silver-bucket option or set "
+            "SILVER_BUCKET environment variable"
+        )
+        sys.exit(1)
+
+    if not gold_bucket_name:
+        logger.error(
+            "Gold bucket not specified. Use --gold-bucket option or set "
+            "GOLD_BUCKET environment variable"
+        )
+        sys.exit(1)
+
+    try:
+        # Use configuration if available
+        try:
+            config = load_config()
+            processor = GoldProcessor(
+                silver_bucket=silver_bucket_name,
+                gold_bucket=gold_bucket_name,
+                config=config,
+            )
+        except ValueError:
+            # Fall back to basic initialization
+            processor = GoldProcessor(
+                silver_bucket=silver_bucket_name, gold_bucket=gold_bucket_name
+            )
+
+        # Process the date range
+        results = processor.process_date_range(
+            start_date_obj, end_date_obj, dry_run=dry_run
+        )
+
+        successful_dates = sum(1 for success in results.values() if success)
+        total_dates = len(results)
+
+        if successful_dates == total_dates and total_dates > 0:
+            logger.info(
+                f"Date range processing completed successfully: "
+                f"{successful_dates} dates"
+            )
+        elif successful_dates > 0:
+            logger.warning(
+                f"Date range processing completed with some failures: "
+                f"{successful_dates}/{total_dates} dates successful"
+            )
+        else:
+            logger.error("Date range processing failed for all dates")
+            sys.exit(1)
+
+    except Exception as e:
+        logger.error(f"Date range processing failed: {e}")
         sys.exit(1)
 
 

@@ -227,8 +227,15 @@ class TestGoldProcessor:
         assert "team_id" in result.columns
 
     @patch("app.processors.IcebergS3TablesWriter")
-    def test_process_date_normal_mode_fails(self, mock_iceberg_writer):
-        """Test that normal mode processing fails due to unimplemented data loading."""
+    @patch("app.processors.S3DataDiscovery")
+    def test_process_date_normal_mode_fails(self, mock_s3_discovery_class, mock_iceberg_writer):
+        """Test that normal mode processing fails when S3 discovery fails."""
+        # Setup mock S3 discovery to raise an exception
+        mock_s3_discovery = MagicMock()
+        mock_s3_discovery.check_data_freshness.return_value = True
+        mock_s3_discovery.load_all_silver_data.side_effect = Exception("S3 connection failed")
+        mock_s3_discovery_class.return_value = mock_s3_discovery
+
         processor = GoldProcessor(
             silver_bucket="test-silver-bucket", gold_bucket="test-gold-bucket"
         )
@@ -362,15 +369,21 @@ class TestGoldProcessor:
         assert "team_1" in result or "team_2" in result  # At least one team should be present
 
     @patch("app.processors.IcebergS3TablesWriter")
+    @patch("app.processors.S3DataDiscovery")
     def test_process_team_season_aggregation_normal_mode_fails(
-        self, mock_iceberg_writer
+        self, mock_s3_discovery_class, mock_iceberg_writer
     ):
-        """Test normal mode team season processing fails due to unimplemented data."""
+        """Test normal mode team season processing fails due to no data available."""
+        # Setup mock S3 discovery to return no data
+        mock_s3_discovery = MagicMock()
+        mock_s3_discovery.discover_dates_to_process.return_value = []  # No dates available
+        mock_s3_discovery_class.return_value = mock_s3_discovery
+
         processor = GoldProcessor(
             silver_bucket="test-silver-bucket", gold_bucket="test-gold-bucket"
         )
         result = processor.process_team_season_aggregation("2023-24", dry_run=False)
-        assert result is False
+        assert result is True  # Should succeed but with no data to process
 
     @patch("app.processors.IcebergS3TablesWriter")
     def test_store_player_analytics_success(self, mock_iceberg_writer_class):

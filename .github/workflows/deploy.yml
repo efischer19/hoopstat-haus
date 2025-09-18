@@ -319,20 +319,6 @@ jobs:
                 echo "❌ Function update failed or timed out"
                 exit 1
               fi
-                    echo "✅ Test invocation successful"
-                    echo "📋 Response:"
-                    cat test_response.json | jq '.'
-                  else
-                    echo "⚠️  Test invocation failed - function may need manual verification"
-                  fi
-                else
-                  echo "ℹ️  Skipping test invocation for data processing function"
-                fi
-
-              else
-                echo "❌ Function update did not complete successfully"
-                exit 1
-              fi
             else
               echo "❌ Failed to update Lambda function code"
               cat lambda_update_result.json || echo "No response file created"

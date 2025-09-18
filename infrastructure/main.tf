@@ -913,7 +913,7 @@ resource "aws_iam_role_policy" "github_actions_operations_lambda" {
         Resource = [
           "arn:aws:lambda:${var.aws_region}:${data.aws_caller_identity.current.account_id}:function:${var.project_name}-bronze-ingestion",
           "arn:aws:lambda:${var.aws_region}:${data.aws_caller_identity.current.account_id}:function:${var.project_name}-silver-processing",
-          "arn:aws:lambda:${var.aws_region}:${data.aws_caller_identity.current.account_id}:function:${var.project_name}-gold-processing"
+          "arn:aws:lambda:${var.aws_region}:${data.aws_caller_identity.current.account_id}:function:${var.project_name}-gold-analytics"
         ]
       }
     ]
@@ -1408,7 +1408,7 @@ resource "aws_lambda_function" "silver_processing" {
 
 # Gold Processing Lambda Function (S3 Tables Analytics)
 resource "aws_lambda_function" "gold_processing" {
-  function_name = "${var.project_name}-gold-processing"
+  function_name = "${var.project_name}-gold-analytics"
   role          = aws_iam_role.lambda_execution.arn
   package_type  = "Image"
   image_uri     = "${aws_ecr_repository.main.repository_url}:gold-analytics-latest"
@@ -1419,7 +1419,7 @@ resource "aws_lambda_function" "gold_processing" {
   environment {
     variables = {
       LOG_LEVEL              = "INFO"
-      APP_NAME               = "gold-processing"
+      APP_NAME               = "gold-analytics"
       SILVER_BUCKET          = aws_s3_bucket.silver.bucket
       S3_TABLES_BUCKET       = aws_s3tables_table_bucket.gold_tables.name
       S3_TABLES_BUCKET_ARN   = aws_s3tables_table_bucket.gold_tables.arn
@@ -1435,7 +1435,7 @@ resource "aws_lambda_function" "gold_processing" {
   }
 
   tags = {
-    Application = "gold-processing"
+    Application = "gold-analytics"
     Type        = "data-pipeline"
     Purpose     = "S3 Tables analytics processing per ADR-026"
     ADR         = "ADR-026"

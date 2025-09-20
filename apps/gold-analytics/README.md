@@ -105,16 +105,15 @@ docker build -f apps/gold-analytics/Dockerfile -t gold-analytics:dev .
 
 ## MCP Integration
 
-Users can query the Gold analytics data using MCP clients:
+Users can query the Gold analytics data using MCP clients with **no AWS credentials required**:
 
 ```json
 {
   "mcpServers": {
-    "hoopstat-haus-gold": {
+    "hoopstat-haus-analytics": {
       "command": "uvx",
       "args": ["awslabs.s3-tables-mcp-server@latest", "--allow-read"],
       "env": {
-        "AWS_PROFILE": "hoopstat-profile",
         "AWS_REGION": "us-east-1",
         "S3_TABLES_BUCKET": "hoopstat-haus-gold-tables"
       }
@@ -123,6 +122,12 @@ Users can query the Gold analytics data using MCP clients:
 }
 ```
 
+### Public Access Features
+- **Anonymous Read Access**: No AWS credentials needed
+- **Real-time Analytics**: Data available 2-4 hours after games
+- **Advanced Metrics**: Player efficiency, team ratings, and more
+- **Optimized Performance**: Date-partitioned for fast queries
+
 ### Example Queries
 - "Show me LeBron's efficiency this week"
 - "What's the Lakers defensive rating this month?"
@@ -130,6 +135,8 @@ Users can query the Gold analytics data using MCP clients:
 - "Compare team offensive ratings for the 2023-24 season"
 - "Show home vs away splits for the Warriors"
 - "Display Four Factors for playoff teams"
+
+**Setup Guide**: [MCP Client Configuration](../../docs-src/MCP_CLIENT_SETUP.md)
 
 ## Related
 

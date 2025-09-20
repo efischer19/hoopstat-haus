@@ -1,0 +1,12 @@
+{
+  "mcpServers": {
+    "hoopstat-haus-analytics": {
+      "command": "uvx",
+      "args": ["awslabs.s3-tables-mcp-server@latest", "--allow-read"],
+      "env": {
+        "AWS_REGION": "us-east-1",
+        "S3_TABLES_BUCKET": "hoopstat-haus-gold-tables"
+      }
+    }
+  }
+}

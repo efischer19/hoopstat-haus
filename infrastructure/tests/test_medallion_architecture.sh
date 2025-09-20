@@ -13,7 +13,6 @@ echo "Test 1: Checking for Medallion Architecture S3 buckets..."
 required_buckets=(
     "aws_s3_bucket.*bronze"
     "aws_s3_bucket.*silver"
-    "aws_s3_bucket.*gold"
     "aws_s3_bucket.*access_logs"
 )
 
@@ -26,12 +25,20 @@ for bucket in "${required_buckets[@]}"; do
     fi
 done
 
+# Test 1a: Check for S3 Tables Gold layer (ADR-026)
+echo "Test 1a: Checking for S3 Tables Gold layer..."
+if grep -q "aws_s3tables_table_bucket.*gold" main.tf; then
+    echo "✅ Found S3 Tables Gold layer implementation"
+else
+    echo "❌ Missing S3 Tables Gold layer implementation"
+    exit 1
+fi
+
 # Test 2: Check for lifecycle policies
 echo "Test 2: Checking for lifecycle policies..."
 lifecycle_configs=(
     "aws_s3_bucket_lifecycle_configuration.*bronze"
     "aws_s3_bucket_lifecycle_configuration.*silver"
-    "aws_s3_bucket_lifecycle_configuration.*gold"
     "aws_s3_bucket_lifecycle_configuration.*access_logs"
 )
 
@@ -43,6 +50,15 @@ for config in "${lifecycle_configs[@]}"; do
         exit 1
     fi
 done
+
+# Test 2a: S3 Tables Gold layer uses automatic compaction instead of lifecycle policies
+echo "Test 2a: Checking S3 Tables Gold layer configuration..."
+if grep -q "aws_s3tables_table.*gold" main.tf; then
+    echo "✅ S3 Tables Gold layer uses automatic compaction (no lifecycle policy needed)"
+else
+    echo "❌ Missing S3 Tables Gold layer configuration"
+    exit 1
+fi
 
 # Test 3: Check for IAM roles
 echo "Test 3: Checking for IAM roles..."
@@ -66,7 +82,6 @@ echo "Test 4: Checking for encryption configuration..."
 encryption_configs=(
     "aws_s3_bucket_server_side_encryption_configuration.*bronze"
     "aws_s3_bucket_server_side_encryption_configuration.*silver"
-    "aws_s3_bucket_server_side_encryption_configuration.*gold"
 )
 
 for config in "${encryption_configs[@]}"; do
@@ -78,12 +93,20 @@ for config in "${encryption_configs[@]}"; do
     fi
 done
 
+# Test 4a: S3 Tables have automatic encryption
+echo "Test 4a: Checking S3 Tables encryption..."
+if grep -q "aws_s3tables_table_bucket.*gold" main.tf; then
+    echo "✅ S3 Tables have automatic encryption enabled by default"
+else
+    echo "❌ Missing S3 Tables configuration"
+    exit 1
+fi
+
 # Test 5: Check for bucket versioning
 echo "Test 5: Checking for bucket versioning..."
 versioning_configs=(
     "aws_s3_bucket_versioning.*bronze"
     "aws_s3_bucket_versioning.*silver"
-    "aws_s3_bucket_versioning.*gold"
 )
 
 for config in "${versioning_configs[@]}"; do
@@ -95,12 +118,20 @@ for config in "${versioning_configs[@]}"; do
     fi
 done
 
+# Test 5a: S3 Tables have automatic versioning through Iceberg format
+echo "Test 5a: Checking S3 Tables versioning..."
+if grep -q "format.*ICEBERG" main.tf; then
+    echo "✅ S3 Tables use Apache Iceberg format with automatic versioning"
+else
+    echo "❌ Missing Apache Iceberg format configuration"
+    exit 1
+fi
+
 # Test 6: Check for CloudWatch logging
 echo "Test 6: Checking for CloudWatch logging..."
 logging_configs=(
     "aws_s3_bucket_logging.*bronze"
     "aws_s3_bucket_logging.*silver"
-    "aws_s3_bucket_logging.*gold"
 )
 
 for config in "${logging_configs[@]}"; do
@@ -112,12 +143,20 @@ for config in "${logging_configs[@]}"; do
     fi
 done
 
+# Test 6a: S3 Tables have CloudWatch integration
+echo "Test 6a: Checking S3 Tables CloudWatch integration..."
+if grep -q "aws_cloudwatch_log_group.*s3_tables" main.tf; then
+    echo "✅ S3 Tables have CloudWatch log group configured"
+else
+    echo "❌ Missing S3 Tables CloudWatch configuration"
+    exit 1
+fi
+
 # Test 7: Check for public access blocks
 echo "Test 7: Checking for public access blocks..."
 public_access_blocks=(
     "aws_s3_bucket_public_access_block.*bronze"
     "aws_s3_bucket_public_access_block.*silver"
-    "aws_s3_bucket_public_access_block.*gold"
 )
 
 for block in "${public_access_blocks[@]}"; do
@@ -128,6 +167,15 @@ for block in "${public_access_blocks[@]}"; do
         exit 1
     fi
 done
+
+# Test 7a: S3 Tables have controlled public read access
+echo "Test 7a: Checking S3 Tables public access configuration..."
+if grep -q "aws_s3tables_table_bucket_policy.*gold" main.tf; then
+    echo "✅ S3 Tables have controlled public read access via bucket policy"
+else
+    echo "❌ Missing S3 Tables public access configuration"
+    exit 1
+fi
 
 # Test 8: Check outputs.tf for Medallion Architecture outputs
 echo "Test 8: Checking for Medallion Architecture outputs..."
@@ -182,11 +230,12 @@ fi
 echo ""
 echo "🎉 All Medallion Architecture infrastructure validation tests passed!"
 echo "📋 Summary:"
-echo "   ✅ 4 S3 buckets configured (Bronze, Silver, Gold, Access Logs)"
+echo "   ✅ 3 S3 buckets configured (Bronze, Silver, Access Logs)"
+echo "   ✅ S3 Tables Gold layer configured with Apache Iceberg (ADR-026)"
 echo "   ✅ 4 lifecycle policies with appropriate retention"
 echo "   ✅ 3 IAM roles for least-privilege data access"
 echo "   ✅ Encryption enabled for all buckets"
 echo "   ✅ Versioning enabled for all buckets"
 echo "   ✅ CloudWatch logging configured"
-echo "   ✅ Public access blocked for all buckets"
+echo "   ✅ Public access blocked for traditional buckets, public read for S3 Tables"
 echo "   ✅ Storage class transitions aligned with medallion architecture"

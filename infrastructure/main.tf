@@ -1314,6 +1314,18 @@ resource "aws_iam_policy" "lambda_execution" {
           "ecr:GetAuthorizationToken"
         ]
         Resource = "*"
+      },
+      {
+        Effect = "Allow"
+        Action = [
+          "sqs:ReceiveMessage",
+          "sqs:DeleteMessage",
+          "sqs:GetQueueAttributes"
+        ]
+        Resource = [
+          aws_sqs_queue.silver_processing.arn,
+          aws_sqs_queue.gold_analytics.arn
+        ]
       }
     ]
   })
@@ -1329,6 +1341,12 @@ resource "aws_iam_role_policy_attachment" "lambda_execution" {
 resource "aws_iam_role_policy_attachment" "lambda_basic_execution_role" {
   role       = aws_iam_role.lambda_execution.name
   policy_arn = "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+}
+
+# Attach AWS managed SQS execution role for Lambda
+resource "aws_iam_role_policy_attachment" "lambda_sqs_execution" {
+  role       = aws_iam_role.lambda_execution.name
+  policy_arn = "arn:aws:iam::aws:policy/service-role/AWSLambdaSQSQueueExecutionRole"
 }
 
 # Lambda function configurations for different applications
@@ -1630,28 +1648,283 @@ resource "aws_cloudwatch_metric_alarm" "s3_tables_ingestion_errors" {
 }
 
 # ============================================================================
-# S3 Event Notifications for Silver Processing
+# CloudWatch Monitoring for SQS Queues
 # ============================================================================
 
-# Lambda permission for S3 to invoke silver-processing function
-resource "aws_lambda_permission" "s3_invoke_silver_processing" {
-  statement_id  = "AllowExecutionFromS3Bucket"
-  action        = "lambda:InvokeFunction"
-  function_name = aws_lambda_function.silver_processing.function_name
-  principal     = "s3.amazonaws.com"
-  source_arn    = aws_s3_bucket.bronze.arn
+# CloudWatch alarm for silver-processing queue depth
+resource "aws_cloudwatch_metric_alarm" "silver_processing_queue_depth" {
+  alarm_name          = "silver-processing-queue-depth"
+  comparison_operator = "GreaterThanThreshold"
+  evaluation_periods  = "2"
+  metric_name         = "ApproximateNumberOfVisibleMessages"
+  namespace           = "AWS/SQS"
+  period              = "300"
+  statistic           = "Average"
+  threshold           = "50"
+  alarm_description   = "This metric monitors silver-processing SQS queue depth"
+
+  dimensions = {
+    QueueName = aws_sqs_queue.silver_processing.name
+  }
+
+  tags = {
+    Severity = "warning"
+    Type     = "queue-depth"
+  }
 }
 
-# S3 bucket notification for bronze bucket to trigger silver processing
+# CloudWatch alarm for gold-analytics queue depth
+resource "aws_cloudwatch_metric_alarm" "gold_analytics_queue_depth" {
+  alarm_name          = "gold-analytics-queue-depth"
+  comparison_operator = "GreaterThanThreshold"
+  evaluation_periods  = "2"
+  metric_name         = "ApproximateNumberOfVisibleMessages"
+  namespace           = "AWS/SQS"
+  period              = "300"
+  statistic           = "Average"
+  threshold           = "50"
+  alarm_description   = "This metric monitors gold-analytics SQS queue depth"
+
+  dimensions = {
+    QueueName = aws_sqs_queue.gold_analytics.name
+  }
+
+  tags = {
+    Severity = "warning"
+    Type     = "queue-depth"
+  }
+}
+
+# CloudWatch alarm for silver-processing dead letter queue
+resource "aws_cloudwatch_metric_alarm" "silver_processing_dlq_messages" {
+  alarm_name          = "silver-processing-dlq-messages"
+  comparison_operator = "GreaterThanThreshold"
+  evaluation_periods  = "1"
+  metric_name         = "ApproximateNumberOfVisibleMessages"
+  namespace           = "AWS/SQS"
+  period              = "300"
+  statistic           = "Maximum"
+  threshold           = "0"
+  alarm_description   = "This metric monitors messages in silver-processing dead letter queue"
+
+  dimensions = {
+    QueueName = aws_sqs_queue.silver_processing_dlq.name
+  }
+
+  tags = {
+    Severity = "critical"
+    Type     = "dead-letter-queue"
+  }
+}
+
+# CloudWatch alarm for gold-analytics dead letter queue
+resource "aws_cloudwatch_metric_alarm" "gold_analytics_dlq_messages" {
+  alarm_name          = "gold-analytics-dlq-messages"
+  comparison_operator = "GreaterThanThreshold"
+  evaluation_periods  = "1"
+  metric_name         = "ApproximateNumberOfVisibleMessages"
+  namespace           = "AWS/SQS"
+  period              = "300"
+  statistic           = "Maximum"
+  threshold           = "0"
+  alarm_description   = "This metric monitors messages in gold-analytics dead letter queue"
+
+  dimensions = {
+    QueueName = aws_sqs_queue.gold_analytics_dlq.name
+  }
+
+  tags = {
+    Severity = "critical"
+    Type     = "dead-letter-queue"
+  }
+}
+
+# ============================================================================
+# SQS Queues for Reliable Event Processing
+# ============================================================================
+
+# SQS queue for silver-processing events
+resource "aws_sqs_queue" "silver_processing" {
+  name = "${var.project_name}-silver-processing-queue"
+
+  # Configure for reliable processing
+  visibility_timeout_seconds = 300 # 5 minutes (same as Lambda timeout)
+  message_retention_seconds  = 1209600 # 14 days
+  receive_wait_time_seconds  = 20 # Long polling
+
+  # Dead letter queue configuration
+  redrive_policy = jsonencode({
+    deadLetterTargetArn = aws_sqs_queue.silver_processing_dlq.arn
+    maxReceiveCount     = 3
+  })
+
+  tags = {
+    Purpose = "Buffer S3 events for silver-processing Lambda"
+    Type    = "data-pipeline"
+  }
+}
+
+# Dead letter queue for silver-processing
+resource "aws_sqs_queue" "silver_processing_dlq" {
+  name = "${var.project_name}-silver-processing-dlq"
+
+  message_retention_seconds = 1209600 # 14 days
+
+  tags = {
+    Purpose = "Dead letter queue for failed silver-processing events"
+    Type    = "data-pipeline"
+  }
+}
+
+# SQS queue for gold-analytics events
+resource "aws_sqs_queue" "gold_analytics" {
+  name = "${var.project_name}-gold-analytics-queue"
+
+  # Configure for reliable processing
+  visibility_timeout_seconds = 300 # 5 minutes (same as Lambda timeout)
+  message_retention_seconds  = 1209600 # 14 days
+  receive_wait_time_seconds  = 20 # Long polling
+
+  # Dead letter queue configuration
+  redrive_policy = jsonencode({
+    deadLetterTargetArn = aws_sqs_queue.gold_analytics_dlq.arn
+    maxReceiveCount     = 3
+  })
+
+  tags = {
+    Purpose = "Buffer S3 events for gold-analytics Lambda"
+    Type    = "data-pipeline"
+  }
+}
+
+# Dead letter queue for gold-analytics
+resource "aws_sqs_queue" "gold_analytics_dlq" {
+  name = "${var.project_name}-gold-analytics-dlq"
+
+  message_retention_seconds = 1209600 # 14 days
+
+  tags = {
+    Purpose = "Dead letter queue for failed gold-analytics events"
+    Type    = "data-pipeline"
+  }
+}
+
+# ============================================================================
+# S3 Event Notifications with SQS Integration
+# ============================================================================
+
+# S3 bucket notification for bronze bucket to trigger silver processing via SQS
 resource "aws_s3_bucket_notification" "bronze_bucket_notification" {
   bucket = aws_s3_bucket.bronze.id
 
-  lambda_function {
-    lambda_function_arn = aws_lambda_function.silver_processing.arn
-    events              = ["s3:ObjectCreated:*"]
-    filter_prefix       = "raw/box_scores/date="
-    filter_suffix       = "/data.json"
+  queue {
+    queue_arn = aws_sqs_queue.silver_processing.arn
+    events    = ["s3:ObjectCreated:*"]
+    filter_prefix = "raw/box_scores/date="
+    filter_suffix = "/data.json"
   }
 
-  depends_on = [aws_lambda_permission.s3_invoke_silver_processing]
+  depends_on = [aws_sqs_queue_policy.silver_processing_policy]
+}
+
+# S3 bucket notification for silver bucket to trigger gold analytics via SQS
+resource "aws_s3_bucket_notification" "silver_bucket_notification" {
+  bucket = aws_s3_bucket.silver.id
+
+  queue {
+    queue_arn = aws_sqs_queue.gold_analytics.arn
+    events    = ["s3:ObjectCreated:*"]
+    filter_prefix = "silver/"
+    filter_suffix = ".parquet"
+  }
+
+  depends_on = [aws_sqs_queue_policy.gold_analytics_policy]
+}
+
+# ============================================================================
+# SQS Queue Policies for S3 Integration
+# ============================================================================
+
+# SQS policy to allow S3 to send messages to silver-processing queue
+resource "aws_sqs_queue_policy" "silver_processing_policy" {
+  queue_url = aws_sqs_queue.silver_processing.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Sid    = "AllowS3ToSendMessage"
+        Effect = "Allow"
+        Principal = {
+          Service = "s3.amazonaws.com"
+        }
+        Action   = "sqs:SendMessage"
+        Resource = aws_sqs_queue.silver_processing.arn
+        Condition = {
+          ArnEquals = {
+            "aws:SourceArn" = aws_s3_bucket.bronze.arn
+          }
+        }
+      }
+    ]
+  })
+}
+
+# SQS policy to allow S3 to send messages to gold-analytics queue
+resource "aws_sqs_queue_policy" "gold_analytics_policy" {
+  queue_url = aws_sqs_queue.gold_analytics.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Sid    = "AllowS3ToSendMessage"
+        Effect = "Allow"
+        Principal = {
+          Service = "s3.amazonaws.com"
+        }
+        Action   = "sqs:SendMessage"
+        Resource = aws_sqs_queue.gold_analytics.arn
+        Condition = {
+          ArnEquals = {
+            "aws:SourceArn" = aws_s3_bucket.silver.arn
+          }
+        }
+      }
+    ]
+  })
+}
+
+# ============================================================================
+# Lambda Event Source Mappings for SQS
+# ============================================================================
+
+# Event source mapping for silver-processing Lambda from SQS
+resource "aws_lambda_event_source_mapping" "silver_processing_sqs" {
+  event_source_arn = aws_sqs_queue.silver_processing.arn
+  function_name    = aws_lambda_function.silver_processing.arn
+  
+  # Batch processing configuration
+  batch_size                         = 10
+  maximum_batching_window_in_seconds = 5
+  
+  # Error handling
+  function_response_types = ["ReportBatchItemFailures"]
+  
+  depends_on = [aws_iam_role_policy_attachment.lambda_sqs_execution]
+}
+
+# Event source mapping for gold-analytics Lambda from SQS
+resource "aws_lambda_event_source_mapping" "gold_analytics_sqs" {
+  event_source_arn = aws_sqs_queue.gold_analytics.arn
+  function_name    = aws_lambda_function.gold_processing.arn
+  
+  # Batch processing configuration
+  batch_size                         = 10
+  maximum_batching_window_in_seconds = 5
+  
+  # Error handling
+  function_response_types = ["ReportBatchItemFailures"]
+  
+  depends_on = [aws_iam_role_policy_attachment.lambda_sqs_execution]
 }

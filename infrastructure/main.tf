@@ -1655,3 +1655,31 @@ resource "aws_s3_bucket_notification" "bronze_bucket_notification" {
 
   depends_on = [aws_lambda_permission.s3_invoke_silver_processing]
 }
+
+# ============================================================================
+# S3 Event Notifications for Gold Processing
+# ============================================================================
+
+# Lambda permission for S3 to invoke gold-processing function
+resource "aws_lambda_permission" "s3_invoke_gold_processing" {
+  statement_id  = "AllowExecutionFromS3Bucket"
+  action        = "lambda:InvokeFunction"
+  function_name = aws_lambda_function.gold_processing.function_name
+  principal     = "s3.amazonaws.com"
+  source_arn    = aws_s3_bucket.silver.arn
+}
+
+# S3 bucket notification for silver bucket to trigger gold processing
+resource "aws_s3_bucket_notification" "silver_bucket_notification" {
+  bucket = aws_s3_bucket.silver.id
+
+  lambda_function {
+    lambda_function_arn = aws_lambda_function.gold_processing.arn
+    events              = ["s3:ObjectCreated:*"]
+    # Support both current silver output format (date=) and future format (season=)
+    filter_prefix       = "silver/"
+    filter_suffix       = ".json"
+  }
+
+  depends_on = [aws_lambda_permission.s3_invoke_gold_processing]
+}

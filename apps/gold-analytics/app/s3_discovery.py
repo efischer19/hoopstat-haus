@@ -72,58 +72,79 @@ class S3DataDiscovery:
         if file_type not in ["player_stats", "team_stats"]:
             raise ValueError(f"Invalid file_type: {file_type}")
 
-        # Construct S3 prefix based on common Silver layer patterns
-        # Typical pattern: silver/player_stats/season=2023-24/date=2024-01-15/
+        # Construct S3 prefix based on Silver layer patterns
+        # Try both patterns for compatibility:
+        # 1. With season: silver/player_stats/season=2023-24/date=2024-01-15/
+        # 2. Without season: silver/player_stats/date=2024-01-15/
         season = self._extract_season_from_date(target_date)
         date_str = target_date.strftime("%Y-%m-%d")
 
-        prefix = f"silver/{file_type}/season={season}/date={date_str}/"
+        # Primary pattern with season partitioning
+        prefix_with_season = f"silver/{file_type}/season={season}/date={date_str}/"
+        # Fallback pattern without season partitioning (current silver output)
+        prefix_without_season = f"silver/{file_type}/date={date_str}/"
 
         logger.info(
-            f"Discovering {file_type} files for {target_date} with prefix: {prefix}"
+            f"Discovering {file_type} files for {target_date} with patterns: "
+            f"{prefix_with_season} or {prefix_without_season}"
         )
 
+        # Try primary pattern first
         try:
             response = self.s3_client.list_objects_v2(
                 Bucket=self.config.silver_bucket,
-                Prefix=prefix,
+                Prefix=prefix_with_season,
                 MaxKeys=1000,  # Reasonable limit for daily files
             )
+            files_found = "Contents" in response
+        except ClientError:
+            files_found = False
+            response = None
 
-            files = []
-            if "Contents" in response:
-                for obj in response["Contents"]:
-                    # Skip directory markers and non-data files
-                    if obj["Key"].endswith("/") or obj["Size"] == 0:
-                        continue
-
-                    # Filter for data files (parquet, json, csv)
-                    if not any(
-                        obj["Key"].endswith(ext)
-                        for ext in [".parquet", ".json", ".csv"]
-                    ):
-                        continue
-
-                    file_info = {
-                        "key": obj["Key"],
-                        "size": obj["Size"],
-                        "last_modified": obj["LastModified"],
-                        "etag": obj["ETag"].strip('"'),
-                        "file_type": file_type,
-                        "date": target_date,
-                        "season": season,
-                    }
-                    files.append(file_info)
-
-            logger.info(f"Discovered {len(files)} {file_type} files for {target_date}")
-            return files
-
-        except ClientError as e:
-            error_code = e.response.get("Error", {}).get("Code", "Unknown")
-            logger.error(
-                f"Failed to discover files for {target_date}: {error_code} - {e}"
+        # If no files found with season pattern, try without season
+        if not files_found:
+            logger.info(
+                f"No files found with season pattern, trying: {prefix_without_season}"
             )
-            raise
+            try:
+                response = self.s3_client.list_objects_v2(
+                    Bucket=self.config.silver_bucket,
+                    Prefix=prefix_without_season,
+                    MaxKeys=1000,  # Reasonable limit for daily files
+                )
+            except ClientError as e:
+                error_code = e.response.get("Error", {}).get("Code", "Unknown")
+                logger.error(
+                    f"Failed to discover files for {target_date}: {error_code} - {e}"
+                )
+                raise
+
+        files = []
+        if response and "Contents" in response:
+            for obj in response["Contents"]:
+                # Skip directory markers and non-data files
+                if obj["Key"].endswith("/") or obj["Size"] == 0:
+                    continue
+
+                # Filter for data files (parquet, json, csv)
+                if not any(
+                    obj["Key"].endswith(ext) for ext in [".parquet", ".json", ".csv"]
+                ):
+                    continue
+
+                file_info = {
+                    "key": obj["Key"],
+                    "size": obj["Size"],
+                    "last_modified": obj["LastModified"],
+                    "etag": obj["ETag"].strip('"'),
+                    "file_type": file_type,
+                    "date": target_date,
+                    "season": season,
+                }
+                files.append(file_info)
+
+        logger.info(f"Discovered {len(files)} {file_type} files for {target_date}")
+        return files
 
     @retry(
         stop=stop_after_attempt(3),
@@ -333,30 +354,73 @@ def parse_s3_event_key(s3_key: str) -> dict[str, Any] | None:
     """
     Parse S3 object key to extract metadata for processing.
 
+    Supports both patterns:
+    1. With season: silver/{file_type}/season={season}/date={date}/filename
+    2. Without season: silver/{file_type}/date={date}/filename
+
     Args:
         s3_key: S3 object key from event
 
     Returns:
         Dictionary with parsed metadata or None if parsing fails
     """
-    # Expected pattern: silver/{file_type}/season={season}/date={date}/filename
-    pattern = (
+    # Try pattern with season first
+    pattern_with_season = (
         r"silver/(?P<file_type>\w+)/season=(?P<season>[\d-]+)/date=(?P<date>[\d-]+)/.*"
     )
 
-    match = re.match(pattern, s3_key)
-    if not match:
-        logger.warning(f"S3 key does not match expected pattern: {s3_key}")
-        return None
+    match = re.match(pattern_with_season, s3_key)
+    if match:
+        try:
+            parsed_date = datetime.strptime(match.group("date"), "%Y-%m-%d").date()
+            return {
+                "file_type": match.group("file_type"),
+                "season": match.group("season"),
+                "date": parsed_date,
+                "original_key": s3_key,
+            }
+        except ValueError as e:
+            logger.error(f"Failed to parse date from S3 key {s3_key}: {e}")
+            return None
 
-    try:
-        parsed_date = datetime.strptime(match.group("date"), "%Y-%m-%d").date()
-        return {
-            "file_type": match.group("file_type"),
-            "season": match.group("season"),
-            "date": parsed_date,
-            "original_key": s3_key,
-        }
-    except ValueError as e:
-        logger.error(f"Failed to parse date from S3 key {s3_key}: {e}")
-        return None
+    # Try pattern without season (current silver output format)
+    pattern_without_season = r"silver/(?P<file_type>\w+)/date=(?P<date>[\d-]+)/.*"
+
+    match = re.match(pattern_without_season, s3_key)
+    if match:
+        try:
+            parsed_date = datetime.strptime(match.group("date"), "%Y-%m-%d").date()
+            # Extract season from date for consistency
+            season = _extract_season_from_date_helper(parsed_date)
+            return {
+                "file_type": match.group("file_type"),
+                "season": season,
+                "date": parsed_date,
+                "original_key": s3_key,
+            }
+        except ValueError as e:
+            logger.error(f"Failed to parse date from S3 key {s3_key}: {e}")
+            return None
+
+    logger.warning(f"S3 key does not match any expected pattern: {s3_key}")
+    return None
+
+
+def _extract_season_from_date_helper(target_date: date) -> str:
+    """
+    Helper function to extract NBA season string from a date.
+
+    Args:
+        target_date: Date to extract season from
+
+    Returns:
+        Season string in format "YYYY-YY"
+    """
+    # NBA season logic: Oct-June
+    if target_date.month >= 10:  # Oct, Nov, Dec
+        season_start_year = target_date.year
+    else:  # Jan-June
+        season_start_year = target_date.year - 1
+
+    season_end_year_short = str(season_start_year + 1)[2:]
+    return f"{season_start_year}-{season_end_year_short}"

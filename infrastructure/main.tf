@@ -525,17 +525,17 @@ resource "aws_s3tables_table_bucket" "gold_tables" {
 resource "aws_s3tables_table_bucket_policy" "gold_tables_public_read" {
   name             = aws_s3tables_table_bucket.gold_tables.name
   table_bucket_arn = aws_s3tables_table_bucket.gold_tables.arn
-  
+
   resource_policy = jsonencode({
     Version = "2012-10-17"
     Statement = [
       {
-        Sid    = "PublicReadOnlyAccess"
-        Effect = "Allow"
+        Sid       = "PublicReadOnlyAccess"
+        Effect    = "Allow"
         Principal = "*"
         Action = [
           "s3tables:GetTable",
-          "s3tables:GetTableData", 
+          "s3tables:GetTableData",
           "s3tables:GetTableMetadata",
           "s3tables:ListTables",
           "s3tables:GetTableBucket"
@@ -549,7 +549,7 @@ resource "aws_s3tables_table_bucket_policy" "gold_tables_public_read" {
             "s3tables:action" = [
               "GetTable",
               "GetTableData",
-              "GetTableMetadata", 
+              "GetTableMetadata",
               "ListTables",
               "GetTableBucket"
             ]

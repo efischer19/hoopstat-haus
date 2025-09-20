@@ -165,7 +165,7 @@ output "s3_tables_gold_analytics" {
     }
     region = var.aws_region
     public_access = {
-      enabled = true
+      enabled            = true
       policy_description = "Anonymous read access for MCP clients"
     }
     mcp_server_config = {

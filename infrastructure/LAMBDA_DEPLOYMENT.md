@@ -57,9 +57,9 @@ The infrastructure includes comprehensive monitoring:
 
 ### S3 Event Triggers
 
-The infrastructure includes automatic S3 event-driven processing:
+The infrastructure includes automatic S3 event-driven processing for the complete data pipeline:
 
-#### Silver Processing Trigger
+#### Bronze → Silver Processing Trigger
 - **Source**: Bronze bucket (`hoopstat-haus-bronze`)
 - **Events**: `s3:ObjectCreated:*`
 - **Filter**: 
@@ -68,10 +68,25 @@ The infrastructure includes automatic S3 event-driven processing:
 - **Target**: `hoopstat-haus-silver-processing` Lambda
 - **Purpose**: Automatically process new Bronze layer data into Silver layer
 
+#### Silver → Gold Processing Trigger
+- **Source**: Silver bucket (`hoopstat-haus-silver`)
+- **Events**: `s3:ObjectCreated:*`
+- **Filter**:
+  - Prefix: `silver/`
+  - Suffix: `.json`
+- **Target**: `hoopstat-haus-gold-analytics` Lambda
+- **Purpose**: Automatically process new Silver layer data into Gold layer analytics
+
+#### Complete Pipeline Flow
+```
+Local Cron → Bronze Lambda → S3 Event → Silver Lambda → S3 Event → Gold Lambda → S3 Tables
+```
+
 #### Error Handling
-- **Dead Letter Queue**: `hoopstat-haus-silver-processing-dlq`
-- **Retention**: 14 days
-- **Visibility Timeout**: 6 minutes (longer than Lambda timeout)
+- **CloudWatch Logs**: All Lambda failures visible in `/hoopstat-haus/data-pipeline` log group
+- **Lambda Retries**: Built-in retry mechanism for transient failures
+- **Monitoring**: CloudWatch alarms for Lambda errors, duration, and throttles
+- **Manual Retry**: For failures, functions can be manually invoked with same event data
 
 ## Deployment Process
 

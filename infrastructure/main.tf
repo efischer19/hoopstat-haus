@@ -521,6 +521,51 @@ resource "aws_s3tables_table_bucket" "gold_tables" {
   name = "${var.project_name}-gold-tables"
 }
 
+# S3 Tables Bucket Policy for public read access to enable MCP client access
+resource "aws_s3tables_table_bucket_policy" "gold_tables_public_read" {
+  table_bucket_arn = aws_s3tables_table_bucket.gold_tables.arn
+
+  resource_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Sid       = "PublicReadOnlyAccess"
+        Effect    = "Allow"
+        Principal = "*"
+        Action = [
+          "s3tables:GetTable",
+          "s3tables:GetTableData",
+          "s3tables:GetTableMetadata",
+          "s3tables:ListTables",
+          "s3tables:GetTableBucket"
+        ]
+        Resource = [
+          aws_s3tables_table_bucket.gold_tables.arn,
+          "${aws_s3tables_table_bucket.gold_tables.arn}/*"
+        ]
+        Condition = {
+          StringEquals = {
+            "s3tables:action" = [
+              "GetTable",
+              "GetTableData",
+              "GetTableMetadata",
+              "ListTables",
+              "GetTableBucket"
+            ]
+          }
+        }
+      }
+    ]
+  })
+
+  depends_on = [
+    aws_s3tables_table_bucket.gold_tables,
+    aws_s3tables_namespace.basketball_analytics,
+    aws_s3tables_table.player_analytics,
+    aws_s3tables_table.team_analytics
+  ]
+}
+
 # S3 Tables Namespace for basketball analytics
 resource "aws_s3tables_namespace" "basketball_analytics" {
   namespace        = "basketball_analytics"

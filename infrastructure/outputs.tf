@@ -144,7 +144,7 @@ output "lambda_execution_role" {
 # ============================================================================
 
 output "s3_tables_gold_analytics" {
-  description = "S3 Tables configuration for Gold layer analytics"
+  description = "S3 Tables configuration for Gold layer analytics with public read access"
   value = {
     table_bucket = {
       name = aws_s3tables_table_bucket.gold_tables.name
@@ -164,14 +164,25 @@ output "s3_tables_gold_analytics" {
       }
     }
     region = var.aws_region
+    public_access = {
+      enabled            = true
+      policy_description = "Anonymous read access for MCP clients"
+    }
     mcp_server_config = {
       command = "uvx"
       args    = ["awslabs.s3-tables-mcp-server@latest", "--allow-read"]
       env = {
         AWS_REGION       = var.aws_region
         S3_TABLES_BUCKET = aws_s3tables_table_bucket.gold_tables.name
+        # No AWS credentials needed for public access
       }
     }
+    example_queries = [
+      "Show me LeBron's efficiency this week",
+      "What's the Lakers defensive rating this month?",
+      "Top 10 players by True Shooting % yesterday",
+      "Compare team offensive ratings for the 2023-24 season"
+    ]
     adr_reference = "ADR-026"
   }
 }

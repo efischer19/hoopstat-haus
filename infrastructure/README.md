@@ -120,6 +120,14 @@ The infrastructure includes a fully configured ECR repository (`hoopstat-haus/pr
 - Integrates with GitHub Actions for automated CI/CD
 - See [ECR Image Management Guide](../docs/ECR_IMAGE_MANAGEMENT.md) for detailed usage
 
+### S3 Tables Public Access
+The infrastructure includes S3 Tables configuration for public basketball analytics access:
+- **Gold Layer Tables**: Apache Iceberg format tables with player and team analytics
+- **Public Read Access**: Anonymous access via bucket policy for MCP clients
+- **Security**: Read-only permissions with conditions to prevent data tampering
+- **Performance**: Optimized partitioning by date for fast queries
+- **Usage**: See [MCP Client Setup Guide](../docs-src/MCP_CLIENT_SETUP.md) for client configuration
+
 ## File Structure
 
 - `main.tf` - Main Terraform configuration
@@ -139,6 +147,9 @@ bash tests/test_infrastructure.sh
 # Run medallion architecture specific tests  
 bash tests/test_medallion_architecture.sh
 
+# Run S3 Tables public access configuration tests
+bash tests/test_s3_tables_public_access.sh
+
 # Run observability configuration tests
 python tests/test_observability.py
 ```
@@ -148,5 +159,6 @@ python tests/test_observability.py
 - **Security checks**: No sensitive data in configuration files
 - **Resource validation**: All required resources are properly configured
 - **Medallion architecture compliance**: Data layer configuration matches requirements
+- **S3 Tables public access**: Bucket policy and public read access validation
 - **Lifecycle policies**: Retention and storage class transitions are correct
 - **IAM policies**: Least-privilege access patterns are implemented

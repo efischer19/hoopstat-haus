@@ -10,13 +10,9 @@
       
       
       
-        <link rel="canonical" href="https://efischer19.github.io/hoopstat-haus/BUILD_ORCHESTRATION/">
+        <link rel="canonical" href="https://efischer19.github.io/hoopstat-haus/MCP_TROUBLESHOOTING/">
       
       
-        <link rel="prev" href="../DEVELOPMENT_PHILOSOPHY/">
-      
-      
-        <link rel="next" href="../E2E_TESTING/">
       
       
       <link rel="icon" href="../assets/images/favicon.png">
@@ -24,7 +20,7 @@
     
     
       
-        <title>Build Orchestration - Hoopstat Haus Shared Libraries Documentation</title>
+        <title>MCP Connection Troubleshooting Guide - Hoopstat Haus Shared Libraries Documentation</title>
       
     
     
@@ -74,7 +70,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#build-and-test-orchestration" class="md-skip">
+        <a href="#mcp-connection-troubleshooting-guide" class="md-skip">
           Skip to content
         </a>
       
@@ -108,7 +104,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Build Orchestration
+              MCP Connection Troubleshooting Guide
             
           </span>
         </div>
@@ -220,12 +216,10 @@
   
   
   
-    
-  
   
     
     
-      <li class="md-tabs__item md-tabs__item--active">
+      <li class="md-tabs__item">
         <a href="../CONTRIBUTING/" class="md-tabs__link">
           
   
@@ -531,31 +525,26 @@
       
   
   
-    
   
   
-  
     
     
     
     
-      
-        
-        
       
       
         
       
     
     
-    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--nested">
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" checked>
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
         
           
-          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="">
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
             
   
   
@@ -568,7 +557,7 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="true">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
           <label class="md-nav__title" for="__nav_3">
             <span class="md-nav__icon md-icon"></span>
             Development
@@ -625,32 +614,10 @@
                 
   
   
-    
   
   
-  
-    <li class="md-nav__item md-nav__item--active">
-      
-      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
-      
-      
-        
-      
-      
-        <label class="md-nav__link md-nav__link--active" for="__toc">
-          
-  
-  
-  <span class="md-ellipsis">
-    Build Orchestration
-    
-  </span>
-  
-
-          <span class="md-nav__icon md-icon"></span>
-        </label>
-      
-      <a href="./" class="md-nav__link md-nav__link--active">
+    <li class="md-nav__item">
+      <a href="../BUILD_ORCHESTRATION/" class="md-nav__link">
         
   
   
@@ -661,245 +628,6 @@
   
 
       </a>
-      
-        
-
-<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
-  
-  
-  
-    
-  
-  
-    <label class="md-nav__title" for="__toc">
-      <span class="md-nav__icon md-icon"></span>
-      Table of contents
-    </label>
-    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
-      
-        <li class="md-nav__item">
-  <a href="#overview" class="md-nav__link">
-    <span class="md-ellipsis">
-      Overview
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#pipeline-structure" class="md-nav__link">
-    <span class="md-ellipsis">
-      Pipeline Structure
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Pipeline Structure">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#1-change-detection-detect-changes" class="md-nav__link">
-    <span class="md-ellipsis">
-      1. Change Detection (detect-changes)
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#2-library-testing-test-libraries" class="md-nav__link">
-    <span class="md-ellipsis">
-      2. Library Testing (test-libraries)
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#3-application-testing-test-applications" class="md-nav__link">
-    <span class="md-ellipsis">
-      3. Application Testing (test-applications)
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#4-integration-testing-test-integration" class="md-nav__link">
-    <span class="md-ellipsis">
-      4. Integration Testing (test-integration)
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#application-types" class="md-nav__link">
-    <span class="md-ellipsis">
-      Application Types
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Application Types">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#deployable-applications" class="md-nav__link">
-    <span class="md-ellipsis">
-      Deployable Applications
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#utility-applications" class="md-nav__link">
-    <span class="md-ellipsis">
-      Utility Applications
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#shared-library-dependencies" class="md-nav__link">
-    <span class="md-ellipsis">
-      Shared Library Dependencies
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Shared Library Dependencies">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#example-dependency-declaration" class="md-nav__link">
-    <span class="md-ellipsis">
-      Example Dependency Declaration
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#cicd-workflow-benefits" class="md-nav__link">
-    <span class="md-ellipsis">
-      CI/CD Workflow Benefits
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="CI/CD Workflow Benefits">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#clear-failure-attribution" class="md-nav__link">
-    <span class="md-ellipsis">
-      Clear Failure Attribution
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#efficient-resource-usage" class="md-nav__link">
-    <span class="md-ellipsis">
-      Efficient Resource Usage
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#deployment-readiness" class="md-nav__link">
-    <span class="md-ellipsis">
-      Deployment Readiness
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#error-scenarios" class="md-nav__link">
-    <span class="md-ellipsis">
-      Error Scenarios
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Error Scenarios">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#missing-dockerfile-for-deployable-app" class="md-nav__link">
-    <span class="md-ellipsis">
-      Missing Dockerfile for Deployable App
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#utility-app-expected-behavior" class="md-nav__link">
-    <span class="md-ellipsis">
-      Utility App (Expected Behavior)
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#library-failure" class="md-nav__link">
-    <span class="md-ellipsis">
-      Library Failure
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#integration-failure" class="md-nav__link">
-    <span class="md-ellipsis">
-      Integration Failure
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#future-enhancements" class="md-nav__link">
-    <span class="md-ellipsis">
-      Future Enhancements
-    </span>
-  </a>
-  
-</li>
-      
-    </ul>
-  
-</nav>
-      
     </li>
   
 
@@ -1008,55 +736,19 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#overview" class="md-nav__link">
+  <a href="#quick-diagnostics" class="md-nav__link">
     <span class="md-ellipsis">
-      Overview
+      Quick Diagnostics
     </span>
   </a>
   
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#pipeline-structure" class="md-nav__link">
-    <span class="md-ellipsis">
-      Pipeline Structure
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Pipeline Structure">
+    <nav class="md-nav" aria-label="Quick Diagnostics">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#1-change-detection-detect-changes" class="md-nav__link">
+  <a href="#check-your-configuration" class="md-nav__link">
     <span class="md-ellipsis">
-      1. Change Detection (detect-changes)
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#2-library-testing-test-libraries" class="md-nav__link">
-    <span class="md-ellipsis">
-      2. Library Testing (test-libraries)
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#3-application-testing-test-applications" class="md-nav__link">
-    <span class="md-ellipsis">
-      3. Application Testing (test-applications)
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#4-integration-testing-test-integration" class="md-nav__link">
-    <span class="md-ellipsis">
-      4. Integration Testing (test-integration)
+      Check Your Configuration
     </span>
   </a>
   
@@ -1068,28 +760,46 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#application-types" class="md-nav__link">
+  <a href="#common-error-messages" class="md-nav__link">
     <span class="md-ellipsis">
-      Application Types
+      Common Error Messages
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="Application Types">
+    <nav class="md-nav" aria-label="Common Error Messages">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#deployable-applications" class="md-nav__link">
+  <a href="#connection-failed-or-server-not-responding" class="md-nav__link">
     <span class="md-ellipsis">
-      Deployable Applications
+      "Connection failed" or "Server not responding"
     </span>
   </a>
   
 </li>
         
           <li class="md-nav__item">
-  <a href="#utility-applications" class="md-nav__link">
+  <a href="#permission-denied-or-access-denied" class="md-nav__link">
     <span class="md-ellipsis">
-      Utility Applications
+      "Permission denied" or "Access denied"
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#no-data-found-or-empty-results" class="md-nav__link">
+    <span class="md-ellipsis">
+      "No data found" or Empty Results
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#query-timeout-or-slow-performance" class="md-nav__link">
+    <span class="md-ellipsis">
+      "Query timeout" or Slow Performance
     </span>
   </a>
   
@@ -1101,19 +811,28 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#shared-library-dependencies" class="md-nav__link">
+  <a href="#client-specific-issues" class="md-nav__link">
     <span class="md-ellipsis">
-      Shared Library Dependencies
+      Client-Specific Issues
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="Shared Library Dependencies">
+    <nav class="md-nav" aria-label="Client-Specific Issues">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#example-dependency-declaration" class="md-nav__link">
+  <a href="#claude-desktop" class="md-nav__link">
     <span class="md-ellipsis">
-      Example Dependency Declaration
+      Claude Desktop
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#other-mcp-clients" class="md-nav__link">
+    <span class="md-ellipsis">
+      Other MCP Clients
     </span>
   </a>
   
@@ -1125,37 +844,37 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#cicd-workflow-benefits" class="md-nav__link">
+  <a href="#advanced-diagnostics" class="md-nav__link">
     <span class="md-ellipsis">
-      CI/CD Workflow Benefits
+      Advanced Diagnostics
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="CI/CD Workflow Benefits">
+    <nav class="md-nav" aria-label="Advanced Diagnostics">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#clear-failure-attribution" class="md-nav__link">
+  <a href="#manual-testing" class="md-nav__link">
     <span class="md-ellipsis">
-      Clear Failure Attribution
+      Manual Testing
     </span>
   </a>
   
 </li>
         
           <li class="md-nav__item">
-  <a href="#efficient-resource-usage" class="md-nav__link">
+  <a href="#network-issues" class="md-nav__link">
     <span class="md-ellipsis">
-      Efficient Resource Usage
+      Network Issues
     </span>
   </a>
   
 </li>
         
           <li class="md-nav__item">
-  <a href="#deployment-readiness" class="md-nav__link">
+  <a href="#log-analysis" class="md-nav__link">
     <span class="md-ellipsis">
-      Deployment Readiness
+      Log Analysis
     </span>
   </a>
   
@@ -1167,46 +886,28 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#error-scenarios" class="md-nav__link">
+  <a href="#performance-optimization" class="md-nav__link">
     <span class="md-ellipsis">
-      Error Scenarios
+      Performance Optimization
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="Error Scenarios">
+    <nav class="md-nav" aria-label="Performance Optimization">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#missing-dockerfile-for-deployable-app" class="md-nav__link">
+  <a href="#query-best-practices" class="md-nav__link">
     <span class="md-ellipsis">
-      Missing Dockerfile for Deployable App
+      Query Best Practices
     </span>
   </a>
   
 </li>
         
           <li class="md-nav__item">
-  <a href="#utility-app-expected-behavior" class="md-nav__link">
+  <a href="#expected-performance" class="md-nav__link">
     <span class="md-ellipsis">
-      Utility App (Expected Behavior)
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#library-failure" class="md-nav__link">
-    <span class="md-ellipsis">
-      Library Failure
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#integration-failure" class="md-nav__link">
-    <span class="md-ellipsis">
-      Integration Failure
+      Expected Performance
     </span>
   </a>
   
@@ -1218,11 +919,77 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#future-enhancements" class="md-nav__link">
+  <a href="#data-availability" class="md-nav__link">
     <span class="md-ellipsis">
-      Future Enhancements
+      Data Availability
     </span>
   </a>
+  
+    <nav class="md-nav" aria-label="Data Availability">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#current-coverage" class="md-nav__link">
+    <span class="md-ellipsis">
+      Current Coverage
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#known-limitations" class="md-nav__link">
+    <span class="md-ellipsis">
+      Known Limitations
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#getting-additional-help" class="md-nav__link">
+    <span class="md-ellipsis">
+      Getting Additional Help
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Getting Additional Help">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#before-asking-for-help" class="md-nav__link">
+    <span class="md-ellipsis">
+      Before Asking for Help
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#when-filing-an-issue" class="md-nav__link">
+    <span class="md-ellipsis">
+      When Filing an Issue
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#contact-methods" class="md-nav__link">
+    <span class="md-ellipsis">
+      Contact Methods
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
   
 </li>
       
@@ -1242,112 +1009,233 @@
 
 
 
-<h1 id="build-and-test-orchestration">Build and Test Orchestration<a class="headerlink" href="#build-and-test-orchestration" title="Permanent link">&para;</a></h1>
-<p>This document describes the enhanced CI/CD pipeline that validates shared library compatibility and handles deployment requirements appropriately.</p>
-<h2 id="overview">Overview<a class="headerlink" href="#overview" title="Permanent link">&para;</a></h2>
-<p>The CI pipeline has been enhanced to support the monorepo structure with shared libraries (<code>/libs</code>) and applications (<code>/apps</code>). It provides comprehensive testing while ensuring that deployment requirements are only enforced where appropriate.</p>
-<h2 id="pipeline-structure">Pipeline Structure<a class="headerlink" href="#pipeline-structure" title="Permanent link">&para;</a></h2>
-<h3 id="1-change-detection-detect-changes">1. Change Detection (<code>detect-changes</code>)<a class="headerlink" href="#1-change-detection-detect-changes" title="Permanent link">&para;</a></h3>
-<ul>
-<li>Detects changes in both <code>/apps</code> and <code>/libs</code> directories</li>
-<li>Creates dynamic build matrices for changed components</li>
-<li>Outputs separate matrices for applications and libraries</li>
-</ul>
-<h3 id="2-library-testing-test-libraries">2. Library Testing (<code>test-libraries</code>)<a class="headerlink" href="#2-library-testing-test-libraries" title="Permanent link">&para;</a></h3>
-<ul>
-<li><strong>Triggers</strong>: When changes detected in <code>/libs</code></li>
-<li><strong>Tests</strong>: Format, lint, and unit tests for each changed library</li>
-<li><strong>No Docker requirement</strong>: Libraries are not deployable and don't need containerization</li>
-<li><strong>Validation</strong>: Ensures shared libraries are ready for consumption by applications</li>
-</ul>
-<h3 id="3-application-testing-test-applications">3. Application Testing (<code>test-applications</code>)<a class="headerlink" href="#3-application-testing-test-applications" title="Permanent link">&para;</a></h3>
-<ul>
-<li><strong>Triggers</strong>: When changes detected in <code>/apps</code></li>
-<li><strong>Tests</strong>: Format, lint, and unit tests for each changed application</li>
-<li><strong>Conditional Docker builds</strong>: Based on application type</li>
-<li><strong>Deployable apps</strong>: Must have Dockerfile, Docker build required</li>
-<li><strong>Utility tools</strong>: No Dockerfile required, skips Docker build</li>
-<li><strong>Smart detection</strong>: Automatically determines build context for apps with shared library dependencies</li>
-</ul>
-<h3 id="4-integration-testing-test-integration">4. Integration Testing (<code>test-integration</code>)<a class="headerlink" href="#4-integration-testing-test-integration" title="Permanent link">&para;</a></h3>
-<ul>
-<li><strong>Triggers</strong>: When both apps and libraries have changes</li>
-<li><strong>Purpose</strong>: Validates that applications work correctly with updated shared libraries</li>
-<li><strong>Process</strong>: Re-runs application tests with updated library dependencies</li>
-</ul>
-<h2 id="application-types">Application Types<a class="headerlink" href="#application-types" title="Permanent link">&para;</a></h2>
-<h3 id="deployable-applications">Deployable Applications<a class="headerlink" href="#deployable-applications" title="Permanent link">&para;</a></h3>
-<ul>
-<li><strong>Characteristics</strong>: Intended for production deployment</li>
-<li><strong>Requirements</strong>: Must have a <code>Dockerfile</code></li>
-<li><strong>CI Behavior</strong>: </li>
-<li>Standard testing (format, lint, test)</li>
-<li>Docker build validation</li>
-<li>Build context automatically adjusted for shared library dependencies</li>
-</ul>
-<h3 id="utility-applications">Utility Applications<a class="headerlink" href="#utility-applications" title="Permanent link">&para;</a></h3>
-<ul>
-<li><strong>Characteristics</strong>: Tools, scripts, or non-deployable utilities</li>
-<li><strong>Requirements</strong>: No <code>Dockerfile</code> needed</li>
-<li><strong>CI Behavior</strong>:</li>
-<li>Standard testing (format, lint, test)</li>
-<li>Docker build skipped</li>
-<li>Marked as utility in CI output</li>
-</ul>
-<h2 id="shared-library-dependencies">Shared Library Dependencies<a class="headerlink" href="#shared-library-dependencies" title="Permanent link">&para;</a></h2>
-<p>When applications depend on shared libraries:</p>
+<h1 id="mcp-connection-troubleshooting-guide">MCP Connection Troubleshooting Guide<a class="headerlink" href="#mcp-connection-troubleshooting-guide" title="Permanent link">&para;</a></h1>
+<p>This guide helps you resolve common issues when connecting to Hoopstat Haus basketball analytics data via MCP.</p>
+<h2 id="quick-diagnostics">Quick Diagnostics<a class="headerlink" href="#quick-diagnostics" title="Permanent link">&para;</a></h2>
+<h3 id="check-your-configuration">Check Your Configuration<a class="headerlink" href="#check-your-configuration" title="Permanent link">&para;</a></h3>
 <ol>
-<li><strong>Detection</strong>: CI automatically detects local library dependencies in <code>pyproject.toml</code></li>
-<li><strong>Build Context</strong>: Docker builds are executed from repository root to include library code</li>
-<li><strong>Integration Testing</strong>: Ensures apps work with updated library versions</li>
+<li>
+<p><strong>Verify MCP Server Configuration</strong>
+   <div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="p">{</span>
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="w">  </span><span class="nt">&quot;mcpServers&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="w">    </span><span class="nt">&quot;hoopstat-haus-analytics&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="w">      </span><span class="nt">&quot;command&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;uvx&quot;</span><span class="p">,</span>
+<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a><span class="w">      </span><span class="nt">&quot;args&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;awslabs.s3-tables-mcp-server@latest&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;--allow-read&quot;</span><span class="p">],</span>
+<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a><span class="w">      </span><span class="nt">&quot;env&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a><span class="w">        </span><span class="nt">&quot;AWS_REGION&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;us-east-1&quot;</span><span class="p">,</span>
+<a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a><span class="w">        </span><span class="nt">&quot;S3_TABLES_BUCKET&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;hoopstat-haus-gold-tables&quot;</span>
+<a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a><span class="w">      </span><span class="p">}</span>
+<a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a><span class="w">    </span><span class="p">}</span>
+<a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a><span class="w">  </span><span class="p">}</span>
+<a id="__codelineno-0-12" name="__codelineno-0-12" href="#__codelineno-0-12"></a><span class="p">}</span>
+</code></pre></div></p>
+</li>
+<li>
+<p><strong>Test AWS S3 Tables MCP Server Installation</strong>
+   <div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="c1"># Check if uvx is installed</span>
+<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>uvx<span class="w"> </span>--version
+<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>
+<a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a><span class="c1"># Test the S3 Tables MCP server</span>
+<a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a>uvx<span class="w"> </span>awslabs.s3-tables-mcp-server@latest<span class="w"> </span>--help
+</code></pre></div></p>
+</li>
+<li>
+<p><strong>Verify Environment Variables</strong></p>
+</li>
+<li><code>AWS_REGION</code> must be exactly <code>us-east-1</code></li>
+<li><code>S3_TABLES_BUCKET</code> must be exactly <code>hoopstat-haus-gold-tables</code></li>
+<li>No AWS credentials are needed (data is publicly accessible)</li>
 </ol>
-<h3 id="example-dependency-declaration">Example Dependency Declaration<a class="headerlink" href="#example-dependency-declaration" title="Permanent link">&para;</a></h3>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="k">[tool.poetry.dependencies]</span>
-<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="n">python</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;^3.12&quot;</span>
-<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="n">my-shared-lib</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span><span class="n">path</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s2">&quot;../../libs/my-shared-lib&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">develop</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="kc">true</span><span class="p">}</span>
+<h2 id="common-error-messages">Common Error Messages<a class="headerlink" href="#common-error-messages" title="Permanent link">&para;</a></h2>
+<h3 id="connection-failed-or-server-not-responding">"Connection failed" or "Server not responding"<a class="headerlink" href="#connection-failed-or-server-not-responding" title="Permanent link">&para;</a></h3>
+<p><strong>Possible Causes:</strong>
+- Internet connectivity issues
+- MCP server not properly installed
+- Incorrect configuration</p>
+<p><strong>Solutions:</strong>
+1. Check internet connectivity:
+   <div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>ping<span class="w"> </span>aws.amazon.com
+</code></pre></div></p>
+<ol>
+<li>
+<p>Reinstall the MCP server:
+   <div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>uvx<span class="w"> </span>uninstall<span class="w"> </span>awslabs.s3-tables-mcp-server
+<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>uvx<span class="w"> </span>install<span class="w"> </span>awslabs.s3-tables-mcp-server@latest
+</code></pre></div></p>
+</li>
+<li>
+<p>Restart your MCP client completely</p>
+</li>
+<li>
+<p>Check for typos in the configuration (especially bucket name and region)</p>
+</li>
+</ol>
+<h3 id="permission-denied-or-access-denied">"Permission denied" or "Access denied"<a class="headerlink" href="#permission-denied-or-access-denied" title="Permanent link">&para;</a></h3>
+<p><strong>Possible Causes:</strong>
+- Incorrect AWS region
+- Wrong bucket name
+- Client trying to perform write operations</p>
+<p><strong>Solutions:</strong>
+1. Double-check the region is <code>us-east-1</code>
+2. Verify bucket name is <code>hoopstat-haus-gold-tables</code>
+3. Ensure <code>--allow-read</code> flag is present in the args
+4. Make sure no AWS credentials are set that might interfere</p>
+<h3 id="no-data-found-or-empty-results">"No data found" or Empty Results<a class="headerlink" href="#no-data-found-or-empty-results" title="Permanent link">&para;</a></h3>
+<p><strong>Possible Causes:</strong>
+- Query targeting very recent games (data latency)
+- Invalid player/team names or IDs
+- Querying outside available date range</p>
+<p><strong>Solutions:</strong>
+1. Try queries for data from 2-3 days ago
+2. Use common player names: "LeBron James", "Stephen Curry", etc.
+3. Query for the 2023-24 season onwards
+4. Try simpler queries first:
+   <div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>&quot;Show me all available tables&quot;
+<a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a>&quot;What data do you have for the Lakers?&quot;
+</code></pre></div></p>
+<h3 id="query-timeout-or-slow-performance">"Query timeout" or Slow Performance<a class="headerlink" href="#query-timeout-or-slow-performance" title="Permanent link">&para;</a></h3>
+<p><strong>Possible Causes:</strong>
+- Large queries without date filtering
+- Network latency
+- Unoptimized query patterns</p>
+<p><strong>Solutions:</strong>
+1. Add date ranges to your queries:
+   <div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>&quot;Show me Lakers stats from the last week&quot;
+<a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a>&quot;Player stats from January 2024&quot;
+</code></pre></div></p>
+<ol>
+<li>Avoid season-wide aggregations without filters</li>
+<li>Use specific player/team names rather than open-ended queries</li>
+</ol>
+<h2 id="client-specific-issues">Client-Specific Issues<a class="headerlink" href="#client-specific-issues" title="Permanent link">&para;</a></h2>
+<h3 id="claude-desktop">Claude Desktop<a class="headerlink" href="#claude-desktop" title="Permanent link">&para;</a></h3>
+<p><strong>Issue: MCP server not appearing in client</strong>
+1. Completely quit Claude Desktop (check system tray)
+2. Update configuration file
+3. Restart Claude Desktop
+4. Look for 🏀 basketball icon in the UI</p>
+<p><strong>Issue: Configuration file location</strong>
+- <strong>macOS</strong>: <code>~/Library/Application Support/Claude/claude_desktop_config.json</code>
+- <strong>Windows</strong>: <code>%APPDATA%\Claude\claude_desktop_config.json</code></p>
+<h3 id="other-mcp-clients">Other MCP Clients<a class="headerlink" href="#other-mcp-clients" title="Permanent link">&para;</a></h3>
+<p><strong>General troubleshooting:</strong>
+1. Check client documentation for MCP server configuration format
+2. Verify the client supports the MCP protocol version used by the S3 Tables server
+3. Check client logs for specific error messages</p>
+<h2 id="advanced-diagnostics">Advanced Diagnostics<a class="headerlink" href="#advanced-diagnostics" title="Permanent link">&para;</a></h2>
+<h3 id="manual-testing">Manual Testing<a class="headerlink" href="#manual-testing" title="Permanent link">&para;</a></h3>
+<p>Test the S3 Tables connection directly:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="c1"># Test basic connectivity (requires AWS CLI)</span>
+<a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a>aws<span class="w"> </span>s3tables<span class="w"> </span>list-table-buckets<span class="w"> </span>--region<span class="w"> </span>us-east-1
+<a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a>
+<a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a><span class="c1"># Test specific bucket access</span>
+<a id="__codelineno-6-5" name="__codelineno-6-5" href="#__codelineno-6-5"></a>aws<span class="w"> </span>s3tables<span class="w"> </span>list-tables<span class="w"> </span>--table-bucket-arn<span class="w"> </span>arn:aws:s3tables:us-east-1:ACCOUNT:bucket/hoopstat-haus-gold-tables<span class="w"> </span>--region<span class="w"> </span>us-east-1
 </code></pre></div>
-<h2 id="cicd-workflow-benefits">CI/CD Workflow Benefits<a class="headerlink" href="#cicd-workflow-benefits" title="Permanent link">&para;</a></h2>
-<h3 id="clear-failure-attribution">Clear Failure Attribution<a class="headerlink" href="#clear-failure-attribution" title="Permanent link">&para;</a></h3>
+<h3 id="network-issues">Network Issues<a class="headerlink" href="#network-issues" title="Permanent link">&para;</a></h3>
+<p><strong>Corporate Firewalls:</strong>
+- The MCP server needs outbound HTTPS access to AWS services
+- Port 443 must be open for AWS API calls
+- Some corporate networks block or proxy AWS traffic</p>
+<p><strong>VPN/Proxy Issues:</strong>
+- Try connecting without VPN
+- Check if proxy settings affect AWS connectivity
+- Some VPNs have issues with AWS regions</p>
+<h3 id="log-analysis">Log Analysis<a class="headerlink" href="#log-analysis" title="Permanent link">&para;</a></h3>
+<p><strong>Enable detailed logging:</strong>
+1. Most MCP clients have debug/verbose modes
+2. Check client documentation for log file locations
+3. Look for specific error messages in logs</p>
+<p><strong>Common log patterns:</strong>
+- <code>Connection refused</code>: Network connectivity issue
+- <code>Access denied</code>: Permission/configuration problem
+- <code>Region not found</code>: Incorrect AWS region setting
+- <code>Bucket not found</code>: Wrong bucket name</p>
+<h2 id="performance-optimization">Performance Optimization<a class="headerlink" href="#performance-optimization" title="Permanent link">&para;</a></h2>
+<h3 id="query-best-practices">Query Best Practices<a class="headerlink" href="#query-best-practices" title="Permanent link">&para;</a></h3>
+<ol>
+<li>
+<p><strong>Use date filters:</strong>
+   <div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>✅ &quot;Lakers stats from last week&quot;
+<a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a>❌ &quot;All Lakers stats ever&quot;
+</code></pre></div></p>
+</li>
+<li>
+<p><strong>Be specific:</strong>
+   <div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a>✅ &quot;LeBron James efficiency this season&quot;
+<a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a>❌ &quot;All player efficiency ratings&quot;
+</code></pre></div></p>
+</li>
+<li>
+<p><strong>Avoid cross-season aggregations:</strong>
+   <div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a>✅ &quot;Top scorers in 2023-24 season&quot;
+<a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a>❌ &quot;Top scorers across all seasons&quot;
+</code></pre></div></p>
+</li>
+</ol>
+<h3 id="expected-performance">Expected Performance<a class="headerlink" href="#expected-performance" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Query Type</th>
+<th>Expected Response Time</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Single player, recent date</td>
+<td>1-3 seconds</td>
+</tr>
+<tr>
+<td>Team stats, last month</td>
+<td>2-5 seconds</td>
+</tr>
+<tr>
+<td>League leaders, current season</td>
+<td>5-10 seconds</td>
+</tr>
+<tr>
+<td>Historical comparisons</td>
+<td>10-30 seconds</td>
+</tr>
+</tbody>
+</table>
+<h2 id="data-availability">Data Availability<a class="headerlink" href="#data-availability" title="Permanent link">&para;</a></h2>
+<h3 id="current-coverage">Current Coverage<a class="headerlink" href="#current-coverage" title="Permanent link">&para;</a></h3>
 <ul>
-<li><strong>Library failures</strong>: Isolated to library testing jobs</li>
-<li><strong>Application failures</strong>: Separated by app type (deployable vs utility)</li>
-<li><strong>Integration failures</strong>: Clearly identify app-library compatibility issues</li>
+<li><strong>Seasons</strong>: 2023-24 onwards</li>
+<li><strong>Data Types</strong>: Player and team analytics</li>
+<li><strong>Update Frequency</strong>: Daily, 2-4 hours after games</li>
+<li><strong>Partitioning</strong>: By date for optimal performance</li>
 </ul>
-<h3 id="efficient-resource-usage">Efficient Resource Usage<a class="headerlink" href="#efficient-resource-usage" title="Permanent link">&para;</a></h3>
+<h3 id="known-limitations">Known Limitations<a class="headerlink" href="#known-limitations" title="Permanent link">&para;</a></h3>
 <ul>
-<li><strong>Selective testing</strong>: Only test changed components</li>
-<li><strong>Conditional Docker</strong>: Only build containers when needed</li>
-<li><strong>Parallel execution</strong>: Libraries and applications test in parallel</li>
+<li>No real-time data (2-4 hour delay)</li>
+<li>Limited to basic and advanced analytics (no play-by-play)</li>
+<li>English language queries work best</li>
+<li>Some very recent expansion team data may be limited</li>
 </ul>
-<h3 id="deployment-readiness">Deployment Readiness<a class="headerlink" href="#deployment-readiness" title="Permanent link">&para;</a></h3>
-<ul>
-<li><strong>Deployable apps</strong>: Validated with Docker builds</li>
-<li><strong>Utility tools</strong>: Tested for functionality without deployment overhead</li>
-<li><strong>Shared libraries</strong>: Validated independently and through integration</li>
-</ul>
-<h2 id="error-scenarios">Error Scenarios<a class="headerlink" href="#error-scenarios" title="Permanent link">&para;</a></h2>
-<h3 id="missing-dockerfile-for-deployable-app">Missing Dockerfile for Deployable App<a class="headerlink" href="#missing-dockerfile-for-deployable-app" title="Permanent link">&para;</a></h3>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>❌ Deployable application my-app is missing required Dockerfile
-</code></pre></div>
-<h3 id="utility-app-expected-behavior">Utility App (Expected Behavior)<a class="headerlink" href="#utility-app-expected-behavior" title="Permanent link">&para;</a></h3>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>🛠️ Application my-tool is a utility/tool (no Dockerfile required)
-<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>✅ Utility/tool application validated successfully
-</code></pre></div>
-<h3 id="library-failure">Library Failure<a class="headerlink" href="#library-failure" title="Permanent link">&para;</a></h3>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>❌ Library example-math-utils failed format check
-<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>📦 Library is NOT ready for use by applications
-</code></pre></div>
-<h3 id="integration-failure">Integration Failure<a class="headerlink" href="#integration-failure" title="Permanent link">&para;</a></h3>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>❌ Integration testing failed for example-calculator-app
-<a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a>🔗 Application does NOT work correctly with updated shared libraries
-</code></pre></div>
-<h2 id="future-enhancements">Future Enhancements<a class="headerlink" href="#future-enhancements" title="Permanent link">&para;</a></h2>
-<ul>
-<li><strong>Deployment markers</strong>: Optional <code>pyproject.toml</code> metadata to explicitly mark deployable vs utility apps</li>
-<li><strong>Library versioning</strong>: Automatic version bumping and compatibility checking</li>
-<li><strong>Dependency analysis</strong>: Automatically test downstream applications when libraries change</li>
-<li><strong>Security scanning</strong>: Container vulnerability assessment for deployable applications</li>
-</ul>
+<h2 id="getting-additional-help">Getting Additional Help<a class="headerlink" href="#getting-additional-help" title="Permanent link">&para;</a></h2>
+<h3 id="before-asking-for-help">Before Asking for Help<a class="headerlink" href="#before-asking-for-help" title="Permanent link">&para;</a></h3>
+<ol>
+<li>Check this troubleshooting guide</li>
+<li>Review the <a href="../MCP_CLIENT_SETUP/">MCP Client Setup Guide</a></li>
+<li>Search <a href="https://github.com/efischer19/hoopstat-haus/issues">existing GitHub issues</a></li>
+</ol>
+<h3 id="when-filing-an-issue">When Filing an Issue<a class="headerlink" href="#when-filing-an-issue" title="Permanent link">&para;</a></h3>
+<p>Include:
+- <strong>MCP Client</strong>: Name and version
+- <strong>Operating System</strong>: OS and version
+- <strong>Error Message</strong>: Exact text of any errors
+- <strong>Configuration</strong>: Your MCP server config (sanitized)
+- <strong>Query</strong>: The specific query that failed
+- <strong>Expected vs Actual</strong>: What you expected vs what happened</p>
+<h3 id="contact-methods">Contact Methods<a class="headerlink" href="#contact-methods" title="Permanent link">&para;</a></h3>
+<ol>
+<li><strong>GitHub Issues</strong>: <a href="https://github.com/efischer19/hoopstat-haus/issues/new">Create a new issue</a></li>
+<li><strong>Discussions</strong>: <a href="https://github.com/efischer19/hoopstat-haus/discussions">Community forum</a></li>
+</ol>
+<hr />
+<p><strong>Still stuck?</strong> The basketball analytics community is here to help! 🏀</p>
 
 
 

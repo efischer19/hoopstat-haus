@@ -2,82 +2,90 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
     <url>
          <loc>https://efischer19.github.io/hoopstat-haus/</loc>
-         <lastmod>2025-09-13</lastmod>
+         <lastmod>2025-09-21</lastmod>
     </url>
     <url>
          <loc>https://efischer19.github.io/hoopstat-haus/BUILD_ORCHESTRATION/</loc>
-         <lastmod>2025-09-13</lastmod>
+         <lastmod>2025-09-21</lastmod>
     </url>
     <url>
          <loc>https://efischer19.github.io/hoopstat-haus/CONTRIBUTING/</loc>
-         <lastmod>2025-09-13</lastmod>
+         <lastmod>2025-09-21</lastmod>
     </url>
     <url>
          <loc>https://efischer19.github.io/hoopstat-haus/DEVELOPMENT_PHILOSOPHY/</loc>
-         <lastmod>2025-09-13</lastmod>
+         <lastmod>2025-09-21</lastmod>
     </url>
     <url>
          <loc>https://efischer19.github.io/hoopstat-haus/DOCUMENTATION_README/</loc>
-         <lastmod>2025-09-13</lastmod>
+         <lastmod>2025-09-21</lastmod>
     </url>
     <url>
          <loc>https://efischer19.github.io/hoopstat-haus/E2E_TESTING/</loc>
-         <lastmod>2025-09-13</lastmod>
+         <lastmod>2025-09-21</lastmod>
     </url>
     <url>
          <loc>https://efischer19.github.io/hoopstat-haus/ECR_IMAGE_MANAGEMENT/</loc>
-         <lastmod>2025-09-13</lastmod>
+         <lastmod>2025-09-21</lastmod>
     </url>
     <url>
          <loc>https://efischer19.github.io/hoopstat-haus/LOCAL_DEVELOPMENT_DEPENDENCIES/</loc>
-         <lastmod>2025-09-13</lastmod>
+         <lastmod>2025-09-21</lastmod>
+    </url>
+    <url>
+         <loc>https://efischer19.github.io/hoopstat-haus/MCP_CLIENT_SETUP/</loc>
+         <lastmod>2025-09-21</lastmod>
+    </url>
+    <url>
+         <loc>https://efischer19.github.io/hoopstat-haus/MCP_TROUBLESHOOTING/</loc>
+         <lastmod>2025-09-21</lastmod>
     </url>
     <url>
          <loc>https://efischer19.github.io/hoopstat-haus/SHARED_LIBRARY_VERSIONING/</loc>
-         <lastmod>2025-09-13</lastmod>
+         <lastmod>2025-09-21</lastmod>
     </url>
     <url>
          <loc>https://efischer19.github.io/hoopstat-haus/feature-request-automation/</loc>
-         <lastmod>2025-09-13</lastmod>
+         <lastmod>2025-09-21</lastmod>
     </url>
     <url>
          <loc>https://efischer19.github.io/hoopstat-haus/libraries/</loc>
-         <lastmod>2025-09-13</lastmod>
+         <lastmod>2025-09-21</lastmod>
     </url>
     <url>
          <loc>https://efischer19.github.io/hoopstat-haus/libraries/example-math-utils/</loc>
-         <lastmod>2025-09-13</lastmod>
+         <lastmod>2025-09-21</lastmod>
     </url>
     <url>
          <loc>https://efischer19.github.io/hoopstat-haus/libraries/hoopstat-config/</loc>
-         <lastmod>2025-09-13</lastmod>
+         <lastmod>2025-09-21</lastmod>
     </url>
     <url>
          <loc>https://efischer19.github.io/hoopstat-haus/libraries/hoopstat-data/</loc>
-         <lastmod>2025-09-13</lastmod>
+         <lastmod>2025-09-21</lastmod>
     </url>
     <url>
          <loc>https://efischer19.github.io/hoopstat-haus/libraries/hoopstat-e2e-testing/</loc>
-         <lastmod>2025-09-13</lastmod>
+         <lastmod>2025-09-21</lastmod>
     </url>
     <url>
          <loc>https://efischer19.github.io/hoopstat-haus/libraries/hoopstat-mock-data/</loc>
-         <lastmod>2025-09-13</lastmod>
+         <lastmod>2025-09-21</lastmod>
     </url>
     <url>
          <loc>https://efischer19.github.io/hoopstat-haus/libraries/hoopstat-nba_api/</loc>
-         <lastmod>2025-09-13</lastmod>
+         <lastmod>2025-09-21</lastmod>
     </url>
     <url>
          <loc>https://efischer19.github.io/hoopstat-haus/libraries/hoopstat-observability/</loc>
-         <lastmod>2025-09-13</lastmod>
+         <lastmod>2025-09-21</lastmod>
     </url>
     <url>
          <loc>https://efischer19.github.io/hoopstat-haus/libraries/hoopstat-s3/</loc>
-         <lastmod>2025-09-13</lastmod>
+         <lastmod>2025-09-21</lastmod>
     </url>
     <url>
          <loc>https://efischer19.github.io/hoopstat-haus/libraries/ingestion/</loc>
-         <lastmod>2025-09-13</lastmod>
+         <lastmod>2025-09-21</lastmod>
     </url>
 </urlset>

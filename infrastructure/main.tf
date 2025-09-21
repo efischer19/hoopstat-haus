@@ -523,7 +523,6 @@ resource "aws_s3tables_table_bucket" "gold_tables" {
 
 # S3 Tables Bucket Policy for public read access to enable MCP client access
 resource "aws_s3tables_table_bucket_policy" "gold_tables_public_read" {
-  name             = aws_s3tables_table_bucket.gold_tables.name
   table_bucket_arn = aws_s3tables_table_bucket.gold_tables.arn
 
   resource_policy = jsonencode({

@@ -8,8 +8,8 @@ packages = [{include = "app"}]
 
 [tool.poetry.dependencies]
 python = "^3.12"
-click = "^8.1.0"
-boto3 = "^1.35.0"
+click = "^8.3.0"
+boto3 = "^1.40.36"
 pyarrow = "^17.0.0"
 pandas = "^2.2.0"
 pyiceberg = {version = "^0.10.0", extras = ["glue"]}
@@ -21,11 +21,11 @@ tenacity = "^9.0.0"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^8.4.2"
-ruff = "^0.13.0"
-black = "^25.1.0"
+ruff = "^0.13.1"
+black = "^25.9.0"
 pytest-cov = "^7.0.0"
-moto = "^5.1.12"
-pytest-mock = "^3.15.0"
+moto = "^5.1.13"
+pytest-mock = "^3.15.1"
 
 [tool.poetry.scripts]
 start = "app.main:main"

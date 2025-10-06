@@ -9,9 +9,9 @@ packages = [{include = "app"}]
 [tool.poetry.dependencies]
 python = "^3.12"
 click = "^8.3.0"
-boto3 = "^1.40.41"
+boto3 = "^1.40.45"
 pyarrow = "^17.0.0"
-pandas = "^2.2.0"
+pandas = "^2.3.3"
 pyiceberg = {version = "^0.10.0", extras = ["glue"]}
 hoopstat-observability = {path = "../../libs/hoopstat-observability", develop = false}
 hoopstat-config = {path = "../../libs/hoopstat-config", develop = false}
@@ -21,10 +21,10 @@ tenacity = "^9.0.0"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^8.4.2"
-ruff = "^0.13.2"
+ruff = "^0.13.3"
 black = "^25.9.0"
 pytest-cov = "^7.0.0"
-moto = "^5.1.13"
+moto = "^5.1.14"
 pytest-mock = "^3.15.1"
 
 [tool.poetry.scripts]

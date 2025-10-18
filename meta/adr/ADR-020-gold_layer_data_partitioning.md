@@ -2,8 +2,8 @@
 title: "ADR-020: Gold Layer Data Partitioning for MCP Performance"
 status: "Superseded"
 date: "2025-07-24"
-superseded_by: "ADR-026"
-superseded_date: "2025-09-13"
+superseded_by: "ADR-027"
+superseded_date: "2025-10-01"
 tags:
   - "data-pipeline"
   - "partitioning"

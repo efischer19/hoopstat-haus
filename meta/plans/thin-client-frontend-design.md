@@ -1,3 +1,5 @@
+> MOVED: This plan is now located at meta/plans/future/thin-client-frontend-design.md and is out of initial scope per ADR-027. The content is preserved there for future reference.
+
 # Plan: "Thin Client" Frontend Design for Bedrock and MCP Server Integration
 
 **Status:** Planning  

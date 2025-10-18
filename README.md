@@ -8,40 +8,25 @@ A GenAI-powered data lakehouse for NBA/WNBA stats. Your go-to for advanced hoops
 
 > **Note:** This project is currently under active development and is not yet functional. The infrastructure and core components are being built. Please check back for updates!
 
-## 🚀 Quick Start: Access Basketball Analytics
+## 🚀 Quick Start: Access Basketball Analytics (Stateless JSON)
 
-**New!** Query our basketball analytics data directly in your AI assistant using MCP:
+Per ADR-027, initial public access is provided via small, precomputed JSON artifacts served directly from S3. No auth required.
 
-```json
-{
-  "mcpServers": {
-    "hoopstat-haus-analytics": {
-      "command": "uvx",
-      "args": ["awslabs.s3-tables-mcp-server@latest", "--allow-read"],
-      "env": {
-        "AWS_REGION": "us-east-1",
-        "S3_TABLES_BUCKET": "hoopstat-haus-gold-tables"
-      }
-    }
-  }
-}
-```
+### What’s available
+- player_daily: per-player daily metrics
+- team_daily: per-team daily metrics
+- top_lists: curated top metrics (e.g., top_ts, top_per, top_efg, top_net)
+- index/latest.json: pointer to the most recent available dates
 
-**No AWS credentials needed** - our analytics data is publicly accessible!
-
-### Example Queries
-- "Show me LeBron's efficiency this week"
-- "What's the Lakers defensive rating this month?"
-- "Top 10 players by True Shooting % yesterday"
-- "Compare team offensive ratings for the 2023-24 season"
-
-**📖 Setup Guide**: [MCP Client Setup](docs-src/MCP_CLIENT_SETUP.md) | **🔧 Troubleshooting**: [Common Issues](docs-src/MCP_TROUBLESHOOTING.md)
+All artifacts are versioned (v1) and capped at ~100 KB for fast, low-cost access.
 
 ### 📊 Data Availability
-- **Coverage**: 2023-24 NBA season onwards
-- **Updates**: Daily, 2-4 hours after games complete
-- **Format**: Apache Iceberg tables with advanced analytics
-- **Access**: Public read access via AWS S3 Tables MCP Server
+- Coverage: 2023-24 NBA season onwards
+- Updates: Daily, 2–4 hours after games complete
+- Format: JSON artifacts under gold/served/
+- Access: Public S3 with CORS (CDN optional)
+
+Note: An MCP adapter may be added later as an optional layer. See meta/plans/v2-architecture-diagram.md.
 
 ## About The Project
 

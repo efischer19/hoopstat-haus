@@ -2,7 +2,7 @@
 
 ## Executive Summary
 
-This plan defines the Medallion Architecture for the Hoopstat Haus data platform, establishing a three-tier data lake structure that progressively refines raw NBA statistics into high-value, analysis-ready datasets. The architecture follows the industry-standard Bronze (raw), Silver (cleaned/conformed), and Gold (aggregated/business-ready) layer pattern, ensuring data quality, lineage, and scalability while supporting the project's MCP server and future analytics applications.
+This plan defines the Medallion Architecture for the Hoopstat Haus data platform, establishing a three-tier data lake structure that progressively refines raw NBA statistics into high-value, analysis-ready datasets. The architecture follows the industry-standard Bronze (raw), Silver (cleaned/conformed), and Gold (aggregated/business-ready) layer pattern, ensuring data quality, lineage, and scalability while supporting public access via stateless JSON artifacts (per ADR-027) and, optionally later, an MCP adapter.
 
 The implementation leverages our established tech stack including AWS S3 for storage, Apache Parquet for data format (per ADR-014), the nba-api for data ingestion (per ADR-013), and Python/Docker/Terraform for processing infrastructure.
 
@@ -159,6 +159,13 @@ s3://hoopstat-haus-gold/
 - Historical snapshots: Indefinite (trend analysis and model training)
 - Lookup tables: Indefinite with versioning (reference data)
 
+**Public Access (Stateless JSON per ADR-027):**
+- Served projection within Gold at `s3://hoopstat-haus-gold/served/`
+- Artifacts (v1): `player_daily/{date}/{player_id}.json`, `team_daily/{date}/{team_id}.json`, `top_lists/{date}/{metric}.json`
+- Index: `index/latest.json` pointing to the most recent dates
+- Constraints: ≤100KB per artifact; include human-readable fields for convenience
+- CORS enabled; CDN optional
+
 ## S3 Bucket Architecture & Partitioning Strategy
 
 ### Bucket Structure
@@ -189,7 +196,7 @@ hoopstat-haus-gold      # Business-ready aggregated data
 - **Primary**: Business domain and temporal relevance
 - **Pattern**: `season=YYYY-YY/month=MM/` for time-series data
 - **Pattern**: `as_of_date=YYYY-MM-DD/` for snapshot data
-- **Benefits**: Optimizes for MCP server queries and dashboard performance
+- **Benefits**: Optimizes for analytics compute and dashboard performance; public serving is handled via precomputed JSON artifacts under served/
 
 ### Storage Optimization
 

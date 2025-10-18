@@ -1,11 +1,13 @@
 # ADR-026: S3 Tables for Gold Layer Analytics
 
 ## Status
-Accepted
+Superseded
+
+superseded_by: "ADR-027"
 
 supersedes: "ADR-025"
 
-We need to implement a Gold layer analytics system that serves both fantasy basketball use cases and general NBA analysis. This decision supersedes ADR-025 (JSON Storage for MVP) after evaluating S3 Tables vs Regular S3 + Custom MCP Server approaches based on cost analysis, learning opportunities, and migration flexibility.
+We need to implement a Gold layer analytics system that serves both fantasy basketball use cases and general NBA analysis. This decision originally superseded ADR-025 (JSON Storage for MVP) after evaluating S3 Tables vs Regular S3 + Custom MCP Server approaches. As of ADR-027, this decision has been superseded in favor of a stateless, JSON-artifact serving approach optimized for public, low-cost consumption.
 
 ### Current State
 - Bronze layer: Raw NBA data stored in S3 JSON format

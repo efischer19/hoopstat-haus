@@ -1,4 +1,6 @@
-# MCP Connection Troubleshooting Guide
+# [Moved to Future Plans] MCP Connection Troubleshooting Guide
+
+> This guide is MCP-first and out of initial scope per ADR-027. It has been moved under meta/plans/future/ for later reference.
 
 This guide helps you resolve common issues when connecting to Hoopstat Haus basketball analytics data via MCP.
 

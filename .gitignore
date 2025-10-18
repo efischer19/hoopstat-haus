@@ -222,3 +222,7 @@ terraform.rc
 infrastructure/terraform_1.10.3_linux_amd64.zip
 infrastructure/LICENSE.txt
 terraform.zip
+
+# VS Code on Mac
+.DS_Store
+*.code-workspace

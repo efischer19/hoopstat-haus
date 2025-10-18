@@ -1,3 +1,5 @@
+> MOVED: This plan is now located at meta/plans/future/e2e-integration-test-workflow.md and is out of initial scope per ADR-027. The content is preserved there for future reference.
+
 # Plan: End-to-End Integration Test Workflow
 
 **Status:** Planning (Updated to align with infrastructure deployment workflow ADR-017)  

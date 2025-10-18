@@ -10,6 +10,8 @@ tags:
   - "schema-management"
 ---
 
+> Note (2025-10-18): For the initial stateless JSON public access (ADR-027), a full metadata catalog is not required. This ADR remains Accepted for internal analytics/ETL discovery and may be implemented later; it is out of initial scope for public serving.
+
 ## Context
 
 * **Problem:** The data pipeline currently lacks a centralized metadata catalog for data discovery and schema management across Bronze, Silver, and Gold layers. While hierarchical S3 partitioning (ADR-020) provides efficient storage and query performance, discovering available datasets, understanding schema evolution, and enabling automated data lineage tracking requires additional metadata infrastructure. The MCP server and E2E testing frameworks need efficient mechanisms to discover and validate data artifacts without hardcoded S3 path assumptions.

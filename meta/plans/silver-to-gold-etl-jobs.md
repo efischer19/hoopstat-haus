@@ -7,7 +7,7 @@
 
 ## Executive Summary
 
-This plan defines a **minimal viable implementation** for Silver to Gold ETL jobs that transform cleaned Silver layer NBA data into basic business-ready aggregations for MCP server consumption. Following the project's "favor simplicity & static-first design" philosophy, this plan focuses on establishing one foundational pattern that can be incrementally extended.
+This plan defines a **minimal viable implementation** for Silver to Gold ETL jobs that transform cleaned Silver layer NBA data into basic business-ready aggregations for public consumption via stateless JSON artifacts (per ADR-027). Following the project's "favor simplicity & static-first design" philosophy, this plan focuses on establishing one foundational pattern that can be incrementally extended.
 
 The implementation starts with **player daily statistics aggregation** as the single core use case, using simple AWS Lambda functions triggered by S3 events. This approach prioritizes getting a working, maintainable system operational quickly rather than building comprehensive infrastructure upfront.
 
@@ -20,21 +20,25 @@ Additional complexity (orchestration, advanced metrics, team analytics) will be 
 Rather than building complex orchestration systems upfront, we'll implement a single, well-tested ETL pattern that can be replicated and extended:
 
 **Pattern: Daily Player Statistics Aggregation**
-- **Input:** Silver layer player game logs (Parquet files)
-- **Output:** Gold layer player daily/season aggregations (Parquet files)
-- **Infrastructure:** Single Lambda function + S3 event trigger
-- **Success Criteria:** Sub-100ms MCP server response times for player stats queries
+- **Input:** Silver layer player game logs (Parquet or JSON depending on Silver impl)
+- **Output:** Gold-served JSON artifacts under `s3://.../gold/served/` (≤100KB each)
+- **Infrastructure:** Batch job or Lambda; emit JSON alongside any internal formats
+- **Success Criteria:** Valid JSON artifacts with correct schema; size limits enforced
 
-### Minimal ETL Architecture
+### Minimal ETL Architecture (Stateless JSON)
 
 ```
 Silver Layer: s3://bucket/silver/player_games/season=2023/date=2024-01-15/
-    ↓ [S3 Event Trigger]
-Lambda Function: player_daily_aggregator
-    ↓ [Transform Logic]
-Gold Layer: s3://bucket/gold/player_daily_stats/season=2023/player_id=123/
-    ↓ [Success/Failure]
-CloudWatch Logs + Metrics (per ADR-018)
+    ↓ [Batch/Lambda]
+Transform: aggregate daily and compute metrics
+    ↓
+Gold-served (Public): s3://bucket/gold/served/
+  ├── player_daily/{date}/{player_id}.json
+  ├── team_daily/{date}/{team_id}.json
+  ├── top_lists/{date}/{metric}.json
+  └── index/latest.json
+    ↓
+Logs + Size Validation (per ADR-018)
 ```
 
 ### Processing Logic (Keep It Simple)
@@ -45,7 +49,7 @@ The ETL job will:
    - Points, rebounds, assists per game
    - Season-to-date cumulative stats
    - Simple shooting percentages (FG%, 3P%, FT%)
-3. **Load:** Write partitioned Parquet to Gold layer (by season/player_id)
+3. **Load:** Write versioned JSON artifacts to Gold-served (≤100KB per file)
 4. **Validate:** Basic row count and null checks only
 
 **No complex metrics initially:** No PER, Win Shares, or advanced analytics until the foundation is solid.
@@ -61,14 +65,11 @@ The ETL job will:
 **Quality Metrics:** Completeness, consistency, timeliness tracking
 **Error Handling:** Quarantine invalid results, alert on quality degradation
 
-### MCP Server Optimization Strategy
+### Public Serving Notes
 
-#### Pre-Computed Query Patterns
-Based on expected AI agent query patterns, pre-compute common aggregations:
-- "Show me LeBron James' season stats"
-- "Compare team offensive ratings"
-- "Find players with similar performance profiles"
-- "Analyze scoring trends over time"
+- Emit human-readable fields (player_name, team_abbr) to reduce client lookups
+- Maintain a lightweight `latest.json` index for easy discovery
+- Keep payloads small; split or paginate if necessary
 
 ## Implementation Example: Player Daily Statistics
 

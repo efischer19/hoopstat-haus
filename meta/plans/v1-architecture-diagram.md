@@ -1,3 +1,5 @@
+> DEPRECATED: Superseded by v2 (meta/plans/v2-architecture-diagram.md) and ADR-027 stateless JSON-first. Retained for historical context.
+
 # Hoopstat Haus v1 Architecture Diagram
 
 This diagram represents the complete end-to-end architecture of the Hoopstat Haus AI-Native Basketball Analytics Platform, showing the data flow from NBA API ingestion through the Medallion Architecture to natural language search capabilities.

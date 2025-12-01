@@ -9,7 +9,7 @@ packages = [{include = "app"}]
 [tool.poetry.dependencies]
 python = "^3.12"
 click = "^8.3.1"
-boto3 = "^1.40.74"
+boto3 = "^1.42.0"
 pyarrow = "^17.0.0"
 pandas = "^2.3.3"
 pyiceberg = {version = "^0.10.0", extras = ["glue"]}
@@ -21,10 +21,10 @@ tenacity = "^9.0.0"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^9.0.1"
-ruff = "^0.14.5"
+ruff = "^0.14.7"
 black = "^25.11.0"
 pytest-cov = "^7.0.0"
-moto = "^5.1.16"
+moto = "^5.1.18"
 pytest-mock = "^3.15.1"
 
 [tool.poetry.scripts]

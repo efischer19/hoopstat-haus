@@ -91,6 +91,10 @@ output "medallion_s3_buckets" {
 output "medallion_iam_roles" {
   description = "IAM roles for Medallion Architecture data access"
   value = {
+    bronze_data_access = {
+      name = aws_iam_role.bronze_data_access.name
+      arn  = aws_iam_role.bronze_data_access.arn
+    }
     silver_data_access = {
       name = aws_iam_role.silver_data_access.name
       arn  = aws_iam_role.silver_data_access.arn
@@ -109,11 +113,6 @@ output "medallion_iam_roles" {
 output "lambda_functions" {
   description = "Information about deployed Lambda functions"
   value = {
-    bronze_ingestion = {
-      function_name = aws_lambda_function.bronze_ingestion.function_name
-      function_arn  = aws_lambda_function.bronze_ingestion.arn
-      invoke_arn    = aws_lambda_function.bronze_ingestion.invoke_arn
-    }
     silver_processing = {
       function_name = aws_lambda_function.silver_processing.function_name
       function_arn  = aws_lambda_function.silver_processing.arn

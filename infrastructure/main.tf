@@ -1191,6 +1191,79 @@ resource "aws_iam_role_policy" "gold_data_access" {
     ]
   })
 }
+
+# ============================================================================
+# IAM Role for Bronze Layer Data Access (Local Execution)
+# ============================================================================
+
+# IAM Role for Bronze Layer Data Access
+resource "aws_iam_role" "bronze_data_access" {
+  name = "${var.project_name}-bronze-data-access"
+
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Principal = {
+          Federated = local.github_oidc_provider_arn
+        }
+        Action = "sts:AssumeRoleWithWebIdentity"
+        Condition = {
+          StringEquals = {
+            "token.actions.githubusercontent.com:aud" = "sts.amazonaws.com"
+          }
+          StringLike = {
+            "token.actions.githubusercontent.com:sub" = "repo:${var.github_repo}:*"
+          }
+        }
+      }
+    ]
+  })
+
+  tags = {
+    Name      = "${var.project_name}-bronze-data-access-role"
+    DataLayer = "bronze"
+    Purpose   = "Local bronze ingestion from external data sources"
+  }
+}
+
+# IAM Policy for Bronze Layer
+resource "aws_iam_role_policy" "bronze_data_access" {
+  name = "${var.project_name}-bronze-data-access-policy"
+  role = aws_iam_role.bronze_data_access.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Action = [
+          "s3:PutObject",
+          "s3:GetObject",
+          "s3:DeleteObject",
+          "s3:ListBucket",
+          "s3:GetBucketLocation"
+        ]
+        Resource = [
+          aws_s3_bucket.bronze.arn,
+          "${aws_s3_bucket.bronze.arn}/*"
+        ]
+      },
+      {
+        Effect = "Allow"
+        Action = [
+          "logs:CreateLogStream",
+          "logs:PutLogEvents"
+        ]
+        Resource = [
+          "${aws_cloudwatch_log_group.data_pipeline.arn}:*"
+        ]
+      }
+    ]
+  })
+}
+
 # ============================================================================
 # Lambda Functions and IAM Roles for Containerized Applications
 # ============================================================================
@@ -1311,40 +1384,6 @@ resource "aws_iam_role_policy_attachment" "lambda_basic_execution_role" {
 # Note: These functions will be created with placeholder image URIs
 # The actual deployment will update the function code with built images
 
-# Bronze Ingestion Lambda Function
-resource "aws_lambda_function" "bronze_ingestion" {
-  function_name = "${var.project_name}-bronze-ingestion"
-  role          = aws_iam_role.lambda_execution.arn
-  package_type  = "Image"
-  image_uri     = "${aws_ecr_repository.main.repository_url}:bronze-ingestion-latest"
-
-  timeout     = var.lambda_config.bronze_ingestion.timeout
-  memory_size = var.lambda_config.bronze_ingestion.memory_size
-
-  environment {
-    variables = {
-      LOG_LEVEL     = "INFO"
-      APP_NAME      = "bronze-ingestion"
-      BRONZE_BUCKET = aws_s3_bucket.bronze.bucket
-    }
-  }
-
-  logging_config {
-    log_format = "JSON"
-    log_group  = aws_cloudwatch_log_group.data_pipeline.name
-  }
-
-  tags = {
-    Application = "bronze-ingestion"
-    Type        = "data-pipeline"
-  }
-
-  # Lifecycle rule to ignore image_uri changes (managed by deployment workflow)
-  lifecycle {
-    ignore_changes = [image_uri]
-  }
-}
-
 # Silver Processing Lambda Function
 resource "aws_lambda_function" "silver_processing" {
   function_name = "${var.project_name}-silver-processing"
@@ -1371,6 +1410,41 @@ resource "aws_lambda_function" "silver_processing" {
 
   tags = {
     Application = "silver-processing"
+    Type        = "data-pipeline"
+  }
+
+  # Lifecycle rule to ignore image_uri changes (managed by deployment workflow)
+  lifecycle {
+    ignore_changes = [image_uri]
+  }
+}
+
+# Gold Processing Lambda Function
+resource "aws_lambda_function" "gold_processing" {
+  function_name = "${var.project_name}-gold-analytics"
+  role          = aws_iam_role.lambda_execution.arn
+  package_type  = "Image"
+  image_uri     = "${aws_ecr_repository.main.repository_url}:gold-analytics-latest"
+
+  timeout     = var.lambda_config.gold_processing.timeout
+  memory_size = var.lambda_config.gold_processing.memory_size
+
+  environment {
+    variables = {
+      LOG_LEVEL        = "INFO"
+      APP_NAME         = "gold-analytics"
+      SILVER_BUCKET    = aws_s3_bucket.silver.bucket
+      GOLD_TABLE_ARN   = aws_s3tables_table_bucket.gold_tables.arn
+    }
+  }
+
+  logging_config {
+    log_format = "JSON"
+    log_group  = aws_cloudwatch_log_group.data_pipeline.name
+  }
+
+  tags = {
+    Application = "gold-analytics"
     Type        = "data-pipeline"
   }
 

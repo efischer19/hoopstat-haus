@@ -28,10 +28,11 @@ The infrastructure includes:
 The infrastructure implements a three-tier medallion architecture for data processing:
 
 #### Bronze Layer (`hoopstat-haus-bronze`)
-- **Purpose**: Raw data landing zone for NBA API ingestion
+- **Purpose**: Raw data landing zone for NBA API ingestion (local execution)
 - **Retention**: 2 years (primary), 30 days (errors), 90 days (metadata)
 - **Storage**: Intelligent Tiering after 30 days for cost optimization
 - **Security**: AES256 encryption, versioning enabled, public access blocked
+- **Ingestion**: Local execution using `bronze_data_access` role (not Lambda)
 
 #### Silver Layer (`hoopstat-haus-silver`)
 - **Purpose**: Cleaned and conformed data with schema enforcement
@@ -82,6 +83,22 @@ The infrastructure uses a two-role security model that separates infrastructure 
   - S3: Object operations on medallion buckets (bronze/silver/gold/access_logs/main)
   - CloudWatch Logs: Create log streams and write log events
   - **Explicit denials**: All administrative actions (bucket creation, IAM operations, etc.)
+
+### Data Access Roles (Medallion Architecture)
+- **Bronze Data Access Role** (`hoopstat-haus-bronze-data-access`)
+  - **Purpose**: Local bronze ingestion from external data sources
+  - **Used By**: Local bronze-ingestion application
+  - **Permissions**: Write to Bronze bucket, read/write CloudWatch logs
+  
+- **Silver Data Access Role** (`hoopstat-haus-silver-data-access`)
+  - **Purpose**: Data transformation from Bronze to Silver
+  - **Used By**: Silver processing Lambda function
+  - **Permissions**: Read Bronze, write Silver, CloudWatch logs
+
+- **Gold Data Access Role** (`hoopstat-haus-gold-data-access`)
+  - **Purpose**: Business analytics and S3 Tables integration
+  - **Used By**: Gold analytics Lambda function
+  - **Permissions**: Read Silver, write to S3 Tables, CloudWatch logs
 
 ### Security Benefits
 - **Principle of Least Privilege**: Operations workflows cannot perform administrative actions

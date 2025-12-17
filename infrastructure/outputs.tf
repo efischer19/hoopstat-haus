@@ -91,10 +91,6 @@ output "medallion_s3_buckets" {
 output "medallion_iam_roles" {
   description = "IAM roles for Medallion Architecture data access"
   value = {
-    bronze_data_access = {
-      name = aws_iam_role.bronze_data_access.name
-      arn  = aws_iam_role.bronze_data_access.arn
-    }
     silver_data_access = {
       name = aws_iam_role.silver_data_access.name
       arn  = aws_iam_role.silver_data_access.arn

@@ -120,13 +120,13 @@ The infrastructure includes a fully configured ECR repository (`hoopstat-haus/pr
 - Integrates with GitHub Actions for automated CI/CD
 - See [ECR Image Management Guide](../docs/ECR_IMAGE_MANAGEMENT.md) for detailed usage
 
-### S3 Tables Public Access
-The infrastructure includes S3 Tables configuration for public basketball analytics access:
-- **Gold Layer Tables**: Apache Iceberg format tables with player and team analytics
-- **Public Read Access**: Anonymous access via bucket policy for MCP clients
-- **Security**: Read-only permissions with conditions to prevent data tampering
-- **Performance**: Optimized partitioning by date for fast queries
-- **Usage**: See [MCP Client Setup Guide](../docs-src/MCP_CLIENT_SETUP.md) for client configuration
+### Public JSON Artifacts (ADR-028)
+The infrastructure serves public basketball analytics via small JSON artifacts:
+- **Gold Presentation Layer**: Pre-computed JSON files under a `served/` prefix
+- **Public Read Access**: Anonymous GET/HEAD with CORS for browser clients
+- **Security**: Read-only bucket policy; logging enabled; least-privilege IAM
+- **Performance**: Cacheable via CDN; deterministic keys; small payloads (≤100KB)
+- **Details**: See [ADR-028](../meta/adr/ADR-028-gold_layer_final.md)
 
 ## File Structure
 

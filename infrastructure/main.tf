@@ -1375,15 +1375,6 @@ resource "aws_lambda_function" "silver_processing" {
   }
 
   # Lifecycle rule to ignore image_uri changes (managed by deployment workflow)
-# Lambda function configurations for different applications
-# Note: These functions will be created with placeholder image URIs
-# The actual deployment will update the function code with built images
-
-# Silver Processing Lambda Function
-resource "aws_lambda_function" "silver_processing" {
-  }
-
-  # Lifecycle rule to ignore image_uri changes (managed by deployment workflow)
   lifecycle {
     ignore_changes = [image_uri]
   }
@@ -1393,7 +1384,6 @@ resource "aws_lambda_function" "silver_processing" {
 # Lambda-specific CloudWatch Alarms
 resource "aws_cloudwatch_metric_alarm" "lambda_errors" {
   for_each = {
-    bronze_ingestion  = aws_lambda_function.bronze_ingestion.function_name
     silver_processing = aws_lambda_function.silver_processing.function_name
     gold_processing   = aws_lambda_function.gold_processing.function_name
   }
@@ -1421,15 +1411,12 @@ resource "aws_cloudwatch_metric_alarm" "lambda_errors" {
 
 resource "aws_cloudwatch_metric_alarm" "lambda_duration" {
   for_each = {
-    bronze_ingestion = {
-      function_name = aws_lambda_function.bronze_ingestion.function_name
+    silver_processing = {
+      function_name = aws_lambda_function.silver_processing.function_name
       threshold     = 250000 # 4.17 minutes (83% of 5m timeout)
-# Lambda-specific CloudWatch Alarms
-resource "aws_cloudwatch_metric_alarm" "lambda_errors" {
-  for_each = {
-    silver_processing = aws_lambda_function.silver_processing.function_name
-    gold_processing   = aws_lambda_function.gold_processing.function_name
-  }   function_name = aws_lambda_function.gold_processing.function_name
+    }
+    gold_processing = {
+      function_name = aws_lambda_function.gold_processing.function_name
       threshold     = 250000 # 4.17 minutes (83% of 5m timeout)
     }
   }
@@ -1453,16 +1440,20 @@ resource "aws_cloudwatch_metric_alarm" "lambda_errors" {
     Type        = "lambda-duration"
     Application = each.key
   }
-resource "aws_cloudwatch_metric_alarm" "lambda_duration" {
-  for_each = {
-    silver_processing = {
+}
+
 resource "aws_cloudwatch_metric_alarm" "lambda_throttles" {
   for_each = {
     silver_processing = aws_lambda_function.silver_processing.function_name
     gold_processing   = aws_lambda_function.gold_processing.function_name
-  }   threshold     = 250000 # 4.17 minutes (83% of 5m timeout)
-    }
-  }eriod              = "300"
+  }
+
+  alarm_name          = "lambda-throttles-${each.key}"
+  comparison_operator = "GreaterThanThreshold"
+  evaluation_periods  = "1"
+  metric_name         = "Throttles"
+  namespace           = "AWS/Lambda"
+  period              = "300"
   statistic           = "Sum"
   threshold           = "0"
   alarm_description   = "This metric monitors Lambda function throttles for ${each.key}"

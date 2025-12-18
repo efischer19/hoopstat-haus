@@ -266,6 +266,15 @@ jobs:
           ENVIRONMENT: ${{ steps.vars.outputs.environment }}
           ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
         run: |
+          # bronze-ingestion runs locally only (not deployed to Lambda)
+          # The Lambda function was removed in infrastructure - see issue #412
+          if [ "$APP_NAME" = "bronze-ingestion" ]; then
+            echo "ℹ️  Skipping Lambda deployment for $APP_NAME"
+            echo "📝 bronze-ingestion runs locally via Docker (see apps/bronze-ingestion/setup-local.sh)"
+            echo "✅ Image is available in ECR for local use: $ECR_REGISTRY/$ECR_REPOSITORY:$FINAL_IMAGE_TAG"
+            exit 0
+          fi
+
           echo "🚀 Deploying $APP_NAME to AWS Lambda in $ENVIRONMENT..."
           echo "📍 Image: $ECR_REGISTRY/$ECR_REPOSITORY:$FINAL_IMAGE_TAG"
 
@@ -360,6 +369,13 @@ jobs:
           echo "Final Image Tag: $FINAL_IMAGE_TAG"
           echo "Final Image: $ECR_REGISTRY/$ECR_REPOSITORY:$FINAL_IMAGE_TAG"
           echo "Triggered by: ${{ github.event_name }}"
+          
+          if [ "$APP_NAME" = "bronze-ingestion" ]; then
+            echo "Deployment Type: ECR Only (Local Docker execution)"
+          else
+            echo "Deployment Type: Lambda Function"
+          fi
+          
           echo "Status: ✅ Success"
 
       - name: Cleanup temporary files

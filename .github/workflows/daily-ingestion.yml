@@ -48,6 +48,22 @@ jobs:
     runs-on: ubuntu-latest
     
     steps:
+      - name: Workflow Deprecation Notice
+        run: |
+          echo "❌ ERROR: This workflow is DEPRECATED and non-functional"
+          echo ""
+          echo "🚫 The bronze-ingestion Lambda function has been removed from infrastructure (issue #412)"
+          echo ""
+          echo "📝 Bronze ingestion now runs ONLY locally via Docker"
+          echo ""
+          echo "✅ To run bronze ingestion:"
+          echo "   1. Navigate to: apps/bronze-ingestion/"
+          echo "   2. Run: ./setup-local.sh"
+          echo "   3. Follow the instructions in README.md"
+          echo ""
+          echo "🔗 See: https://github.com/efischer19/hoopstat-haus/tree/main/apps/bronze-ingestion"
+          exit 1
+      
       - name: Checkout code
         uses: actions/checkout@v4
 

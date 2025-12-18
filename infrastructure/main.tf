@@ -956,7 +956,6 @@ resource "aws_iam_role_policy" "github_actions_operations_lambda" {
           "lambda:GetFunctionConfiguration"
         ]
         Resource = [
-          "arn:aws:lambda:${var.aws_region}:${data.aws_caller_identity.current.account_id}:function:${var.project_name}-bronze-ingestion",
           "arn:aws:lambda:${var.aws_region}:${data.aws_caller_identity.current.account_id}:function:${var.project_name}-silver-processing",
           "arn:aws:lambda:${var.aws_region}:${data.aws_caller_identity.current.account_id}:function:${var.project_name}-gold-analytics"
         ]
@@ -1024,74 +1023,6 @@ resource "aws_iam_role_policy" "github_actions_operations_denials" {
 # ============================================================================
 # IAM Roles for Medallion Architecture Data Access
 # ============================================================================
-
-# IAM Role for Bronze Layer Data Access
-resource "aws_iam_role" "bronze_data_access" {
-  name = "${var.project_name}-bronze-data-access"
-
-  assume_role_policy = jsonencode({
-    Version = "2012-10-17"
-    Statement = [
-      {
-        Effect = "Allow"
-        Principal = {
-          Federated = local.github_oidc_provider_arn
-        }
-        Action = "sts:AssumeRoleWithWebIdentity"
-        Condition = {
-          StringEquals = {
-            "token.actions.githubusercontent.com:aud" = "sts.amazonaws.com"
-          }
-          StringLike = {
-            "token.actions.githubusercontent.com:sub" = "repo:${var.github_repo}:*"
-          }
-        }
-      }
-    ]
-  })
-
-  tags = {
-    Name      = "${var.project_name}-bronze-data-access-role"
-    DataLayer = "bronze"
-    Purpose   = "Data ingestion and raw data access"
-  }
-}
-
-# IAM Policy for Bronze Layer
-resource "aws_iam_role_policy" "bronze_data_access" {
-  name = "${var.project_name}-bronze-data-access-policy"
-  role = aws_iam_role.bronze_data_access.id
-
-  policy = jsonencode({
-    Version = "2012-10-17"
-    Statement = [
-      {
-        Effect = "Allow"
-        Action = [
-          "s3:GetObject",
-          "s3:PutObject",
-          "s3:DeleteObject",
-          "s3:ListBucket",
-          "s3:GetBucketLocation"
-        ]
-        Resource = [
-          aws_s3_bucket.bronze.arn,
-          "${aws_s3_bucket.bronze.arn}/*"
-        ]
-      },
-      {
-        Effect = "Allow"
-        Action = [
-          "logs:CreateLogStream",
-          "logs:PutLogEvents"
-        ]
-        Resource = [
-          "${aws_cloudwatch_log_group.data_pipeline.arn}:*"
-        ]
-      }
-    ]
-  })
-}
 
 # IAM Role for Silver Layer Data Access
 resource "aws_iam_role" "silver_data_access" {
@@ -1260,6 +1191,79 @@ resource "aws_iam_role_policy" "gold_data_access" {
     ]
   })
 }
+
+# ============================================================================
+# IAM Role for Bronze Layer Data Access (Local Execution)
+# ============================================================================
+
+# IAM Role for Bronze Layer Data Access
+resource "aws_iam_role" "bronze_data_access" {
+  name = "${var.project_name}-bronze-data-access"
+
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Principal = {
+          Federated = local.github_oidc_provider_arn
+        }
+        Action = "sts:AssumeRoleWithWebIdentity"
+        Condition = {
+          StringEquals = {
+            "token.actions.githubusercontent.com:aud" = "sts.amazonaws.com"
+          }
+          StringLike = {
+            "token.actions.githubusercontent.com:sub" = "repo:${var.github_repo}:*"
+          }
+        }
+      }
+    ]
+  })
+
+  tags = {
+    Name      = "${var.project_name}-bronze-data-access-role"
+    DataLayer = "bronze"
+    Purpose   = "Local bronze ingestion from external data sources"
+  }
+}
+
+# IAM Policy for Bronze Layer
+resource "aws_iam_role_policy" "bronze_data_access" {
+  name = "${var.project_name}-bronze-data-access-policy"
+  role = aws_iam_role.bronze_data_access.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Action = [
+          "s3:PutObject",
+          "s3:GetObject",
+          "s3:DeleteObject",
+          "s3:ListBucket",
+          "s3:GetBucketLocation"
+        ]
+        Resource = [
+          aws_s3_bucket.bronze.arn,
+          "${aws_s3_bucket.bronze.arn}/*"
+        ]
+      },
+      {
+        Effect = "Allow"
+        Action = [
+          "logs:CreateLogStream",
+          "logs:PutLogEvents"
+        ]
+        Resource = [
+          "${aws_cloudwatch_log_group.data_pipeline.arn}:*"
+        ]
+      }
+    ]
+  })
+}
+
 # ============================================================================
 # Lambda Functions and IAM Roles for Containerized Applications
 # ============================================================================
@@ -1380,40 +1384,6 @@ resource "aws_iam_role_policy_attachment" "lambda_basic_execution_role" {
 # Note: These functions will be created with placeholder image URIs
 # The actual deployment will update the function code with built images
 
-# Bronze Ingestion Lambda Function
-resource "aws_lambda_function" "bronze_ingestion" {
-  function_name = "${var.project_name}-bronze-ingestion"
-  role          = aws_iam_role.lambda_execution.arn
-  package_type  = "Image"
-  image_uri     = "${aws_ecr_repository.main.repository_url}:bronze-ingestion-latest"
-
-  timeout     = var.lambda_config.bronze_ingestion.timeout
-  memory_size = var.lambda_config.bronze_ingestion.memory_size
-
-  environment {
-    variables = {
-      LOG_LEVEL     = "INFO"
-      APP_NAME      = "bronze-ingestion"
-      BRONZE_BUCKET = aws_s3_bucket.bronze.bucket
-    }
-  }
-
-  logging_config {
-    log_format = "JSON"
-    log_group  = aws_cloudwatch_log_group.data_pipeline.name
-  }
-
-  tags = {
-    Application = "bronze-ingestion"
-    Type        = "data-pipeline"
-  }
-
-  # Lifecycle rule to ignore image_uri changes (managed by deployment workflow)
-  lifecycle {
-    ignore_changes = [image_uri]
-  }
-}
-
 # Silver Processing Lambda Function
 resource "aws_lambda_function" "silver_processing" {
   function_name = "${var.project_name}-silver-processing"
@@ -1447,11 +1417,9 @@ resource "aws_lambda_function" "silver_processing" {
   lifecycle {
     ignore_changes = [image_uri]
   }
-
-  # Simple error handling via CloudWatch logs and Lambda retries
 }
 
-# Gold Processing Lambda Function (S3 Tables Analytics)
+# Gold Processing Lambda Function
 resource "aws_lambda_function" "gold_processing" {
   function_name = "${var.project_name}-gold-analytics"
   role          = aws_iam_role.lambda_execution.arn
@@ -1463,27 +1431,21 @@ resource "aws_lambda_function" "gold_processing" {
 
   environment {
     variables = {
-      LOG_LEVEL              = "INFO"
-      APP_NAME               = "gold-analytics"
-      SILVER_BUCKET          = aws_s3_bucket.silver.bucket
-      S3_TABLES_BUCKET       = aws_s3tables_table_bucket.gold_tables.name
-      S3_TABLES_BUCKET_ARN   = aws_s3tables_table_bucket.gold_tables.arn
-      NAMESPACE              = aws_s3tables_namespace.basketball_analytics.namespace
-      PLAYER_ANALYTICS_TABLE = aws_s3tables_table.player_analytics.name
-      TEAM_ANALYTICS_TABLE   = aws_s3tables_table.team_analytics.name
+      LOG_LEVEL        = "INFO"
+      APP_NAME         = "gold-analytics"
+      SILVER_BUCKET    = aws_s3_bucket.silver.bucket
+      GOLD_TABLE_ARN   = aws_s3tables_table_bucket.gold_tables.arn
     }
   }
 
   logging_config {
     log_format = "JSON"
-    log_group  = aws_cloudwatch_log_group.s3_tables.name
+    log_group  = aws_cloudwatch_log_group.data_pipeline.name
   }
 
   tags = {
     Application = "gold-analytics"
     Type        = "data-pipeline"
-    Purpose     = "S3 Tables analytics processing per ADR-026"
-    ADR         = "ADR-026"
   }
 
   # Lifecycle rule to ignore image_uri changes (managed by deployment workflow)
@@ -1496,7 +1458,6 @@ resource "aws_lambda_function" "gold_processing" {
 # Lambda-specific CloudWatch Alarms
 resource "aws_cloudwatch_metric_alarm" "lambda_errors" {
   for_each = {
-    bronze_ingestion  = aws_lambda_function.bronze_ingestion.function_name
     silver_processing = aws_lambda_function.silver_processing.function_name
     gold_processing   = aws_lambda_function.gold_processing.function_name
   }
@@ -1524,10 +1485,6 @@ resource "aws_cloudwatch_metric_alarm" "lambda_errors" {
 
 resource "aws_cloudwatch_metric_alarm" "lambda_duration" {
   for_each = {
-    bronze_ingestion = {
-      function_name = aws_lambda_function.bronze_ingestion.function_name
-      threshold     = 250000 # 4.17 minutes (83% of 5m timeout)
-    }
     silver_processing = {
       function_name = aws_lambda_function.silver_processing.function_name
       threshold     = 250000 # 4.17 minutes (83% of 5m timeout)
@@ -1561,7 +1518,6 @@ resource "aws_cloudwatch_metric_alarm" "lambda_duration" {
 
 resource "aws_cloudwatch_metric_alarm" "lambda_throttles" {
   for_each = {
-    bronze_ingestion  = aws_lambda_function.bronze_ingestion.function_name
     silver_processing = aws_lambda_function.silver_processing.function_name
     gold_processing   = aws_lambda_function.gold_processing.function_name
   }
@@ -1727,4 +1683,66 @@ resource "aws_s3_bucket_notification" "silver_bucket_notification" {
   }
 
   depends_on = [aws_lambda_permission.s3_invoke_gold_processing]
+}
+
+# ============================================================================
+# Physical Devices IAM Resources
+# ============================================================================
+
+# IAM User for Production Raspberry Pi
+resource "aws_iam_user" "prod_pi" {
+  name = "hoopstat-prod-pi"
+  tags = {
+    Description = "User for Raspberry Pi in production closet"
+  }
+}
+
+# Policy for Production Pi
+# Grants permission to pull from ECR and write to the Bronze bucket
+resource "aws_iam_policy" "prod_pi_policy" {
+  name        = "hoopstat-prod-pi-policy"
+  description = "Policy for Raspberry Pi to pull images and write to bronze bucket"
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Sid    = "ECRAuth"
+        Effect = "Allow"
+        Action = [
+          "ecr:GetAuthorizationToken"
+        ]
+        Resource = "*"
+      },
+      {
+        Sid    = "ECRPull"
+        Effect = "Allow"
+        Action = [
+          "ecr:BatchCheckLayerAvailability",
+          "ecr:GetDownloadUrlForLayer",
+          "ecr:BatchGetImage"
+        ]
+        Resource = aws_ecr_repository.main.arn
+      },
+      {
+        Sid    = "BronzeBucketAccess"
+        Effect = "Allow"
+        Action = [
+          "s3:PutObject",
+          "s3:GetObject",
+          "s3:ListBucket",
+          "s3:GetBucketLocation"
+        ]
+        Resource = [
+          aws_s3_bucket.bronze.arn,
+          "${aws_s3_bucket.bronze.arn}/*"
+        ]
+      }
+    ]
+  })
+}
+
+resource "aws_iam_user_policy_attachment" "prod_pi_attach" {
+  user       = aws_iam_user.prod_pi.name
+  policy_arn = aws_iam_policy.prod_pi_policy.arn
 }

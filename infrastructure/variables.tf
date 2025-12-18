@@ -40,10 +40,6 @@ variable "github_repo" {
 variable "lambda_config" {
   description = "Configuration for Lambda functions"
   type = object({
-    bronze_ingestion = object({
-      timeout     = number
-      memory_size = number
-    })
     silver_processing = object({
       timeout     = number
       memory_size = number
@@ -54,10 +50,6 @@ variable "lambda_config" {
     })
   })
   default = {
-    bronze_ingestion = {
-      timeout     = 300 # 5 minutes for data ingestion
-      memory_size = 256
-    }
     silver_processing = {
       timeout     = 300  # 5 minutes for data processing
       memory_size = 1024 # 1GB for data processing workloads

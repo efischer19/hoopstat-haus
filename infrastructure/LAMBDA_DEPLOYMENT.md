@@ -14,12 +14,14 @@ The infrastructure supports deploying containerized Python applications as AWS L
 
 ### Lambda Functions
 
-The infrastructure provisions 2 Lambda functions for existing containerized applications:
+The infrastructure provisions Lambda functions for data processing in the medallion architecture:
 
 | Function Name | Purpose | Timeout | Memory | Log Group |
 |---------------|---------|---------|--------|-----------|
-| `hoopstat-haus-bronze-ingestion` | Data ingestion to bronze layer | 5min | 256MB | `/hoopstat-haus/data-pipeline` |
 | `hoopstat-haus-silver-processing` | Data processing from bronze to silver layer | 5min | 1024MB | `/hoopstat-haus/data-pipeline` |
+| `hoopstat-haus-gold-analytics` | Analytics processing from silver to gold layer | 5min | 1024MB | `/hoopstat-haus/data-pipeline` |
+
+**Note**: Bronze ingestion is performed locally (not via Lambda) due to NBA API IP restrictions. See `apps/bronze-ingestion/README.md` for local execution setup.
 
 ### IAM Roles and Permissions
 
@@ -79,8 +81,10 @@ The infrastructure includes automatic S3 event-driven processing for the complet
 
 #### Complete Pipeline Flow
 ```
-Local Cron → Bronze Lambda → S3 Event → Silver Lambda → S3 Event → Gold Lambda → S3 Tables
+Local Cron/Script → Bronze Bucket → S3 Event → Silver Lambda → S3 Event → Gold Lambda → S3 Tables
 ```
+
+Bronze ingestion runs locally with the `bronze_data_access` IAM role to write to the bronze S3 bucket.
 
 #### Error Handling
 - **CloudWatch Logs**: All Lambda failures visible in `/hoopstat-haus/data-pipeline` log group
@@ -121,7 +125,7 @@ You can also deploy manually using the GitHub Actions workflow dispatch:
 ```bash
 # Via GitHub CLI
 gh workflow run deploy.yml \
-  --field application=bronze-ingestion \
+  --field application=silver-processing \
   --field environment=prod \
   --field image_tag=latest
 
@@ -177,8 +181,8 @@ Example:
 
 Function configurations are optimized for cost:
 
-- **Data Ingestion** (bronze-ingestion): Balanced configuration for data processing
-- **Data Processing** (silver-processing): Higher memory for complex transformations
+- **Data Processing** (silver-processing): Configured for complex transformations
+- **Analytics** (gold-analytics): Configured for analytics aggregations
 
 ### Lifecycle Management
 
@@ -210,11 +214,11 @@ Key configuration options in `variables.tf`:
 variable "lambda_config" {
   description = "Configuration for Lambda functions"
   type = object({
-    bronze_ingestion = object({
+    silver_processing = object({
       timeout     = number
       memory_size = number
     })
-    silver_processing = object({
+    gold_processing = object({
       timeout     = number
       memory_size = number
     })
@@ -227,7 +231,7 @@ variable "lambda_config" {
 Override defaults using Terraform variables:
 
 ```bash
-terraform plan -var="lambda_config.bronze_ingestion.timeout=600"
+terraform plan -var="lambda_config.silver_processing.timeout=600"
 ```
 
 ## Testing

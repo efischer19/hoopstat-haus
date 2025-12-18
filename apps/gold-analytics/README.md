@@ -4,7 +4,7 @@ Gold layer analytics processing for NBA statistics using S3 Tables and Apache Ic
 
 ## Overview
 
-This application processes Silver layer NBA data and transforms it into advanced analytics metrics stored in S3 Tables using Apache Iceberg format. It implements the Gold layer strategy from [ADR-026](../../meta/adr/ADR-026-s3_tables_gold_layer.md).
+This application processes Silver layer NBA data and transforms it into advanced analytics metrics. For v1, internal Gold data is stored as Parquet and a public presentation layer is produced as small JSON artifacts under a `served/` prefix, per [ADR-028](../../meta/adr/ADR-028-gold_layer_final.md).
 
 ## Features
 
@@ -14,14 +14,10 @@ This application processes Silver layer NBA data and transforms it into advanced
 - **Season Aggregations**: Full season summaries for players and teams
 - **S3 Tables Integration**: Optimized storage using Apache Iceberg format
 
-### Apache Iceberg Integration
-- **PyIceberg Library**: Full Apache Iceberg support for Lambda environment
-- **Optimized Partitioning**: Season/month/team partitioning per ADR-026
-- **File Size Optimization**: Target 64-128MB files for query performance 
-- **Schema Evolution**: Support for future analytics additions
-- **Transaction Support**: Data consistency through Iceberg transactions
-- **Automatic Compaction**: S3 Tables handles long-term efficiency
-- **Error Handling**: Comprehensive logging for debugging
+### Storage & Partitions (v1)
+- **Internal Parquet**: Partition by season/date/team_id/player_id to match access patterns
+- **Public JSON Artifacts**: Small, versioned JSON files (≤100KB) for browser/app consumption
+- **Schema Evolution**: Versioned JSON schemas; Parquet schemas evolve with manifests
 
 ### Performance Features
 - **Memory-Optimized Writes**: Streaming writes for Lambda constraints
@@ -81,18 +77,9 @@ Environment variables:
 
 ## Architecture
 
-### S3 Tables Partitioning
-Following the strategy from ADR-026:
+### Outputs (v1)
 ```
-s3://bucket/gold_tables/
-├── player_analytics/
-│   └── date=YYYY-MM-DD/player_id=*/analytics.parquet
-├── player_season_summaries/
-│   └── season=YYYY-YY/player_id=*/season_stats.parquet
-├── team_analytics/
-│   └── date=YYYY-MM-DD/team_id=*/analytics.parquet
-└── team_season_summaries/
-    └── season=YYYY-YY/team_id=*/season_stats.parquet
+Internal Parquet (partitioned) → Public JSON (served/...) per ADR-028
 ```
 
 ### Lambda Deployment
@@ -105,7 +92,7 @@ docker build -f apps/gold-analytics/Dockerfile -t gold-analytics:dev .
 
 ## MCP Integration
 
-Users can query the Gold analytics data using MCP clients with **no AWS credentials required**:
+Users can fetch the public JSON artifacts directly via HTTPS with **no AWS credentials required**:
 
 ```json
 {
@@ -124,9 +111,9 @@ Users can query the Gold analytics data using MCP clients with **no AWS credenti
 
 ### Public Access Features
 - **Anonymous Read Access**: No AWS credentials needed
-- **Real-time Analytics**: Data available 2-4 hours after games
+- **Low Latency**: Small JSON payloads fetch fast, CDN-cacheable
 - **Advanced Metrics**: Player efficiency, team ratings, and more
-- **Optimized Performance**: Date-partitioned for fast queries
+- **Deterministic Keys**: Easy to consume from browsers/apps
 
 ### Example Queries
 - "Show me LeBron's efficiency this week"
@@ -136,7 +123,7 @@ Users can query the Gold analytics data using MCP clients with **no AWS credenti
 - "Show home vs away splits for the Warriors"
 - "Display Four Factors for playoff teams"
 
-**Setup Guide**: [MCP Client Configuration](../../docs-src/MCP_CLIENT_SETUP.md)
+**Details**: See [ADR-028](../../meta/adr/ADR-028-gold_layer_final.md)
 
 ## Related
 

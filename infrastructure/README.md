@@ -28,10 +28,11 @@ The infrastructure includes:
 The infrastructure implements a three-tier medallion architecture for data processing:
 
 #### Bronze Layer (`hoopstat-haus-bronze`)
-- **Purpose**: Raw data landing zone for NBA API ingestion
+- **Purpose**: Raw data landing zone for NBA API ingestion (local execution)
 - **Retention**: 2 years (primary), 30 days (errors), 90 days (metadata)
 - **Storage**: Intelligent Tiering after 30 days for cost optimization
 - **Security**: AES256 encryption, versioning enabled, public access blocked
+- **Ingestion**: Local execution using `bronze_data_access` role (not Lambda)
 
 #### Silver Layer (`hoopstat-haus-silver`)
 - **Purpose**: Cleaned and conformed data with schema enforcement
@@ -83,6 +84,22 @@ The infrastructure uses a two-role security model that separates infrastructure 
   - CloudWatch Logs: Create log streams and write log events
   - **Explicit denials**: All administrative actions (bucket creation, IAM operations, etc.)
 
+### Data Access Roles (Medallion Architecture)
+- **Bronze Data Access Role** (`hoopstat-haus-bronze-data-access`)
+  - **Purpose**: Local bronze ingestion from external data sources
+  - **Used By**: Local bronze-ingestion application
+  - **Permissions**: Write to Bronze bucket, read/write CloudWatch logs
+  
+- **Silver Data Access Role** (`hoopstat-haus-silver-data-access`)
+  - **Purpose**: Data transformation from Bronze to Silver
+  - **Used By**: Silver processing Lambda function
+  - **Permissions**: Read Bronze, write Silver, CloudWatch logs
+
+- **Gold Data Access Role** (`hoopstat-haus-gold-data-access`)
+  - **Purpose**: Business analytics and S3 Tables integration
+  - **Used By**: Gold analytics Lambda function
+  - **Permissions**: Read Silver, write to S3 Tables, CloudWatch logs
+
 ### Security Benefits
 - **Principle of Least Privilege**: Operations workflows cannot perform administrative actions
 - **Separation of Concerns**: Infrastructure changes require the admin role, runtime operations use the limited role
@@ -120,13 +137,13 @@ The infrastructure includes a fully configured ECR repository (`hoopstat-haus/pr
 - Integrates with GitHub Actions for automated CI/CD
 - See [ECR Image Management Guide](../docs/ECR_IMAGE_MANAGEMENT.md) for detailed usage
 
-### S3 Tables Public Access
-The infrastructure includes S3 Tables configuration for public basketball analytics access:
-- **Gold Layer Tables**: Apache Iceberg format tables with player and team analytics
-- **Public Read Access**: Anonymous access via bucket policy for MCP clients
-- **Security**: Read-only permissions with conditions to prevent data tampering
-- **Performance**: Optimized partitioning by date for fast queries
-- **Usage**: See [MCP Client Setup Guide](../docs-src/MCP_CLIENT_SETUP.md) for client configuration
+### Public JSON Artifacts (ADR-028)
+The infrastructure serves public basketball analytics via small JSON artifacts:
+- **Gold Presentation Layer**: Pre-computed JSON files under a `served/` prefix
+- **Public Read Access**: Anonymous GET/HEAD with CORS for browser clients
+- **Security**: Read-only bucket policy; logging enabled; least-privilege IAM
+- **Performance**: Cacheable via CDN; deterministic keys; small payloads (≤100KB)
+- **Details**: See [ADR-028](../meta/adr/ADR-028-gold_layer_final.md)
 
 ## File Structure
 

@@ -144,6 +144,28 @@ jobs:
             changed_app_files=$(echo "$changed_app_files" | cut -d'/' -f2 | sort -u)
             changed_lib_files=$(git diff --name-only "$BASE_SHA" "$HEAD_SHA" | grep '^libs/' || true)
             changed_lib_files=$(echo "$changed_lib_files" | cut -d'/' -f2 | sort -u)
+
+            # Check for apps that depend on changed libraries
+            if [ -n "$changed_lib_files" ]; then
+              echo "Checking for apps dependent on changed libraries..."
+              for lib in $changed_lib_files; do
+                echo "  Checking dependents of $lib..."
+                for app_toml in apps/*/pyproject.toml; do
+                  if [ -f "$app_toml" ]; then
+                    # Check if the library is mentioned in the pyproject.toml
+                    # This covers path dependencies like {path = "../../libs/libname"}
+                    if grep -q "$lib" "$app_toml"; then
+                      app_name=$(basename $(dirname "$app_toml"))
+                      echo "    App $app_name depends on $lib - marking for build"
+                      changed_app_files="$changed_app_files
+$app_name"
+                    fi
+                  fi
+                done
+              done
+              # Deduplicate
+              changed_app_files=$(echo "$changed_app_files" | sort -u | grep -v '^$')
+            fi
           fi
 
           # Process apps

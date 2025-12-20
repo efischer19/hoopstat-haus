@@ -100,6 +100,29 @@ jobs:
             echo "🔁 Diffing changes between $BASE_SHA..$HEAD_SHA"
             changed_app_files=$(git diff --name-only "$BASE_SHA" "$HEAD_SHA" | grep '^apps/' || true)
             changed_app_files=$(echo "$changed_app_files" | cut -d'/' -f2 | sort -u)
+            
+            # Also check for changed libraries and include dependent apps
+            changed_lib_files=$(git diff --name-only "$BASE_SHA" "$HEAD_SHA" | grep '^libs/' || true)
+            changed_lib_files=$(echo "$changed_lib_files" | cut -d'/' -f2 | sort -u)
+            
+            if [ -n "$changed_lib_files" ]; then
+              echo "Checking for apps dependent on changed libraries..."
+              for lib in $changed_lib_files; do
+                echo "  Checking dependents of $lib..."
+                for app_toml in apps/*/pyproject.toml; do
+                  if [ -f "$app_toml" ]; then
+                    if grep -q "$lib" "$app_toml"; then
+                      app_name=$(basename $(dirname "$app_toml"))
+                      echo "    App $app_name depends on $lib - marking for deployment"
+                      changed_app_files="$changed_app_files
+$app_name"
+                    fi
+                  fi
+                done
+              done
+              # Deduplicate
+              changed_app_files=$(echo "$changed_app_files" | sort -u | grep -v '^$')
+            fi
           fi
 
           if [ -z "$changed_app_files" ]; then

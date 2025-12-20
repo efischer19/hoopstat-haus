@@ -6,6 +6,11 @@ authors = ["Hoopstat Haus Team"]
 readme = "README.md"
 packages = [{include = "app"}]
 
+[[tool.poetry.source]]
+name = "piwheels"
+url = "https://www.piwheels.org/simple/"
+priority = "supplemental"
+
 [tool.poetry.dependencies]
 python = "^3.12"
 nba-api = "^1.5.2"

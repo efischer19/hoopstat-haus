@@ -152,7 +152,7 @@ docker run --rm \
     -e AWS_REGION="${AWS_REGION}" \
     -e AWS_SESSION_TOKEN="${AWS_SESSION_TOKEN:-}" \
     -e BRONZE_BUCKET="${BRONZE_BUCKET}" \
-    --entrypoint /var/lang/bin/python \
+    --entrypoint python \
     "$IMAGE_URI" \
     -m app.main ingest --date "${RUN_DATE}" ${EXTRA_ARGS[@]:-} 2>&1 | tee -a "$LOG_FILE" || EXIT_CODE=$?
 
@@ -182,7 +182,7 @@ if docker run --rm \
     -e AWS_REGION="${AWS_REGION:-${AWS_DEFAULT_REGION:-us-east-1}}" \
     -e BRONZE_BUCKET="${BRONZE_BUCKET:-hoopstat-haus-bronze}" \
     -e AWS_SESSION_TOKEN="${AWS_SESSION_TOKEN:-}" \
-    --entrypoint /var/lang/bin/python \
+    --entrypoint python \
     "$IMAGE_URI" \
     -m app.main --help > /dev/null 2>&1; then
     echo "✅ Container execution test passed"

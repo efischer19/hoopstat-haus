@@ -119,6 +119,31 @@ class TestNBAClient:
         assert len(games) == 0
 
     @patch.object(NBAClient, "_make_request")
+    def test_get_games_for_date_with_result_sets(self, mock_make_request):
+        """Test fetching games with resultSets structure (plural)."""
+        # Mock API response with resultSets (plural) structure
+        mock_response = {
+            "resultSets": [
+                {
+                    "headers": ["GAME_ID", "HOME_TEAM", "AWAY_TEAM"],
+                    "rowSet": [["003", "Celtics", "Nets"], ["004", "Suns", "Mavs"]],
+                }
+            ]
+        }
+        mock_make_request.return_value = mock_response
+
+        client = NBAClient()
+        target_date = date(2024, 2, 20)
+
+        games = client.get_games_for_date(target_date)
+
+        assert len(games) == 2
+        assert games[0]["GAME_ID"] == "003"
+        assert games[0]["HOME_TEAM"] == "Celtics"
+        assert games[1]["GAME_ID"] == "004"
+        assert "fetch_date" in games[0]
+
+    @patch.object(NBAClient, "_make_request")
     def test_get_box_score(self, mock_make_request):
         """Test fetching box score for a game."""
         mock_response = {

@@ -4,6 +4,11 @@
 
 FROM python:3.12-slim
 
+# Add build dependencies for compiling Python packages with C extensions
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends build-essential python3-dev libffi-dev && \
+    rm -rf /var/lib/apt/lists/*
+
 ENV PYTHONUNBUFFERED=1 \
     PIP_NO_CACHE_DIR=1 \
     POETRY_NO_INTERACTION=1 \

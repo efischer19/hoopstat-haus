@@ -39,6 +39,10 @@ on:
         required: false
         default: 'latest'
 
+permissions:
+  id-token: write
+  contents: read
+
 jobs:
   build-push:
     runs-on: ubuntu-latest
@@ -107,20 +111,21 @@ jobs:
           # Special handling for bronze-ingestion (ARMv7)
           PLATFORM_ARG=""
           if [ "${{ inputs.app_name }}" = "bronze-ingestion" ]; then
-             if [ "${{ inputs.push }}" == "true" ]; then
-                echo "🥧 Building bronze-ingestion for linux/arm/v7 (Raspberry Pi 2)"
-                PLATFORM_ARG="--platform linux/arm/v7"
-             else
-                echo "ℹ️  Skipping ARM build for local test (using default architecture)"
-             fi
+            if [ "${{ inputs.push }}" == "true" ]; then
+              echo "🥧 Building bronze-ingestion for linux/arm/v7 (Raspberry Pi 2)"
+              PLATFORM_ARG="--platform linux/arm/v7"
+            else
+              echo "ℹ️  Skipping bronze-ingestion ARM build during test (no Docker image will be built)"
+              exit 0
+            fi
           fi
 
           echo "Building with context: $CONTEXT_DIR"
           echo "Dockerfile: $DOCKERFILE"
           
-          cd $CONTEXT_DIR
+          cd "$CONTEXT_DIR"
           docker buildx build $PLATFORM_ARG \
-            -f $DOCKERFILE \
+            -f "$DOCKERFILE" \
             $TAG_ARGS \
             $OUTPUT_ARG .
           

@@ -336,7 +336,7 @@ jobs:
         uses: aws-actions/amazon-ecr-login@v2
 
       - name: Set up Docker Buildx
-        if: steps.deployment-check.outputs.deployable == 'true'
+        if: steps.deployment-check.outputs.deployable == 'true' && (matrix.app != 'bronze-ingestion' || github.event_name != 'pull_request')
         uses: docker/setup-buildx-action@v3
 
       - name: Build Docker image
@@ -350,12 +350,18 @@ jobs:
               cd ../../
               
               # bronze-ingestion builds specifically for ARMv7 (Raspberry Pi 2)
+              # Only build ARM during push to main or workflow_dispatch (when we'll push to ECR)
               if [ "${{ matrix.app }}" = "bronze-ingestion" ]; then
-                echo "🥧 Building bronze-ingestion for linux/arm/v7 (Raspberry Pi 2)"
-                docker buildx build --platform linux/arm/v7 \
-                  -f apps/${{ matrix.app }}/Dockerfile \
-                  -t ${{ matrix.app }}:ci \
-                  --load .
+                if [ "${{ github.event_name }}" = "pull_request" ]; then
+                  echo "ℹ️  Skipping ARM build for bronze-ingestion during PR validation"
+                  echo "   ARM image will be built on merge to main"
+                else
+                  echo "🥧 Building bronze-ingestion for linux/arm/v7 (Raspberry Pi 2)"
+                  docker buildx build --platform linux/arm/v7 \
+                    -f apps/${{ matrix.app }}/Dockerfile \
+                    -t ${{ matrix.app }}:ci \
+                    --load .
+                fi
               else
                 docker build -f apps/${{ matrix.app }}/Dockerfile -t ${{ matrix.app }}:ci .
               fi

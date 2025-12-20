@@ -157,8 +157,7 @@ jobs:
                     if grep -q "$lib" "$app_toml"; then
                       app_name=$(basename $(dirname "$app_toml"))
                       echo "    App $app_name depends on $lib - marking for build"
-                      changed_app_files="$changed_app_files
-$app_name"
+                      changed_app_files="$(printf "%s\n%s" "$changed_app_files" "$app_name")"
                     fi
                   fi
                 done

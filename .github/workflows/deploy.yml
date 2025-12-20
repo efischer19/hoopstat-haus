@@ -226,6 +226,13 @@ jobs:
         run: |
           echo "📥 Pulling image from ECR..."
           docker pull $ECR_REGISTRY/$ECR_REPOSITORY:$FINAL_IMAGE_TAG
+          
+          # Skip health check for bronze-ingestion (ARM-only image)
+          if [ "$APP_NAME" = "bronze-ingestion" ]; then
+            echo "ℹ️  Skipping health check for ARM-only image (bronze-ingestion)"
+            echo "✅ ARM image successfully pulled from ECR"
+            exit 0
+          fi
 
           echo "🧪 Testing image health..."
           

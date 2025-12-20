@@ -335,6 +335,10 @@ jobs:
         id: login-ecr
         uses: aws-actions/amazon-ecr-login@v2
 
+      - name: Set up Docker Buildx
+        if: steps.deployment-check.outputs.deployable == 'true'
+        uses: docker/setup-buildx-action@v3
+
       - name: Build Docker image
         if: steps.deployment-check.outputs.deployable == 'true'
         working-directory: apps/${{ matrix.app }}
@@ -344,7 +348,17 @@ jobs:
             if grep -q "path.*\\.\\./\\.\\./libs" pyproject.toml; then
               echo "📦 Application uses shared libraries, building from repository root"
               cd ../../
-              docker build -f apps/${{ matrix.app }}/Dockerfile -t ${{ matrix.app }}:ci .
+              
+              # bronze-ingestion builds specifically for ARMv7 (Raspberry Pi 2)
+              if [ "${{ matrix.app }}" = "bronze-ingestion" ]; then
+                echo "🥧 Building bronze-ingestion for linux/arm/v7 (Raspberry Pi 2)"
+                docker buildx build --platform linux/arm/v7 \
+                  -f apps/${{ matrix.app }}/Dockerfile \
+                  -t ${{ matrix.app }}:ci \
+                  --load .
+              else
+                docker build -f apps/${{ matrix.app }}/Dockerfile -t ${{ matrix.app }}:ci .
+              fi
             else
               echo "📦 Building standalone application"
               docker build -t ${{ matrix.app }}:ci .

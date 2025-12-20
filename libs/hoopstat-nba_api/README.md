@@ -54,3 +54,5 @@ The client includes respectful rate limiting by default:
 - Maximum retries: 5
 
 This ensures we're being respectful to the NBA API and avoiding rate limit issues.
+
+<!-- Touch commit to trigger CI -->

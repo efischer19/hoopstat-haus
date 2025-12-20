@@ -127,6 +127,9 @@ jobs:
           docker buildx build $PLATFORM_ARG \
             -f "$DOCKERFILE" \
             $TAG_ARGS \
-            $OUTPUT_ARG .
+            $OUTPUT_ARG \
+            --cache-from type=gha \
+            --cache-to type=gha,mode=max \
+            .
           
           echo "✅ Build (and optional push) successful"

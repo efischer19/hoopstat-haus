@@ -1,0 +1,127 @@
+name: Build and Push App Image
+
+on:
+  workflow_call:
+    inputs:
+      app_name:
+        required: true
+        type: string
+      push:
+        required: false
+        type: boolean
+        default: false
+      tags:
+        required: false
+        type: string
+        default: 'latest'
+    secrets:
+      AWS_ACCOUNT_ID:
+        required: true
+
+  workflow_dispatch:
+    inputs:
+      app_name:
+        description: 'Application to build'
+        required: true
+        type: choice
+        options:
+          - bronze-ingestion
+          - silver-processing
+          - gold-analytics
+          - example-calculator-app
+      push:
+        description: 'Push to ECR?'
+        required: true
+        type: boolean
+        default: true
+      tags:
+        description: 'Comma-separated tags (e.g. latest,v1.0)'
+        required: false
+        default: 'latest'
+
+jobs:
+  build-push:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Check if app is deployable
+        id: check
+        working-directory: apps/${{ inputs.app_name }}
+        run: |
+          if [ -f "Dockerfile" ]; then
+            echo "deployable=true" >> $GITHUB_OUTPUT
+          else
+            echo "deployable=false" >> $GITHUB_OUTPUT
+            echo "::error::No Dockerfile found for ${{ inputs.app_name }}"
+            exit 1
+          fi
+
+      - name: Configure AWS credentials
+        if: inputs.push == true
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::${{ secrets.AWS_ACCOUNT_ID }}:role/hoopstat-haus-operations
+          role-session-name: GitHubActions-BuildPush-${{ github.run_id }}
+          aws-region: us-east-1
+
+      - name: Login to Amazon ECR
+        if: inputs.push == true
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build Docker image
+        working-directory: apps/${{ inputs.app_name }}
+        run: |
+          # Check if app uses local shared libraries
+          if grep -q "path.*\\.\\./\\.\\./libs" pyproject.toml; then
+            echo "📦 Application uses shared libraries, building from repository root"
+            CONTEXT_DIR="../../"
+            DOCKERFILE="apps/${{ inputs.app_name }}/Dockerfile"
+          else
+            echo "📦 Building standalone application"
+            CONTEXT_DIR="."
+            DOCKERFILE="Dockerfile"
+          fi
+
+          TAG_ARGS=""
+          if [ "${{ inputs.push }}" == "true" ]; then
+            REGISTRY="${{ steps.login-ecr.outputs.registry }}"
+            REPO="hoopstat-haus/prod"
+            IFS=',' read -ra TAG_LIST <<< "${{ inputs.tags }}"
+            for tag in "${TAG_LIST[@]}"; do
+              TAG_ARGS="$TAG_ARGS -t $REGISTRY/$REPO:${{ inputs.app_name }}-$tag"
+            done
+            # Also tag locally for verification if needed
+            TAG_ARGS="$TAG_ARGS -t ${{ inputs.app_name }}:latest"
+            OUTPUT_ARG="--push"
+          else
+            TAG_ARGS="-t ${{ inputs.app_name }}:ci"
+            OUTPUT_ARG="--load"
+          fi
+
+          # Special handling for bronze-ingestion (ARMv7)
+          PLATFORM_ARG=""
+          if [ "${{ inputs.app_name }}" = "bronze-ingestion" ]; then
+             if [ "${{ inputs.push }}" == "true" ]; then
+                echo "🥧 Building bronze-ingestion for linux/arm/v7 (Raspberry Pi 2)"
+                PLATFORM_ARG="--platform linux/arm/v7"
+             else
+                echo "ℹ️  Skipping ARM build for local test (using default architecture)"
+             fi
+          fi
+
+          echo "Building with context: $CONTEXT_DIR"
+          echo "Dockerfile: $DOCKERFILE"
+          
+          cd $CONTEXT_DIR
+          docker buildx build $PLATFORM_ARG \
+            -f $DOCKERFILE \
+            $TAG_ARGS \
+            $OUTPUT_ARG .
+          
+          echo "✅ Build (and optional push) successful"

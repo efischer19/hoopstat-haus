@@ -238,27 +238,10 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Set up Python
-        uses: actions/setup-python@v4
+      - name: Set up Python and Poetry
+        uses: ./.github/actions/setup-python-poetry
         with:
-          python-version: '3.12'
-
-      - name: Install Poetry
-        uses: snok/install-poetry@v1
-        with:
-          version: latest
-          virtualenvs-create: true
-          virtualenvs-in-project: true
-
-      - name: Cache Poetry dependencies
-        uses: actions/cache@v3
-        with:
-          path: libs/${{ matrix.lib }}/.venv
-          key: >-
-            poetry-lib-${{ matrix.lib }}-${{ runner.os }}-
-            ${{ hashFiles('libs/${{ matrix.lib }}/poetry.lock') }}
-          restore-keys: |
-            poetry-lib-${{ matrix.lib }}-${{ runner.os }}-
+          working-directory: libs/${{ matrix.lib }}
 
       - name: Install dependencies
         working-directory: libs/${{ matrix.lib }}
@@ -295,17 +278,10 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Set up Python
-        uses: actions/setup-python@v4
+      - name: Set up Python and Poetry
+        uses: ./.github/actions/setup-python-poetry
         with:
-          python-version: '3.12'
-
-      - name: Install Poetry
-        uses: snok/install-poetry@v1
-        with:
-          version: latest
-          virtualenvs-create: true
-          virtualenvs-in-project: true
+          working-directory: apps/${{ matrix.app }}
 
       - name: Install dependencies
         working-directory: apps/${{ matrix.app }}
@@ -323,106 +299,20 @@ jobs:
         working-directory: apps/${{ matrix.app }}
         run: poetry run pytest
 
-      - name: Check if app is deployable
-        id: deployment-check
-        working-directory: apps/${{ matrix.app }}
-        run: |
-          # Check if this app is intended for deployment
-          # Deployable apps should have a Dockerfile
-          if [ -f "Dockerfile" ]; then
-            echo "deployable=true" >> $GITHUB_OUTPUT
-            echo "🚢 Application ${{ matrix.app }} is deployable (has Dockerfile)"
-          else
-            # Check pyproject.toml for deployment markers
-            if grep -q "deployable.*true" pyproject.toml 2>/dev/null; then
-              echo "deployable=true" >> $GITHUB_OUTPUT
-              echo "⚠️  Application ${{ matrix.app }} marked as deployable but missing Dockerfile"
-            else
-              echo "deployable=false" >> $GITHUB_OUTPUT
-              echo "🛠️  Application ${{ matrix.app }} is a utility/tool (no Dockerfile required)"
-            fi
-          fi
-
-      - name: Configure AWS credentials
-        if: steps.deployment-check.outputs.deployable == 'true' && (github.event_name == 'workflow_dispatch' || (github.event_name == 'push' && github.ref == 'refs/heads/main'))
-        uses: aws-actions/configure-aws-credentials@v4
-        with:
-          role-to-assume: arn:aws:iam::${{ secrets.AWS_ACCOUNT_ID }}:role/hoopstat-haus-operations
-          role-session-name: GitHubActions-ECR-${{ github.run_id }}
-          aws-region: us-east-1
-
-      - name: Login to Amazon ECR
-        if: steps.deployment-check.outputs.deployable == 'true' && (github.event_name == 'workflow_dispatch' || (github.event_name == 'push' && github.ref == 'refs/heads/main'))
-        id: login-ecr
-        uses: aws-actions/amazon-ecr-login@v2
-
-      - name: Set up Docker Buildx
-        if: steps.deployment-check.outputs.deployable == 'true' && (matrix.app != 'bronze-ingestion' || github.event_name != 'pull_request')
-        uses: docker/setup-buildx-action@v3
-
-      - name: Build Docker image
-        if: steps.deployment-check.outputs.deployable == 'true'
-        working-directory: apps/${{ matrix.app }}
-        run: |
-          if [ -f "Dockerfile" ]; then
-            # Check if app uses local shared libraries
-            if grep -q "path.*\\.\\./\\.\\./libs" pyproject.toml; then
-              echo "📦 Application uses shared libraries, building from repository root"
-              cd ../../
-              
-              # bronze-ingestion builds specifically for ARMv7 (Raspberry Pi 2)
-              # Only build ARM during push to main or workflow_dispatch (when we'll push to ECR)
-              if [ "${{ matrix.app }}" = "bronze-ingestion" ]; then
-                if [ "${{ github.event_name }}" = "pull_request" ]; then
-                  echo "ℹ️  Skipping ARM build for bronze-ingestion during PR validation"
-                  echo "   ARM image will be built on merge to main"
-                else
-                  echo "🥧 Building bronze-ingestion for linux/arm/v7 (Raspberry Pi 2)"
-                  docker buildx build --platform linux/arm/v7 \
-                    -f apps/${{ matrix.app }}/Dockerfile \
-                    -t ${{ matrix.app }}:ci \
-                    --load .
-                fi
-              else
-                docker build -f apps/${{ matrix.app }}/Dockerfile -t ${{ matrix.app }}:ci .
-              fi
-            else
-              echo "📦 Building standalone application"
-              docker build -t ${{ matrix.app }}:ci .
-            fi
-            echo "✅ Docker build successful for ${{ matrix.app }}"
-          else
-            echo "❌ Deployable application ${{ matrix.app }} is missing required Dockerfile"
-            exit 1
-          fi
-
-      - name: Tag and push image to ECR
-        if: steps.deployment-check.outputs.deployable == 'true' && (github.event_name == 'workflow_dispatch' || (github.event_name == 'push' && github.ref == 'refs/heads/main'))
-        env:
-          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
-          ECR_REPOSITORY: hoopstat-haus/prod
-          IMAGE_TAG: ${{ github.sha }}
-        run: |
-          # Tag image for ECR with multiple tags
-          docker tag ${{ matrix.app }}:ci $ECR_REGISTRY/$ECR_REPOSITORY:${{ matrix.app }}-$IMAGE_TAG
-          docker tag ${{ matrix.app }}:ci $ECR_REGISTRY/$ECR_REPOSITORY:${{ matrix.app }}-latest
-          
-          # Push all tags
-          docker push $ECR_REGISTRY/$ECR_REPOSITORY:${{ matrix.app }}-$IMAGE_TAG
-          docker push $ECR_REGISTRY/$ECR_REPOSITORY:${{ matrix.app }}-latest
-          
-          echo "✅ Successfully pushed ${{ matrix.app }} to ECR"
-          echo "📍 Image: $ECR_REGISTRY/$ECR_REPOSITORY:${{ matrix.app }}-$IMAGE_TAG"
-
-      - name: Application validation
-        working-directory: apps/${{ matrix.app }}
-        run: |
-          echo "✅ Application ${{ matrix.app }} passed all tests"
-          if [ "${{ steps.deployment-check.outputs.deployable }}" == "true" ]; then
-            echo "🚢 Application is ready for deployment"
-          else
-            echo "🛠️  Utility/tool application validated successfully"
-          fi
+  build-push-images:
+    name: Build and Push Images
+    needs: [detect-changes, test-applications]
+    if: needs.detect-changes.outputs.has-app-changes == 'true'
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJson(needs.detect-changes.outputs.app-matrix) }}
+    uses: ./.github/workflows/reusable-build-push.yml
+    with:
+      app_name: ${{ matrix.app }}
+      push: ${{ github.event_name == 'workflow_dispatch' || (github.event_name == 'push' && github.ref == 'refs/heads/main') }}
+      tags: ${{ github.sha }},latest
+    secrets:
+      AWS_ACCOUNT_ID: ${{ secrets.AWS_ACCOUNT_ID }}
 
   test-integration:
     name: Test App-Library Integration
@@ -437,17 +327,10 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Set up Python
-        uses: actions/setup-python@v4
+      - name: Set up Python and Poetry
+        uses: ./.github/actions/setup-python-poetry
         with:
-          python-version: '3.12'
-
-      - name: Install Poetry
-        uses: snok/install-poetry@v1
-        with:
-          version: latest
-          virtualenvs-create: true
-          virtualenvs-in-project: true
+          working-directory: apps/${{ matrix.app }}
 
       - name: Test app with updated libraries
         working-directory: apps/${{ matrix.app }}
@@ -478,27 +361,10 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Set up Python
-        uses: actions/setup-python@v4
+      - name: Set up Python and Poetry
+        uses: ./.github/actions/setup-python-poetry
         with:
-          python-version: '3.12'
-
-      - name: Install Poetry
-        uses: snok/install-poetry@v1
-        with:
-          version: latest
-          virtualenvs-create: true
-          virtualenvs-in-project: true
-
-      - name: Cache Poetry dependencies
-        uses: actions/cache@v3
-        with:
-          path: libs/hoopstat-e2e-testing/.venv
-          key: >-
-            poetry-lib-hoopstat-e2e-testing-${{ runner.os }}-
-            ${{ hashFiles('libs/hoopstat-e2e-testing/poetry.lock') }}
-          restore-keys: |
-            poetry-lib-hoopstat-e2e-testing-${{ runner.os }}-
+          working-directory: libs/hoopstat-e2e-testing
 
       - name: Install E2E testing dependencies
         working-directory: libs/hoopstat-e2e-testing

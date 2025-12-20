@@ -31,7 +31,7 @@ class TestNBAClient:
         """Test successful API request."""
         # Mock the endpoint response
         mock_instance = Mock()
-        mock_instance.get_json.return_value = {"test": "data"}
+        mock_instance.get_dict.return_value = {"test": "data"}
         mock_endpoint.return_value = mock_instance
 
         client = NBAClient()
@@ -40,14 +40,14 @@ class TestNBAClient:
 
         assert result == {"test": "data"}
         mock_endpoint.assert_called_once_with(test_param="value")
-        mock_instance.get_json.assert_called_once()
+        mock_instance.get_dict.assert_called_once()
 
     @patch("hoopstat_nba_api.nba_client.LeagueGameFinder")
     def test_make_request_with_retries(self, mock_endpoint):
         """Test API request with retries on failure."""
         # Mock endpoint that fails then succeeds
         mock_instance = Mock()
-        mock_instance.get_json.side_effect = [
+        mock_instance.get_dict.side_effect = [
             Exception("First failure"),
             {"test": "data"},
         ]
@@ -58,14 +58,14 @@ class TestNBAClient:
         result = client._make_request(mock_endpoint)
 
         assert result == {"test": "data"}
-        assert mock_instance.get_json.call_count == 2
+        assert mock_instance.get_dict.call_count == 2
 
     @patch("hoopstat_nba_api.nba_client.LeagueGameFinder")
     def test_make_request_max_retries_exceeded(self, mock_endpoint):
         """Test API request that exceeds max retries."""
         # Mock endpoint that always fails
         mock_instance = Mock()
-        mock_instance.get_json.side_effect = Exception("Always fails")
+        mock_instance.get_dict.side_effect = Exception("Always fails")
         mock_endpoint.return_value = mock_instance
 
         client = NBAClient()
@@ -117,6 +117,31 @@ class TestNBAClient:
         games = client.get_games_for_date(date(2024, 1, 15))
 
         assert len(games) == 0
+
+    @patch.object(NBAClient, "_make_request")
+    def test_get_games_for_date_with_result_sets(self, mock_make_request):
+        """Test fetching games with resultSets structure (plural)."""
+        # Mock API response with resultSets (plural) structure
+        mock_response = {
+            "resultSets": [
+                {
+                    "headers": ["GAME_ID", "HOME_TEAM", "AWAY_TEAM"],
+                    "rowSet": [["003", "Celtics", "Nets"], ["004", "Suns", "Mavs"]],
+                }
+            ]
+        }
+        mock_make_request.return_value = mock_response
+
+        client = NBAClient()
+        target_date = date(2024, 2, 20)
+
+        games = client.get_games_for_date(target_date)
+
+        assert len(games) == 2
+        assert games[0]["GAME_ID"] == "003"
+        assert games[0]["HOME_TEAM"] == "Celtics"
+        assert games[1]["GAME_ID"] == "004"
+        assert "fetch_date" in games[0]
 
     @patch.object(NBAClient, "_make_request")
     def test_get_box_score(self, mock_make_request):

@@ -70,7 +70,7 @@ class NBAClient:
 
                 # Make the API call
                 endpoint = endpoint_class(**kwargs)
-                data = endpoint.get_json()
+                data = endpoint.get_dict()
 
                 # Reset rate limiter on success
                 self.rate_limiter.reset_delay()
@@ -135,8 +135,14 @@ class NBAClient:
                 league_id_nullable="00",  # NBA
             )
 
-            games = data.get("resultSet", {}).get("rowSet", [])
-            headers = data.get("resultSet", {}).get("headers", [])
+            # Handle both resultSet and resultSets structures
+            if "resultSets" in data:
+                result_set = data["resultSets"][0]
+            else:
+                result_set = data.get("resultSet", {})
+
+            games = result_set.get("rowSet", [])
+            headers = result_set.get("headers", [])
 
             # Convert to list of dictionaries
             games_data = []

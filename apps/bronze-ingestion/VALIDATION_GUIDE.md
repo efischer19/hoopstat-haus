@@ -13,14 +13,17 @@ The bronze layer ingestion pipeline now includes comprehensive data validation a
 All NBA API responses are validated against predefined JSON schemas to ensure they match expected structure and data types.
 
 **Schemas Implemented:**
-- **Schedule Schema**: Validates game schedule data from `LeagueGameFinder` endpoint
-- **Box Score Schema**: Validates box score data from `BoxScoreTraditionalV3` endpoint
+- **Schedule Schema**: Validates game schedule data from `LeagueGameFinder` endpoint (legacy format)
+- **Box Score Schema**: Validates box score data supporting both:
+  - **V3 Format** (`BoxScoreTraditionalV3`): Uses `boxScoreTraditional` root key with `homeTeam` and `awayTeam` objects
+  - **Legacy Format**: Uses `resultSets` array structure
 
 **Key Validations:**
 - Required fields presence
 - Data type validation (strings, integers, arrays)
 - Field format validation (game IDs, dates)
 - Reasonable value ranges for statistics
+- Team and player structure validation for V3 format
 
 ### 2. Data Completeness Checks
 

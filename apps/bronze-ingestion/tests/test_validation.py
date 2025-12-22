@@ -334,10 +334,9 @@ class TestDataValidator:
 
         result = self.validator.validate_api_response(invalid_box_score_v3, "box_score")
 
+        # Schema validation should fail due to missing required field
         assert result["valid"] is False
-        assert any(
-            "Missing homeTeam or awayTeam" in issue for issue in result["issues"]
-        )
+        assert result["metrics"]["schema_valid"] is False
 
     def test_validate_api_response_invalid_box_score_v3_missing_fields(self):
         """Test validation of V3 box score with missing required fields."""

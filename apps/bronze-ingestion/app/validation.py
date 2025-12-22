@@ -153,16 +153,11 @@ class DataValidator:
         """Validate V3 format box score with boxScoreTraditional structure."""
         box_score = box_score_data.get("boxScoreTraditional", {})
 
-        # Validate presence of required teams
-        home_team = box_score.get("homeTeam")
-        away_team = box_score.get("awayTeam")
+        # Get team data - schema validation ensures these exist and have required fields
+        home_team = box_score.get("homeTeam", {})
+        away_team = box_score.get("awayTeam", {})
 
-        if not home_team or not away_team:
-            result["valid"] = False
-            result["issues"].append("Missing homeTeam or awayTeam in V3 box score")
-            return
-
-        # Count teams and players
+        # Count teams and players for metrics
         result["metrics"]["team_count"] = 2
         result["metrics"]["home_player_count"] = len(home_team.get("players", []))
         result["metrics"]["away_player_count"] = len(away_team.get("players", []))
@@ -171,16 +166,7 @@ class DataValidator:
             + result["metrics"]["away_player_count"]
         )
 
-        # Validate team structures
-        for team_key, team in [("homeTeam", home_team), ("awayTeam", away_team)]:
-            if "teamId" not in team:
-                result["issues"].append(f"Missing teamId in {team_key}")
-            if "players" not in team:
-                result["issues"].append(f"Missing players in {team_key}")
-            if "statistics" not in team:
-                result["issues"].append(f"Missing statistics in {team_key}")
-
-        # Extract game metadata for validation
+        # Extract and validate game metadata
         game_id = box_score.get("gameId")
         if game_id:
             game_metadata = {"game_id": game_id}

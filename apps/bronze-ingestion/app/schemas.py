@@ -73,6 +73,7 @@ NBA_BOX_SCORE_SCHEMA = {
                                     "type": "array",
                                     "items": {
                                         "type": "object",
+                                        "required": ["personId", "statistics"],
                                         "properties": {
                                             "personId": {"type": "integer"},
                                             "statistics": {"type": "object"},
@@ -100,6 +101,7 @@ NBA_BOX_SCORE_SCHEMA = {
                                     "type": "array",
                                     "items": {
                                         "type": "object",
+                                        "required": ["personId", "statistics"],
                                         "properties": {
                                             "personId": {"type": "integer"},
                                             "statistics": {"type": "object"},

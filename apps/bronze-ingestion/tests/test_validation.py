@@ -19,7 +19,8 @@ class TestSchemas:
 
         box_score_schema = get_schema("box_score")
         assert box_score_schema["type"] == "object"
-        assert "resultSets" in box_score_schema["required"]
+        # V3 schema uses oneOf to support both legacy and V3 formats
+        assert "oneOf" in box_score_schema
 
     def test_get_schema_invalid_type(self):
         """Test that invalid schema types raise ValueError."""
@@ -263,3 +264,143 @@ class TestDataValidator:
 
         assert is_valid is False
         assert any("Unrealistic points value" in issue for issue in result["issues"])
+
+    def test_validate_api_response_valid_box_score_v3(self):
+        """Test validation of valid V3 box score data with boxScoreTraditional."""
+        valid_box_score_v3 = {
+            "boxScoreTraditional": {
+                "gameId": "0022400001",
+                "homeTeam": {
+                    "teamId": 1610612738,
+                    "teamCity": "Boston",
+                    "teamName": "Celtics",
+                    "teamTricode": "BOS",
+                    "teamSlug": "celtics",
+                    "players": [
+                        {
+                            "personId": 203935,
+                            "firstName": "Jayson",
+                            "familyName": "Tatum",
+                            "statistics": {
+                                "points": 28,
+                                "rebounds": 10,
+                            },
+                        }
+                    ],
+                    "statistics": {
+                        "points": 117,
+                        "rebounds": 45,
+                    },
+                },
+                "awayTeam": {
+                    "teamId": 1610612752,
+                    "teamCity": "New York",
+                    "teamName": "Knicks",
+                    "teamTricode": "NYK",
+                    "teamSlug": "knicks",
+                    "players": [],
+                    "statistics": {
+                        "points": 107,
+                        "rebounds": 40,
+                    },
+                },
+            },
+            "fetch_date": "2024-12-22T05:49:44Z",
+            "game_id": "0022400001",
+        }
+
+        result = self.validator.validate_api_response(valid_box_score_v3, "box_score")
+
+        assert result["valid"] is True
+        assert result["metrics"]["schema_valid"] is True
+        assert result["metrics"]["team_count"] == 2
+        assert result["metrics"]["home_player_count"] == 1
+        assert result["metrics"]["away_player_count"] == 0
+        assert result["metrics"]["total_player_count"] == 1
+
+    def test_validate_api_response_invalid_box_score_v3_missing_team(self):
+        """Test validation of invalid V3 box score missing required team."""
+        invalid_box_score_v3 = {
+            "boxScoreTraditional": {
+                "gameId": "0022400001",
+                "homeTeam": {
+                    "teamId": 1610612738,
+                    "players": [],
+                    "statistics": {},
+                },
+                # Missing awayTeam
+            }
+        }
+
+        result = self.validator.validate_api_response(invalid_box_score_v3, "box_score")
+
+        assert result["valid"] is False
+        assert any(
+            "Missing homeTeam or awayTeam" in issue for issue in result["issues"]
+        )
+
+    def test_validate_api_response_invalid_box_score_v3_missing_fields(self):
+        """Test validation of V3 box score with missing required fields."""
+        invalid_box_score_v3 = {
+            "boxScoreTraditional": {
+                "gameId": "0022400001",
+                "homeTeam": {
+                    "teamId": 1610612738,
+                    # Missing players and statistics
+                },
+                "awayTeam": {
+                    "teamId": 1610612752,
+                    "players": [],
+                    # Missing statistics
+                },
+            }
+        }
+
+        result = self.validator.validate_api_response(invalid_box_score_v3, "box_score")
+
+        # Schema validation should fail due to missing required fields
+        assert result["valid"] is False
+
+    def test_box_score_schema_v3_validation(self):
+        """Test box score V3 schema validation with valid data."""
+        schema = get_schema("box_score")
+
+        # Valid V3 box score data
+        valid_data_v3 = {
+            "boxScoreTraditional": {
+                "gameId": "0022400001",
+                "homeTeam": {
+                    "teamId": 1610612738,
+                    "players": [],
+                    "statistics": {},
+                },
+                "awayTeam": {
+                    "teamId": 1610612752,
+                    "players": [],
+                    "statistics": {},
+                },
+            }
+        }
+
+        # Should not raise any exception
+        jsonschema.validate(valid_data_v3, schema)
+
+    def test_box_score_schema_legacy_validation_still_works(self):
+        """Test that legacy box score schema validation still works."""
+        schema = get_schema("box_score")
+
+        # Valid legacy box score data
+        valid_data_legacy = {
+            "resultSets": [
+                {
+                    "name": "PlayerStats",
+                    "headers": ["PLAYER_ID", "PLAYER_NAME", "PTS"],
+                    "rowSet": [
+                        ["123", "LeBron James", 25],
+                    ],
+                }
+            ]
+        }
+
+        # Should not raise any exception
+        jsonschema.validate(valid_data_legacy, schema)

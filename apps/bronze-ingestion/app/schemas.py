@@ -45,46 +45,122 @@ NBA_SCHEDULE_SCHEMA = {
     },
 }
 
-# NBA API box score response schema - based on BoxScoreTraditionalV3 response
+# NBA API box score response schema - supports both legacy and V3 formats
+# V3 format (BoxScoreTraditionalV3): uses boxScoreTraditional with homeTeam/awayTeam
+# Legacy format: uses resultSets array
 NBA_BOX_SCORE_SCHEMA = {
     "type": "object",
-    "required": ["resultSets"],
-    "properties": {
-        "resultSets": {
-            "type": "array",
-            "minItems": 1,
-            "items": {
-                "type": "object",
-                "required": ["name", "headers", "rowSet"],
-                "properties": {
-                    "name": {"type": "string", "minLength": 1},
-                    "headers": {
-                        "type": "array",
-                        "items": {"type": "string"},
-                        "minItems": 1,
-                    },
-                    "rowSet": {
-                        "type": "array",
-                        "items": {
-                            "type": "array",
-                            "items": {
-                                "type": ["string", "number", "null"],
+    "oneOf": [
+        # V3 format with boxScoreTraditional
+        {
+            "required": ["boxScoreTraditional"],
+            "properties": {
+                "boxScoreTraditional": {
+                    "type": "object",
+                    "required": ["gameId", "homeTeam", "awayTeam"],
+                    "properties": {
+                        "gameId": {"type": "string", "minLength": 1},
+                        "homeTeam": {
+                            "type": "object",
+                            "required": ["teamId", "players", "statistics"],
+                            "properties": {
+                                "teamId": {"type": "integer", "minimum": 1},
+                                "teamCity": {"type": "string"},
+                                "teamName": {"type": "string"},
+                                "teamTricode": {"type": "string"},
+                                "teamSlug": {"type": "string"},
+                                "players": {
+                                    "type": "array",
+                                    "items": {
+                                        "type": "object",
+                                        "properties": {
+                                            "personId": {"type": "integer"},
+                                            "statistics": {"type": "object"},
+                                        },
+                                        "additionalProperties": True,
+                                    },
+                                },
+                                "statistics": {
+                                    "type": "object",
+                                    "additionalProperties": True,
+                                },
                             },
+                            "additionalProperties": True,
+                        },
+                        "awayTeam": {
+                            "type": "object",
+                            "required": ["teamId", "players", "statistics"],
+                            "properties": {
+                                "teamId": {"type": "integer", "minimum": 1},
+                                "teamCity": {"type": "string"},
+                                "teamName": {"type": "string"},
+                                "teamTricode": {"type": "string"},
+                                "teamSlug": {"type": "string"},
+                                "players": {
+                                    "type": "array",
+                                    "items": {
+                                        "type": "object",
+                                        "properties": {
+                                            "personId": {"type": "integer"},
+                                            "statistics": {"type": "object"},
+                                        },
+                                        "additionalProperties": True,
+                                    },
+                                },
+                                "statistics": {
+                                    "type": "object",
+                                    "additionalProperties": True,
+                                },
+                            },
+                            "additionalProperties": True,
                         },
                     },
+                    "additionalProperties": True,
                 },
-                "additionalProperties": True,
-            },
-        },
-        "parameters": {
-            "type": "object",
-            "properties": {
-                "GameID": {"type": "string", "pattern": r"^\d{10}$"},
             },
             "additionalProperties": True,
         },
-    },
-    "additionalProperties": True,
+        # Legacy format with resultSets
+        {
+            "required": ["resultSets"],
+            "properties": {
+                "resultSets": {
+                    "type": "array",
+                    "minItems": 1,
+                    "items": {
+                        "type": "object",
+                        "required": ["name", "headers", "rowSet"],
+                        "properties": {
+                            "name": {"type": "string", "minLength": 1},
+                            "headers": {
+                                "type": "array",
+                                "items": {"type": "string"},
+                                "minItems": 1,
+                            },
+                            "rowSet": {
+                                "type": "array",
+                                "items": {
+                                    "type": "array",
+                                    "items": {
+                                        "type": ["string", "number", "null"],
+                                    },
+                                },
+                            },
+                        },
+                        "additionalProperties": True,
+                    },
+                },
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "GameID": {"type": "string", "pattern": r"^\d{10}$"},
+                    },
+                    "additionalProperties": True,
+                },
+            },
+            "additionalProperties": True,
+        },
+    ],
 }
 
 # Base schema for any NBA API response with common metadata

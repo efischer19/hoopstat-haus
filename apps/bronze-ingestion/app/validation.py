@@ -134,7 +134,50 @@ class DataValidator:
             result["issues"].append("Box score data is not a dictionary")
             return
 
-        # Check for required result sets
+        # Check which format we have: V3 (boxScoreTraditional) or legacy (resultSets)
+        if "boxScoreTraditional" in box_score_data:
+            # V3 format validation
+            self._validate_box_score_v3_format(box_score_data, result, context)
+        elif "resultSets" in box_score_data:
+            # Legacy format validation
+            self._validate_box_score_legacy_format(box_score_data, result, context)
+        else:
+            result["valid"] = False
+            result["issues"].append(
+                "Box score data missing both 'boxScoreTraditional' and 'resultSets'"
+            )
+
+    def _validate_box_score_v3_format(
+        self, box_score_data: dict, result: dict, context: dict[str, Any] | None
+    ) -> None:
+        """Validate V3 format box score with boxScoreTraditional structure."""
+        box_score = box_score_data.get("boxScoreTraditional", {})
+
+        # Get team data - schema validation ensures these exist and have required fields
+        home_team = box_score.get("homeTeam", {})
+        away_team = box_score.get("awayTeam", {})
+
+        # Count teams and players for metrics
+        result["metrics"]["team_count"] = 2
+        result["metrics"]["home_player_count"] = len(home_team.get("players", []))
+        result["metrics"]["away_player_count"] = len(away_team.get("players", []))
+        result["metrics"]["total_player_count"] = (
+            result["metrics"]["home_player_count"]
+            + result["metrics"]["away_player_count"]
+        )
+
+        # Extract and validate game metadata
+        game_id = box_score.get("gameId")
+        if game_id:
+            game_metadata = {"game_id": game_id}
+            self._validate_game_metadata(game_metadata, result, context)
+        else:
+            result["issues"].append("Missing gameId in V3 box score")
+
+    def _validate_box_score_legacy_format(
+        self, box_score_data: dict, result: dict, context: dict[str, Any] | None
+    ) -> None:
+        """Validate legacy format box score with resultSets structure."""
         result_sets = box_score_data.get("resultSets", [])
         result["metrics"]["result_set_count"] = len(result_sets)
 

@@ -350,11 +350,11 @@ jobs:
     name: Test E2E Pipeline
     needs: [detect-changes, test-libraries]
     if: >
-      (contains(needs.detect-changes.outputs.lib-matrix, 'hoopstat-e2e-testing') ||
-       contains(needs.detect-changes.outputs.lib-matrix, 'hoopstat-mock-data') ||
-       contains(needs.detect-changes.outputs.lib-matrix, 'hoopstat-data')) ||
-      contains(github.event.pull_request.body, '[e2e]') ||
-      github.event_name == 'push'
+      github.event_name == 'push' ||
+      contains(needs.detect-changes.outputs.lib-matrix, 'hoopstat-e2e-testing') ||
+      contains(needs.detect-changes.outputs.lib-matrix, 'hoopstat-mock-data') ||
+      contains(needs.detect-changes.outputs.lib-matrix, 'hoopstat-data') ||
+      (github.event_name == 'pull_request' && contains(github.event.pull_request.body, '[e2e]'))
     runs-on: ubuntu-latest
 
     steps:

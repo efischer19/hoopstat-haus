@@ -101,8 +101,6 @@ jobs:
             for tag in "${TAG_LIST[@]}"; do
               TAG_ARGS="$TAG_ARGS -t $REGISTRY/$REPO:${{ inputs.app_name }}-$tag"
             done
-            # Also tag locally for verification if needed
-            TAG_ARGS="$TAG_ARGS -t ${{ inputs.app_name }}:latest"
             OUTPUT_ARG="--push"
           else
             TAG_ARGS="-t ${{ inputs.app_name }}:ci"

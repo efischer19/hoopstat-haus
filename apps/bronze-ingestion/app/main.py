@@ -14,7 +14,6 @@ from hoopstat_observability import get_logger
 
 from .ingestion import DateScopedIngestion
 
-# Trigger deployment test - attempt 2
 logger = get_logger(__name__)
 
 

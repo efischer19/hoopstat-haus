@@ -23,6 +23,7 @@ on:
         options:
           - bronze-ingestion
           - silver-processing
+          - gold-analytics
 
 permissions:
   id-token: write

@@ -20,9 +20,11 @@ COPY apps/gold-analytics/pyproject.toml apps/gold-analytics/poetry.lock* ./apps/
 # Copy local libraries referenced as path deps
 COPY libs/ ./libs/
 
-# Install only runtime deps into the base interpreter site-packages
-RUN cd apps/gold-analytics && poetry install --only=main --no-root --no-ansi && \
-    poetry cache clear pypi --all || true
+# Install dependencies directly into the Lambda task root
+# We use --target to force pip (under the hood) to put files where Lambda expects them
+RUN cd apps/gold-analytics && \
+    poetry export -f requirements.txt --output requirements.txt && \
+    pip install -r requirements.txt --target ${LAMBDA_TASK_ROOT}
 
 # Copy application source into Lambda task root
 WORKDIR ${LAMBDA_TASK_ROOT}

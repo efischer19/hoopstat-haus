@@ -9,8 +9,9 @@ ENV PYTHONUNBUFFERED=1 \
     POETRY_NO_INTERACTION=1 \
     POETRY_VIRTUALENVS_CREATE=false
 
-# Install Poetry via pip (no OS packages needed)
-RUN pip install --upgrade pip && pip install poetry
+# Install Poetry and the export plugin
+RUN pip install --upgrade pip && \
+    pip install poetry poetry-plugin-export
 
 # Use a build-friendly workspace so Poetry can resolve path deps
 WORKDIR /src
@@ -20,11 +21,19 @@ COPY apps/silver-processing/pyproject.toml apps/silver-processing/poetry.lock* .
 # Copy local libraries referenced as path deps
 COPY libs/ ./libs/
 
-# Install dependencies directly into the Lambda task root
-# We use --target to force pip (under the hood) to put files where Lambda expects them
+# Export dependencies to requirements.txt, excluding local libs which we install explicitly
+# This ensures we have full control over how local path dependencies are installed
 RUN cd apps/silver-processing && \
-    poetry export -f requirements.txt --output requirements.txt && \
+    poetry export --without-hashes --format=requirements.txt | grep -v "hoopstat-" > requirements.txt && \
     pip install -r requirements.txt --target ${LAMBDA_TASK_ROOT}
+
+# Install local libraries explicitly into the Lambda task root
+RUN pip install \
+    ./libs/hoopstat-observability \
+    ./libs/hoopstat-data \
+    ./libs/hoopstat-config \
+    ./libs/hoopstat-s3 \
+    --target ${LAMBDA_TASK_ROOT}
 
 # Copy application source into Lambda task root
 WORKDIR ${LAMBDA_TASK_ROOT}

@@ -35,9 +35,10 @@ All JSON artifacts include a `schema_version` field using semantic versioning:
 3. **Backward compatibility:** Clients should gracefully handle unknown optional fields
 
 ### Version Migration Strategy
-- New versions are published to separate S3 paths: `served/v2/player_daily/...`
-- Old versions remain available for 90 days after new version release
-- Clients specify version preference via URL path or default to latest
+- **Version identification:** Clients rely on the `schema_version` field within each JSON artifact
+- **Path-based versioning (future):** If needed, new major versions may use separate S3 paths (e.g., `served/v2/...`)
+- **For v1:** All artifacts use paths without version prefix (e.g., `served/player_daily/...`) as specified in ADR-028
+- **Backward compatibility:** Old schema versions remain available during migration periods
 
 ## Size Limit: ≤100KB Per Artifact
 
@@ -66,9 +67,11 @@ Daily player performance statistics with advanced analytics for a single player 
 
 ### S3 Path Pattern
 ```
-served/v1/player_daily/{date}/{player_id}.json
+served/player_daily/{date}/{player_id}.json
 ```
-Example: `served/v1/player_daily/2024-11-15/2544.json`
+Example: `served/player_daily/2024-11-15/2544.json`
+
+**Note:** Path follows ADR-028 specification. Version identification is via `schema_version` field in JSON.
 
 ### Schema Definition
 
@@ -321,9 +324,11 @@ Daily team performance statistics with advanced analytics for a single team on a
 
 ### S3 Path Pattern
 ```
-served/v1/team_daily/{date}/{team_id}.json
+served/team_daily/{date}/{team_id}.json
 ```
-Example: `served/v1/team_daily/2024-11-15/1610612747.json`
+Example: `served/team_daily/2024-11-15/1610612747.json`
+
+**Note:** Path follows ADR-028 specification. Version identification is via `schema_version` field in JSON.
 
 ### Schema Definition
 
@@ -623,12 +628,14 @@ Ranked lists of top performers by specific metrics for a given date or time peri
 
 ### S3 Path Pattern
 ```
-served/v1/top_lists/{date}/{metric}.json
+served/top_lists/{date}/{metric}.json
 ```
 Examples:
-- `served/v1/top_lists/2024-11-15/top_scorers.json`
-- `served/v1/top_lists/2024-11-15/top_efficiency.json`
-- `served/v1/top_lists/2024-11-15/top_true_shooting.json`
+- `served/top_lists/2024-11-15/top_scorers.json`
+- `served/top_lists/2024-11-15/top_efficiency.json`
+- `served/top_lists/2024-11-15/top_true_shooting.json`
+
+**Note:** Path follows ADR-028 specification. Version identification is via `schema_version` field in JSON.
 
 ### Supported Metrics
 - `top_scorers`: Top points scorers
@@ -872,18 +879,18 @@ Examples:
 
 ### URL Access Pattern
 ```
-https://{bucket}.s3.{region}.amazonaws.com/served/v1/{artifact_type}/{date}/{id}.json
+https://{bucket}.s3.{region}.amazonaws.com/served/{artifact_type}/{date}/{id}.json
 ```
 
 Example:
 ```
-https://hoopstat-haus-gold.s3.us-east-1.amazonaws.com/served/v1/player_daily/2024-11-15/2544.json
+https://hoopstat-haus-gold.s3.us-east-1.amazonaws.com/served/player_daily/2024-11-15/2544.json
 ```
 
 ## Discovery and Index Files
 
 ### Latest Data Index
-**Path:** `served/v1/index/latest.json`
+**Path:** `served/index/latest.json`
 
 **Purpose:** Help clients discover the most recent data available
 

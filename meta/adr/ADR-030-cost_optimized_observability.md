@@ -1,6 +1,6 @@
 ---
 title: "ADR-030: Cost-Optimized Observability Strategy"
-status: "Proposed"
+status: "Accepted"
 date: "2025-12-27"
 supersedes: "ADR-018"
 tags:

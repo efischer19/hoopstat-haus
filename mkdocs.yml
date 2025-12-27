@@ -28,6 +28,8 @@ nav:
     - hoopstat-mock-data: libraries/hoopstat-mock-data.md
     - hoopstat-observability: libraries/hoopstat-observability.md
     - ingestion: libraries/ingestion.md
+  - Data Architecture:
+    - JSON Artifact Schemas: JSON_ARTIFACT_SCHEMAS.md
   - Development:
     - Contributing: CONTRIBUTING.md
     - Development Philosophy: DEVELOPMENT_PHILOSOPHY.md

@@ -1319,11 +1319,7 @@ resource "aws_lambda_function" "gold_processing" {
 
 
 # ============================================================================
-# S3 Tables CloudWatch Monitoring (ADR-026)
-# ============================================================================
-
-# ============================================================================
-# S3 Tables CloudWatch Monitoring
+# S3 Tables CloudWatch Log Group (ADR-026)
 # ============================================================================
 
 # CloudWatch Log Group for S3 Tables analytics operations monitoring

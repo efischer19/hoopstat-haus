@@ -84,6 +84,137 @@ class BronzeToSilverProcessor:
             )
             raise
 
+    def _map_nba_api_to_model(self, bronze_data: dict[str, Any]) -> dict[str, Any]:
+        """
+        Map NBA API camelCase format to snake_case model format.
+
+        Handles the transformation from NBA API V3 format (boxScoreTraditional)
+        to the BoxScoreRaw model's expected snake_case format.
+
+        Args:
+            bronze_data: Raw NBA API data (potentially with boxScoreTraditional wrapper)
+
+        Returns:
+            Mapped data in snake_case format compatible with BoxScoreRaw model
+        """
+        # Check if data is already in snake_case format (direct BoxScoreRaw format)
+        if "game_id" in bronze_data or "home_team" in bronze_data:
+            logger.debug("Data already in snake_case format, no mapping needed")
+            return bronze_data
+
+        # Check if data has boxScoreTraditional wrapper (NBA API V3 format)
+        if "boxScoreTraditional" in bronze_data:
+            logger.debug("Detected NBA API V3 format with boxScoreTraditional wrapper")
+            box_score = bronze_data["boxScoreTraditional"]
+
+            # Map top-level fields
+            mapped_data = {
+                "game_id": box_score.get("gameId"),
+                "game_date": box_score.get("gameDate"),
+                "arena": box_score.get("arena") or box_score.get("venue"),
+            }
+
+            # Map home team
+            if "homeTeam" in box_score:
+                home_team_data = box_score["homeTeam"]
+                mapped_data["home_team"] = {
+                    "id": home_team_data.get("teamId"),
+                    "name": home_team_data.get("teamName"),
+                    "city": home_team_data.get("teamCity"),
+                    "abbreviation": home_team_data.get("teamTricode")
+                    or home_team_data.get("teamSlug"),
+                }
+
+                # Map home team statistics
+                if "statistics" in home_team_data:
+                    mapped_data["home_team_stats"] = self._map_team_statistics(
+                        home_team_data["statistics"]
+                    )
+
+                # Map home team players
+                if "players" in home_team_data:
+                    mapped_data["home_players"] = [
+                        self._map_player_statistics(player, home_team_data)
+                        for player in home_team_data["players"]
+                    ]
+
+            # Map away team
+            if "awayTeam" in box_score:
+                away_team_data = box_score["awayTeam"]
+                mapped_data["away_team"] = {
+                    "id": away_team_data.get("teamId"),
+                    "name": away_team_data.get("teamName"),
+                    "city": away_team_data.get("teamCity"),
+                    "abbreviation": away_team_data.get("teamTricode")
+                    or away_team_data.get("teamSlug"),
+                }
+
+                # Map away team statistics
+                if "statistics" in away_team_data:
+                    mapped_data["away_team_stats"] = self._map_team_statistics(
+                        away_team_data["statistics"]
+                    )
+
+                # Map away team players
+                if "players" in away_team_data:
+                    mapped_data["away_players"] = [
+                        self._map_player_statistics(player, away_team_data)
+                        for player in away_team_data["players"]
+                    ]
+
+            return mapped_data
+
+        # If no known format detected, return as-is and let validation catch any issues
+        logger.warning("Unknown data format, returning as-is")
+        return bronze_data
+
+    def _map_team_statistics(self, stats: dict[str, Any]) -> dict[str, Any]:
+        """Map team statistics from camelCase to snake_case."""
+        return {
+            "points": stats.get("points"),
+            "field_goals_made": stats.get("fieldGoalsMade"),
+            "field_goals_attempted": stats.get("fieldGoalsAttempted"),
+            "three_pointers_made": stats.get("threePointersMade"),
+            "three_pointers_attempted": stats.get("threePointersAttempted"),
+            "free_throws_made": stats.get("freeThrowsMade"),
+            "free_throws_attempted": stats.get("freeThrowsAttempted"),
+            "offensive_rebounds": stats.get("reboundsOffensive"),
+            "defensive_rebounds": stats.get("reboundsDefensive"),
+            "rebounds": stats.get("reboundsTotal"),
+            "assists": stats.get("assists"),
+            "steals": stats.get("steals"),
+            "blocks": stats.get("blocks"),
+            "turnovers": stats.get("turnovers"),
+            "fouls": stats.get("foulsPersonal"),
+        }
+
+    def _map_player_statistics(
+        self, player: dict[str, Any], team_data: dict[str, Any]
+    ) -> dict[str, Any]:
+        """Map player statistics from camelCase to snake_case."""
+        stats = player.get("statistics", {})
+
+        return {
+            "player_id": player.get("personId"),
+            "player_name": player.get("name") or player.get("nameI"),
+            "team": team_data.get("teamName"),
+            "position": player.get("position"),
+            "minutes_played": stats.get("minutes") or stats.get("minutesCalculated"),
+            "points": stats.get("points"),
+            "offensive_rebounds": stats.get("reboundsOffensive"),
+            "defensive_rebounds": stats.get("reboundsDefensive"),
+            "assists": stats.get("assists"),
+            "steals": stats.get("steals"),
+            "blocks": stats.get("blocks"),
+            "turnovers": stats.get("turnovers"),
+            "field_goals_made": stats.get("fieldGoalsMade"),
+            "field_goals_attempted": stats.get("fieldGoalsAttempted"),
+            "three_pointers_made": stats.get("threePointersMade"),
+            "three_pointers_attempted": stats.get("threePointersAttempted"),
+            "free_throws_made": stats.get("freeThrowsMade"),
+            "free_throws_attempted": stats.get("freeThrowsAttempted"),
+        }
+
     def transform_to_silver(
         self, bronze_data: dict[str, Any], entity: str
     ) -> dict[str, list[dict]]:
@@ -99,9 +230,12 @@ class BronzeToSilverProcessor:
         """
         logger.info(f"Transforming Bronze data to Silver for entity: {entity}")
 
+        # Map NBA API format to model format if needed
+        mapped_data = self._map_nba_api_to_model(bronze_data)
+
         # Parse Bronze data using BoxScoreRaw model
         try:
-            box_score_raw = BoxScoreRaw(**bronze_data)
+            box_score_raw = BoxScoreRaw(**mapped_data)
         except Exception as e:
             logger.error(f"Failed to parse Bronze data with BoxScoreRaw model: {e}")
             raise ValueError(f"Invalid Bronze data format: {e}") from e

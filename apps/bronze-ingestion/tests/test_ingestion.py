@@ -325,11 +325,12 @@ class TestDateScopedIngestion:
         mock_s3_instance = Mock()
         stored_schedule_data = None
 
-        def capture_json_storage(data, entity, target_date):
+        def capture_json_storage(data, entity, target_date, game_id=None):
             nonlocal stored_schedule_data
             if entity == "schedule":
                 stored_schedule_data = data
-            return f"raw/{entity}/date={target_date.strftime('%Y-%m-%d')}/data.json"
+            filename = f"{game_id}.json" if game_id else "data.json"
+            return f"raw/{entity}/date={target_date.strftime('%Y-%m-%d')}/{filename}"
 
         mock_s3_instance.store_json.side_effect = capture_json_storage
         mock_s3_manager.return_value = mock_s3_instance
@@ -345,6 +346,7 @@ class TestDateScopedIngestion:
             "complete": True,
             "actual_count": 2,
             "expected_count": None,
+            "context": "schedule_for_2023-12-25",
             "issues": [],
         }
         mock_validator.return_value = mock_validator_instance

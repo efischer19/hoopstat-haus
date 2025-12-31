@@ -1341,11 +1341,12 @@ resource "aws_cloudwatch_log_group" "s3_tables" {
 
 # Lambda permission for S3 to invoke silver-processing function
 resource "aws_lambda_permission" "s3_invoke_silver_processing" {
-  statement_id  = "AllowExecutionFromS3Bucket"
-  action        = "lambda:InvokeFunction"
-  function_name = aws_lambda_function.silver_processing.function_name
-  principal     = "s3.amazonaws.com"
-  source_arn    = aws_s3_bucket.bronze.arn
+  statement_id   = "AllowExecutionFromS3Bucket"
+  action         = "lambda:InvokeFunction"
+  function_name  = aws_lambda_function.silver_processing.function_name
+  principal      = "s3.amazonaws.com"
+  source_arn     = aws_s3_bucket.bronze.arn
+  source_account = data.aws_caller_identity.current.account_id
 }
 
 # S3 bucket notification for bronze bucket to trigger silver processing

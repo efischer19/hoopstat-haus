@@ -330,10 +330,10 @@ class SilverS3Manager(S3Uploader):
         Returns:
             True if this is a Bronze trigger event
         """
-        # Check for Bronze layer pattern: raw/{entity}/date=YYYY-MM-DD/data.json
+        # Check for Bronze layer pattern: raw/{entity}/date=YYYY-MM-DD/*.json
         return (
             s3_key.startswith("raw/")
-            and s3_key.endswith("/data.json")
+            and s3_key.endswith(".json")
             and "/date=" in s3_key
         )
 
@@ -348,9 +348,9 @@ class SilverS3Manager(S3Uploader):
             Dictionary with entity and date info, or None if parsing fails
         """
         try:
-            # Parse: raw/{entity}/date=YYYY-MM-DD/data.json
+            # Parse: raw/{entity}/date=YYYY-MM-DD/*.json
             parts = s3_key.split("/")
-            if len(parts) >= 4 and parts[0] == "raw" and parts[3] == "data.json":
+            if len(parts) >= 4 and parts[0] == "raw" and parts[-1].endswith(".json"):
                 entity = parts[1]
                 date_part = parts[2]
 

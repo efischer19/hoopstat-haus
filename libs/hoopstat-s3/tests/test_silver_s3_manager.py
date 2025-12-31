@@ -350,10 +350,15 @@ class TestSilverS3Manager:
         )  # No date
         assert (
             manager._is_bronze_trigger_event(
-                "raw/box_scores/date=2024-01-15/other.json"
+                "raw/box_scores/date=2024-01-15/0022500123.json"
             )
+            is True
+        )  # Game ID filename
+
+        assert (
+            manager._is_bronze_trigger_event("raw/box_scores/date=2024-01-15/data.txt")
             is False
-        )  # Not data.json
+        )  # Not .json
         assert (
             manager._is_bronze_trigger_event(
                 "processed/box_scores/date=2024-01-15/data.json"

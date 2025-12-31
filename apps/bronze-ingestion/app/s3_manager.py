@@ -26,7 +26,9 @@ class BronzeS3Manager:
             logger.error(f"Failed to initialize S3 client: {e}")
             raise
 
-    def store_json(self, data: dict, entity: str, target_date: date) -> str:
+    def store_json(
+        self, data: dict, entity: str, target_date: date, game_id: str | None = None
+    ) -> str:
         """
         Store dictionary as JSON in S3 following ADR-025 JSON storage format.
 
@@ -34,13 +36,18 @@ class BronzeS3Manager:
             data: Dictionary to store as JSON
             entity: Entity type (schedule, box_scores, etc.)
             target_date: Date for partitioning
+            game_id: Optional game ID for file naming (ADR-031). If provided,
+                    uses {game_id}.json; otherwise uses data.json
 
         Returns:
             S3 key where data was stored
         """
-        # Key structure: s3://<bronze-bucket>/raw/<entity>/date=YYYY-MM-DD/data.json
+        # Key structure per ADR-031: one file per game instance
+        # s3://<bronze-bucket>/raw/<entity>/date=YYYY-MM-DD/{game_id}.json
+        # For non-game entities, use data.json as default
         date_str = target_date.strftime("%Y-%m-%d")
-        key = f"raw/{entity}/date={date_str}/data.json"
+        filename = f"{game_id}.json" if game_id else "data.json"
+        key = f"raw/{entity}/date={date_str}/{filename}"
 
         try:
             # Convert dictionary to JSON bytes

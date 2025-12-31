@@ -31,12 +31,86 @@ class TestBronzeToSilverProcessor:
 
     @patch("boto3.client")
     def test_read_bronze_json_success(self, mock_boto_client):
-        """Test successful reading of Bronze JSON data."""
+        """Test successful reading of Bronze JSON data (ADR-031: multiple files)."""
         mock_s3_client = Mock()
         mock_boto_client.return_value = mock_s3_client
 
-        # Mock S3 response
-        test_data = {"game_id": 123, "home_team": {"id": 1, "name": "Lakers"}}
+        # Mock S3 list_objects_v2 response with multiple game files
+        test_data_1 = {
+            "game_id": "0022400123",
+            "home_team": {"id": 1, "name": "Lakers"},
+        }
+        test_data_2 = {
+            "game_id": "0022400124",
+            "home_team": {"id": 2, "name": "Celtics"},
+        }
+
+        mock_list_response = {
+            "Contents": [
+                {"Key": "raw/box_scores/date=2024-01-01/0022400123.json"},
+                {"Key": "raw/box_scores/date=2024-01-01/0022400124.json"},
+            ]
+        }
+        mock_s3_client.list_objects_v2.return_value = mock_list_response
+
+        # Mock get_object responses for each file
+        mock_response_1 = {"Body": Mock()}
+        mock_response_1["Body"].read.return_value = json.dumps(test_data_1).encode(
+            "utf-8"
+        )
+        mock_response_2 = {"Body": Mock()}
+        mock_response_2["Body"].read.return_value = json.dumps(test_data_2).encode(
+            "utf-8"
+        )
+
+        mock_s3_client.get_object.side_effect = [mock_response_1, mock_response_2]
+
+        processor = BronzeToSilverProcessor("test-bucket")
+        result = processor.read_bronze_json("box_scores", date(2024, 1, 1))
+
+        # Should return list of games
+        assert isinstance(result, list)
+        assert len(result) == 2
+        assert result[0] == test_data_1
+        assert result[1] == test_data_2
+
+        # Verify list_objects_v2 was called with correct prefix
+        mock_s3_client.list_objects_v2.assert_called_once_with(
+            Bucket="test-bucket", Prefix="raw/box_scores/date=2024-01-01/"
+        )
+
+    @patch("boto3.client")
+    def test_read_bronze_json_not_found(self, mock_boto_client):
+        """Test reading Bronze JSON when no files exist."""
+        mock_s3_client = Mock()
+        mock_boto_client.return_value = mock_s3_client
+
+        # Mock empty list_objects_v2 response (no Contents key)
+        mock_s3_client.list_objects_v2.return_value = {}
+
+        processor = BronzeToSilverProcessor("test-bucket")
+        result = processor.read_bronze_json("box_scores", date(2024, 1, 1))
+
+        # Should return empty list
+        assert result == []
+
+    @patch("boto3.client")
+    def test_read_bronze_json_single_file(self, mock_boto_client):
+        """Test reading Bronze JSON with single file."""
+        mock_s3_client = Mock()
+        mock_boto_client.return_value = mock_s3_client
+
+        # Mock S3 list_objects_v2 response with single game file
+        test_data = {"game_id": "0022400123", "home_team": {"id": 1, "name": "Lakers"}}
+
+        mock_list_response = {
+            "Contents": [
+                {"Key": "raw/box_scores/date=2024-01-01/0022400123.json"},
+            ]
+        }
+        mock_s3_client.list_objects_v2.return_value = mock_list_response
+
+        # Mock get_object response
         mock_response = {"Body": Mock()}
         mock_response["Body"].read.return_value = json.dumps(test_data).encode("utf-8")
         mock_s3_client.get_object.return_value = mock_response
@@ -44,25 +118,10 @@ class TestBronzeToSilverProcessor:
         processor = BronzeToSilverProcessor("test-bucket")
         result = processor.read_bronze_json("box_scores", date(2024, 1, 1))
 
-        assert result == test_data
-        mock_s3_client.get_object.assert_called_once_with(
-            Bucket="test-bucket", Key="raw/box_scores/date=2024-01-01/data.json"
-        )
-
-    @patch("boto3.client")
-    def test_read_bronze_json_not_found(self, mock_boto_client):
-        """Test reading Bronze JSON when file doesn't exist."""
-        mock_s3_client = Mock()
-        mock_boto_client.return_value = mock_s3_client
-
-        # Mock NoSuchKey exception
-        mock_s3_client.exceptions.NoSuchKey = Exception
-        mock_s3_client.get_object.side_effect = mock_s3_client.exceptions.NoSuchKey()
-
-        processor = BronzeToSilverProcessor("test-bucket")
-        result = processor.read_bronze_json("box_scores", date(2024, 1, 1))
-
-        assert result is None
+        # Should return list with single game
+        assert isinstance(result, list)
+        assert len(result) == 1
+        assert result[0] == test_data
 
     def test_convert_minutes_to_decimal(self):
         """Test minutes conversion utility."""

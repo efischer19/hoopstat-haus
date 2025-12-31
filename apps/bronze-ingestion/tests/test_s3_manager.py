@@ -108,7 +108,7 @@ class TestBronzeS3Manager:
         # Store the JSON data
         key = manager.store_json(test_data, "games", target_date)
 
-        # Verify the key structure
+        # Verify the key structure (no game_id, uses data.json)
         expected_key = "raw/games/date=2023-12-25/data.json"
         assert key == expected_key
 
@@ -135,6 +135,40 @@ class TestBronzeS3Manager:
         assert parsed_data["game_id"] == "12345"
         assert parsed_data["teams"] == ["LAL", "GSW"]
         assert parsed_data["metadata"]["venue"] == "Staples Center"
+
+    @patch("app.s3_manager.boto3.client")
+    def test_store_json_with_game_id(self, mock_boto_client):
+        """Test storing dictionary as JSON with game_id (ADR-031)."""
+        mock_client = Mock()
+        mock_boto_client.return_value = mock_client
+
+        manager = BronzeS3Manager("test-bucket")
+
+        # Create test data
+        test_data = {
+            "game_id": "0022400123",
+            "teams": ["LAL", "GSW"],
+            "scores": [100, 95],
+        }
+
+        target_date = date(2023, 12, 25)
+
+        # Store the JSON data with game_id
+        key = manager.store_json(
+            test_data, "box_scores", target_date, game_id="0022400123"
+        )
+
+        # Verify the key structure uses game_id as filename
+        expected_key = "raw/box_scores/date=2023-12-25/0022400123.json"
+        assert key == expected_key
+
+        # Verify S3 put_object was called with correct key
+        mock_client.put_object.assert_called_once()
+        call_args = mock_client.put_object.call_args
+
+        assert call_args[1]["Bucket"] == "test-bucket"
+        assert call_args[1]["Key"] == expected_key
+        assert call_args[1]["ContentType"] == "application/json"
 
     @patch("app.s3_manager.boto3.client")
     def test_store_json_s3_error(self, mock_boto_client):

@@ -53,34 +53,63 @@ class BronzeToSilverProcessor:
             logger.error(f"Failed to initialize S3 client: {e}")
             raise
 
-    def read_bronze_json(self, entity: str, target_date: date) -> dict[str, Any] | None:
+    def read_bronze_json(self, entity: str, target_date: date) -> list[dict[str, Any]]:
         """
-        Read Bronze JSON data from S3.
+        Read Bronze JSON data from S3 (ADR-031: supports multiple files per date).
 
         Args:
             entity: Entity type (e.g., 'box_scores')
             target_date: Date of the data
 
         Returns:
-            Parsed JSON data or None if not found
+            List of parsed JSON data (one per file). Empty list if no files found.
         """
         date_str = target_date.strftime("%Y-%m-%d")
-        key = f"raw/{entity}/date={date_str}/data.json"
+        prefix = f"raw/{entity}/date={date_str}/"
 
         try:
-            response = self.s3_client.get_object(Bucket=self.bronze_bucket, Key=key)
-            json_content = response["Body"].read().decode("utf-8")
-            data = json.loads(json_content)
-            logger.info(
-                f"Successfully read Bronze data from s3://{self.bronze_bucket}/{key}"
+            # List all objects under the date prefix
+            response = self.s3_client.list_objects_v2(
+                Bucket=self.bronze_bucket, Prefix=prefix
             )
-            return data
-        except self.s3_client.exceptions.NoSuchKey:
-            logger.warning(f"Bronze data not found: s3://{self.bronze_bucket}/{key}")
-            return None
+
+            if "Contents" not in response:
+                logger.warning(
+                    f"No Bronze data found at s3://{self.bronze_bucket}/{prefix}"
+                )
+                return []
+
+            # Read each file and collect the data
+            all_data = []
+            for obj in response["Contents"]:
+                key = obj["Key"]
+                try:
+                    file_response = self.s3_client.get_object(
+                        Bucket=self.bronze_bucket, Key=key
+                    )
+                    json_content = file_response["Body"].read().decode("utf-8")
+                    data = json.loads(json_content)
+                    all_data.append(data)
+                    logger.debug(
+                        f"Successfully read Bronze data from s3://{self.bronze_bucket}/{key}"
+                    )
+                except Exception as e:
+                    logger.error(
+                        f"Failed to read Bronze data from "
+                        f"s3://{self.bronze_bucket}/{key}: {e}"
+                    )
+                    # Continue processing other files
+                    continue
+
+            logger.info(
+                f"Successfully read {len(all_data)} Bronze files from "
+                f"s3://{self.bronze_bucket}/{prefix}"
+            )
+            return all_data
+
         except Exception as e:
             logger.error(
-                f"Failed to read Bronze data from s3://{self.bronze_bucket}/{key}: {e}"
+                f"Failed to list Bronze data at s3://{self.bronze_bucket}/{prefix}: {e}"
             )
             raise
 
@@ -607,22 +636,55 @@ class SilverProcessor:
             # Process box_scores entity (main entity type for now)
             entity = "box_scores"
 
-            # 1. Load Bronze JSON data from S3
-            bronze_data = self.bronze_to_silver_processor.read_bronze_json(
+            # 1. Load Bronze JSON data from S3 (ADR-031: returns list of games)
+            bronze_data_list = self.bronze_to_silver_processor.read_bronze_json(
                 entity, target_date
             )
-            if bronze_data is None:
+            if not bronze_data_list:
                 logger.warning(f"No Bronze data found for {entity} on {target_date}")
                 return False
 
-            # 2. Transform to Silver models (PlayerStats, TeamStats, GameStats)
-            silver_data = self.bronze_to_silver_processor.transform_to_silver(
-                bronze_data, entity
+            logger.info(
+                f"Found {len(bronze_data_list)} game(s) for {target_date}, "
+                "processing each..."
             )
 
-            # 3. Validate data quality
+            # Aggregate all Silver data from all games
+            all_silver_data = {
+                "player_stats": [],
+                "team_stats": [],
+                "game_stats": [],
+            }
+
+            # 2. Process each game individually
+            for i, bronze_data in enumerate(bronze_data_list):
+                logger.debug(f"Processing game {i + 1}/{len(bronze_data_list)}")
+
+                try:
+                    # Transform to Silver models (PlayerStats, TeamStats, GameStats)
+                    silver_data = self.bronze_to_silver_processor.transform_to_silver(
+                        bronze_data, entity
+                    )
+
+                    # Aggregate the results
+                    all_silver_data["player_stats"].extend(
+                        silver_data.get("player_stats", [])
+                    )
+                    all_silver_data["team_stats"].extend(
+                        silver_data.get("team_stats", [])
+                    )
+                    all_silver_data["game_stats"].extend(
+                        silver_data.get("game_stats", [])
+                    )
+
+                except Exception as e:
+                    logger.error(f"Failed to transform game {i + 1}: {e}")
+                    # Continue processing other games
+                    continue
+
+            # 3. Validate aggregated data quality
             quality_results = self.bronze_to_silver_processor.apply_quality_checks(
-                silver_data
+                all_silver_data
             )
 
             if not quality_results.get("overall_quality", False):
@@ -633,15 +695,15 @@ class SilverProcessor:
                 )
 
             # 4. Validate Silver data models
-            if not self.validate_silver_data(silver_data):
+            if not self.validate_silver_data(all_silver_data):
                 logger.error(f"Silver data validation failed for {target_date}")
                 return False
 
             if dry_run:
                 logger.info("Dry run mode - data validation only")
-                player_count = len(silver_data.get("player_stats", []))
-                team_count = len(silver_data.get("team_stats", []))
-                game_count = len(silver_data.get("game_stats", []))
+                player_count = len(all_silver_data.get("player_stats", []))
+                team_count = len(all_silver_data.get("team_stats", []))
+                game_count = len(all_silver_data.get("game_stats", []))
                 logger.info(
                     f"Would process: {player_count} player stats, "
                     f"{team_count} team stats, {game_count} game stats"
@@ -653,12 +715,12 @@ class SilverProcessor:
                 if self.s3_manager:
                     try:
                         written_keys = self.s3_manager.write_partitioned_silver_data(
-                            silver_data, target_date, check_exists=True
+                            all_silver_data, target_date, check_exists=True
                         )
 
-                        player_count = len(silver_data.get("player_stats", []))
-                        team_count = len(silver_data.get("team_stats", []))
-                        game_count = len(silver_data.get("game_stats", []))
+                        player_count = len(all_silver_data.get("player_stats", []))
+                        team_count = len(all_silver_data.get("team_stats", []))
+                        game_count = len(all_silver_data.get("game_stats", []))
 
                         logger.info(
                             f"Successfully wrote Silver data for {target_date}: "
@@ -674,9 +736,9 @@ class SilverProcessor:
                         return False
                 else:
                     logger.warning("No S3 manager configured - Silver data not written")
-                    player_count = len(silver_data.get("player_stats", []))
-                    team_count = len(silver_data.get("team_stats", []))
-                    game_count = len(silver_data.get("game_stats", []))
+                    player_count = len(all_silver_data.get("player_stats", []))
+                    team_count = len(all_silver_data.get("team_stats", []))
+                    game_count = len(all_silver_data.get("game_stats", []))
                     logger.info(
                         f"Successfully processed: {player_count} player stats, "
                         f"{team_count} team stats, {game_count} game stats"

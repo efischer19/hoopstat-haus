@@ -249,11 +249,12 @@ class DateScopedIngestion:
     ) -> None:
         """Store box score data as JSON in S3 with date-based partitioning."""
         try:
-            # Store raw nested box score structure as JSON
+            # Store raw nested box score structure as JSON (ADR-031: one file per game)
             self.s3_manager.store_json(
                 box_score,
                 entity="box_scores",
                 target_date=target_date,
+                game_id=game_id,
             )
             logger.debug(f"Stored box score for game {game_id}")
 

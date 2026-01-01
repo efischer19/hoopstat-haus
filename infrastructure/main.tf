@@ -1346,6 +1346,7 @@ resource "aws_lambda_permission" "s3_invoke_silver_processing" {
   function_name  = aws_lambda_function.silver_processing.function_name
   principal      = "s3.amazonaws.com"
   source_arn     = aws_s3_bucket.bronze.arn
+  source_account = data.aws_caller_identity.current.account_id
 }
 
 # S3 bucket notification for bronze bucket to trigger silver processing
@@ -1355,8 +1356,6 @@ resource "aws_s3_bucket_notification" "bronze_bucket_notification" {
   lambda_function {
     lambda_function_arn = aws_lambda_function.silver_processing.arn
     events              = ["s3:ObjectCreated:*"]
-    filter_prefix       = "raw/box_scores/date="
-    filter_suffix       = ".json"
   }
 
   depends_on = [aws_lambda_permission.s3_invoke_silver_processing]

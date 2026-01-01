@@ -14,7 +14,7 @@ The silver-processing Lambda deployment includes:
 
 - **S3 Event Trigger**: Bronze bucket → Lambda
   - Events: `s3:ObjectCreated:*`
-  - Filter prefix: `raw/box_scores/date=`
+  - Filter prefix: `raw/box/`
   - Filter suffix: `/data.json`
 
 - **IAM Permissions**: S3 read/write, CloudWatch logging, SQS (DLQ)
@@ -62,7 +62,7 @@ EOF
 
 # Upload to Bronze bucket (this should trigger the Lambda)
 aws s3 cp sample_bronze_data.json \
-  s3://hoopstat-haus-bronze/raw/box_scores/date=2024-01-01/data.json
+  s3://hoopstat-haus-bronze/raw/box/2024-01-01/data.json
 ```
 
 #### 4. Monitor Lambda Execution
@@ -82,7 +82,7 @@ aws lambda get-function --function-name hoopstat-haus-silver-processing \
 
 Check if Silver data was created:
 ```bash
-aws s3 ls s3://hoopstat-haus-silver/processed/box_scores/date=2024-01-01/
+aws s3 ls s3://hoopstat-haus-silver/processed/box/date=2024-01-01/
 ```
 
 #### 6. Test Error Handling
@@ -91,7 +91,7 @@ Upload invalid data to test DLQ:
 ```bash
 # Upload invalid JSON
 echo "invalid json" | aws s3 cp - \
-  s3://hoopstat-haus-bronze/raw/box_scores/date=2024-01-02/data.json
+  s3://hoopstat-haus-bronze/raw/box/2024-01-02/data.json
 ```
 
 Check DLQ for failed messages:
@@ -117,9 +117,9 @@ aws sqs receive-message --queue-url $(aws sqs get-queue-url \
 ### Filter Test Cases
 - [ ] Files with correct prefix/suffix trigger Lambda
 - [ ] Files outside filter pattern are ignored:
-  - `raw/box_scores/summary.json` (no date prefix)
-  - `raw/box_scores/date=2024-01-01/metadata.json` (wrong suffix)
-  - `processed/box_scores/date=2024-01-01/data.json` (wrong prefix)
+  - `raw/box/summary.json` (no date prefix)
+  - `raw/box/2024-01-01/metadata.json` (wrong suffix)
+  - `processed/box/date=2024-01-01/data.json` (wrong prefix)
 
 ## Monitoring and Observability
 
@@ -177,7 +177,7 @@ aws logs filter-log-events \
 1. **Reprocess failed data**:
    ```bash
    # Re-upload file to trigger reprocessing
-   aws s3 cp s3://source/path s3://hoopstat-haus-bronze/raw/box_scores/date=YYYY-MM-DD/data.json
+   aws s3 cp s3://source/path s3://hoopstat-haus-bronze/raw/box/YYYY-MM-DD/data.json
    ```
 
 2. **Manual Lambda invocation**:

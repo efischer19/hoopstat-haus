@@ -51,7 +51,7 @@ Simulate a cron job by uploading test data directly:
 echo '{"test": "data", "date": "2024-01-15"}' > /tmp/test-data.json
 
 # 2. Upload to bronze bucket (triggers silver processing)
-aws s3 cp /tmp/test-data.json s3://hoopstat-haus-bronze/raw/box_scores/date=2024-01-15/data.json
+aws s3 cp /tmp/test-data.json s3://hoopstat-haus-bronze/raw/box/date=2024-01-15/data.json
 
 # 3. This should automatically trigger the cascade
 ```
@@ -79,7 +79,7 @@ Check that data flows through each layer:
 
 ```bash
 # Check bronze layer
-aws s3 ls s3://hoopstat-haus-bronze/raw/box_scores/ --recursive
+aws s3 ls s3://hoopstat-haus-bronze/raw/box/ --recursive
 
 # Check silver layer
 aws s3 ls s3://hoopstat-haus-silver/silver/ --recursive
@@ -102,7 +102,7 @@ aws lambda get-function --function-name hoopstat-haus-gold-analytics | jq '.Conf
 ## Expected Flow
 
 1. **Bronze Ingestion**
-   - Creates: `s3://bronze/raw/box_scores/date=YYYY-MM-DD/data.json`
+   - Creates: `s3://bronze/raw/box/date=YYYY-MM-DD/data.json`
    - Triggers: Silver processing Lambda via S3 event
 
 2. **Silver Processing** 
@@ -134,7 +134,7 @@ aws lambda get-function --function-name hoopstat-haus-gold-analytics | jq '.Conf
    - `silver/{file_type}/date=YYYY-MM-DD/file` (current output)
 
 2. **S3 Event Filters**: 
-   - Bronze → Silver: Filters for `raw/box_scores/date=` prefix and `/data.json` suffix
+   - Bronze → Silver: Filters for `raw/box/date=` prefix and `/data.json` suffix
    - Silver → Gold: Filters for `silver/` prefix and `.json` suffix
 
 3. **IAM Permissions**: Ensure Lambda execution roles have proper S3 access
@@ -145,7 +145,7 @@ If testing generates unwanted data:
 
 ```bash
 # Clean bronze test data
-aws s3 rm s3://hoopstat-haus-bronze/raw/box_scores/date=2024-01-15/ --recursive
+aws s3 rm s3://hoopstat-haus-bronze/raw/box/date=2024-01-15/ --recursive
 
 # Clean silver test data  
 aws s3 rm s3://hoopstat-haus-silver/silver/ --recursive

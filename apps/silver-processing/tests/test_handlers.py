@@ -43,8 +43,8 @@ class TestLambdaHandler:
         mock_manager = MagicMock()
         mock_bronze_event = {
             "bucket": "test-bucket",
-            "key": "raw/box_scores/date=2024-01-15/data.json",
-            "entity": "box_scores",
+            "key": "raw/box/2024-01-15/data.json",
+            "entity": "box",
             "date": date(2024, 1, 15),
         }
         mock_manager.parse_s3_event.return_value = [mock_bronze_event]
@@ -71,14 +71,14 @@ class TestLambdaHandler:
 
         bronze_event = {
             "bucket": "test-bucket",
-            "key": "raw/box_scores/date=2024-01-15/data.json",
-            "entity": "box_scores",
+            "key": "raw/box/2024-01-15/data.json",
+            "entity": "box",
             "date": date(2024, 1, 15),
         }
 
         result = process_bronze_event(processor, bronze_event)
         assert result["success"] is True
-        assert result["bronze_event"]["entity"] == "box_scores"
+        assert result["bronze_event"]["entity"] == "box"
         assert "Successfully processed" in result["message"]
 
     def test_process_bronze_event_missing_info(self):
@@ -99,8 +99,8 @@ class TestLambdaHandler:
 
         bronze_event = {
             "bucket": "test-bucket",
-            "key": "raw/box_scores/date=2024-01-15/data.json",
-            "entity": "box_scores",
+            "key": "raw/box/2024-01-15/data.json",
+            "entity": "box",
             "date": date(2024, 1, 15),
         }
 

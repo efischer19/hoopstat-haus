@@ -67,7 +67,7 @@ class SilverS3Manager(S3Uploader):
         Read Bronze JSON data from S3.
 
         Args:
-            entity: Entity type (e.g., 'box_scores')
+            entity: Entity type (e.g., 'box')
             target_date: Date of the data
 
         Returns:
@@ -77,7 +77,7 @@ class SilverS3Manager(S3Uploader):
             SilverS3ManagerError: If read operation fails
         """
         date_str = target_date.strftime("%Y-%m-%d")
-        key = f"raw/{entity}/date={date_str}/data.json"
+        key = f"raw/{entity}/{date_str}/data.json"
 
         try:
             response = self.s3_client.get_object(Bucket=self.bucket_name, Key=key)
@@ -110,7 +110,7 @@ class SilverS3Manager(S3Uploader):
         Write Silver JSON data to S3 with proper partitioning.
 
         Args:
-            entity_type: Type of entity (player_stats, team_stats, game_stats)
+            entity_type: Type of entity (player-stats, team-stats, game-stats)
             data: Silver layer data to write
             target_date: Date for partitioning
             check_exists: Whether to check for existing data (idempotency)
@@ -123,15 +123,15 @@ class SilverS3Manager(S3Uploader):
         """
         date_str = target_date.strftime("%Y-%m-%d")
 
-        # Generate Silver partition path
-        partition_path = f"silver/{entity_type}/date={date_str}/"
+        # Generate Silver partition path (ADR-032: URL-safe characters only)
+        partition_path = f"silver/{entity_type}/{date_str}/"
 
         # Determine filename based on entity type
-        if entity_type == "player_stats":
+        if entity_type == "player-stats":
             filename = "players.json"
-        elif entity_type == "team_stats":
+        elif entity_type == "team-stats":
             filename = "teams.json"
-        elif entity_type == "game_stats":
+        elif entity_type == "game-stats":
             filename = "games.json"
         else:
             filename = f"{entity_type}.json"
@@ -330,35 +330,35 @@ class SilverS3Manager(S3Uploader):
         Returns:
             True if this is a Bronze trigger event
         """
-        # Check for Bronze layer pattern: raw/{entity}/date=YYYY-MM-DD/*.json
-        return (
-            s3_key.startswith("raw/")
-            and s3_key.endswith(".json")
-            and "/date=" in s3_key
-        )
+        # Check for Bronze layer pattern: raw/{entity}/YYYY-MM-DD/*.json
+        # ADR-032: No longer using 'date=' prefix
+        import re
+
+        # Pattern: raw/{entity}/{YYYY-MM-DD}/*.json
+        pattern = r"^raw/[^/]+/\d{4}-\d{2}-\d{2}/.*\.json$"
+        return bool(re.match(pattern, s3_key))
 
     def _extract_entity_info_from_key(self, s3_key: str) -> dict[str, Any] | None:
         """
         Extract entity and date information from Bronze S3 key.
 
         Args:
-            s3_key: S3 key like 'raw/box_scores/date=2024-01-15/data.json'
+            s3_key: S3 key like 'raw/box/2024-01-15/data.json'
 
         Returns:
             Dictionary with entity and date info, or None if parsing fails
         """
         try:
-            # Parse: raw/{entity}/date=YYYY-MM-DD/*.json
+            # Parse: raw/{entity}/{YYYY-MM-DD}/*.json (ADR-032: no 'date=' prefix)
             parts = s3_key.split("/")
             if len(parts) >= 4 and parts[0] == "raw" and parts[-1].endswith(".json"):
                 entity = parts[1]
-                date_part = parts[2]
+                date_str = parts[2]
 
-                if date_part.startswith("date="):
-                    date_str = date_part[5:]  # Remove 'date=' prefix
-                    target_date = datetime.strptime(date_str, "%Y-%m-%d").date()
+                # Validate date format YYYY-MM-DD
+                target_date = datetime.strptime(date_str, "%Y-%m-%d").date()
 
-                    return {"entity": entity, "date": target_date, "date_str": date_str}
+                return {"entity": entity, "date": target_date, "date_str": date_str}
 
         except Exception as e:
             logger.warning(f"Failed to extract entity info from key {s3_key}: {e}")
@@ -446,11 +446,13 @@ class SilverS3Manager(S3Uploader):
                 key = obj.get("Key", "")
 
                 # Extract date from silver path:
-                # silver/{entity_type}/date=YYYY-MM-DD/{filename}
-                if "/date=" in key:
+                # silver/{entity_type}/{YYYY-MM-DD}/{filename}
+                # ADR-032: No longer using 'date=' prefix
+                if len(key.split("/")) >= 4:
                     try:
-                        date_part = key.split("/date=")[1].split("/")[0]
-                        target_date = datetime.strptime(date_part, "%Y-%m-%d").date()
+                        # Get third segment which should be the date
+                        date_str = key.split("/")[2]
+                        target_date = datetime.strptime(date_str, "%Y-%m-%d").date()
 
                         # Apply date filtering if specified
                         if start_date and target_date < start_date:

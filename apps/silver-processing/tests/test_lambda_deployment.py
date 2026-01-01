@@ -44,7 +44,7 @@ class TestLambdaDeployment:
                             "arn": "arn:aws:s3:::test-bronze-bucket",
                         },
                         "object": {
-                            "key": "raw/box_scores/date=2024-01-01/data.json",
+                            "key": "raw/box/2024-01-01/data.json",
                             "size": 1024,
                             "eTag": "0123456789abcdef0123456789abcdef",
                             "sequencer": "0A1B2C3D4E5F678901",
@@ -101,14 +101,14 @@ class TestLambdaDeployment:
 
         # Test files that should trigger the Lambda (match filter)
         trigger_files = [
-            "raw/box_scores/date=2024-01-01/data.json",
-            "raw/box_scores/date=2024-12-31/data.json",
-            "raw/box_scores/date=2023-03-15/data.json",
+            "raw/box/2024-01-01/data.json",
+            "raw/box/2024-12-31/data.json",
+            "raw/box/2023-03-15/data.json",
         ]
 
         # Test files that should NOT trigger the Lambda (don't match filter)
         no_trigger_files = [
-            "raw/box_scores/date=2024-01-01/metadata.json",  # wrong suffix
+            "raw/box/2024-01-01/metadata.json",  # wrong suffix
             "raw/box_scores/summary.json",  # missing date prefix
             "processed/box_scores/date=2024-01-01/data.json",  # wrong prefix
             "raw/player_stats/date=2024-01-01/data.json",  # wrong path
@@ -130,7 +130,7 @@ class TestLambdaDeployment:
         # In real deployment, S3 would filter these automatically
         # Here we simulate the filtering logic
         def matches_filter(key):
-            return key.startswith("raw/box_scores/date=") and key.endswith("/data.json")
+            return key.startswith("raw/box/") and key.endswith("/data.json")
 
         triggered_files = [key for key in uploaded_keys if matches_filter(key)]
         assert len(triggered_files) == len(trigger_files)

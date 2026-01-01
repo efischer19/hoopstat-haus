@@ -1,7 +1,7 @@
 ---
 title: "ADR-031: Bronze Layer File Granularity - One File Per Game"
 status: "Accepted"
-date: "2025-12-31"
+date: "2026-01-01"
 tags:
   - "data-pipeline"
   - "bronze-layer"

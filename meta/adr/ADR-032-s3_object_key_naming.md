@@ -1,6 +1,6 @@
 ---
 title: "ADR-032: S3 Object Key Naming - Avoid URL-Encoded Characters"
-status: "Proposed"
+status: "Accepted"
 date: "2026-01-01"
 tags:
   - "data-pipeline"

@@ -262,7 +262,7 @@ class TestSilverS3Manager:
                     "eventSource": "aws:s3",
                     "s3": {
                         "bucket": {"name": "test-bucket"},
-                        "object": {"key": "raw/standings/date=2024-01-16/data.json"},
+                        "object": {"key": "raw/standings/2024-01-16/data.json"},
                     },
                 },
             ]
@@ -273,11 +273,12 @@ class TestSilverS3Manager:
         assert len(bronze_events) == 2
 
         # First event
-        assert bronze_events[0]["entity"] == "box_scores"
+        assert bronze_events[0]["entity"] == "box"
         assert bronze_events[0]["date"] == date(2024, 1, 15)
         assert bronze_events[0]["bucket"] == "test-bucket"
 
         # Second event
+        assert bronze_events[1]["entity"] == "standings"
         assert bronze_events[1]["entity"] == "standings"
         assert bronze_events[1]["date"] == date(2024, 1, 16)
 
@@ -328,13 +329,13 @@ class TestSilverS3Manager:
 
         manager = SilverS3Manager("test-bucket")
 
-        # Valid Bronze events
+        # Valid Bronze events (new format without 'date=')
         assert (
             manager._is_bronze_trigger_event("raw/box/2024-01-15/data.json")
             is True
         )
         assert (
-            manager._is_bronze_trigger_event("raw/standings/date=2024-12-25/data.json")
+            manager._is_bronze_trigger_event("raw/standings/2024-12-25/data.json")
             is True
         )
 
@@ -382,7 +383,7 @@ class TestSilverS3Manager:
             "raw/box/2024-01-15/data.json"
         )
         assert result is not None
-        assert result["entity"] == "box_scores"
+        assert result["entity"] == "box"
         assert result["date"] == date(2024, 1, 15)
         assert result["date_str"] == "2024-01-15"
 
@@ -393,7 +394,7 @@ class TestSilverS3Manager:
             )
             is None
         )
-        assert manager._extract_entity_info_from_key("raw/box_scores/data.json") is None
+        assert manager._extract_entity_info_from_key("raw/box/data.json") is None
         assert (
             manager._extract_entity_info_from_key(
                 "raw/box/invalid/data.json"
@@ -427,10 +428,10 @@ class TestSilverS3Manager:
         manager = SilverS3Manager("test-bucket")
 
         # List all Bronze data for box_scores
-        bronze_data = manager.list_bronze_data("box_scores")
+        bronze_data = manager.list_bronze_data("box")
 
         assert len(bronze_data) == 3
-        assert all(item["entity"] == "box_scores" for item in bronze_data)
+        assert all(item["entity"] == "box" for item in bronze_data)
 
         # Verify dates are parsed correctly
         dates = [item["date"] for item in bronze_data]
@@ -464,7 +465,7 @@ class TestSilverS3Manager:
 
         # List Bronze data with date filter
         bronze_data = manager.list_bronze_data(
-            "box_scores", start_date=date(2024, 1, 16), end_date=date(2024, 1, 16)
+            "box", start_date=date(2024, 1, 16), end_date=date(2024, 1, 16)
         )
 
         assert len(bronze_data) == 1
@@ -496,10 +497,10 @@ class TestSilverS3Manager:
         manager = SilverS3Manager("test-bucket")
 
         # List Silver data for player_stats
-        silver_data = manager.list_silver_data("player_stats")
+        silver_data = manager.list_silver_data("player-stats")
 
         assert len(silver_data) == 2
-        assert all(item["entity_type"] == "player_stats" for item in silver_data)
+        assert all(item["entity_type"] == "player-stats" for item in silver_data)
 
         # Verify dates are parsed correctly
         dates = [item["date"] for item in silver_data]
@@ -533,7 +534,7 @@ class TestSilverS3Manager:
 
         # List Silver data with date filter
         silver_data = manager.list_silver_data(
-            "player_stats", start_date=date(2024, 1, 16), end_date=date(2024, 1, 16)
+            "player-stats", start_date=date(2024, 1, 16), end_date=date(2024, 1, 16)
         )
 
         assert len(silver_data) == 1
@@ -588,24 +589,24 @@ class TestSilverS3Manager:
 
                 # Test player_stats -> players.json
                 key1 = manager.write_silver_json(
-                    "player_stats", [], target_date, check_exists=False
+                    "player-stats", [], target_date, check_exists=False
                 )
                 assert key1 == "silver/player-stats/2024-01-15/players.json"
 
                 # Test team_stats -> teams.json
                 key2 = manager.write_silver_json(
-                    "team_stats", [], target_date, check_exists=False
+                    "team-stats", [], target_date, check_exists=False
                 )
                 assert key2 == "silver/team-stats/2024-01-15/teams.json"
 
                 # Test game_stats -> games.json
                 key3 = manager.write_silver_json(
-                    "game_stats", [], target_date, check_exists=False
+                    "game-stats", [], target_date, check_exists=False
                 )
                 assert key3 == "silver/game-stats/2024-01-15/games.json"
 
                 # Test custom entity type
                 key4 = manager.write_silver_json(
-                    "custom_stats", [], target_date, check_exists=False
+                    "custom-stats", [], target_date, check_exists=False
                 )
-                assert key4 == "silver/custom_stats/date=2024-01-15/custom_stats.json"
+                assert key4 == "silver/custom-stats/2024-01-15/custom-stats.json"

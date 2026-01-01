@@ -145,32 +145,6 @@ The infrastructure serves public basketball analytics via small JSON artifacts:
 - **Performance**: Cacheable via CDN; deterministic keys; small payloads (≤100KB)
 - **Details**: See [ADR-028](../meta/adr/ADR-028-gold_layer_final.md)
 
-## CloudTrail Debugging
-
-The infrastructure includes CloudTrail configuration for debugging S3 Data Events:
-
-- **Purpose**: Debug Bronze S3 bucket events that trigger Silver Lambda processing
-- **Log Group**: `/aws/cloudtrail/hoopstat-haus`
-- **Trail**: `hoopstat-haus-bronze-s3-events`
-- **Events**: WriteOnly S3 Data Events for the Bronze bucket
-- **Storage**: S3 bucket `hoopstat-haus-cloudtrail` and CloudWatch Logs
-
-### Viewing CloudTrail Logs
-
-After deploying the infrastructure, S3 upload events will appear in CloudWatch Logs:
-
-```bash
-# Using AWS CLI to view recent logs
-aws logs tail /aws/cloudtrail/hoopstat-haus --follow
-
-# Using AWS Console
-# Navigate to CloudWatch → Log groups → /aws/cloudtrail/hoopstat-haus
-```
-
-### Cleanup
-
-All CloudTrail resources are tagged with `Temporary = "true"` for easy identification and removal when debugging is complete.
-
 ## File Structure
 
 - `main.tf` - Main Terraform configuration
@@ -195,9 +169,6 @@ bash tests/test_s3_tables_public_access.sh
 
 # Run observability configuration tests
 python tests/test_observability.py
-
-# Run CloudTrail configuration tests
-bash tests/test_cloudtrail.sh
 ```
 
 ### Test Coverage
@@ -208,4 +179,3 @@ bash tests/test_cloudtrail.sh
 - **S3 Tables public access**: Bucket policy and public read access validation
 - **Lifecycle policies**: Retention and storage class transitions are correct
 - **IAM policies**: Least-privilege access patterns are implemented
-- **CloudTrail debugging**: S3 Data Events logging for Bronze bucket

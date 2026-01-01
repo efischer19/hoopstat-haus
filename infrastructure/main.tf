@@ -1356,6 +1356,8 @@ resource "aws_s3_bucket_notification" "bronze_bucket_notification" {
   lambda_function {
     lambda_function_arn = aws_lambda_function.silver_processing.arn
     events              = ["s3:ObjectCreated:*"]
+    filter_prefix       = "raw/box_scores/date"
+    filter_suffix       = "json"
   }
 
   depends_on = [aws_lambda_permission.s3_invoke_silver_processing]

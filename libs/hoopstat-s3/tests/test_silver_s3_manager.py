@@ -330,10 +330,7 @@ class TestSilverS3Manager:
         manager = SilverS3Manager("test-bucket")
 
         # Valid Bronze events (new format without 'date=')
-        assert (
-            manager._is_bronze_trigger_event("raw/box/2024-01-15/data.json")
-            is True
-        )
+        assert manager._is_bronze_trigger_event("raw/box/2024-01-15/data.json") is True
         assert (
             manager._is_bronze_trigger_event("raw/standings/2024-12-25/data.json")
             is True
@@ -350,20 +347,15 @@ class TestSilverS3Manager:
             manager._is_bronze_trigger_event("raw/box_scores/data.json") is False
         )  # No date
         assert (
-            manager._is_bronze_trigger_event(
-                "raw/box/2024-01-15/0022500123.json"
-            )
+            manager._is_bronze_trigger_event("raw/box/2024-01-15/0022500123.json")
             is True
         )  # Game ID filename
 
         assert (
-            manager._is_bronze_trigger_event("raw/box/2024-01-15/data.txt")
-            is False
+            manager._is_bronze_trigger_event("raw/box/2024-01-15/data.txt") is False
         )  # Not .json
         assert (
-            manager._is_bronze_trigger_event(
-                "processed/box/2024-01-15/data.json"
-            )
+            manager._is_bronze_trigger_event("processed/box/2024-01-15/data.json")
             is False
         )  # Not raw
 
@@ -379,9 +371,7 @@ class TestSilverS3Manager:
         manager = SilverS3Manager("test-bucket")
 
         # Valid key
-        result = manager._extract_entity_info_from_key(
-            "raw/box/2024-01-15/data.json"
-        )
+        result = manager._extract_entity_info_from_key("raw/box/2024-01-15/data.json")
         assert result is not None
         assert result["entity"] == "box"
         assert result["date"] == date(2024, 1, 15)
@@ -396,10 +386,7 @@ class TestSilverS3Manager:
         )
         assert manager._extract_entity_info_from_key("raw/box/data.json") is None
         assert (
-            manager._extract_entity_info_from_key(
-                "raw/box/invalid/data.json"
-            )
-            is None
+            manager._extract_entity_info_from_key("raw/box/invalid/data.json") is None
         )
 
     @mock_aws

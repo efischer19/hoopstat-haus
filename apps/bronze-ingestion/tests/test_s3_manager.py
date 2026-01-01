@@ -154,9 +154,7 @@ class TestBronzeS3Manager:
         target_date = date(2023, 12, 25)
 
         # Store the JSON data with game_id
-        key = manager.store_json(
-            test_data, "box", target_date, game_id="0022400123"
-        )
+        key = manager.store_json(test_data, "box", target_date, game_id="0022400123")
 
         # Verify the key structure uses game_id as filename
         expected_key = "raw/box/2023-12-25/0022400123.json"

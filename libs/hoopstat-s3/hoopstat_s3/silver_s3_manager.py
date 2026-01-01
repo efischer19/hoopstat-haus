@@ -333,9 +333,9 @@ class SilverS3Manager(S3Uploader):
         # Check for Bronze layer pattern: raw/{entity}/YYYY-MM-DD/*.json
         # ADR-032: No longer using 'date=' prefix
         import re
-        
+
         # Pattern: raw/{entity}/{YYYY-MM-DD}/*.json
-        pattern = r'^raw/[^/]+/\d{4}-\d{2}-\d{2}/.*\.json$'
+        pattern = r"^raw/[^/]+/\d{4}-\d{2}-\d{2}/.*\.json$"
         return bool(re.match(pattern, s3_key))
 
     def _extract_entity_info_from_key(self, s3_key: str) -> dict[str, Any] | None:
@@ -354,7 +354,7 @@ class SilverS3Manager(S3Uploader):
             if len(parts) >= 4 and parts[0] == "raw" and parts[-1].endswith(".json"):
                 entity = parts[1]
                 date_str = parts[2]
-                
+
                 # Validate date format YYYY-MM-DD
                 target_date = datetime.strptime(date_str, "%Y-%m-%d").date()
 

@@ -1454,7 +1454,7 @@ s3://bucket/nba-api/{data_type}/year={year}/month={month}/day={day}/hour={hour}/
 </code></pre></div>
 <p>Read Bronze JSON data from S3.</p>
 <p>Args:
-    entity: Entity type (e.g., 'box_scores')
+    entity: Entity type (e.g., 'box')
     target_date: Date of the data</p>
 <p>Returns:
     Parsed JSON data or None if not found</p>
@@ -1465,7 +1465,7 @@ s3://bucket/nba-api/{data_type}/year={year}/month={month}/day={day}/hour={hour}/
 </code></pre></div>
 <p>Write Silver JSON data to S3 with proper partitioning.</p>
 <p>Args:
-    entity_type: Type of entity (player_stats, team_stats, game_stats)
+    entity_type: Type of entity (player-stats, team-stats, game-stats)
     data: Silver layer data to write
     target_date: Date for partitioning
     check_exists: Whether to check for existing data (idempotency)</p>

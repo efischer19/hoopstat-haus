@@ -805,7 +805,7 @@ resource "aws_cloudtrail" "bronze_s3_events" {
 
     data_resource {
       type   = "AWS::S3::Object"
-      values = ["${aws_s3_bucket.bronze.arn}/"]
+      values = ["${aws_s3_bucket.bronze.arn}/*"]
     }
   }
 

@@ -52,7 +52,7 @@ class TestSilverS3Manager:
         test_data = {"game_id": 123, "teams": ["Lakers", "Celtics"]}
         s3_client.put_object(
             Bucket="test-bucket",
-            Key="raw/box_scores/date=2024-01-15/data.json",
+            Key="raw/box/2024-01-15/data.json",
             Body=json.dumps(test_data).encode("utf-8"),
             ContentType="application/json",
         )
@@ -60,7 +60,7 @@ class TestSilverS3Manager:
         manager = SilverS3Manager("test-bucket")
         target_date = date(2024, 1, 15)
 
-        result = manager.read_bronze_json("box_scores", target_date)
+        result = manager.read_bronze_json("box", target_date)
 
         assert result is not None
         assert result == test_data
@@ -77,7 +77,7 @@ class TestSilverS3Manager:
         manager = SilverS3Manager("test-bucket")
         target_date = date(2024, 1, 15)
 
-        result = manager.read_bronze_json("box_scores", target_date)
+        result = manager.read_bronze_json("box", target_date)
 
         assert result is None
 
@@ -93,7 +93,7 @@ class TestSilverS3Manager:
         # Create invalid JSON data
         s3_client.put_object(
             Bucket="test-bucket",
-            Key="raw/box_scores/date=2024-01-15/data.json",
+            Key="raw/box/2024-01-15/data.json",
             Body=b"invalid json content",
             ContentType="application/json",
         )
@@ -102,7 +102,7 @@ class TestSilverS3Manager:
         target_date = date(2024, 1, 15)
 
         with pytest.raises(SilverS3ManagerError):
-            manager.read_bronze_json("box_scores", target_date)
+            manager.read_bronze_json("box", target_date)
 
     @mock_aws
     def test_write_silver_json_success(self):
@@ -122,10 +122,10 @@ class TestSilverS3Manager:
         target_date = date(2024, 1, 15)
 
         result_key = manager.write_silver_json(
-            "player_stats", test_data, target_date, check_exists=False
+            "player-stats", test_data, target_date, check_exists=False
         )
 
-        expected_key = "silver/player_stats/date=2024-01-15/players.json"
+        expected_key = "silver/player-stats/2024-01-15/players.json"
         assert result_key == expected_key
 
         # Verify data was written correctly
@@ -136,7 +136,7 @@ class TestSilverS3Manager:
         # Verify metadata
         metadata = response["Metadata"]
         assert metadata["data_layer"] == "silver"
-        assert metadata["entity_type"] == "player_stats"
+        assert metadata["entity_type"] == "player-stats"
         assert metadata["format"] == "json"
 
     @mock_aws
@@ -154,11 +154,11 @@ class TestSilverS3Manager:
         target_date = date(2024, 1, 15)
 
         # First write
-        result_key1 = manager.write_silver_json("player_stats", test_data, target_date)
+        result_key1 = manager.write_silver_json("player-stats", test_data, target_date)
 
         # Second write with idempotency check (should skip)
         result_key2 = manager.write_silver_json(
-            "player_stats", test_data, target_date, check_exists=True
+            "player-stats", test_data, target_date, check_exists=True
         )
 
         assert result_key1 == result_key2
@@ -175,9 +175,9 @@ class TestSilverS3Manager:
         manager = SilverS3Manager("test-bucket")
 
         silver_data = {
-            "player_stats": [{"player_id": "123", "points": 25}],
-            "team_stats": [{"team_id": "1", "score": 108}],
-            "game_stats": [{"game_id": "12345", "home_score": 108, "away_score": 95}],
+            "player-stats": [{"player_id": "123", "points": 25}],
+            "team-stats": [{"team_id": "1", "score": 108}],
+            "game-stats": [{"game_id": "12345", "home_score": 108, "away_score": 95}],
         }
         target_date = date(2024, 1, 15)
 
@@ -186,15 +186,15 @@ class TestSilverS3Manager:
         )
 
         assert len(results) == 3
-        assert "player_stats" in results
-        assert "team_stats" in results
-        assert "game_stats" in results
+        assert "player-stats" in results
+        assert "team-stats" in results
+        assert "game-stats" in results
 
         # Verify all files were created
         expected_keys = [
-            "silver/player_stats/date=2024-01-15/players.json",
-            "silver/team_stats/date=2024-01-15/teams.json",
-            "silver/game_stats/date=2024-01-15/games.json",
+            "silver/player-stats/2024-01-15/players.json",
+            "silver/team-stats/2024-01-15/teams.json",
+            "silver/game-stats/2024-01-15/games.json",
         ]
 
         for key in expected_keys:
@@ -246,7 +246,7 @@ class TestSilverS3Manager:
                     "eventSource": "aws:s3",
                     "s3": {
                         "bucket": {"name": "test-bucket"},
-                        "object": {"key": "raw/box_scores/date=2024-01-15/data.json"},
+                        "object": {"key": "raw/box/2024-01-15/data.json"},
                     },
                 },
                 {
@@ -254,7 +254,7 @@ class TestSilverS3Manager:
                     "s3": {
                         "bucket": {"name": "test-bucket"},
                         "object": {
-                            "key": "silver/player_stats/date=2024-01-15/players.json"
+                            "key": "silver/player-stats/2024-01-15/players.json"
                         },  # Should be ignored
                     },
                 },
@@ -299,7 +299,7 @@ class TestSilverS3Manager:
                     "s3": {
                         "bucket": {"name": "test-bucket"},
                         "object": {
-                            "key": "silver/player_stats/date=2024-01-15/players.json"
+                            "key": "silver/player-stats/2024-01-15/players.json"
                         },
                     },
                 },
@@ -307,7 +307,7 @@ class TestSilverS3Manager:
                     "eventSource": "aws:lambda",  # Not S3
                     "s3": {
                         "bucket": {"name": "test-bucket"},
-                        "object": {"key": "raw/box_scores/date=2024-01-15/data.json"},
+                        "object": {"key": "raw/box/2024-01-15/data.json"},
                     },
                 },
             ]
@@ -330,7 +330,7 @@ class TestSilverS3Manager:
 
         # Valid Bronze events
         assert (
-            manager._is_bronze_trigger_event("raw/box_scores/date=2024-01-15/data.json")
+            manager._is_bronze_trigger_event("raw/box/2024-01-15/data.json")
             is True
         )
         assert (
@@ -341,7 +341,7 @@ class TestSilverS3Manager:
         # Invalid events
         assert (
             manager._is_bronze_trigger_event(
-                "silver/player_stats/date=2024-01-15/players.json"
+                "silver/player-stats/2024-01-15/players.json"
             )
             is False
         )
@@ -350,18 +350,18 @@ class TestSilverS3Manager:
         )  # No date
         assert (
             manager._is_bronze_trigger_event(
-                "raw/box_scores/date=2024-01-15/0022500123.json"
+                "raw/box/2024-01-15/0022500123.json"
             )
             is True
         )  # Game ID filename
 
         assert (
-            manager._is_bronze_trigger_event("raw/box_scores/date=2024-01-15/data.txt")
+            manager._is_bronze_trigger_event("raw/box/2024-01-15/data.txt")
             is False
         )  # Not .json
         assert (
             manager._is_bronze_trigger_event(
-                "processed/box_scores/date=2024-01-15/data.json"
+                "processed/box/2024-01-15/data.json"
             )
             is False
         )  # Not raw
@@ -379,7 +379,7 @@ class TestSilverS3Manager:
 
         # Valid key
         result = manager._extract_entity_info_from_key(
-            "raw/box_scores/date=2024-01-15/data.json"
+            "raw/box/2024-01-15/data.json"
         )
         assert result is not None
         assert result["entity"] == "box_scores"
@@ -389,14 +389,14 @@ class TestSilverS3Manager:
         # Invalid keys
         assert (
             manager._extract_entity_info_from_key(
-                "silver/player_stats/date=2024-01-15/players.json"
+                "silver/player-stats/2024-01-15/players.json"
             )
             is None
         )
         assert manager._extract_entity_info_from_key("raw/box_scores/data.json") is None
         assert (
             manager._extract_entity_info_from_key(
-                "raw/box_scores/date=invalid/data.json"
+                "raw/box/invalid/data.json"
             )
             is None
         )
@@ -412,9 +412,9 @@ class TestSilverS3Manager:
 
         # Create test Bronze data files
         test_files = [
-            "raw/box_scores/date=2024-01-15/data.json",
-            "raw/box_scores/date=2024-01-16/data.json",
-            "raw/box_scores/date=2024-01-17/data.json",
+            "raw/box/2024-01-15/data.json",
+            "raw/box/2024-01-16/data.json",
+            "raw/box/2024-01-17/data.json",
         ]
 
         for key in test_files:
@@ -448,9 +448,9 @@ class TestSilverS3Manager:
 
         # Create test Bronze data files
         test_files = [
-            "raw/box_scores/date=2024-01-15/data.json",
-            "raw/box_scores/date=2024-01-16/data.json",
-            "raw/box_scores/date=2024-01-17/data.json",
+            "raw/box/2024-01-15/data.json",
+            "raw/box/2024-01-16/data.json",
+            "raw/box/2024-01-17/data.json",
         ]
 
         for key in test_files:
@@ -481,9 +481,9 @@ class TestSilverS3Manager:
 
         # Create test Silver data files
         test_files = [
-            "silver/player_stats/date=2024-01-15/players.json",
-            "silver/player_stats/date=2024-01-16/players.json",
-            "silver/team_stats/date=2024-01-15/teams.json",
+            "silver/player-stats/2024-01-15/players.json",
+            "silver/player-stats/2024-01-16/players.json",
+            "silver/team-stats/2024-01-15/teams.json",
         ]
 
         for key in test_files:
@@ -517,9 +517,9 @@ class TestSilverS3Manager:
 
         # Create test Silver data files
         test_files = [
-            "silver/player_stats/date=2024-01-15/players.json",
-            "silver/player_stats/date=2024-01-16/players.json",
-            "silver/player_stats/date=2024-01-17/players.json",
+            "silver/player-stats/2024-01-15/players.json",
+            "silver/player-stats/2024-01-16/players.json",
+            "silver/player-stats/2024-01-17/players.json",
         ]
 
         for key in test_files:
@@ -550,7 +550,7 @@ class TestSilverS3Manager:
 
         manager = SilverS3Manager("test-bucket")
 
-        test_key = "silver/player_stats/date=2024-01-15/players.json"
+        test_key = "silver/player-stats/2024-01-15/players.json"
 
         # Initially should not exist
         assert manager._silver_data_exists(test_key) is False
@@ -590,19 +590,19 @@ class TestSilverS3Manager:
                 key1 = manager.write_silver_json(
                     "player_stats", [], target_date, check_exists=False
                 )
-                assert key1 == "silver/player_stats/date=2024-01-15/players.json"
+                assert key1 == "silver/player-stats/2024-01-15/players.json"
 
                 # Test team_stats -> teams.json
                 key2 = manager.write_silver_json(
                     "team_stats", [], target_date, check_exists=False
                 )
-                assert key2 == "silver/team_stats/date=2024-01-15/teams.json"
+                assert key2 == "silver/team-stats/2024-01-15/teams.json"
 
                 # Test game_stats -> games.json
                 key3 = manager.write_silver_json(
                     "game_stats", [], target_date, check_exists=False
                 )
-                assert key3 == "silver/game_stats/date=2024-01-15/games.json"
+                assert key3 == "silver/game-stats/2024-01-15/games.json"
 
                 # Test custom entity type
                 key4 = manager.write_silver_json(

@@ -65,7 +65,7 @@ The infrastructure includes automatic S3 event-driven processing for the complet
 - **Source**: Bronze bucket (`hoopstat-haus-bronze`)
 - **Events**: `s3:ObjectCreated:*`
 - **Filter**: 
-  - Prefix: `raw/box_scores/date=`
+  - Prefix: `raw/box/`
   - Suffix: `/data.json`
 - **Target**: `hoopstat-haus-silver-processing` Lambda
 - **Purpose**: Automatically process new Bronze layer data into Silver layer

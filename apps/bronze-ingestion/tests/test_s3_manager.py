@@ -37,7 +37,7 @@ class TestBronzeS3Manager:
 
         assert exists is True
         mock_client.list_objects_v2.assert_called_once_with(
-            Bucket="test-bucket", Prefix="raw/games/date=2023-12-25/", MaxKeys=1
+            Bucket="test-bucket", Prefix="raw/games/2023-12-25/", MaxKeys=1
         )
 
     @patch("app.s3_manager.boto3.client")
@@ -109,7 +109,7 @@ class TestBronzeS3Manager:
         key = manager.store_json(test_data, "games", target_date)
 
         # Verify the key structure (no game_id, uses data.json)
-        expected_key = "raw/games/date=2023-12-25/data.json"
+        expected_key = "raw/games/2023-12-25/data.json"
         assert key == expected_key
 
         # Verify S3 put_object was called
@@ -155,11 +155,11 @@ class TestBronzeS3Manager:
 
         # Store the JSON data with game_id
         key = manager.store_json(
-            test_data, "box_scores", target_date, game_id="0022400123"
+            test_data, "box", target_date, game_id="0022400123"
         )
 
         # Verify the key structure uses game_id as filename
-        expected_key = "raw/box_scores/date=2023-12-25/0022400123.json"
+        expected_key = "raw/box/2023-12-25/0022400123.json"
         assert key == expected_key
 
         # Verify S3 put_object was called with correct key

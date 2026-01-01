@@ -11,9 +11,9 @@ tags:
 
 ## Context
 
-* **Problem:** The bronze-ingestion app currently writes all games for a given date to the exact same S3 key (`raw/box_scores/date=YYYY-MM-DD/data.json`). This causes each subsequent game processed for that day to overwrite the previous one, resulting in data loss. Only the last game processed is actually stored in the Bronze layer.
+* **Problem:** The bronze-ingestion app currently writes all games for a given date to the exact same S3 key (`raw/box/YYYY-MM-DD/data.json`). This causes each subsequent game processed for that day to overwrite the previous one, resulting in data loss. Only the last game processed is actually stored in the Bronze layer.
 * **Constraints:** ADR-025 (JSON Storage MVP) specifies JSON format but does not define the file naming convention or cardinality (one file per day vs. per game). This ambiguity led to the current incorrect implementation where multiple entity instances (games) are stored to a single file path.
-* **Impact:** The silver-processing app is coupled to this bug, as it expects to read a single file at `raw/box_scores/date=YYYY-MM-DD/data.json` and parse it as a single `BoxScoreRaw` object. Multiple games on the same day cannot be processed correctly.
+* **Impact:** The silver-processing app is coupled to this bug, as it expects to read a single file at `raw/box/YYYY-MM-DD/data.json` and parse it as a single `BoxScoreRaw` object. Multiple games on the same day cannot be processed correctly.
 
 ## Decision
 
@@ -21,14 +21,14 @@ Bronze layer storage will use **one file per entity instance** (e.g., per game),
 
 **File naming pattern:**
 ```
-raw/{entity}/date={YYYY-MM-DD}/{entity_id}.json
+raw/{entity}/{YYYY-MM-DD}/{entity_id}.json
 ```
 
 **Specific example for box scores:**
 ```
-raw/box_scores/date=2025-10-25/0022400001.json
-raw/box_scores/date=2025-10-25/0022400002.json
-raw/box_scores/date=2025-10-25/0022400003.json
+raw/box/2025-10-25/0022400001.json
+raw/box/2025-10-25/0022400002.json
+raw/box/2025-10-25/0022400003.json
 ```
 
 **Rationale:**
@@ -77,11 +77,11 @@ raw/box_scores/date=2025-10-25/0022400003.json
 
 ### Bronze Layer Changes
 - `BronzeS3Manager.store_json()` accepts optional `game_id` parameter
-- File key format: `raw/{entity}/date={date}/{game_id}.json`
+- File key format: `raw/{entity}/{date}/{game_id}.json`
 - Backward compatibility: if `game_id` is None, use `data.json` (for non-game entities like schedule)
 
 ### Silver Layer Changes
-- `BronzeToSilverProcessor.read_bronze_json()` lists all objects under `date=YYYY-MM-DD/` prefix
+- `BronzeToSilverProcessor.read_bronze_json()` lists all objects under `YYYY-MM-DD/` prefix
 - Iterates through each file and yields/returns list of `BoxScoreRaw` objects
 - Main processing loop handles list of games rather than single game object
 

@@ -111,7 +111,7 @@ create_test_data() {
 EOF
 )
     
-    local bronze_key="raw/box_scores/date=$TEST_DATE/data.json"
+    local bronze_key="raw/box/date=$TEST_DATE/data.json"
     echo "$test_data" | aws s3 cp - "s3://$BRONZE_BUCKET/$bronze_key"
     
     echo "✅ Test data uploaded to: s3://$BRONZE_BUCKET/$bronze_key"
@@ -191,7 +191,7 @@ cleanup_test_data() {
     echo "🧹 Cleaning up test data..."
     
     # Remove bronze test data
-    aws s3 rm "s3://$BRONZE_BUCKET/raw/box_scores/date=$TEST_DATE/" --recursive || true
+    aws s3 rm "s3://$BRONZE_BUCKET/raw/box/date=$TEST_DATE/" --recursive || true
     
     # Remove silver test data (optional - comment out if you want to keep it)
     # aws s3 rm "s3://$SILVER_BUCKET/silver/" --recursive --exclude "*" --include "*date=$TEST_DATE*" || true
@@ -224,7 +224,7 @@ main() {
     echo "   - Run 'cleanup_test_data' if you want to remove test data"
     echo ""
     echo "🔧 To run cleanup manually:"
-    echo "   aws s3 rm s3://$BRONZE_BUCKET/raw/box_scores/date=$TEST_DATE/ --recursive"
+    echo "   aws s3 rm s3://$BRONZE_BUCKET/raw/box/date=$TEST_DATE/ --recursive"
     echo ""
 }
 

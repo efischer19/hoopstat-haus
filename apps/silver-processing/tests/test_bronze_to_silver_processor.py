@@ -47,8 +47,8 @@ class TestBronzeToSilverProcessor:
 
         mock_list_response = {
             "Contents": [
-                {"Key": "raw/box_scores/date=2024-01-01/0022400123.json"},
-                {"Key": "raw/box_scores/date=2024-01-01/0022400124.json"},
+                {"Key": "raw/box/2024-01-01/0022400123.json"},
+                {"Key": "raw/box/2024-01-01/0022400124.json"},
             ]
         }
         mock_s3_client.list_objects_v2.return_value = mock_list_response
@@ -66,7 +66,7 @@ class TestBronzeToSilverProcessor:
         mock_s3_client.get_object.side_effect = [mock_response_1, mock_response_2]
 
         processor = BronzeToSilverProcessor("test-bucket")
-        result = processor.read_bronze_json("box_scores", date(2024, 1, 1))
+        result = processor.read_bronze_json("box", date(2024, 1, 1))
 
         # Should return list of games
         assert isinstance(result, list)
@@ -76,7 +76,7 @@ class TestBronzeToSilverProcessor:
 
         # Verify list_objects_v2 was called with correct prefix
         mock_s3_client.list_objects_v2.assert_called_once_with(
-            Bucket="test-bucket", Prefix="raw/box_scores/date=2024-01-01/"
+            Bucket="test-bucket", Prefix="raw/box/2024-01-01/"
         )
 
     @patch("boto3.client")
@@ -89,7 +89,7 @@ class TestBronzeToSilverProcessor:
         mock_s3_client.list_objects_v2.return_value = {}
 
         processor = BronzeToSilverProcessor("test-bucket")
-        result = processor.read_bronze_json("box_scores", date(2024, 1, 1))
+        result = processor.read_bronze_json("box", date(2024, 1, 1))
 
         # Should return empty list
         assert result == []
@@ -105,7 +105,7 @@ class TestBronzeToSilverProcessor:
 
         mock_list_response = {
             "Contents": [
-                {"Key": "raw/box_scores/date=2024-01-01/0022400123.json"},
+                {"Key": "raw/box/2024-01-01/0022400123.json"},
             ]
         }
         mock_s3_client.list_objects_v2.return_value = mock_list_response
@@ -116,7 +116,7 @@ class TestBronzeToSilverProcessor:
         mock_s3_client.get_object.return_value = mock_response
 
         processor = BronzeToSilverProcessor("test-bucket")
-        result = processor.read_bronze_json("box_scores", date(2024, 1, 1))
+        result = processor.read_bronze_json("box", date(2024, 1, 1))
 
         # Should return list with single game
         assert isinstance(result, list)
@@ -229,7 +229,7 @@ class TestBronzeToSilverProcessor:
         }
 
         # Transform to Silver
-        result = self.processor.transform_to_silver(bronze_data, "box_scores")
+        result = self.processor.transform_to_silver(bronze_data, "box")
 
         # Verify structure
         assert "player_stats" in result

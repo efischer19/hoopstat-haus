@@ -58,14 +58,15 @@ class BronzeToSilverProcessor:
         Read Bronze JSON data from S3 (ADR-031: supports multiple files per date).
 
         Args:
-            entity: Entity type (e.g., 'box_scores')
+            entity: Entity type (e.g., 'box')
             target_date: Date of the data
 
         Returns:
             List of parsed JSON data (one per file). Empty list if no files found.
         """
         date_str = target_date.strftime("%Y-%m-%d")
-        prefix = f"raw/{entity}/date={date_str}/"
+        # ADR-032: Use URL-safe paths without 'date=' prefix
+        prefix = f"raw/{entity}/{date_str}/"
 
         try:
             # List all objects under the date prefix

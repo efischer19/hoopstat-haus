@@ -286,7 +286,7 @@ class TestBronzeSummaryManager:
         )
 
         # Verify entities list
-        assert entities == ["schedule", "box_scores", "players"]
+        assert entities == ["schedule", "box", "players"]
 
     def test_error_handling_in_generate_summary(self, summary_manager):
         """Test error handling in generate_summary method."""

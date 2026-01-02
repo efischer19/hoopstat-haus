@@ -226,7 +226,7 @@ class TestDateScopedIngestion:
 
         # Verify box score storage call (JSON)
         box_score_call = mock_s3_instance.store_json.call_args_list[1]
-        assert box_score_call[1]["entity"] == "box_scores"
+        assert box_score_call[1]["entity"] == "box"
         assert box_score_call[1]["target_date"] == target_date
 
     @patch("app.ingestion.DataValidator")

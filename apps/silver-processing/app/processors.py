@@ -127,8 +127,9 @@ class BronzeToSilverProcessor:
         Returns:
             Mapped data in snake_case format compatible with BoxScoreRaw model
         """
+
         # Check if data is already in snake_case format (direct BoxScoreRaw format)
-        if "game_id" in bronze_data or "home_team" in bronze_data:
+        if "home_team" in bronze_data or "away_team" in bronze_data:
             logger.debug("Data already in snake_case format, no mapping needed")
             return bronze_data
 

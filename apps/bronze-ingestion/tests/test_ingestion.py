@@ -226,7 +226,7 @@ class TestDateScopedIngestion:
 
         # Verify box score storage call (JSON)
         box_score_call = mock_s3_instance.store_json.call_args_list[1]
-        assert box_score_call[1]["entity"] == "box_scores"
+        assert box_score_call[1]["entity"] == "box"
         assert box_score_call[1]["target_date"] == target_date
 
     @patch("app.ingestion.DataValidator")
@@ -330,7 +330,7 @@ class TestDateScopedIngestion:
             if entity == "schedule":
                 stored_schedule_data = data
             filename = f"{game_id}.json" if game_id else "data.json"
-            return f"raw/{entity}/date={target_date.strftime('%Y-%m-%d')}/{filename}"
+            return f"raw/{entity}/{target_date.strftime('%Y-%m-%d')}/{filename}"
 
         mock_s3_instance.store_json.side_effect = capture_json_storage
         mock_s3_manager.return_value = mock_s3_instance

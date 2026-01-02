@@ -214,7 +214,7 @@ class BronzeSummaryManager:
         """Get statistics for a specific entity on a specific date."""
         try:
             date_str = target_date.strftime("%Y-%m-%d")
-            prefix = f"raw/{entity}/date={date_str}/"
+            prefix = f"raw/{entity}/{date_str}/"
 
             # List objects for this entity/date combination
             response = self.s3_manager.s3_client.list_objects_v2(

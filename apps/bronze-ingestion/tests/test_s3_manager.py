@@ -65,13 +65,13 @@ class TestBronzeS3Manager:
             {
                 "CommonPrefixes": [
                     {"Prefix": "raw/games/"},
-                    {"Prefix": "raw/box_scores/"},
+                    {"Prefix": "raw/box/"},
                     {"Prefix": "raw/schedule/"},
                 ]
             },
             # Subsequent calls - check if each entity has data for the date
             {"KeyCount": 1},  # games has data
-            {"KeyCount": 0},  # box_scores has no data
+            {"KeyCount": 0},  # box has no data
             {"KeyCount": 1},  # schedule has data
         ]
         mock_boto_client.return_value = mock_client

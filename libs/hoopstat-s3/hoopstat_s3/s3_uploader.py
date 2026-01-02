@@ -181,14 +181,14 @@ class S3Uploader:
             return ""
 
         # Generate partition path
-        partition_path = self._generate_partition_path("box_scores", target_date)
+        partition_path = self._generate_partition_path("box", target_date)
         timestamp = datetime.now().isoformat().replace(":", "-")
         filename = f"box_score_{game_id}_{timestamp}.parquet"
         s3_key = partition_path + filename
 
         # Add metadata
         metadata = {
-            "data_type": "box_scores",
+            "data_type": "box",
             "game_id": game_id,
             "target_date": target_date.isoformat(),
             "upload_timestamp": datetime.now().isoformat(),

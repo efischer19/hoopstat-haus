@@ -109,9 +109,9 @@ class TestLambdaDeployment:
         # Test files that should NOT trigger the Lambda (don't match filter)
         no_trigger_files = [
             "raw/box/2024-01-01/metadata.json",  # wrong suffix
-            "raw/box_scores/summary.json",  # missing date prefix
-            "processed/box_scores/date=2024-01-01/data.json",  # wrong prefix
-            "raw/player_stats/date=2024-01-01/data.json",  # wrong path
+            "raw/box/summary.json",  # missing date prefix
+            "processed/box/2024-01-01/data.json",  # wrong prefix
+            "raw/player/2024-01-01/data.json",  # wrong path
         ]
 
         # Upload files to test S3 structure

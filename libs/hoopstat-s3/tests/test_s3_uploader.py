@@ -124,13 +124,13 @@ class TestS3Uploader:
 
         s3_key = uploader.upload_box_score(test_data, game_id, target_date)
 
-        assert s3_key.startswith("nba-api/box_scores/year=2024/month=01/day=15/hour=")
+        assert s3_key.startswith("nba-api/box/year=2024/month=01/day=15/hour=")
         assert game_id in s3_key
         assert s3_key.endswith(".parquet")
 
         # Verify metadata
         response = conn.get_object(Bucket="test-bucket", Key=s3_key)
-        assert response["Metadata"]["data_type"] == "box_scores"
+        assert response["Metadata"]["data_type"] == "box"
         assert response["Metadata"]["game_id"] == game_id
 
     @mock_aws

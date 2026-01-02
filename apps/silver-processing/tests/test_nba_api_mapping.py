@@ -397,3 +397,143 @@ class TestNBAAPIMapping:
         assert mapped_data["home_team"]["name"] == "Lakers"
         assert len(mapped_data["home_players"]) == 0
         assert mapped_data["home_team_stats"]["points"] == 100
+
+    def test_map_bronze_data_with_game_id_and_boxscore_wrapper(self):
+        """Test bronze data with game_id and boxScoreTraditional wrapper.
+
+        This validates the bug fix where the processor should NOT treat
+        data as already-mapped just because it has a root-level game_id
+        metadata field. Bronze data can have both a root-level game_id
+        metadata field AND a boxScoreTraditional wrapper that needs to be
+        processed.
+
+        The processor should check for home_team/away_team (which only
+        exist in already-mapped data) rather than game_id (which can exist
+        in both bronze and mapped data).
+        """
+        # Bronze data with BOTH root-level game_id metadata AND
+        # boxScoreTraditional wrapper - the scenario that caused the bug
+        bronze_data_with_metadata = {
+            "game_id": "0022300456",  # Root-level metadata field
+            "boxScoreTraditional": {  # NBA API V3 wrapper that needs processing
+                "gameId": "0022300456",
+                "gameDate": "2024-02-10",
+                "arena": "Madison Square Garden",
+                "homeTeam": {
+                    "teamId": 1610612752,
+                    "teamName": "Knicks",
+                    "teamCity": "New York",
+                    "teamTricode": "NYK",
+                    "players": [
+                        {
+                            "personId": 1630166,
+                            "name": "Jalen Brunson",
+                            "position": "G",
+                            "statistics": {
+                                "minutesCalculated": "35:12",
+                                "points": 32,
+                                "reboundsOffensive": 1,
+                                "reboundsDefensive": 4,
+                                "assists": 7,
+                                "steals": 1,
+                                "blocks": 0,
+                                "turnovers": 2,
+                                "fieldGoalsMade": 12,
+                                "fieldGoalsAttempted": 22,
+                                "threePointersMade": 4,
+                                "threePointersAttempted": 8,
+                                "freeThrowsMade": 4,
+                                "freeThrowsAttempted": 5,
+                            },
+                        }
+                    ],
+                    "statistics": {
+                        "points": 115,
+                        "fieldGoalsMade": 42,
+                        "fieldGoalsAttempted": 88,
+                        "threePointersMade": 14,
+                        "threePointersAttempted": 32,
+                        "freeThrowsMade": 17,
+                        "freeThrowsAttempted": 22,
+                        "reboundsOffensive": 10,
+                        "reboundsDefensive": 35,
+                        "reboundsTotal": 45,
+                        "assists": 28,
+                        "steals": 9,
+                        "blocks": 6,
+                        "turnovers": 14,
+                        "foulsPersonal": 20,
+                    },
+                },
+                "awayTeam": {
+                    "teamId": 1610612751,
+                    "teamName": "Nets",
+                    "teamCity": "Brooklyn",
+                    "teamTricode": "BKN",
+                    "players": [],
+                    "statistics": {
+                        "points": 110,
+                        "fieldGoalsMade": 40,
+                        "fieldGoalsAttempted": 85,
+                        "threePointersMade": 12,
+                        "threePointersAttempted": 30,
+                        "freeThrowsMade": 18,
+                        "freeThrowsAttempted": 20,
+                        "reboundsOffensive": 8,
+                        "reboundsDefensive": 32,
+                        "reboundsTotal": 40,
+                        "assists": 24,
+                        "steals": 7,
+                        "blocks": 4,
+                        "turnovers": 12,
+                        "foulsPersonal": 22,
+                    },
+                },
+            },
+        }
+
+        # Map the data - this should process the boxScoreTraditional
+        # wrapper, not treat it as already-mapped
+        mapped_data = self.processor._map_nba_api_to_model(bronze_data_with_metadata)
+
+        # Verify that the boxScoreTraditional wrapper was correctly
+        # processed. The data should be transformed to snake_case format
+        # with home_team and away_team
+        assert "home_team" in mapped_data, (
+            "Should extract home_team from boxScoreTraditional"
+        )
+        assert "away_team" in mapped_data, (
+            "Should extract away_team from boxScoreTraditional"
+        )
+
+        # Verify home team was correctly extracted and mapped
+        assert mapped_data["home_team"]["id"] == 1610612752
+        assert mapped_data["home_team"]["name"] == "Knicks"
+        assert mapped_data["home_team"]["city"] == "New York"
+        assert mapped_data["home_team"]["abbreviation"] == "NYK"
+
+        # Verify away team was correctly extracted and mapped
+        assert mapped_data["away_team"]["id"] == 1610612751
+        assert mapped_data["away_team"]["name"] == "Nets"
+        assert mapped_data["away_team"]["city"] == "Brooklyn"
+        assert mapped_data["away_team"]["abbreviation"] == "BKN"
+
+        # Verify team stats were correctly mapped
+        assert mapped_data["home_team_stats"]["points"] == 115
+        assert mapped_data["home_team_stats"]["field_goals_made"] == 42
+        assert mapped_data["away_team_stats"]["points"] == 110
+
+        # Verify player data was correctly extracted and mapped
+        assert len(mapped_data["home_players"]) == 1
+        brunson = mapped_data["home_players"][0]
+        assert brunson["player_id"] == 1630166
+        assert brunson["player_name"] == "Jalen Brunson"
+        assert brunson["team"] == "Knicks"
+        assert brunson["position"] == "G"
+        assert brunson["points"] == 32
+        assert brunson["assists"] == 7
+
+        # Verify top-level fields
+        assert mapped_data["game_id"] == "0022300456"
+        assert mapped_data["game_date"] == "2024-02-10"
+        assert mapped_data["arena"] == "Madison Square Garden"

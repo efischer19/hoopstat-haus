@@ -240,7 +240,7 @@ class TestBronzeSummaryManager:
 
         # Verify S3 call
         mock_s3_manager.s3_client.list_objects_v2.assert_called_once_with(
-            Bucket="test-bronze-bucket", Prefix="raw/schedule/date=2024-01-15/"
+            Bucket="test-bronze-bucket", Prefix="raw/schedule/2024-01-15/"
         )
 
         # Verify statistics
@@ -272,7 +272,7 @@ class TestBronzeSummaryManager:
         mock_response = {
             "CommonPrefixes": [
                 {"Prefix": "raw/schedule/"},
-                {"Prefix": "raw/box_scores/"},
+                {"Prefix": "raw/box/"},
                 {"Prefix": "raw/players/"},
             ]
         }

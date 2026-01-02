@@ -330,7 +330,7 @@ class TestDateScopedIngestion:
             if entity == "schedule":
                 stored_schedule_data = data
             filename = f"{game_id}.json" if game_id else "data.json"
-            return f"raw/{entity}/date={target_date.strftime('%Y-%m-%d')}/{filename}"
+            return f"raw/{entity}/{target_date.strftime('%Y-%m-%d')}/{filename}"
 
         mock_s3_instance.store_json.side_effect = capture_json_storage
         mock_s3_manager.return_value = mock_s3_instance

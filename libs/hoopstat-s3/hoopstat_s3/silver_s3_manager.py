@@ -29,8 +29,8 @@ class SilverS3Manager(S3Uploader):
     Silver S3 Manager for Bronze-to-Silver data processing.
 
     Extends the base S3Uploader to support:
-    - Reading Bronze layer JSON data from paths: raw/{entity}/date=YYYY-MM-DD/data.json
-    - Writing Silver layer JSON data to paths: silver/{entity_type}/date=YYYY-MM-DD/
+    - Reading Bronze layer JSON data from paths: raw/{entity}/YYYY-MM-DD/data.json
+    - Writing Silver layer JSON data to paths: silver/{entity_type}/YYYY-MM-DD/
     - Partitioned Silver storage for player_stats, team_stats, game_stats
     - S3 event handling for Lambda triggers
     - Idempotency checks

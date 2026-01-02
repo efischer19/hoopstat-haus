@@ -252,7 +252,7 @@ class DateScopedIngestion:
             # Store raw nested box score structure as JSON (ADR-031: one file per game)
             self.s3_manager.store_json(
                 box_score,
-                entity="box_scores",
+                entity="box",
                 target_date=target_date,
                 game_id=game_id,
             )

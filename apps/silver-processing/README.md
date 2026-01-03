@@ -17,7 +17,7 @@ This application processes NBA statistics data and provides the transformation l
 
 ### Deployment
 - **Runtime**: AWS Lambda for serverless processing
-- **Trigger**: S3 events when new Bronze layer data arrives
+- **Trigger**: S3 events when Bronze layer summary.json is updated
 - **Storage**: Reads from Bronze S3 bucket, writes to Silver S3 bucket
 - **Format**: JSON storage following ADR-025
 
@@ -77,13 +77,18 @@ def lambda_handler(event, context):
 
 ## Data Processing Pipeline
 
-1. **S3 Event Trigger**: Lambda triggered when Bronze data arrives
-2. **Data Loading**: Reads Bronze JSON from S3
-3. **Validation**: Applies Silver model validation 
-4. **Transformation**: Cleans and standardizes data
-5. **Quality Checks**: Validates data quality and completeness
-6. **Storage**: Writes Silver JSON to S3
-7. **Monitoring**: Logs processing results and metrics
+1. **S3 Event Trigger**: Lambda triggered when Bronze summary.json is updated
+2. **Summary Reading**: Reads Bronze layer summary to get last ingestion date
+3. **Data Loading**: Reads Bronze JSON from S3 for the target date
+4. **Validation**: Applies Silver model validation 
+5. **Transformation**: Cleans and standardizes data
+6. **Quality Checks**: Validates data quality and completeness
+7. **Storage**: Writes Silver JSON to S3
+8. **Monitoring**: Logs processing results and metrics
+
+### Trigger Mechanism
+
+The Silver processing is triggered by updates to the Bronze layer summary file (`_metadata/summary.json`). When Bronze ingestion completes, it updates this summary file with metadata including the `last_ingestion_date`. The Silver Lambda reads this summary to determine which date's data to process, ensuring proper coordination between Bronze and Silver layers.
 
 ## Configuration
 

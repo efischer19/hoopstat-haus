@@ -277,9 +277,47 @@ class SilverS3Manager(S3Uploader):
             logger.error(f"Failed to upload to S3: {e}")
             raise S3UploadError(f"S3 upload failed: {e}") from e
 
+    def read_summary_json(self) -> dict[str, Any] | None:
+        """
+        Read the Bronze layer summary.json file from S3.
+
+        This method reads the summary metadata file that contains information
+        about the last bronze ingestion, including the date that was processed.
+
+        Returns:
+            Parsed summary JSON data, or None if the file doesn't exist
+
+        Raises:
+            SilverS3ManagerError: If read operation fails for reasons other
+                than file not found
+        """
+        key = "_metadata/summary.json"
+
+        try:
+            response = self.s3_client.get_object(Bucket=self.bucket_name, Key=key)
+            json_content = response["Body"].read().decode("utf-8")
+            data = json.loads(json_content)
+
+            logger.info(f"Successfully read summary from s3://{self.bucket_name}/{key}")
+            return data
+
+        except self.s3_client.exceptions.NoSuchKey:
+            logger.warning(f"Summary file not found: s3://{self.bucket_name}/{key}")
+            return None
+
+        except (BotoCoreError, ClientError, json.JSONDecodeError) as e:
+            logger.error(
+                f"Failed to read summary from s3://{self.bucket_name}/{key}: {e}"
+            )
+            raise SilverS3ManagerError(f"Summary read failed: {e}") from e
+
     def parse_s3_event(self, event: dict[str, Any]) -> list[dict[str, Any]]:
         """
-        Parse S3 event records from Lambda event for Bronze data triggers.
+        DEPRECATED: Parse S3 event records from Lambda event for Bronze data triggers.
+
+        This method is deprecated and will be removed in a future version.
+        Use read_summary_json() instead to get the last ingestion date from
+        the Bronze layer summary file.
 
         Args:
             event: Lambda event containing S3 records
@@ -287,6 +325,7 @@ class SilverS3Manager(S3Uploader):
         Returns:
             List of parsed Bronze data events that should trigger Silver processing
         """
+        logger.warning("parse_s3_event is deprecated. Use read_summary_json() instead.")
         try:
             records = event.get("Records", [])
             bronze_events = []

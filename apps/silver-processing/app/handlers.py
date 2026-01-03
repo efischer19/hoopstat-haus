@@ -64,11 +64,9 @@ def lambda_handler(event: dict[str, Any], context: Any) -> dict[str, Any]:
 
                 # Extract date from summary
                 # Structure: bronze_layer_stats -> last_ingestion_date
-                last_ingestion_date_str = (
-                    summary_data.get("bronze_layer_stats", {}).get(
-                        "last_ingestion_date"
-                    )
-                )
+                last_ingestion_date_str = summary_data.get(
+                    "bronze_layer_stats", {}
+                ).get("last_ingestion_date")
 
                 if not last_ingestion_date_str:
                     logger.warning("No last_ingestion_date found in summary")
@@ -78,9 +76,6 @@ def lambda_handler(event: dict[str, Any], context: Any) -> dict[str, Any]:
                     }
 
                 # Parse date (YYYY-MM-DD)
-                # The summary uses isoformat(), which might include time if it was datetime
-                # But based on bronze_summary.py, it comes from target_date.isoformat() where target_date is a date object
-                # So it should be YYYY-MM-DD
                 target_date = datetime.strptime(
                     last_ingestion_date_str[:10], "%Y-%m-%d"
                 ).date()
@@ -108,14 +103,6 @@ def lambda_handler(event: dict[str, Any], context: Any) -> dict[str, Any]:
                     "statusCode": 500,
                     "message": f"Failed to process summary update: {e}",
                 }
-
-        # Fallback to legacy behavior (individual file triggers) if needed,
-        # or just return if we only want to support summary triggers.
-        # For now, let's keep the legacy check just in case, or remove it if we want to be strict.
-        # The user asked to "update the trigger", implying we are switching.
-        # But keeping legacy support might be safer if there are other triggers.
-        # However, the infrastructure change removed the other trigger.
-        # So let's just log and return.
 
         logger.warning("Event is not a summary.json update, ignoring")
         return {"statusCode": 200, "message": "Event ignored (not summary.json)"}

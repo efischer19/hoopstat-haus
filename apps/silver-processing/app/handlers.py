@@ -77,7 +77,7 @@ def lambda_handler(event: dict[str, Any], context: Any) -> dict[str, Any]:
 
                 # Parse date (YYYY-MM-DD)
                 target_date = datetime.strptime(
-                    last_ingestion_date_str[:10], "%Y-%m-%d"
+                    last_ingestion_date_str, "%Y-%m-%d"
                 ).date()
 
                 logger.info(f"Triggering processing for date: {target_date}")

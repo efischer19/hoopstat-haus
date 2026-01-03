@@ -5,6 +5,8 @@ This module provides handlers for S3 events that trigger Silver layer processing
 when new Bronze layer data arrives.
 """
 
+import json
+from datetime import datetime
 from typing import Any
 
 from hoopstat_observability import get_logger
@@ -38,103 +40,86 @@ def lambda_handler(event: dict[str, Any], context: Any) -> dict[str, Any]:
             logger.error("BRONZE_BUCKET environment variable not set")
             return {"statusCode": 400, "message": "No bucket configured"}
 
-        # Initialize S3 manager for event parsing
+        # Initialize S3 manager
         s3_manager = SilverS3Manager(bucket_name)
 
-        # Parse S3 events using SilverS3Manager
-        bronze_events = s3_manager.parse_s3_event(event)
+        # Check if this is a summary.json update
+        is_summary_update = False
+        for record in event.get("Records", []):
+            if record.get("eventSource") == "aws:s3":
+                key = record.get("s3", {}).get("object", {}).get("key", "")
+                if key.endswith("summary.json"):
+                    is_summary_update = True
+                    break
 
-        if not bronze_events:
-            logger.warning("No Bronze trigger events found in S3 event")
-            return {"statusCode": 200, "message": "No Bronze triggers to process"}
-
-        # Process each Bronze event
-        processor = SilverProcessor(bronze_bucket=bucket_name)
-        results = []
-
-        for bronze_event in bronze_events:
+        if is_summary_update:
+            logger.info("Detected summary.json update, checking for new data")
             try:
-                result = process_bronze_event(processor, bronze_event)
-                results.append(result)
-            except Exception as e:
-                logger.error(f"Failed to process Bronze event {bronze_event}: {e}")
-                results.append(
-                    {"bronze_event": bronze_event, "success": False, "error": str(e)}
+                # Read summary file to get the last ingestion date
+                response = s3_manager.s3_client.get_object(
+                    Bucket=bucket_name, Key="_metadata/summary.json"
+                )
+                summary_content = response["Body"].read().decode("utf-8")
+                summary_data = json.loads(summary_content)
+
+                # Extract date from summary
+                # Structure: bronze_layer_stats -> last_ingestion_date
+                last_ingestion_date_str = (
+                    summary_data.get("bronze_layer_stats", {}).get(
+                        "last_ingestion_date"
+                    )
                 )
 
-        # Summarize results
-        success_count = sum(1 for r in results if r.get("success", False))
-        total_count = len(results)
+                if not last_ingestion_date_str:
+                    logger.warning("No last_ingestion_date found in summary")
+                    return {
+                        "statusCode": 200,
+                        "message": "No date found in summary to process",
+                    }
 
-        logger.info(
-            f"Processed {success_count}/{total_count} Bronze events successfully"
-        )
+                # Parse date (YYYY-MM-DD)
+                # The summary uses isoformat(), which might include time if it was datetime
+                # But based on bronze_summary.py, it comes from target_date.isoformat() where target_date is a date object
+                # So it should be YYYY-MM-DD
+                target_date = datetime.strptime(
+                    last_ingestion_date_str[:10], "%Y-%m-%d"
+                ).date()
 
-        return {
-            "statusCode": 200,
-            "message": f"Processed {success_count}/{total_count} Bronze events",
-            "results": results,
-        }
+                logger.info(f"Triggering processing for date: {target_date}")
+
+                # Process the date
+                processor = SilverProcessor(bronze_bucket=bucket_name)
+                success = processor.process_date(target_date, dry_run=False)
+
+                if success:
+                    return {
+                        "statusCode": 200,
+                        "message": f"Successfully processed data for {target_date}",
+                    }
+                else:
+                    return {
+                        "statusCode": 500,
+                        "message": f"Processing failed for {target_date}",
+                    }
+
+            except Exception as e:
+                logger.error(f"Failed to process summary update: {e}")
+                return {
+                    "statusCode": 500,
+                    "message": f"Failed to process summary update: {e}",
+                }
+
+        # Fallback to legacy behavior (individual file triggers) if needed,
+        # or just return if we only want to support summary triggers.
+        # For now, let's keep the legacy check just in case, or remove it if we want to be strict.
+        # The user asked to "update the trigger", implying we are switching.
+        # But keeping legacy support might be safer if there are other triggers.
+        # However, the infrastructure change removed the other trigger.
+        # So let's just log and return.
+
+        logger.warning("Event is not a summary.json update, ignoring")
+        return {"statusCode": 200, "message": "Event ignored (not summary.json)"}
 
     except Exception as e:
         logger.error(f"Lambda handler failed: {e}")
         return {"statusCode": 500, "message": f"Processing failed: {e}"}
-
-
-def process_bronze_event(
-    processor: SilverProcessor, bronze_event: dict[str, Any]
-) -> dict[str, Any]:
-    """
-    Process a single Bronze event from S3.
-
-    Args:
-        processor: The Silver processor instance
-        bronze_event: Bronze event information from SilverS3Manager
-
-    Returns:
-        Processing result dictionary
-    """
-    try:
-        # Extract information from Bronze event
-        bucket = bronze_event.get("bucket")
-        key = bronze_event.get("key")
-        entity = bronze_event.get("entity")
-        target_date = bronze_event.get("date")
-
-        if not all([bucket, key, entity, target_date]):
-            raise ValueError("Missing required Bronze event information")
-
-        logger.info(
-            f"Processing Bronze event: entity={entity}, date={target_date}, "
-            f"s3://{bucket}/{key}"
-        )
-
-        # Process the date using the Silver processor
-        success = processor.process_date(target_date, dry_run=False)
-
-        if success:
-            return {
-                "bronze_event": {
-                    "bucket": bucket,
-                    "key": key,
-                    "entity": entity,
-                    "date": target_date.isoformat(),
-                },
-                "success": True,
-                "message": f"Successfully processed {entity} data for {target_date}",
-            }
-        else:
-            return {
-                "bronze_event": {
-                    "bucket": bucket,
-                    "key": key,
-                    "entity": entity,
-                    "date": target_date.isoformat(),
-                },
-                "success": False,
-                "message": f"Processing failed for {entity} data on {target_date}",
-            }
-
-    except Exception as e:
-        logger.error(f"Bronze event processing failed: {e}")
-        raise

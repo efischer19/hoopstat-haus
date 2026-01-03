@@ -636,7 +636,7 @@ class SilverProcessor:
                 return False
 
             # Process box_scores entity (main entity type for now)
-            entity = "box_scores"
+            entity = "box"
 
             # 1. Load Bronze JSON data from S3 (ADR-031: returns list of games)
             bronze_data_list = self.bronze_to_silver_processor.read_bronze_json(

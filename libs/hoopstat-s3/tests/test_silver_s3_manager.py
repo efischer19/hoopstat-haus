@@ -6,6 +6,7 @@ import json
 from datetime import date
 from unittest.mock import patch
 
+import boto3
 import pytest
 from moto import mock_aws
 
@@ -600,10 +601,6 @@ class TestSilverS3Manager:
     def test_read_summary_json_success(self):
         """Test reading summary.json file successfully."""
         # Setup mock S3
-        import json
-
-        import boto3
-
         s3_client = boto3.client("s3", region_name="us-east-1")
         s3_client.create_bucket(Bucket="test-bucket")
 
@@ -636,8 +633,6 @@ class TestSilverS3Manager:
     def test_read_summary_json_not_found(self):
         """Test reading summary.json when file doesn't exist."""
         # Setup mock S3
-        import boto3
-
         s3_client = boto3.client("s3", region_name="us-east-1")
         s3_client.create_bucket(Bucket="test-bucket")
 
@@ -650,8 +645,6 @@ class TestSilverS3Manager:
     def test_read_summary_json_invalid_json(self):
         """Test reading summary.json with invalid JSON."""
         # Setup mock S3
-        import boto3
-
         s3_client = boto3.client("s3", region_name="us-east-1")
         s3_client.create_bucket(Bucket="test-bucket")
 
@@ -664,8 +657,6 @@ class TestSilverS3Manager:
         )
 
         manager = SilverS3Manager("test-bucket")
-
-        from hoopstat_s3.silver_s3_manager import SilverS3ManagerError
 
         with pytest.raises(SilverS3ManagerError, match="Summary read failed"):
             manager.read_summary_json()

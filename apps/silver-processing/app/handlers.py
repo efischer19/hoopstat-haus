@@ -5,7 +5,6 @@ This module provides handlers for S3 events that trigger Silver layer processing
 when new Bronze layer data arrives.
 """
 
-import json
 from datetime import datetime
 from typing import Any
 
@@ -56,11 +55,14 @@ def lambda_handler(event: dict[str, Any], context: Any) -> dict[str, Any]:
             logger.info("Detected summary.json update, checking for new data")
             try:
                 # Read summary file to get the last ingestion date
-                response = s3_manager.s3_client.get_object(
-                    Bucket=bucket_name, Key="_metadata/summary.json"
-                )
-                summary_content = response["Body"].read().decode("utf-8")
-                summary_data = json.loads(summary_content)
+                summary_data = s3_manager.read_summary_json()
+
+                if not summary_data:
+                    logger.warning("Summary file not found or could not be read")
+                    return {
+                        "statusCode": 404,
+                        "message": "Summary file not found",
+                    }
 
                 # Extract date from summary
                 # Structure: bronze_layer_stats -> last_ingestion_date

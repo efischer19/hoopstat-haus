@@ -595,3 +595,77 @@ class TestSilverS3Manager:
                     "custom-stats", [], target_date, check_exists=False
                 )
                 assert key4 == "silver/custom-stats/2024-01-15/custom-stats.json"
+
+    @mock_aws
+    def test_read_summary_json_success(self):
+        """Test reading summary.json file successfully."""
+        # Setup mock S3
+        import json
+
+        import boto3
+
+        s3_client = boto3.client("s3", region_name="us-east-1")
+        s3_client.create_bucket(Bucket="test-bucket")
+
+        # Create a sample summary file
+        summary_data = {
+            "summary_version": "1.0",
+            "generated_at": "2024-01-15T12:00:00Z",
+            "bronze_layer_stats": {
+                "last_ingestion_date": "2024-01-15",
+                "last_successful_run": "2024-01-15T12:00:00Z",
+                "total_entities": 2,
+            },
+        }
+
+        s3_client.put_object(
+            Bucket="test-bucket",
+            Key="_metadata/summary.json",
+            Body=json.dumps(summary_data).encode("utf-8"),
+            ContentType="application/json",
+        )
+
+        manager = SilverS3Manager("test-bucket")
+        result = manager.read_summary_json()
+
+        assert result is not None
+        assert result["summary_version"] == "1.0"
+        assert result["bronze_layer_stats"]["last_ingestion_date"] == "2024-01-15"
+
+    @mock_aws
+    def test_read_summary_json_not_found(self):
+        """Test reading summary.json when file doesn't exist."""
+        # Setup mock S3
+        import boto3
+
+        s3_client = boto3.client("s3", region_name="us-east-1")
+        s3_client.create_bucket(Bucket="test-bucket")
+
+        manager = SilverS3Manager("test-bucket")
+        result = manager.read_summary_json()
+
+        assert result is None
+
+    @mock_aws
+    def test_read_summary_json_invalid_json(self):
+        """Test reading summary.json with invalid JSON."""
+        # Setup mock S3
+        import boto3
+
+        s3_client = boto3.client("s3", region_name="us-east-1")
+        s3_client.create_bucket(Bucket="test-bucket")
+
+        # Create a file with invalid JSON
+        s3_client.put_object(
+            Bucket="test-bucket",
+            Key="_metadata/summary.json",
+            Body=b"invalid json content",
+            ContentType="application/json",
+        )
+
+        manager = SilverS3Manager("test-bucket")
+
+        from hoopstat_s3.silver_s3_manager import SilverS3ManagerError
+
+        with pytest.raises(SilverS3ManagerError, match="Summary read failed"):
+            manager.read_summary_json()

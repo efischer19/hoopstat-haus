@@ -479,178 +479,6 @@ resource "aws_s3_bucket_lifecycle_configuration" "gold" {
   }
 }
 
-# ============================================================================
-# S3 Tables for Gold Layer Analytics (ADR-026)
-# ============================================================================
-
-# S3 Tables Bucket for Gold Layer Apache Iceberg analytics
-resource "aws_s3tables_table_bucket" "gold_tables" {
-  name = "${var.project_name}-gold-tables"
-}
-
-# S3 Tables Namespace for basketball analytics
-resource "aws_s3tables_namespace" "basketball_analytics" {
-  namespace        = "basketball_analytics"
-  table_bucket_arn = aws_s3tables_table_bucket.gold_tables.arn
-}
-
-# Player Analytics Table with Apache Iceberg schema
-resource "aws_s3tables_table" "player_analytics" {
-  name             = "player_analytics"
-  namespace        = aws_s3tables_namespace.basketball_analytics.namespace
-  table_bucket_arn = aws_s3tables_table_bucket.gold_tables.arn
-  format           = "ICEBERG"
-
-  metadata {
-    iceberg {
-      schema {
-        field {
-          name     = "player_id"
-          type     = "int"
-          required = true
-        }
-        field {
-          name     = "game_date"
-          type     = "date"
-          required = true
-        }
-        field {
-          name     = "season"
-          type     = "string"
-          required = true
-        }
-        field {
-          name     = "team_id"
-          type     = "int"
-          required = true
-        }
-        field {
-          name     = "points"
-          type     = "int"
-          required = false
-        }
-        field {
-          name     = "rebounds"
-          type     = "int"
-          required = false
-        }
-        field {
-          name     = "assists"
-          type     = "int"
-          required = false
-        }
-        field {
-          name     = "true_shooting_pct"
-          type     = "double"
-          required = false
-        }
-        field {
-          name     = "player_efficiency_rating"
-          type     = "double"
-          required = false
-        }
-        field {
-          name     = "usage_rate"
-          type     = "double"
-          required = false
-        }
-        field {
-          name     = "effective_field_goal_pct"
-          type     = "double"
-          required = false
-        }
-        field {
-          name     = "defensive_rating"
-          type     = "double"
-          required = false
-        }
-        field {
-          name     = "offensive_rating"
-          type     = "double"
-          required = false
-        }
-      }
-    }
-  }
-}
-
-# Team Analytics Table with Apache Iceberg schema
-resource "aws_s3tables_table" "team_analytics" {
-  name             = "team_analytics"
-  namespace        = aws_s3tables_namespace.basketball_analytics.namespace
-  table_bucket_arn = aws_s3tables_table_bucket.gold_tables.arn
-  format           = "ICEBERG"
-
-  metadata {
-    iceberg {
-      schema {
-        field {
-          name     = "team_id"
-          type     = "int"
-          required = true
-        }
-        field {
-          name     = "game_date"
-          type     = "date"
-          required = true
-        }
-        field {
-          name     = "season"
-          type     = "string"
-          required = true
-        }
-        field {
-          name     = "opponent_team_id"
-          type     = "int"
-          required = true
-        }
-        field {
-          name     = "offensive_rating"
-          type     = "double"
-          required = false
-        }
-        field {
-          name     = "defensive_rating"
-          type     = "double"
-          required = false
-        }
-        field {
-          name     = "net_rating"
-          type     = "double"
-          required = false
-        }
-        field {
-          name     = "pace"
-          type     = "double"
-          required = false
-        }
-        field {
-          name     = "effective_field_goal_pct"
-          type     = "double"
-          required = false
-        }
-        field {
-          name     = "true_shooting_pct"
-          type     = "double"
-          required = false
-        }
-        field {
-          name     = "turnover_rate"
-          type     = "double"
-          required = false
-        }
-        field {
-          name     = "rebound_rate"
-          type     = "double"
-          required = false
-        }
-      }
-    }
-  }
-}
-
-
-
 # S3 bucket for access logs
 resource "aws_s3_bucket" "access_logs" {
   bucket = "${var.project_name}-access-logs"
@@ -1105,33 +933,11 @@ resource "aws_iam_role_policy" "gold_data_access" {
       {
         Effect = "Allow"
         Action = [
-          # S3 Tables permissions for Gold analytics
-          "s3tables:GetTable",
-          "s3tables:GetTableData",
-          "s3tables:GetTableMetadata",
-          "s3tables:PutTableData",
-          "s3tables:UpdateTableData",
-          "s3tables:DeleteTableData",
-          "s3tables:CreateTable",
-          "s3tables:UpdateTable",
-          "s3tables:ListTables",
-          "s3tables:GetTableBucket",
-          "s3tables:ListTableBuckets"
-        ]
-        Resource = [
-          "arn:aws:s3tables:${var.aws_region}:${data.aws_caller_identity.current.account_id}:bucket/${aws_s3tables_table_bucket.gold_tables.name}",
-          "arn:aws:s3tables:${var.aws_region}:${data.aws_caller_identity.current.account_id}:bucket/${aws_s3tables_table_bucket.gold_tables.name}/*"
-        ]
-      },
-      {
-        Effect = "Allow"
-        Action = [
           "logs:CreateLogStream",
           "logs:PutLogEvents"
         ]
         Resource = [
-          "${aws_cloudwatch_log_group.data_pipeline.arn}:*",
-          "${aws_cloudwatch_log_group.s3_tables.arn}:*"
+          "${aws_cloudwatch_log_group.data_pipeline.arn}:*"
         ]
       }
     ]
@@ -1252,8 +1058,7 @@ resource "aws_iam_policy" "lambda_execution" {
         ]
         Resource = [
           "${aws_cloudwatch_log_group.applications.arn}:*",
-          "${aws_cloudwatch_log_group.data_pipeline.arn}:*",
-          "${aws_cloudwatch_log_group.s3_tables.arn}:*"
+          "${aws_cloudwatch_log_group.data_pipeline.arn}:*"
         ]
       },
       {
@@ -1274,24 +1079,6 @@ resource "aws_iam_policy" "lambda_execution" {
           "${aws_s3_bucket.silver.arn}/*",
           aws_s3_bucket.gold.arn,
           "${aws_s3_bucket.gold.arn}/*"
-        ]
-      },
-      {
-        Effect = "Allow"
-        Action = [
-          # S3 Tables permissions for Gold layer processing
-          "s3tables:GetTable",
-          "s3tables:GetTableData",
-          "s3tables:GetTableMetadata",
-          "s3tables:PutTableData",
-          "s3tables:UpdateTableData",
-          "s3tables:DeleteTableData",
-          "s3tables:ListTables",
-          "s3tables:GetTableBucket"
-        ]
-        Resource = [
-          "arn:aws:s3tables:${var.aws_region}:${data.aws_caller_identity.current.account_id}:bucket/${aws_s3tables_table_bucket.gold_tables.name}",
-          "arn:aws:s3tables:${var.aws_region}:${data.aws_caller_identity.current.account_id}:bucket/${aws_s3tables_table_bucket.gold_tables.name}/*"
         ]
       },
       {
@@ -1379,11 +1166,10 @@ resource "aws_lambda_function" "gold_processing" {
 
   environment {
     variables = {
-      LOG_LEVEL      = "INFO"
-      APP_NAME       = "gold-analytics"
-      SILVER_BUCKET  = aws_s3_bucket.silver.bucket
-      GOLD_BUCKET    = aws_s3_bucket.gold.bucket
-      GOLD_TABLE_ARN = aws_s3tables_table_bucket.gold_tables.arn
+      LOG_LEVEL     = "INFO"
+      APP_NAME      = "gold-analytics"
+      SILVER_BUCKET = aws_s3_bucket.silver.bucket
+      GOLD_BUCKET   = aws_s3_bucket.gold.bucket
     }
   }
 
@@ -1400,24 +1186,6 @@ resource "aws_lambda_function" "gold_processing" {
   # Lifecycle rule to ignore image_uri changes (managed by deployment workflow)
   lifecycle {
     ignore_changes = [image_uri]
-  }
-}
-
-
-
-
-# ============================================================================
-# S3 Tables CloudWatch Log Group (ADR-026)
-# ============================================================================
-
-# CloudWatch Log Group for S3 Tables analytics operations monitoring
-resource "aws_cloudwatch_log_group" "s3_tables" {
-  name              = "/hoopstat-haus/s3-tables"
-  retention_in_days = var.log_retention_days.data_pipeline
-
-  tags = {
-    LogType = "s3-tables"
-    Purpose = "S3 Tables analytics operations monitoring"
   }
 }
 

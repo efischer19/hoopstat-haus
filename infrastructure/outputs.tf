@@ -81,6 +81,10 @@ output "medallion_s3_buckets" {
       name = aws_s3_bucket.silver.bucket
       arn  = aws_s3_bucket.silver.arn
     }
+    gold = {
+      name = aws_s3_bucket.gold.bucket
+      arn  = aws_s3_bucket.gold.arn
+    }
     access_logs = {
       name = aws_s3_bucket.access_logs.bucket
       arn  = aws_s3_bucket.access_logs.arn
@@ -135,49 +139,13 @@ output "lambda_execution_role" {
 }
 
 # ============================================================================
-# S3 Tables Outputs (ADR-026)
+# Gold Layer S3 Bucket Output (ADR-028)
 # ============================================================================
 
-output "s3_tables_gold_analytics" {
-  description = "S3 Tables configuration for Gold layer analytics with public read access"
+output "gold_bucket" {
+  description = "Gold layer S3 bucket for Parquet storage and served/ JSON artifacts"
   value = {
-    table_bucket = {
-      name = aws_s3tables_table_bucket.gold_tables.name
-      arn  = aws_s3tables_table_bucket.gold_tables.arn
-    }
-    namespace = {
-      name = aws_s3tables_namespace.basketball_analytics.namespace
-    }
-    tables = {
-      player_analytics = {
-        name = aws_s3tables_table.player_analytics.name
-        arn  = aws_s3tables_table.player_analytics.arn
-      }
-      team_analytics = {
-        name = aws_s3tables_table.team_analytics.name
-        arn  = aws_s3tables_table.team_analytics.arn
-      }
-    }
-    region = var.aws_region
-    public_access = {
-      enabled            = true
-      policy_description = "Anonymous read access for MCP clients"
-    }
-    mcp_server_config = {
-      command = "uvx"
-      args    = ["awslabs.s3-tables-mcp-server@latest", "--allow-read"]
-      env = {
-        AWS_REGION       = var.aws_region
-        S3_TABLES_BUCKET = aws_s3tables_table_bucket.gold_tables.name
-        # No AWS credentials needed for public access
-      }
-    }
-    example_queries = [
-      "Show me LeBron's efficiency this week",
-      "What's the Lakers defensive rating this month?",
-      "Top 10 players by True Shooting % yesterday",
-      "Compare team offensive ratings for the 2023-24 season"
-    ]
-    adr_reference = "ADR-026"
+    name = aws_s3_bucket.gold.bucket
+    arn  = aws_s3_bucket.gold.arn
   }
 }

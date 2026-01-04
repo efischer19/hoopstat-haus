@@ -31,8 +31,9 @@ For v1:
   - JSON schemas versioned and documented; deterministic key layout (indexes for discovery)
 
 - Orchestration & compute
-  - PySpark jobs on AWS Glue for Bronze→Silver and Silver→Gold, orchestrated by EventBridge→Glue Workflow
-  - S3→Lambda notifications are disabled by default for v1
+  - Bronze→Silver: AWS Lambda triggered by Bronze `_metadata/summary.json` updates (simple daily coordination)
+  - Silver→Gold: PySpark jobs on AWS Glue, orchestrated by EventBridge→Glue Workflow
+  - S3→Lambda notifications are disabled by default for Silver→Gold in v1
 
 - Discovery/catalog
   - Adopt ADR-024 lightweight manifest-based catalog (JSON manifests in S3) for dataset/schema/partition discovery
@@ -74,7 +75,7 @@ For v1:
 
 ## Scope and Non-Goals
 
-- In scope (v1): Spark/Glue transforms; Parquet storage; JSON artifact publishing with schemas and indexes; manifest-based catalog; EventBridge→Glue orchestration; public read + CORS configuration.
+- In scope (v1): Spark/Glue transforms (Silver→Gold); Parquet storage; JSON artifact publishing with schemas and indexes; manifest-based catalog; EventBridge→Glue orchestration (Silver→Gold); public read + CORS configuration.
 - Out of scope (v1): Iceberg/Glue Catalog; Athena NL→SQL; S3 Tables-backed public serving.
 
 ## Implementation Notes
@@ -94,12 +95,13 @@ For v1:
   - Use manifests for test discovery and tooling (no hardcoded paths)
 
 - Orchestration
-  - EventBridge on Bronze arrivals → Glue Workflow
-  - Conditional job chaining Bronze→Silver→Gold
+  - EventBridge on Silver readiness → Glue Workflow
+  - Conditional job chaining Silver→Gold
 
 ## Migration and Clean-up
 
-- Disable S3→Lambda notifications for Silver/Gold processing in v1
+- Retain S3→Lambda trigger for Bronze→Silver via `_metadata/summary.json` updates
+- Disable S3→Lambda notifications for Silver→Gold processing in v1
 - Retain or remove Lambda prototypes behind tfvars; safe to delete post-v1
 - Gate any S3 Tables resources by default; enable only if/when we adopt Iceberg formally
 

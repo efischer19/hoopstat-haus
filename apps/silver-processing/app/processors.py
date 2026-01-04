@@ -587,7 +587,10 @@ class SilverProcessor:
     """Main processor for transforming Bronze to Silver layer data."""
 
     def __init__(
-        self, bronze_bucket: str | None = None, region_name: str = "us-east-1"
+        self,
+        bronze_bucket: str | None = None,
+        silver_bucket: str | None = None,
+        region_name: str = "us-east-1",
     ) -> None:
         """
         Initialize the Silver processor with dependencies.
@@ -595,14 +598,21 @@ class SilverProcessor:
         Args:
             bronze_bucket: S3 bucket name for Bronze data (optional for backward
                 compatibility)
+            silver_bucket: S3 bucket name for Silver data (optional, defaults to
+                bronze_bucket for backward compatibility)
             region_name: AWS region name
         """
         self.bronze_bucket = bronze_bucket
+        self.silver_bucket = silver_bucket or bronze_bucket
         self.region_name = region_name
 
         if bronze_bucket:
             # Use SilverS3Manager for both Bronze reading and Silver writing
-            self.s3_manager = SilverS3Manager(bronze_bucket, region_name=region_name)
+            self.s3_manager = SilverS3Manager(
+                bronze_bucket=bronze_bucket,
+                silver_bucket=self.silver_bucket,
+                region_name=region_name,
+            )
 
             # Keep backward compatibility with existing BronzeToSilverProcessor
             self.bronze_to_silver_processor = BronzeToSilverProcessor(
@@ -615,7 +625,13 @@ class SilverProcessor:
                 "No Bronze bucket configured - some operations may not be available"
             )
 
-        logger.info("Silver processor initialized with SilverS3Manager")
+        if self.bronze_bucket == self.silver_bucket:
+            logger.info("Silver processor initialized with SilverS3Manager")
+        else:
+            logger.info(
+                f"Silver processor initialized - Bronze: {self.bronze_bucket}, "
+                f"Silver: {self.silver_bucket}"
+            )
 
     def process_date(self, target_date: date, dry_run: bool = False) -> bool:
         """

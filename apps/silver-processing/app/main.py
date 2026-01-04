@@ -38,7 +38,17 @@ def cli(debug: bool) -> None:
     type=str,
     help="S3 bucket name for Bronze data (can also be set via BRONZE_BUCKET env var)",
 )
-def process(date: datetime | None, dry_run: bool, bronze_bucket: str | None) -> None:
+@click.option(
+    "--silver-bucket",
+    type=str,
+    help="S3 bucket name for Silver data (can also be set via SILVER_BUCKET env var)",
+)
+def process(
+    date: datetime | None,
+    dry_run: bool,
+    bronze_bucket: str | None,
+    silver_bucket: str | None,
+) -> None:
     """Process Bronze layer data into Silver layer format."""
     # Default to today (UTC) if no date provided
     target_date = date.date() if date else datetime.now(UTC).date()
@@ -49,17 +59,28 @@ def process(date: datetime | None, dry_run: bool, bronze_bucket: str | None) -> 
         logger.info("Dry run mode - no data will be written")
 
     # Get bronze bucket from CLI option or environment variable
-    bucket_name = bronze_bucket or os.getenv("BRONZE_BUCKET")
-    if not bucket_name:
+    bronze_bucket_name = bronze_bucket or os.getenv("BRONZE_BUCKET")
+    if not bronze_bucket_name:
         logger.error(
             "Bronze bucket not specified. Use --bronze-bucket option or set "
             "BRONZE_BUCKET environment variable"
         )
         sys.exit(1)
 
+    # Get silver bucket from CLI option or environment variable
+    silver_bucket_name = silver_bucket or os.getenv("SILVER_BUCKET")
+    if not silver_bucket_name:
+        logger.error(
+            "Silver bucket not specified. Use --silver-bucket option or set "
+            "SILVER_BUCKET environment variable"
+        )
+        sys.exit(1)
+
     try:
-        # Initialize Silver processor with Bronze bucket
-        processor = SilverProcessor(bronze_bucket=bucket_name)
+        # Initialize Silver processor with both Bronze and Silver buckets
+        processor = SilverProcessor(
+            bronze_bucket=bronze_bucket_name, silver_bucket=silver_bucket_name
+        )
 
         # Process the target date
         success = processor.process_date(target_date, dry_run=dry_run)

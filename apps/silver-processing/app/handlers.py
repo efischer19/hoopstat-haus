@@ -31,16 +31,23 @@ def lambda_handler(event: dict[str, Any], context: Any) -> dict[str, Any]:
     logger.info(f"Event: {event}")
 
     try:
-        # Get bucket name from environment or use default
+        # Get bucket names from environment
         import os
 
-        bucket_name = os.getenv("BRONZE_BUCKET")
-        if not bucket_name:
+        bronze_bucket = os.getenv("BRONZE_BUCKET")
+        if not bronze_bucket:
             logger.error("BRONZE_BUCKET environment variable not set")
-            return {"statusCode": 400, "message": "No bucket configured"}
+            return {"statusCode": 400, "message": "No bronze bucket configured"}
 
-        # Initialize S3 manager
-        s3_manager = SilverS3Manager(bucket_name)
+        silver_bucket = os.getenv("SILVER_BUCKET")
+        if not silver_bucket:
+            logger.error("SILVER_BUCKET environment variable not set")
+            return {"statusCode": 400, "message": "No silver bucket configured"}
+
+        # Initialize S3 manager with both buckets
+        s3_manager = SilverS3Manager(
+            bronze_bucket=bronze_bucket, silver_bucket=silver_bucket
+        )
 
         # Check if this is a summary.json update
         is_summary_update = False
@@ -84,8 +91,10 @@ def lambda_handler(event: dict[str, Any], context: Any) -> dict[str, Any]:
 
                 logger.info(f"Triggering processing for date: {target_date}")
 
-                # Process the date
-                processor = SilverProcessor(bronze_bucket=bucket_name)
+                # Process the date with both buckets specified
+                processor = SilverProcessor(
+                    bronze_bucket=bronze_bucket, silver_bucket=silver_bucket
+                )
                 success = processor.process_date(target_date, dry_run=False)
 
                 if success:

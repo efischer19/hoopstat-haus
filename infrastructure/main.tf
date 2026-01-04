@@ -418,6 +418,67 @@ resource "aws_s3_bucket_lifecycle_configuration" "silver" {
   }
 }
 
+# S3 Bucket for Gold Layer (Business-ready aggregated datasets)
+resource "aws_s3_bucket" "gold" {
+  bucket = "${var.project_name}-gold"
+
+  tags = {
+    Name      = "${var.project_name}-gold-bucket"
+    DataLayer = "gold"
+    Purpose   = "Business-ready aggregated datasets and served/ JSON artifacts"
+    Retention = "indefinite"
+  }
+}
+
+# S3 Bucket versioning for Gold layer
+resource "aws_s3_bucket_versioning" "gold" {
+  bucket = aws_s3_bucket.gold.id
+  versioning_configuration {
+    status = "Enabled"
+  }
+}
+
+# S3 Bucket encryption for Gold layer
+resource "aws_s3_bucket_server_side_encryption_configuration" "gold" {
+  bucket = aws_s3_bucket.gold.id
+
+  rule {
+    apply_server_side_encryption_by_default {
+      sse_algorithm = "AES256"
+    }
+    bucket_key_enabled = true
+  }
+}
+
+# S3 Bucket public access block for Gold layer
+resource "aws_s3_bucket_public_access_block" "gold" {
+  bucket = aws_s3_bucket.gold.id
+
+  block_public_acls       = true
+  block_public_policy     = true
+  ignore_public_acls      = true
+  restrict_public_buckets = true
+}
+
+# Gold Layer Lifecycle Policy
+resource "aws_s3_bucket_lifecycle_configuration" "gold" {
+  bucket = aws_s3_bucket.gold.id
+
+  rule {
+    id     = "gold_primary_data"
+    status = "Enabled"
+
+    # Apply to all objects by default
+    filter {}
+
+    # No expiration - indefinite retention as per README
+    # Incomplete multipart uploads cleanup
+    abort_incomplete_multipart_upload {
+      days_after_initiation = 7
+    }
+  }
+}
+
 # ============================================================================
 # S3 Tables for Gold Layer Analytics (ADR-026)
 # ============================================================================
@@ -661,6 +722,14 @@ resource "aws_s3_bucket_logging" "silver" {
   target_prefix = "silver/"
 }
 
+# S3 Bucket Logging for Gold Layer
+resource "aws_s3_bucket_logging" "gold" {
+  bucket = aws_s3_bucket.gold.id
+
+  target_bucket = aws_s3_bucket.access_logs.id
+  target_prefix = "gold/"
+}
+
 
 
 # ============================================================================
@@ -753,6 +822,7 @@ resource "aws_iam_role_policy" "github_actions_operations_s3" {
           aws_s3_bucket.main.arn,
           aws_s3_bucket.bronze.arn,
           aws_s3_bucket.silver.arn,
+          aws_s3_bucket.gold.arn,
           aws_s3_bucket.access_logs.arn
         ]
       },
@@ -767,6 +837,7 @@ resource "aws_iam_role_policy" "github_actions_operations_s3" {
           "${aws_s3_bucket.main.arn}/*",
           "${aws_s3_bucket.bronze.arn}/*",
           "${aws_s3_bucket.silver.arn}/*",
+          "${aws_s3_bucket.gold.arn}/*",
           "${aws_s3_bucket.access_logs.arn}/*"
         ]
       }
@@ -1020,6 +1091,20 @@ resource "aws_iam_role_policy" "gold_data_access" {
       {
         Effect = "Allow"
         Action = [
+          "s3:GetObject",
+          "s3:PutObject",
+          "s3:DeleteObject",
+          "s3:ListBucket",
+          "s3:GetBucketLocation"
+        ]
+        Resource = [
+          aws_s3_bucket.gold.arn,
+          "${aws_s3_bucket.gold.arn}/*"
+        ]
+      },
+      {
+        Effect = "Allow"
+        Action = [
           # S3 Tables permissions for Gold analytics
           "s3tables:GetTable",
           "s3tables:GetTableData",
@@ -1186,7 +1271,9 @@ resource "aws_iam_policy" "lambda_execution" {
           aws_s3_bucket.bronze.arn,
           "${aws_s3_bucket.bronze.arn}/*",
           aws_s3_bucket.silver.arn,
-          "${aws_s3_bucket.silver.arn}/*"
+          "${aws_s3_bucket.silver.arn}/*",
+          aws_s3_bucket.gold.arn,
+          "${aws_s3_bucket.gold.arn}/*"
         ]
       },
       {
@@ -1295,6 +1382,7 @@ resource "aws_lambda_function" "gold_processing" {
       LOG_LEVEL      = "INFO"
       APP_NAME       = "gold-analytics"
       SILVER_BUCKET  = aws_s3_bucket.silver.bucket
+      GOLD_BUCKET    = aws_s3_bucket.gold.bucket
       GOLD_TABLE_ARN = aws_s3tables_table_bucket.gold_tables.arn
     }
   }

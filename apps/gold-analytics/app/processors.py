@@ -14,6 +14,7 @@ from hoopstat_observability import get_logger
 
 from .config import GoldAnalyticsConfig, load_config
 from .iceberg_integration import IcebergS3TablesWriter
+from .json_artifacts import JSONArtifactWriter
 from .performance import performance_context, performance_monitor
 from .s3_discovery import S3DataDiscovery
 from .validation import (
@@ -64,6 +65,7 @@ class GoldProcessor:
 
         # Initialize components
         self.iceberg_writer = IcebergS3TablesWriter(gold_bucket)
+        self.json_writer = JSONArtifactWriter(gold_bucket)
         self.s3_discovery = S3DataDiscovery(self.config)
         self.validator = DataValidator(validation_mode="lenient")
 
@@ -582,6 +584,25 @@ class GoldProcessor:
                         self._store_player_analytics(player_analytics, target_date)
                     if not team_analytics.empty:
                         self._store_team_analytics(team_analytics, target_date)
+
+                    # Write JSON artifacts after successful Iceberg storage
+                    try:
+                        if not player_analytics.empty:
+                            self.json_writer.write_player_daily_artifacts(
+                                player_analytics, target_date
+                            )
+                            self.json_writer.write_top_lists(
+                                player_analytics, target_date
+                            )
+                        if not team_analytics.empty:
+                            self.json_writer.write_team_daily_artifacts(
+                                team_analytics, target_date
+                            )
+                        # Update latest index
+                        self.json_writer.write_latest_index(target_date)
+                    except Exception as e:
+                        logger.error(f"Failed to write JSON artifacts: {e}")
+                        # Don't fail the whole process if JSON writing fails
                 else:
                     logger.info(f"Would store {len(player_analytics)} player analytics")
                     logger.info(f"Would store {len(team_analytics)} team analytics")

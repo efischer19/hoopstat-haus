@@ -10,7 +10,10 @@ class TestLambdaHandler:
     """Test cases for Lambda event handlers."""
 
     @patch("app.handlers.SilverS3Manager")
-    @patch.dict("os.environ", {"BRONZE_BUCKET": "test-bucket", "SILVER_BUCKET": "test-silver-bucket"})
+    @patch.dict(
+        "os.environ",
+        {"BRONZE_BUCKET": "test-bucket", "SILVER_BUCKET": "test-silver-bucket"},
+    )
     def test_lambda_handler_non_summary_event(self, mock_s3_manager):
         """Test Lambda handler with non-summary event."""
         mock_manager = MagicMock()
@@ -43,7 +46,10 @@ class TestLambdaHandler:
         assert "bronze bucket configured" in result["message"]
 
     @patch("app.handlers.SilverS3Manager")
-    @patch.dict("os.environ", {"BRONZE_BUCKET": "test-bucket", "SILVER_BUCKET": "test-silver-bucket"})
+    @patch.dict(
+        "os.environ",
+        {"BRONZE_BUCKET": "test-bucket", "SILVER_BUCKET": "test-silver-bucket"},
+    )
     def test_lambda_handler_with_summary_update(self, mock_s3_manager):
         """Test Lambda handler with summary.json update event."""
         # Mock S3 manager to return summary data
@@ -84,7 +90,10 @@ class TestLambdaHandler:
             )
 
     @patch("app.handlers.SilverS3Manager")
-    @patch.dict("os.environ", {"BRONZE_BUCKET": "test-bucket", "SILVER_BUCKET": "test-silver-bucket"})
+    @patch.dict(
+        "os.environ",
+        {"BRONZE_BUCKET": "test-bucket", "SILVER_BUCKET": "test-silver-bucket"},
+    )
     def test_lambda_handler_summary_not_found(self, mock_s3_manager):
         """Test Lambda handler when summary.json doesn't exist."""
         mock_manager = MagicMock()
@@ -109,7 +118,10 @@ class TestLambdaHandler:
         assert "Summary file not found" in result["message"]
 
     @patch("app.handlers.SilverS3Manager")
-    @patch.dict("os.environ", {"BRONZE_BUCKET": "test-bucket", "SILVER_BUCKET": "test-silver-bucket"})
+    @patch.dict(
+        "os.environ",
+        {"BRONZE_BUCKET": "test-bucket", "SILVER_BUCKET": "test-silver-bucket"},
+    )
     def test_lambda_handler_no_date_in_summary(self, mock_s3_manager):
         """Test Lambda handler when summary has no last_ingestion_date."""
         mock_manager = MagicMock()
@@ -137,7 +149,10 @@ class TestLambdaHandler:
         assert "No date found in summary" in result["message"]
 
     @patch("app.handlers.SilverS3Manager")
-    @patch.dict("os.environ", {"BRONZE_BUCKET": "test-bucket", "SILVER_BUCKET": "test-silver-bucket"})
+    @patch.dict(
+        "os.environ",
+        {"BRONZE_BUCKET": "test-bucket", "SILVER_BUCKET": "test-silver-bucket"},
+    )
     def test_lambda_handler_processing_failure(self, mock_s3_manager):
         """Test Lambda handler when processing fails."""
         mock_manager = MagicMock()
@@ -171,7 +186,10 @@ class TestLambdaHandler:
             assert "Processing failed" in result["message"]
 
     @patch("app.handlers.SilverS3Manager")
-    @patch.dict("os.environ", {"BRONZE_BUCKET": "test-bucket", "SILVER_BUCKET": "test-silver-bucket"})
+    @patch.dict(
+        "os.environ",
+        {"BRONZE_BUCKET": "test-bucket", "SILVER_BUCKET": "test-silver-bucket"},
+    )
     def test_lambda_handler_exception_during_processing(self, mock_s3_manager):
         """Test Lambda handler when an exception occurs during processing."""
         mock_manager = MagicMock()

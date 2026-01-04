@@ -59,7 +59,7 @@ class TestLambdaDeployment:
 
         # Should return error due to missing BRONZE_BUCKET environment variable
         assert result["statusCode"] == 400
-        assert "No bucket configured" in result["message"]
+        assert "bronze bucket configured" in result["message"]
 
     def test_lambda_handler_imports(self):
         """Test that all necessary imports for Lambda handler work."""

@@ -39,28 +39,57 @@ class SilverS3Manager(S3Uploader):
 
     def __init__(
         self,
-        bucket_name: str,
+        bucket_name: str | None = None,
         aws_access_key_id: str | None = None,
         aws_secret_access_key: str | None = None,
         region_name: str = "us-east-1",
+        bronze_bucket: str | None = None,
+        silver_bucket: str | None = None,
     ):
         """
         Initialize the Silver S3 Manager.
 
         Args:
-            bucket_name: S3 bucket name for uploads/downloads
+            bucket_name: S3 bucket name for uploads/downloads (deprecated, use
+                bronze_bucket and silver_bucket instead for clarity)
             aws_access_key_id: AWS access key (optional, can use IAM roles)
             aws_secret_access_key: AWS secret key (optional, can use IAM roles)
             region_name: AWS region name
+            bronze_bucket: S3 bucket name for reading Bronze data
+            silver_bucket: S3 bucket name for writing Silver data
         """
         # Store region_name for our own use
         self.region_name = region_name
 
-        # Initialize the parent S3Uploader
+        # Determine which buckets to use
+        # Priority: explicit bronze_bucket/silver_bucket > bucket_name
+        # (for backward compatibility)
+        if bronze_bucket or silver_bucket:
+            self.bronze_bucket = bronze_bucket
+            self.silver_bucket = silver_bucket
+            # Use silver_bucket for the parent S3Uploader (for writing)
+            write_bucket = silver_bucket or bucket_name
+        else:
+            # Backward compatibility: use bucket_name for both read and write
+            self.bronze_bucket = bucket_name
+            self.silver_bucket = bucket_name
+            write_bucket = bucket_name
+
+        if not write_bucket:
+            raise ValueError("Must provide bucket_name or silver_bucket")
+
+        # Initialize the parent S3Uploader with the write bucket
         super().__init__(
-            bucket_name, aws_access_key_id, aws_secret_access_key, region_name
+            write_bucket, aws_access_key_id, aws_secret_access_key, region_name
         )
-        logger.info(f"Initialized Silver S3 Manager for bucket: {bucket_name}")
+
+        if self.bronze_bucket == self.silver_bucket:
+            logger.info(f"Initialized Silver S3 Manager for bucket: {write_bucket}")
+        else:
+            logger.info(
+                f"Initialized Silver S3 Manager - Bronze: {self.bronze_bucket}, "
+                f"Silver: {self.silver_bucket}"
+            )
 
     def read_bronze_json(self, entity: str, target_date: date) -> dict[str, Any] | None:
         """
@@ -80,22 +109,22 @@ class SilverS3Manager(S3Uploader):
         key = f"raw/{entity}/{date_str}/data.json"
 
         try:
-            response = self.s3_client.get_object(Bucket=self.bucket_name, Key=key)
+            response = self.s3_client.get_object(Bucket=self.bronze_bucket, Key=key)
             json_content = response["Body"].read().decode("utf-8")
             data = json.loads(json_content)
 
             logger.info(
-                f"Successfully read Bronze data from s3://{self.bucket_name}/{key}"
+                f"Successfully read Bronze data from s3://{self.bronze_bucket}/{key}"
             )
             return data
 
         except self.s3_client.exceptions.NoSuchKey:
-            logger.warning(f"Bronze data not found: s3://{self.bucket_name}/{key}")
+            logger.warning(f"Bronze data not found: s3://{self.bronze_bucket}/{key}")
             return None
 
         except (BotoCoreError, ClientError, json.JSONDecodeError) as e:
             logger.error(
-                f"Failed to read Bronze data from s3://{self.bucket_name}/{key}: {e}"
+                f"Failed to read Bronze data from s3://{self.bronze_bucket}/{key}: {e}"
             )
             raise SilverS3ManagerError(f"Bronze data read failed: {e}") from e
 
@@ -294,20 +323,22 @@ class SilverS3Manager(S3Uploader):
         key = "_metadata/summary.json"
 
         try:
-            response = self.s3_client.get_object(Bucket=self.bucket_name, Key=key)
+            response = self.s3_client.get_object(Bucket=self.bronze_bucket, Key=key)
             json_content = response["Body"].read().decode("utf-8")
             data = json.loads(json_content)
 
-            logger.info(f"Successfully read summary from s3://{self.bucket_name}/{key}")
+            logger.info(
+                f"Successfully read summary from s3://{self.bronze_bucket}/{key}"
+            )
             return data
 
         except self.s3_client.exceptions.NoSuchKey:
-            logger.warning(f"Summary file not found: s3://{self.bucket_name}/{key}")
+            logger.warning(f"Summary file not found: s3://{self.bronze_bucket}/{key}")
             return None
 
         except (BotoCoreError, ClientError, json.JSONDecodeError) as e:
             logger.error(
-                f"Failed to read summary from s3://{self.bucket_name}/{key}: {e}"
+                f"Failed to read summary from s3://{self.bronze_bucket}/{key}: {e}"
             )
             raise SilverS3ManagerError(f"Summary read failed: {e}") from e
 
@@ -423,7 +454,11 @@ class SilverS3Manager(S3Uploader):
         """
         try:
             prefix = f"raw/{entity}/"
-            objects = self.list_objects(prefix)
+            # List objects from Bronze bucket
+            response = self.s3_client.list_objects_v2(
+                Bucket=self.bronze_bucket, Prefix=prefix, MaxKeys=1000
+            )
+            objects = response.get("Contents", [])
 
             bronze_data = []
             for obj in objects:

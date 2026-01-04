@@ -311,18 +311,28 @@ class JSONArtifactWriter:
         Returns:
             Prepared data dict for model initialization
         """
+
+        def safe_int(value: Any, default: int = 0) -> int:
+            """Safely convert value to int, handling None and NaN."""
+            if pd.isna(value) or value is None:
+                return default
+            try:
+                return int(value)
+            except (ValueError, TypeError):
+                return default
+
         # Map analytics DataFrame columns to model fields
         return {
             "player_id": str(player_data.get("player_id", "")),
             "player_name": player_data.get("player_name"),
             "team": player_data.get("team") or player_data.get("team_id"),
             "position": player_data.get("position"),
-            "points": int(player_data.get("points", 0)),
-            "rebounds": int(player_data.get("rebounds", 0)),
-            "assists": int(player_data.get("assists", 0)),
-            "steals": int(player_data.get("steals", 0)),
-            "blocks": int(player_data.get("blocks", 0)),
-            "turnovers": int(player_data.get("turnovers", 0)),
+            "points": safe_int(player_data.get("points")),
+            "rebounds": safe_int(player_data.get("rebounds")),
+            "assists": safe_int(player_data.get("assists")),
+            "steals": safe_int(player_data.get("steals")),
+            "blocks": safe_int(player_data.get("blocks")),
+            "turnovers": safe_int(player_data.get("turnovers")),
             "field_goals_made": player_data.get("field_goals_made"),
             "field_goals_attempted": player_data.get("field_goals_attempted"),
             "three_pointers_made": player_data.get("three_pointers_made"),
@@ -354,21 +364,31 @@ class JSONArtifactWriter:
         Returns:
             Prepared data dict for model initialization
         """
+
+        def safe_int(value: Any, default: int = 0) -> int:
+            """Safely convert value to int, handling None and NaN."""
+            if pd.isna(value) or value is None:
+                return default
+            try:
+                return int(value)
+            except (ValueError, TypeError):
+                return default
+
         return {
             "team_id": str(team_data.get("team_id", "")),
             "team_name": team_data.get("team_name", ""),
             "game_id": team_data.get("game_id"),
             "game_date": target_date.strftime("%Y-%m-%d"),
             "season": team_data.get("season"),
-            "points": int(team_data.get("points", 0)),
-            "field_goals_made": int(team_data.get("field_goals_made", 0)),
-            "field_goals_attempted": int(team_data.get("field_goals_attempted", 0)),
+            "points": safe_int(team_data.get("points")),
+            "field_goals_made": safe_int(team_data.get("field_goals_made")),
+            "field_goals_attempted": safe_int(team_data.get("field_goals_attempted")),
             "three_pointers_made": team_data.get("three_pointers_made"),
             "three_pointers_attempted": team_data.get("three_pointers_attempted"),
             "free_throws_made": team_data.get("free_throws_made"),
             "free_throws_attempted": team_data.get("free_throws_attempted"),
-            "rebounds": int(team_data.get("rebounds", 0)),
-            "assists": int(team_data.get("assists", 0)),
+            "rebounds": safe_int(team_data.get("rebounds")),
+            "assists": safe_int(team_data.get("assists")),
             "steals": team_data.get("steals"),
             "blocks": team_data.get("blocks"),
             "turnovers": team_data.get("turnovers"),

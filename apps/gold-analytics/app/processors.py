@@ -9,6 +9,7 @@ from datetime import date
 from typing import Any
 
 import pandas as pd
+from botocore.exceptions import BotoCoreError, ClientError
 from hoopstat_data.transforms import PlayerSeasonAggregator, TeamSeasonAggregator
 from hoopstat_observability import get_logger
 
@@ -600,8 +601,11 @@ class GoldProcessor:
                             )
                         # Update latest index
                         self.json_writer.write_latest_index(target_date)
+                    except (BotoCoreError, ClientError) as e:
+                        logger.error(f"S3 error writing JSON artifacts: {e}")
+                        # Don't fail the whole process if JSON writing fails
                     except Exception as e:
-                        logger.error(f"Failed to write JSON artifacts: {e}")
+                        logger.error(f"Unexpected error writing JSON artifacts: {e}")
                         # Don't fail the whole process if JSON writing fails
                 else:
                     logger.info(f"Would store {len(player_analytics)} player analytics")

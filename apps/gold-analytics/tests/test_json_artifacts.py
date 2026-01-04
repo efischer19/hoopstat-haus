@@ -10,6 +10,7 @@ These tests validate the JSON artifact writer functionality including:
 - Error handling scenarios
 """
 
+import json
 from datetime import date
 from unittest.mock import MagicMock
 
@@ -44,9 +45,9 @@ class TestJSONArtifactWriter:
         """Sample player analytics data for testing."""
         return pd.DataFrame(
             {
-                "player_id": ["2544", "201939"],  # LeBron, Curry
-                "player_name": ["LeBron James", "Stephen Curry"],
-                "team": ["LAL", "GSW"],
+                "player_id": ["player_001", "player_002"],
+                "player_name": ["Test Player One", "Test Player Two"],
+                "team": ["TEAM1", "TEAM2"],
                 "position": ["F", "G"],
                 "points": [25, 30],
                 "rebounds": [8, 5],
@@ -73,8 +74,8 @@ class TestJSONArtifactWriter:
         """Sample team analytics data for testing."""
         return pd.DataFrame(
             {
-                "team_id": ["1610612747", "1610612744"],  # Lakers, Warriors
-                "team_name": ["Los Angeles Lakers", "Golden State Warriors"],
+                "team_id": ["team_001", "team_002"],
+                "team_name": ["Test Team One", "Test Team Two"],
                 "points": [110, 115],
                 "field_goals_made": [42, 45],
                 "field_goals_attempted": [85, 88],
@@ -127,29 +128,28 @@ class TestJSONArtifactWriter:
 
         # Verify file names
         keys = [obj["Key"] for obj in response["Contents"]]
-        assert "served/player_daily/2024-01-15/2544.json" in keys
-        assert "served/player_daily/2024-01-15/201939.json" in keys
+        assert "served/player_daily/2024-01-15/player_001.json" in keys
+        assert "served/player_daily/2024-01-15/player_002.json" in keys
 
     def test_write_player_daily_artifacts_validates_json(
         self, writer, mock_s3, sample_player_analytics
     ):
         """Test that player daily artifacts contain valid JSON."""
-        import json
-
         target_date = date(2024, 1, 15)
 
         writer.write_player_daily_artifacts(sample_player_analytics, target_date)
 
         # Read and validate JSON
         response = mock_s3.get_object(
-            Bucket="test-gold-bucket", Key="served/player_daily/2024-01-15/2544.json"
+            Bucket="test-gold-bucket",
+            Key="served/player_daily/2024-01-15/player_001.json",
         )
         content = response["Body"].read().decode("utf-8")
         data = json.loads(content)
 
         # Verify expected fields
-        assert data["player_id"] == "2544"
-        assert data["player_name"] == "LeBron James"
+        assert data["player_id"] == "player_001"
+        assert data["player_name"] == "Test Player One"
         assert data["points"] == 25
         assert data["rebounds"] == 8
         assert data["efficiency_rating"] == 22.5
@@ -174,8 +174,6 @@ class TestJSONArtifactWriter:
         self, writer, mock_s3, sample_team_analytics
     ):
         """Test that team daily artifacts contain valid JSON."""
-        import json
-
         target_date = date(2024, 1, 15)
 
         writer.write_team_daily_artifacts(sample_team_analytics, target_date)
@@ -183,14 +181,14 @@ class TestJSONArtifactWriter:
         # Read and validate JSON
         response = mock_s3.get_object(
             Bucket="test-gold-bucket",
-            Key="served/team_daily/2024-01-15/1610612747.json",
+            Key="served/team_daily/2024-01-15/team_001.json",
         )
         content = response["Body"].read().decode("utf-8")
         data = json.loads(content)
 
         # Verify expected fields
-        assert data["team_id"] == "1610612747"
-        assert data["team_name"] == "Los Angeles Lakers"
+        assert data["team_id"] == "team_001"
+        assert data["team_name"] == "Test Team One"
         assert data["points"] == 110
         assert data["offensive_rating"] == 115.3
 
@@ -219,8 +217,6 @@ class TestJSONArtifactWriter:
         self, writer, mock_s3, sample_player_analytics
     ):
         """Test that top lists contain valid content."""
-        import json
-
         target_date = date(2024, 1, 15)
 
         writer.write_top_lists(sample_player_analytics, target_date)
@@ -238,9 +234,9 @@ class TestJSONArtifactWriter:
         assert "players" in data
         assert len(data["players"]) == 2
 
-        # Verify top player (Stephen Curry with 30 points)
+        # Verify top player (player_002 with 30 points)
         assert data["players"][0]["rank"] == 1
-        assert data["players"][0]["player_id"] == "201939"
+        assert data["players"][0]["player_id"] == "player_002"
         assert data["players"][0]["value"] == 30
 
     def test_write_latest_index(self, writer, mock_s3):
@@ -259,8 +255,6 @@ class TestJSONArtifactWriter:
 
     def test_write_latest_index_validates_content(self, writer, mock_s3):
         """Test that latest index contains valid content."""
-        import json
-
         target_date = date(2024, 1, 15)
 
         writer.write_latest_index(target_date)

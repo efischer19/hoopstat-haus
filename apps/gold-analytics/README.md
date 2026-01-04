@@ -1,10 +1,12 @@
 # Gold Analytics
 
-Gold layer analytics processing for NBA statistics using S3 Tables and Apache Iceberg format.
+Gold layer analytics processing for NBA statistics.
 
 ## Overview
 
-This application processes Silver layer NBA data and transforms it into advanced analytics metrics. For v1, internal Gold data is stored as Parquet and a public presentation layer is produced as small JSON artifacts under a `served/` prefix, per [ADR-028](../../meta/adr/ADR-028-gold_layer_final.md).
+This application processes Silver layer NBA data and transforms it into advanced analytics metrics. Per [ADR-028](../../meta/adr/ADR-028-gold_layer_final.md), internal Gold data is stored as Parquet and a public presentation layer should be produced as small JSON artifacts under a `served/` prefix.
+
+**Note**: S3 Tables/Iceberg functionality has been removed per ADR-028. The application currently needs to be updated to write JSON artifacts to the `served/` prefix instead of Iceberg tables.
 
 ## Features
 
@@ -12,22 +14,20 @@ This application processes Silver layer NBA data and transforms it into advanced
 - **Player Analytics**: True Shooting %, Player Efficiency Rating, Usage Rate, Effective FG%
 - **Team Analytics**: Offensive/Defensive Rating, Pace, Net Rating, Four Factors
 - **Season Aggregations**: Full season summaries for players and teams
-- **S3 Tables Integration**: Optimized storage using Apache Iceberg format
 
-### Storage & Partitions (v1)
+### Storage & Partitions (Target for v1)
 - **Internal Parquet**: Partition by season/date/team_id/player_id to match access patterns
-- **Public JSON Artifacts**: Small, versioned JSON files (≤100KB) for browser/app consumption
+- **Public JSON Artifacts**: Small, versioned JSON files (≤100KB) for browser/app consumption (TODO: Not yet implemented)
 - **Schema Evolution**: Versioned JSON schemas; Parquet schemas evolve with manifests
 
 ### Performance Features
-- **Memory-Optimized Writes**: Streaming writes for Lambda constraints
-- **Chunked Processing**: Large datasets split for optimal file sizes
-- **Query Optimization**: Partition pruning for sub-second responses
+- **Memory-Optimized Processing**: Streaming processing for Lambda constraints
+- **Chunked Processing**: Large datasets split for optimal processing
 - **Decimal Precision**: Proper data types for analytics percentages
 
-### Data Flow
+### Data Flow (Target)
 ```
-Silver S3 (JSON) → Gold Lambda → Gold S3 Tables (Iceberg) → MCP Clients
+Silver S3 (Parquet) → Gold Lambda → Gold S3 Parquet (internal) + JSON artifacts (served/)
 ```
 
 ## Development
@@ -73,13 +73,24 @@ poetry run start status
 
 Environment variables:
 - `SILVER_BUCKET`: S3 bucket containing Silver layer data
-- `GOLD_BUCKET`: S3 bucket for Gold layer S3 Tables
+- `GOLD_BUCKET`: S3 bucket for Gold layer data (Parquet internal storage and JSON artifacts)
 
 ## Architecture
 
-### Outputs (v1)
+### Outputs (Target for v1)
 ```
-Internal Parquet (partitioned) → Public JSON (served/...) per ADR-028
+Silver Parquet → Gold Parquet (internal) + JSON artifacts (served/) per ADR-028
+```
+
+**Current Status**: Analytics calculation logic exists, but storage layer needs to be implemented
+to write JSON artifacts instead of S3 Tables/Iceberg.
+
+### Lambda Deployment
+```bash
+# Build Docker image (from repo root)
+docker build -f apps/gold-analytics/Dockerfile -t gold-analytics:dev .
+
+# Deploy via Terraform (see infrastructure/)
 ```
 
 ### Lambda Deployment
@@ -90,42 +101,31 @@ docker build -f apps/gold-analytics/Dockerfile -t gold-analytics:dev .
 # Deploy via Terraform (see infrastructure/)
 ```
 
-## MCP Integration
+## Public JSON Artifacts (TODO)
 
-Users can fetch the public JSON artifacts directly via HTTPS with **no AWS credentials required**:
+Per ADR-028, the Gold layer should serve public JSON artifacts for consumption:
 
-```json
-{
-  "mcpServers": {
-    "hoopstat-haus-analytics": {
-      "command": "uvx",
-      "args": ["awslabs.s3-tables-mcp-server@latest", "--allow-read"],
-      "env": {
-        "AWS_REGION": "us-east-1",
-        "S3_TABLES_BUCKET": "hoopstat-haus-gold-tables"
-      }
-    }
-  }
-}
+- **Anonymous Read Access**: Small JSON payloads (≤100KB) under `served/` prefix
+- **Low Latency**: CDN-cacheable, deterministic keys
+- **Advanced Metrics**: Player efficiency, team ratings, season aggregations
+- **Schema Versioned**: Documented JSON schemas for each artifact type
+
+### Target Artifact Structure
+```
+s3://gold-bucket/served/
+├── player_daily/{date}/{player_id}.json
+├── team_daily/{date}/{team_id}.json
+├── top_lists/{date}/{metric}.json
+└── index/latest.json
 ```
 
-### Public Access Features
-- **Anonymous Read Access**: No AWS credentials needed
-- **Low Latency**: Small JSON payloads fetch fast, CDN-cacheable
-- **Advanced Metrics**: Player efficiency, team ratings, and more
-- **Deterministic Keys**: Easy to consume from browsers/apps
-
-### Example Queries
-- "Show me LeBron's efficiency this week"
-- "What's the Lakers defensive rating this month?"
-- "Top 10 players by True Shooting % yesterday"
-- "Compare team offensive ratings for the 2023-24 season"
-- "Show home vs away splits for the Warriors"
-- "Display Four Factors for playoff teams"
+**Current Status**: Artifact writing not yet implemented. S3 Tables/Iceberg functionality 
+has been removed per ADR-028.
 
 **Details**: See [ADR-028](../../meta/adr/ADR-028-gold_layer_final.md)
 
 ## Related
 
-- [ADR-026: S3 Tables for Gold Layer Analytics](../../meta/adr/ADR-026-s3_tables_gold_layer.md)
+- [ADR-028: Gold Layer Architecture and Serving Strategy (Final)](../../meta/adr/ADR-028-gold_layer_final.md)
+- [ADR-026: S3 Tables for Gold Layer Analytics](../../meta/adr/ADR-026-s3_tables_gold_layer.md) (Superseded)
 - [Silver Processing App](../silver-processing/)

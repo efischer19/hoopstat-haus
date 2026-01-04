@@ -12,8 +12,7 @@ from app.processors import GoldProcessor
 class TestGoldProcessor:
     """Test cases for the GoldProcessor class."""
 
-    @patch("app.processors.IcebergS3TablesWriter")
-    def test_processor_initialization(self, mock_iceberg_writer):
+    def test_processor_initialization(self):
         """Test that processor can be initialized."""
         processor = GoldProcessor(
             silver_bucket="test-silver-bucket", gold_bucket="test-gold-bucket"
@@ -21,11 +20,7 @@ class TestGoldProcessor:
         assert processor.silver_bucket == "test-silver-bucket"
         assert processor.gold_bucket == "test-gold-bucket"
 
-        # Verify Iceberg writer was initialized
-        mock_iceberg_writer.assert_called_once_with("test-gold-bucket")
-
-    @patch("app.processors.IcebergS3TablesWriter")
-    def test_process_date_dry_run(self, mock_iceberg_writer):
+    def test_process_date_dry_run(self):
         """Test processing a date in dry-run mode."""
         processor = GoldProcessor(
             silver_bucket="test-silver-bucket", gold_bucket="test-gold-bucket"
@@ -34,8 +29,7 @@ class TestGoldProcessor:
         result = processor.process_date(target_date, dry_run=True)
         assert result is True
 
-    @patch("app.processors.IcebergS3TablesWriter")
-    def test_load_silver_player_stats_dry_run(self, mock_iceberg_writer):
+    def test_load_silver_player_stats_dry_run(self):
         """Test loading player stats in dry-run mode."""
         processor = GoldProcessor(
             silver_bucket="test-silver-bucket", gold_bucket="test-gold-bucket"

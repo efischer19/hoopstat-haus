@@ -117,46 +117,17 @@ def status(gold_bucket: str | None) -> None:
         sys.exit(1)
 
     try:
-        from .iceberg_integration import IcebergS3TablesWriter
-
-        # Initialize Iceberg writer and check table health
-        iceberg_writer = IcebergS3TablesWriter(gold_bucket_name)
-
-        # Check both analytics tables
-        player_health = iceberg_writer.check_table_health(
-            "basketball_analytics.player_analytics"
+        # TODO: Implement status check for JSON artifacts per ADR-028
+        # S3 Tables functionality removed - need to check Gold S3 bucket instead
+        logger.info("=== Gold Layer Status Check ===")
+        logger.warning(
+            "S3 Tables health check removed - "
+            "need to implement JSON artifact validation per ADR-028"
         )
-        team_health = iceberg_writer.check_table_health(
-            "basketball_analytics.team_analytics"
-        )
-
-        logger.info("=== S3 Tables Health Check ===")
+        logger.info(f"Gold Bucket: {gold_bucket_name}")
         logger.info(
-            f"Player Analytics Table: {'✓' if player_health['exists'] else '✗'}"
+            "TODO: Check for served/ prefix structure and validate JSON artifacts"
         )
-        if player_health.get("error"):
-            logger.error(f"  Error: {player_health['error']}")
-        elif player_health["exists"]:
-            logger.info(
-                f"  Schema version: {player_health.get('schema_version', 'unknown')}"
-            )
-            logger.info(f"  Snapshot ID: {player_health.get('snapshot_id', 'none')}")
-
-        logger.info(f"Team Analytics Table: {'✓' if team_health['exists'] else '✗'}")
-        if team_health.get("error"):
-            logger.error(f"  Error: {team_health['error']}")
-        elif team_health["exists"]:
-            logger.info(
-                f"  Schema version: {team_health.get('schema_version', 'unknown')}"
-            )
-            logger.info(f"  Snapshot ID: {team_health.get('snapshot_id', 'none')}")
-
-        if player_health["exists"] and team_health["exists"]:
-            logger.info("Gold layer analytics pipeline is ready ✓")
-        else:
-            logger.warning(
-                "Some S3 Tables are not available - first write will create them"
-            )
 
     except Exception as e:
         logger.error(f"Status check failed: {e}")

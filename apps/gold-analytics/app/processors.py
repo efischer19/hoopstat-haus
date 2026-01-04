@@ -13,7 +13,9 @@ from hoopstat_data.transforms import PlayerSeasonAggregator, TeamSeasonAggregato
 from hoopstat_observability import get_logger
 
 from .config import GoldAnalyticsConfig, load_config
-from .iceberg_integration import IcebergS3TablesWriter
+
+# TODO: IcebergS3TablesWriter removed per ADR-028 (S3 Tables out-of-scope for v1)
+# Need to implement JSON artifact writing to served/ prefix instead
 from .performance import performance_context, performance_monitor
 from .s3_discovery import S3DataDiscovery
 from .validation import (
@@ -63,7 +65,8 @@ class GoldProcessor:
         self.team_aggregator = TeamSeasonAggregator(validation_mode="lenient")
 
         # Initialize components
-        self.iceberg_writer = IcebergS3TablesWriter(gold_bucket)
+        # TODO: Replace with JSON artifact writer per ADR-028
+        # self.iceberg_writer = IcebergS3TablesWriter(gold_bucket)
         self.s3_discovery = S3DataDiscovery(self.config)
         self.validator = DataValidator(validation_mode="lenient")
 
@@ -334,15 +337,21 @@ class GoldProcessor:
         season_year = int(season.split("-")[0])
         representative_date = date(season_year, 10, 1)
 
-        success = self.iceberg_writer.write_team_analytics(
-            df, representative_date, season
+        # TODO: Replace with JSON artifact writing per ADR-028
+        # S3 Tables functionality removed - need to write to served/ prefix
+        # success = self.iceberg_writer.write_team_analytics(
+        #     df, representative_date, season
+        # )
+        #
+        # if not success:
+        #     raise RuntimeError(f"Failed to store team season aggregations for {season}")
+
+        logger.warning(
+            "S3 Tables write functionality removed - "
+            "need to implement JSON artifact writing per ADR-028"
         )
-
-        if not success:
-            raise RuntimeError(f"Failed to store team season aggregations for {season}")
-
         logger.info(
-            f"Successfully stored team season aggregations for "
+            f"Would store team season aggregations for "
             f"{len(aggregated_seasons)} teams"
         )
 
@@ -504,15 +513,21 @@ class GoldProcessor:
         season_year = int(season.split("-")[0])
         representative_date = date(season_year, 10, 1)
 
-        success = self.iceberg_writer.write_player_analytics(
-            df, representative_date, season
+        # TODO: Replace with JSON artifact writing per ADR-028
+        # S3 Tables functionality removed - need to write to served/ prefix
+        # success = self.iceberg_writer.write_player_analytics(
+        #     df, representative_date, season
+        # )
+        #
+        # if not success:
+        #     raise RuntimeError(f"Failed to store season aggregations for {season}")
+
+        logger.warning(
+            "S3 Tables write functionality removed - "
+            "need to implement JSON artifact writing per ADR-028"
         )
-
-        if not success:
-            raise RuntimeError(f"Failed to store season aggregations for {season}")
-
         logger.info(
-            f"Successfully stored season aggregations for "
+            f"Would store season aggregations for "
             f"{len(aggregated_seasons)} players"
         )
 
@@ -964,13 +979,20 @@ class GoldProcessor:
             f"date {target_date}, season {season}"
         )
 
+        # TODO: Replace with JSON artifact writing per ADR-028
+        # S3 Tables functionality removed - need to write to served/ prefix
         # Use Iceberg writer with proper error handling
-        success = self.iceberg_writer.write_player_analytics(
-            analytics, target_date, season
-        )
+        # success = self.iceberg_writer.write_player_analytics(
+        #     analytics, target_date, season
+        # )
+        #
+        # if not success:
+        #     raise RuntimeError("Failed to store player analytics to S3 Tables")
 
-        if not success:
-            raise RuntimeError("Failed to store player analytics to S3 Tables")
+        logger.warning(
+            "S3 Tables write functionality removed - "
+            "need to implement JSON artifact writing per ADR-028"
+        )
 
     def _store_team_analytics(self, analytics: pd.DataFrame, target_date: date) -> None:
         """
@@ -995,13 +1017,20 @@ class GoldProcessor:
             f"season {season}"
         )
 
+        # TODO: Replace with JSON artifact writing per ADR-028
+        # S3 Tables functionality removed - need to write to served/ prefix
         # Use Iceberg writer with proper error handling
-        success = self.iceberg_writer.write_team_analytics(
-            analytics, target_date, season
-        )
+        # success = self.iceberg_writer.write_team_analytics(
+        #     analytics, target_date, season
+        # )
+        #
+        # if not success:
+        #     raise RuntimeError("Failed to store team analytics to S3 Tables")
 
-        if not success:
-            raise RuntimeError("Failed to store team analytics to S3 Tables")
+        logger.warning(
+            "S3 Tables write functionality removed - "
+            "need to implement JSON artifact writing per ADR-028"
+        )
 
     def process_date_range(
         self,

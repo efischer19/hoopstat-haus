@@ -31,8 +31,7 @@ class TestCLI:
         assert result.exit_code == 0
         assert "Check the status" in result.output
 
-    @patch("app.iceberg_integration.IcebergS3TablesWriter")
-    def test_debug_flag(self, mock_iceberg_writer):
+    def test_debug_flag(self):
         """Test that debug flag is accepted."""
         runner = CliRunner()
         result = runner.invoke(
@@ -40,8 +39,7 @@ class TestCLI:
         )
         assert result.exit_code == 0
 
-    @patch("app.processors.IcebergS3TablesWriter")
-    def test_dry_run_flag(self, mock_iceberg_writer):
+    def test_dry_run_flag(self):
         """Test that dry-run flag works."""
         runner = CliRunner()
         result = runner.invoke(

@@ -99,7 +99,6 @@ The infrastructure uses a two-role security model that separates infrastructure 
   - **Purpose**: Business analytics and Gold layer data processing
   - **Used By**: Gold analytics Lambda function and GitHub Actions for Gold processing
   - **Permissions**: Read Silver bucket, write Gold bucket (including served/ artifacts), read/write S3 Tables, CloudWatch logs
-  - **Permissions**: Read Silver, write to S3 Tables, CloudWatch logs
 
 ### Security Benefits
 - **Principle of Least Privilege**: Operations workflows cannot perform administrative actions

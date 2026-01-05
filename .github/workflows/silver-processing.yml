@@ -341,7 +341,7 @@ jobs:
           
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "**Next Steps:**" >> $GITHUB_STEP_SUMMARY
-          CLOUDWATCH_URL="https://console.aws.amazon.com/cloudwatch/home?region=$AWS_REGION#logsV2:log-groups/log-group//hoopstat-haus/data-pipeline"
+          CLOUDWATCH_URL="https://console.aws.amazon.com/cloudwatch/home?region=$AWS_REGION#logsV2:log-groups/log-group/hoopstat-haus/data-pipeline"
           LAMBDA_URL="https://console.aws.amazon.com/lambda/home?region=$AWS_REGION#/functions/$FUNCTION_NAME"
           echo "- Monitor execution in [CloudWatch Logs]($CLOUDWATCH_URL)" >> $GITHUB_STEP_SUMMARY
           echo "- Check [Lambda Function]($LAMBDA_URL) for detailed metrics" >> $GITHUB_STEP_SUMMARY

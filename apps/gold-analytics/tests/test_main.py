@@ -1,7 +1,5 @@
 """Tests for the main CLI module."""
 
-from unittest.mock import patch
-
 from click.testing import CliRunner
 
 from app.main import cli

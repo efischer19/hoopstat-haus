@@ -334,8 +334,8 @@ class GoldProcessor:
 
         # Store using existing team analytics functionality
         # For season aggregations, we use a representative date (season start)
-        season_year = int(season.split("-")[0])
-        representative_date = date(season_year, 10, 1)
+        # season_year = int(season.split("-")[0])
+        # representative_date = date(season_year, 10, 1)
 
         # TODO: Replace with JSON artifact writing per ADR-028
         # S3 Tables functionality removed - need to write to served/ prefix
@@ -344,15 +344,16 @@ class GoldProcessor:
         # )
         #
         # if not success:
-        #     raise RuntimeError(f"Failed to store team season aggregations for {season}")
+        #     raise RuntimeError(
+        #         f"Failed to store team season aggregations for {season}"
+        #     )
 
         logger.warning(
             "S3 Tables write functionality removed - "
             "need to implement JSON artifact writing per ADR-028"
         )
         logger.info(
-            f"Would store team season aggregations for "
-            f"{len(aggregated_seasons)} teams"
+            f"Would store team season aggregations for {len(aggregated_seasons)} teams"
         )
 
     @performance_monitor("load_season_player_games")
@@ -510,8 +511,8 @@ class GoldProcessor:
 
         # Store using existing player analytics functionality
         # For season aggregations, we use a representative date (season start)
-        season_year = int(season.split("-")[0])
-        representative_date = date(season_year, 10, 1)
+        # season_year = int(season.split("-")[0])
+        # representative_date = date(season_year, 10, 1)
 
         # TODO: Replace with JSON artifact writing per ADR-028
         # S3 Tables functionality removed - need to write to served/ prefix
@@ -527,8 +528,7 @@ class GoldProcessor:
             "need to implement JSON artifact writing per ADR-028"
         )
         logger.info(
-            f"Would store season aggregations for "
-            f"{len(aggregated_seasons)} players"
+            f"Would store season aggregations for {len(aggregated_seasons)} players"
         )
 
     @performance_monitor("process_date")

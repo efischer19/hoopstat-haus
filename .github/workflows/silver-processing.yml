@@ -1,0 +1,383 @@
+---
+name: Silver Processing
+
+on:
+  workflow_dispatch:
+    inputs:
+      date:
+        description: 'Single date to process (YYYY-MM-DD). Leave empty if using date range.'
+        required: false
+        type: string
+      start_date:
+        description: 'Start date for range (YYYY-MM-DD). Used if "date" is empty.'
+        required: false
+        type: string
+      end_date:
+        description: 'End date for range (YYYY-MM-DD). Used if "date" is empty.'
+        required: false
+        type: string
+      dry_run:
+        description: 'Run in dry-run mode (no data changes)'
+        required: false
+        default: false
+        type: boolean
+
+permissions:
+  id-token: write
+  contents: read
+
+env:
+  AWS_REGION: us-east-1
+  FUNCTION_NAME: hoopstat-haus-silver-processing
+
+jobs:
+  silver-processing:
+    name: Execute Silver Processing
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::${{ secrets.AWS_ACCOUNT_ID }}:role/hoopstat-haus-github-actions
+          role-session-name: GitHubActions-SilverProcessing-${{ github.run_id }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Check Lambda function exists
+        run: |
+          echo "🔍 Checking if Lambda function exists..."
+          
+          if aws lambda get-function \
+              --function-name $FUNCTION_NAME \
+              --region $AWS_REGION >/dev/null 2>&1; then
+            echo "✅ Lambda function found: $FUNCTION_NAME"
+            
+            FUNCTION_QUERY='Configuration.[FunctionName,State,LastModified,Runtime,Timeout,MemorySize]'
+            aws lambda get-function \
+              --function-name $FUNCTION_NAME \
+              --region $AWS_REGION \
+              --query "$FUNCTION_QUERY" \
+              --output table
+          else
+            echo "❌ Lambda function not found: $FUNCTION_NAME"
+            echo "🔧 Please ensure the function is deployed via the deploy workflow"
+            exit 1
+          fi
+
+      - name: Validate input parameters
+        id: validate
+        run: |
+          # Validate that either single date or date range is provided
+          if [ -n "${{ inputs.date }}" ]; then
+            echo "mode=single" >> $GITHUB_OUTPUT
+            echo "📅 Mode: Single date processing"
+            echo "📅 Date: ${{ inputs.date }}"
+            
+            # Validate date format
+            if ! date -d "${{ inputs.date }}" >/dev/null 2>&1; then
+              echo "❌ Invalid date format: ${{ inputs.date }}"
+              echo "Expected format: YYYY-MM-DD"
+              exit 1
+            fi
+          elif [ -n "${{ inputs.start_date }}" ] && [ -n "${{ inputs.end_date }}" ]; then
+            echo "mode=range" >> $GITHUB_OUTPUT
+            echo "📅 Mode: Date range processing"
+            echo "📅 Start date: ${{ inputs.start_date }}"
+            echo "📅 End date: ${{ inputs.end_date }}"
+            
+            # Validate date formats
+            if ! date -d "${{ inputs.start_date }}" >/dev/null 2>&1; then
+              echo "❌ Invalid start date format: ${{ inputs.start_date }}"
+              echo "Expected format: YYYY-MM-DD"
+              exit 1
+            fi
+            
+            if ! date -d "${{ inputs.end_date }}" >/dev/null 2>&1; then
+              echo "❌ Invalid end date format: ${{ inputs.end_date }}"
+              echo "Expected format: YYYY-MM-DD"
+              exit 1
+            fi
+            
+            # Validate that start_date <= end_date
+            if [[ "${{ inputs.start_date }}" > "${{ inputs.end_date }}" ]]; then
+              echo "❌ Start date must be before or equal to end date"
+              exit 1
+            fi
+          else
+            echo "❌ Invalid input: Must provide either 'date' or both 'start_date' and 'end_date'"
+            exit 1
+          fi
+
+      - name: Process single date
+        if: steps.validate.outputs.mode == 'single'
+        id: single
+        run: |
+          DATE="${{ inputs.date }}"
+          DRY_RUN="${{ inputs.dry_run || 'false' }}"
+          
+          echo "🚀 Processing single date: $DATE"
+          
+          # Create JSON payload for Lambda invocation
+          PAYLOAD=$(cat << EOF
+          {
+            "source": "github-actions-manual",
+            "trigger_type": "workflow_dispatch",
+            "parameters": {
+              "date": "$DATE",
+              "dry_run": $DRY_RUN
+            },
+            "metadata": {
+              "workflow_run_id": "${{ github.run_id }}",
+              "workflow_run_number": "${{ github.run_number }}",
+              "repository": "${{ github.repository }}",
+              "triggered_at": "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+            }
+          }
+          EOF
+          )
+          
+          echo "📋 Invocation payload:"
+          echo "$PAYLOAD" | jq '.'
+          
+          # Save payload to file
+          echo "$PAYLOAD" > /tmp/lambda_payload.json
+          
+          # Invoke Lambda function asynchronously
+          echo "🚀 Invoking Lambda function for date: $DATE"
+          aws lambda invoke \
+            --function-name $FUNCTION_NAME \
+            --invocation-type Event \
+            --payload file:///tmp/lambda_payload.json \
+            --region $AWS_REGION \
+            --cli-binary-format raw-in-base64-out \
+            /tmp/lambda_response.json
+          
+          INVOKE_RESULT=$?
+          
+          if [ $INVOKE_RESULT -eq 0 ]; then
+            echo "✅ Lambda function invoked successfully for date: $DATE"
+            REQUEST_ID=$(cat /tmp/lambda_response.json | jq -r '.ResponseMetadata.RequestId // "unknown"')
+            echo "📋 Request ID: $REQUEST_ID"
+            echo "request_id=$REQUEST_ID" >> $GITHUB_OUTPUT
+          else
+            echo "❌ Failed to invoke Lambda function for date: $DATE"
+            cat /tmp/lambda_response.json || echo "No response file found"
+            exit 1
+          fi
+
+      - name: Process date range
+        if: steps.validate.outputs.mode == 'range'
+        id: range
+        run: |
+          START_DATE="${{ inputs.start_date }}"
+          END_DATE="${{ inputs.end_date }}"
+          DRY_RUN="${{ inputs.dry_run || 'false' }}"
+          
+          echo "🚀 Processing date range: $START_DATE to $END_DATE"
+          
+          # Convert dates to epoch for iteration
+          CURRENT_DATE="$START_DATE"
+          SUCCESS_COUNT=0
+          FAILURE_COUNT=0
+          
+          while [[ "$CURRENT_DATE" <= "$END_DATE" ]]; do
+            echo ""
+            echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+            echo "📅 Processing date: $CURRENT_DATE"
+            echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+            
+            # Create JSON payload for Lambda invocation
+            PAYLOAD=$(cat << EOF
+            {
+              "source": "github-actions-manual",
+              "trigger_type": "workflow_dispatch",
+              "parameters": {
+                "date": "$CURRENT_DATE",
+                "dry_run": $DRY_RUN
+              },
+              "metadata": {
+                "workflow_run_id": "${{ github.run_id }}",
+                "workflow_run_number": "${{ github.run_number }}",
+                "repository": "${{ github.repository }}",
+                "triggered_at": "$(date -u +%Y-%m-%dT%H:%M:%SZ)",
+                "date_range": {
+                  "start_date": "$START_DATE",
+                  "end_date": "$END_DATE",
+                  "current_date": "$CURRENT_DATE"
+                }
+              }
+            }
+            EOF
+            )
+            
+            echo "📋 Invocation payload:"
+            echo "$PAYLOAD" | jq '.'
+            
+            # Save payload to file
+            echo "$PAYLOAD" > /tmp/lambda_payload_${CURRENT_DATE}.json
+            
+            # Invoke Lambda function asynchronously
+            echo "🚀 Invoking Lambda function..."
+            if aws lambda invoke \
+                --function-name $FUNCTION_NAME \
+                --invocation-type Event \
+                --payload file:///tmp/lambda_payload_${CURRENT_DATE}.json \
+                --region $AWS_REGION \
+                --cli-binary-format raw-in-base64-out \
+                /tmp/lambda_response_${CURRENT_DATE}.json; then
+              
+              echo "✅ Lambda function invoked successfully for date: $CURRENT_DATE"
+              REQUEST_ID=$(cat /tmp/lambda_response_${CURRENT_DATE}.json | jq -r '.ResponseMetadata.RequestId // "unknown"')
+              echo "📋 Request ID: $REQUEST_ID"
+              SUCCESS_COUNT=$((SUCCESS_COUNT + 1))
+              
+              # Small delay between invocations to avoid throttling
+              sleep 2
+            else
+              echo "❌ Failed to invoke Lambda function for date: $CURRENT_DATE"
+              cat /tmp/lambda_response_${CURRENT_DATE}.json || echo "No response file found"
+              FAILURE_COUNT=$((FAILURE_COUNT + 1))
+            fi
+            
+            # Move to next date
+            CURRENT_DATE=$(date -d "$CURRENT_DATE + 1 day" +%Y-%m-%d)
+          done
+          
+          echo ""
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          echo "📊 Date Range Processing Summary"
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          echo "✅ Successful invocations: $SUCCESS_COUNT"
+          echo "❌ Failed invocations: $FAILURE_COUNT"
+          echo "📅 Date range: $START_DATE to $END_DATE"
+          
+          echo "success_count=$SUCCESS_COUNT" >> $GITHUB_OUTPUT
+          echo "failure_count=$FAILURE_COUNT" >> $GITHUB_OUTPUT
+          
+          if [ $FAILURE_COUNT -gt 0 ]; then
+            exit 1
+          fi
+
+      - name: Wait and check execution status
+        run: |
+          echo "⏳ Waiting for function execution to start..."
+          sleep 30
+          
+          echo "🔍 Checking recent Lambda function logs..."
+          
+          LOG_GROUP="/hoopstat-haus/data-pipeline"
+          
+          # Check if log group exists and get recent logs
+          if aws logs describe-log-groups \
+              --log-group-name-prefix "$LOG_GROUP" \
+              --region $AWS_REGION \
+              --query 'logGroups[0].logGroupName' \
+              --output text | grep -q "$LOG_GROUP"; then
+            
+            echo "📋 Recent log events from $LOG_GROUP:"
+            
+            # Get logs from the last 5 minutes
+            START_TIME=$(($(date +%s) - 300))
+            START_TIME_MS=$((START_TIME * 1000))
+            
+            QUERY='events[?contains(message, `silver-processing`) || contains(message, `ERROR`) || contains(message, `Starting`)].message'
+            aws logs filter-log-events \
+              --log-group-name "$LOG_GROUP" \
+              --start-time $START_TIME_MS \
+              --region $AWS_REGION \
+              --query "$QUERY" \
+              --output table || echo "No recent log events found"
+              
+          else
+            echo "ℹ️  Log group $LOG_GROUP not found"
+            echo "    Function may not have executed yet"
+          fi
+          
+          echo "💡 For complete execution logs, check CloudWatch Logs:"
+          CLOUDWATCH_URL="https://console.aws.amazon.com/cloudwatch/home?region=$AWS_REGION#logsV2:log-groups/log-group/$LOG_GROUP"
+          echo "   $CLOUDWATCH_URL"
+
+      - name: Set up notification summary
+        id: summary
+        if: always()
+        run: |
+          echo "📋 Silver Processing Summary" >> $GITHUB_STEP_SUMMARY
+          echo "=====================================" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Execution Details:**" >> $GITHUB_STEP_SUMMARY
+          echo "- Function: \`$FUNCTION_NAME\`" >> $GITHUB_STEP_SUMMARY
+          echo "- Trigger: ${{ github.event_name }}" >> $GITHUB_STEP_SUMMARY
+          echo "- Dry Run: ${{ inputs.dry_run || 'false' }}" >> $GITHUB_STEP_SUMMARY
+          echo "- Execution Time: $(date -u +%Y-%m-%dT%H:%M:%SZ)" >> $GITHUB_STEP_SUMMARY
+          
+          if [ "${{ steps.validate.outputs.mode }}" = "single" ]; then
+            echo "- Mode: Single Date" >> $GITHUB_STEP_SUMMARY
+            echo "- Date: ${{ inputs.date }}" >> $GITHUB_STEP_SUMMARY
+            
+            if [ "${{ steps.single.outcome }}" = "success" ]; then
+              echo "- Status: ✅ **Successfully Invoked**" >> $GITHUB_STEP_SUMMARY
+              echo "- Request ID: \`${{ steps.single.outputs.request_id }}\`" >> $GITHUB_STEP_SUMMARY
+            else
+              echo "- Status: ❌ **Invocation Failed**" >> $GITHUB_STEP_SUMMARY
+            fi
+          else
+            echo "- Mode: Date Range" >> $GITHUB_STEP_SUMMARY
+            echo "- Start Date: ${{ inputs.start_date }}" >> $GITHUB_STEP_SUMMARY
+            echo "- End Date: ${{ inputs.end_date }}" >> $GITHUB_STEP_SUMMARY
+            
+            if [ "${{ steps.range.outcome }}" = "success" ]; then
+              echo "- Status: ✅ **Successfully Invoked**" >> $GITHUB_STEP_SUMMARY
+              echo "- Successful Invocations: ${{ steps.range.outputs.success_count }}" >> $GITHUB_STEP_SUMMARY
+              echo "- Failed Invocations: ${{ steps.range.outputs.failure_count }}" >> $GITHUB_STEP_SUMMARY
+            else
+              echo "- Status: ❌ **Some Invocations Failed**" >> $GITHUB_STEP_SUMMARY
+              echo "- Successful Invocations: ${{ steps.range.outputs.success_count }}" >> $GITHUB_STEP_SUMMARY
+              echo "- Failed Invocations: ${{ steps.range.outputs.failure_count }}" >> $GITHUB_STEP_SUMMARY
+            fi
+          fi
+          
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Next Steps:**" >> $GITHUB_STEP_SUMMARY
+          CLOUDWATCH_URL="https://console.aws.amazon.com/cloudwatch/home?region=$AWS_REGION#logsV2:log-groups/log-group//hoopstat-haus/data-pipeline"
+          LAMBDA_URL="https://console.aws.amazon.com/lambda/home?region=$AWS_REGION#/functions/$FUNCTION_NAME"
+          echo "- Monitor execution in [CloudWatch Logs]($CLOUDWATCH_URL)" >> $GITHUB_STEP_SUMMARY
+          echo "- Check [Lambda Function]($LAMBDA_URL) for detailed metrics" >> $GITHUB_STEP_SUMMARY
+
+      - name: Report execution status
+        if: always()
+        run: |
+          echo "🏁 Silver processing workflow completed"
+          echo "📊 Workflow Status: ${{ job.status }}"
+          
+          if [ "${{ steps.validate.outputs.mode }}" = "single" ]; then
+            if [ "${{ steps.single.outcome }}" = "success" ]; then
+              echo "✅ Lambda function invocation successful"
+              echo "🔗 Request ID: ${{ steps.single.outputs.request_id }}"
+              exit 0
+            else
+              echo "❌ Lambda function invocation failed"
+              echo "💡 Check the workflow logs and Lambda function status"
+              exit 1
+            fi
+          else
+            if [ "${{ steps.range.outcome }}" = "success" ]; then
+              echo "✅ All Lambda function invocations successful"
+              echo "📊 Successful: ${{ steps.range.outputs.success_count }}"
+              exit 0
+            else
+              echo "❌ Some Lambda function invocations failed"
+              echo "📊 Successful: ${{ steps.range.outputs.success_count }}"
+              echo "📊 Failed: ${{ steps.range.outputs.failure_count }}"
+              echo "💡 Check the workflow logs and Lambda function status"
+              exit 1
+            fi
+          fi
+
+      - name: Cleanup temporary files
+        if: always()
+        run: |
+          # Clean up temporary files
+          rm -f /tmp/lambda_payload*.json /tmp/lambda_response*.json

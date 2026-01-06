@@ -452,10 +452,11 @@ resource "aws_s3_bucket_server_side_encryption_configuration" "gold" {
 
 # S3 Bucket public access block for Gold layer
 # Allow public policy to enable public read access to served/ prefix
-# Note: While block_public_policy=false allows bucket policies to grant public access,
-# the bucket policy itself (aws_s3_bucket_policy.gold_public_read) is explicitly scoped
-# to only the served/* prefix. Any future policy changes are logged and subject to
-# infrastructure review via Terraform and version control.
+# Security note: Setting block_public_policy=false and restrict_public_buckets=false
+# enables the bucket policy to grant public access. However, the bucket policy itself
+# (aws_s3_bucket_policy.gold_public_read) explicitly restricts access to the served/*
+# prefix pattern only. All other prefixes in the Gold bucket remain private.
+# All policy changes are tracked via version control and Terraform state.
 resource "aws_s3_bucket_public_access_block" "gold" {
   bucket = aws_s3_bucket.gold.id
 
@@ -466,13 +467,16 @@ resource "aws_s3_bucket_public_access_block" "gold" {
 }
 
 # S3 Bucket CORS configuration for Gold layer
+# Wildcard origin (*) allows access from any domain, which is appropriate for
+# public JSON artifacts (ADR-028) that are designed to be consumed by browsers
+# and mobile apps from any source. Only read methods (GET/HEAD) are allowed.
 resource "aws_s3_bucket_cors_configuration" "gold" {
   bucket = aws_s3_bucket.gold.id
 
   cors_rule {
     allowed_headers = ["*"]
     allowed_methods = ["GET", "HEAD"]
-    allowed_origins = ["*"]
+    allowed_origins = ["*"]  # Public artifacts accessible from any domain
     expose_headers  = ["ETag", "Content-Length", "Content-Type"]
     max_age_seconds = 3600
   }
@@ -511,12 +515,16 @@ resource "aws_cloudfront_origin_access_control" "gold_served" {
 }
 
 # CloudFront distribution for Gold bucket served/ prefix
+# Cost optimization: PriceClass_100 limits edge locations to North America and Europe,
+# reducing costs while serving primary user base. Asia/Pacific/South America users
+# will have slightly higher latency but still benefit from caching and compression.
+# Estimated cost: ~$0.085/GB for first 10TB vs ~$0.17/GB for global (PriceClass_All).
 resource "aws_cloudfront_distribution" "gold_served" {
   enabled             = true
   is_ipv6_enabled     = true
   comment             = "CloudFront distribution for hoopstat-haus JSON artifacts"
   default_root_object = ""
-  price_class         = "PriceClass_100" # Use only North America and Europe
+  price_class         = "PriceClass_100" # North America and Europe only
 
   origin {
     domain_name              = aws_s3_bucket.gold.bucket_regional_domain_name
@@ -566,6 +574,9 @@ resource "aws_cloudfront_distribution" "gold_served" {
 }
 
 # CloudFront response headers policy for CORS
+# Wildcard origin (*) allows access from any domain, which is appropriate for
+# public JSON artifacts (ADR-028) that are designed to be consumed by browsers
+# and mobile apps from any source. Only read methods (GET/HEAD/OPTIONS) are allowed.
 resource "aws_cloudfront_response_headers_policy" "gold_served_cors" {
   name    = "${var.project_name}-gold-served-cors"
   comment = "CORS policy for Gold bucket served/ prefix"
@@ -582,7 +593,7 @@ resource "aws_cloudfront_response_headers_policy" "gold_served_cors" {
     }
 
     access_control_allow_origins {
-      items = ["*"]
+      items = ["*"]  # Public artifacts accessible from any domain
     }
 
     access_control_max_age_sec = 3600

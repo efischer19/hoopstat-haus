@@ -452,6 +452,10 @@ resource "aws_s3_bucket_server_side_encryption_configuration" "gold" {
 
 # S3 Bucket public access block for Gold layer
 # Allow public policy to enable public read access to served/ prefix
+# Note: While block_public_policy=false allows bucket policies to grant public access,
+# the bucket policy itself (aws_s3_bucket_policy.gold_public_read) is explicitly scoped
+# to only the served/* prefix. Any future policy changes are logged and subject to
+# infrastructure review via Terraform and version control.
 resource "aws_s3_bucket_public_access_block" "gold" {
   bucket = aws_s3_bucket.gold.id
 
@@ -594,7 +598,11 @@ resource "aws_cloudfront_response_headers_policy" "gold_served_cors" {
   }
 }
 
-# Update S3 bucket policy to allow CloudFront OAC access
+# S3 bucket policy for Gold layer
+# Grants public read access exclusively to served/ prefix for JSON artifacts (ADR-028)
+# Security: Resource patterns explicitly restrict access to served/* only.
+# All other prefixes in the Gold bucket (internal Parquet files, etc.) remain private.
+# Changes to this policy are tracked via version control and Terraform state.
 resource "aws_s3_bucket_policy" "gold_public_read" {
   bucket = aws_s3_bucket.gold.id
 
@@ -616,8 +624,8 @@ resource "aws_s3_bucket_policy" "gold_public_read" {
         }
       },
       {
-        Sid    = "PublicReadServedArtifacts"
-        Effect = "Allow"
+        Sid       = "PublicReadServedArtifacts"
+        Effect    = "Allow"
         Principal = "*"
         Action = [
           "s3:GetObject",

@@ -149,3 +149,28 @@ output "gold_bucket" {
     arn  = aws_s3_bucket.gold.arn
   }
 }
+
+# ============================================================================
+# CloudFront Distribution Outputs for Public JSON Artifacts
+# ============================================================================
+
+output "cloudfront_distribution" {
+  description = "CloudFront distribution for public JSON artifacts"
+  value = {
+    id          = aws_cloudfront_distribution.gold_served.id
+    arn         = aws_cloudfront_distribution.gold_served.arn
+    domain_name = aws_cloudfront_distribution.gold_served.domain_name
+    status      = aws_cloudfront_distribution.gold_served.status
+  }
+}
+
+output "public_artifact_urls" {
+  description = "Public URLs for accessing JSON artifacts"
+  value = {
+    cloudfront_base_url = "https://${aws_cloudfront_distribution.gold_served.domain_name}"
+    s3_direct_base_url  = "https://${aws_s3_bucket.gold.bucket}.s3.${var.aws_region}.amazonaws.com/served"
+    example_player_url  = "https://${aws_cloudfront_distribution.gold_served.domain_name}/player_daily/2024-11-15/2544.json"
+    example_team_url    = "https://${aws_cloudfront_distribution.gold_served.domain_name}/team_daily/2024-11-15/1610612747.json"
+    example_index_url   = "https://${aws_cloudfront_distribution.gold_served.domain_name}/index/latest.json"
+  }
+}

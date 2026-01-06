@@ -451,13 +451,27 @@ resource "aws_s3_bucket_server_side_encryption_configuration" "gold" {
 }
 
 # S3 Bucket public access block for Gold layer
+# Allow public policy to enable public read access to served/ prefix
 resource "aws_s3_bucket_public_access_block" "gold" {
   bucket = aws_s3_bucket.gold.id
 
   block_public_acls       = true
-  block_public_policy     = true
+  block_public_policy     = false  # Allow public policy for served/ prefix
   ignore_public_acls      = true
-  restrict_public_buckets = true
+  restrict_public_buckets = false  # Allow public bucket access for served/ prefix
+}
+
+# S3 Bucket CORS configuration for Gold layer
+resource "aws_s3_bucket_cors_configuration" "gold" {
+  bucket = aws_s3_bucket.gold.id
+
+  cors_rule {
+    allowed_headers = ["*"]
+    allowed_methods = ["GET", "HEAD"]
+    allowed_origins = ["*"]
+    expose_headers  = ["ETag", "Content-Length", "Content-Type"]
+    max_age_seconds = 3600
+  }
 }
 
 # Gold Layer Lifecycle Policy
@@ -477,6 +491,142 @@ resource "aws_s3_bucket_lifecycle_configuration" "gold" {
       days_after_initiation = 7
     }
   }
+}
+
+# ============================================================================
+# CloudFront Distribution for Gold Layer served/ prefix
+# ============================================================================
+
+# CloudFront Origin Access Control for S3
+resource "aws_cloudfront_origin_access_control" "gold_served" {
+  name                              = "${var.project_name}-gold-served-oac"
+  description                       = "Origin Access Control for Gold bucket served/ prefix"
+  origin_access_control_origin_type = "s3"
+  signing_behavior                  = "always"
+  signing_protocol                  = "sigv4"
+}
+
+# CloudFront distribution for Gold bucket served/ prefix
+resource "aws_cloudfront_distribution" "gold_served" {
+  enabled             = true
+  is_ipv6_enabled     = true
+  comment             = "CloudFront distribution for hoopstat-haus JSON artifacts"
+  default_root_object = ""
+  price_class         = "PriceClass_100" # Use only North America and Europe
+
+  origin {
+    domain_name              = aws_s3_bucket.gold.bucket_regional_domain_name
+    origin_id                = "S3-${aws_s3_bucket.gold.bucket}"
+    origin_access_control_id = aws_cloudfront_origin_access_control.gold_served.id
+    origin_path              = "/served"
+  }
+
+  default_cache_behavior {
+    allowed_methods  = ["GET", "HEAD", "OPTIONS"]
+    cached_methods   = ["GET", "HEAD", "OPTIONS"]
+    target_origin_id = "S3-${aws_s3_bucket.gold.bucket}"
+
+    forwarded_values {
+      query_string = false
+      headers      = ["Origin", "Access-Control-Request-Headers", "Access-Control-Request-Method"]
+
+      cookies {
+        forward = "none"
+      }
+    }
+
+    viewer_protocol_policy = "redirect-to-https"
+    min_ttl                = 0
+    default_ttl            = 3600  # 1 hour
+    max_ttl                = 86400 # 24 hours
+    compress               = true
+
+    # Response headers policy for CORS
+    response_headers_policy_id = aws_cloudfront_response_headers_policy.gold_served_cors.id
+  }
+
+  restrictions {
+    geo_restriction {
+      restriction_type = "none"
+    }
+  }
+
+  viewer_certificate {
+    cloudfront_default_certificate = true
+  }
+
+  tags = {
+    Name    = "${var.project_name}-gold-served-cdn"
+    Purpose = "CDN for public JSON artifacts"
+  }
+}
+
+# CloudFront response headers policy for CORS
+resource "aws_cloudfront_response_headers_policy" "gold_served_cors" {
+  name    = "${var.project_name}-gold-served-cors"
+  comment = "CORS policy for Gold bucket served/ prefix"
+
+  cors_config {
+    access_control_allow_credentials = false
+
+    access_control_allow_headers {
+      items = ["*"]
+    }
+
+    access_control_allow_methods {
+      items = ["GET", "HEAD", "OPTIONS"]
+    }
+
+    access_control_allow_origins {
+      items = ["*"]
+    }
+
+    access_control_max_age_sec = 3600
+    origin_override            = true
+  }
+
+  custom_headers_config {
+    items {
+      header   = "Cache-Control"
+      value    = "public, max-age=3600"
+      override = false
+    }
+  }
+}
+
+# Update S3 bucket policy to allow CloudFront OAC access
+resource "aws_s3_bucket_policy" "gold_public_read" {
+  bucket = aws_s3_bucket.gold.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Sid    = "AllowCloudFrontOAC"
+        Effect = "Allow"
+        Principal = {
+          Service = "cloudfront.amazonaws.com"
+        }
+        Action   = "s3:GetObject"
+        Resource = "${aws_s3_bucket.gold.arn}/served/*"
+        Condition = {
+          StringEquals = {
+            "AWS:SourceArn" = aws_cloudfront_distribution.gold_served.arn
+          }
+        }
+      },
+      {
+        Sid    = "PublicReadServedArtifacts"
+        Effect = "Allow"
+        Principal = "*"
+        Action = [
+          "s3:GetObject",
+          "s3:GetObjectVersion"
+        ]
+        Resource = "${aws_s3_bucket.gold.arn}/served/*"
+      }
+    ]
+  })
 }
 
 # S3 bucket for access logs

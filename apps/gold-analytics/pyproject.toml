@@ -1,7 +1,7 @@
 [tool.poetry]
 name = "gold-analytics"
 version = "0.1.0"
-description = "Gold layer analytics processing for NBA statistics using S3 Tables"
+description = "Gold layer analytics processing for NBA statistics"
 authors = ["Hoopstat Haus Team"]
 readme = "README.md"
 packages = [{include = "app"}]
@@ -9,10 +9,9 @@ packages = [{include = "app"}]
 [tool.poetry.dependencies]
 python = "^3.12"
 click = "^8.3.1"
-boto3 = "^1.42.17"
+boto3 = "^1.42.22"
 pyarrow = "^17.0.0"
 pandas = "^2.3.3"
-pyiceberg = {version = "^0.10.0", extras = ["glue"]}
 hoopstat-observability = {path = "../../libs/hoopstat-observability", develop = false}
 hoopstat-config = {path = "../../libs/hoopstat-config", develop = false}
 hoopstat-s3 = {path = "../../libs/hoopstat-s3", develop = false}

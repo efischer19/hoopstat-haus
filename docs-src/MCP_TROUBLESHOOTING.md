@@ -1,6 +1,10 @@
-# [Moved to Future Plans] MCP Connection Troubleshooting Guide
+# [Deprecated - Future Feature] MCP Connection Troubleshooting Guide
 
-> This guide is MCP-first and out of initial scope per ADR-027. It has been moved under meta/plans/future/ for later reference.
+> **Note**: This guide describes S3 Tables/MCP integration which is out of scope for v1 per ADR-028.
+> S3 Tables infrastructure has been removed. For current v1 plans, see ADR-028 which describes
+> serving public JSON artifacts instead. This document is preserved for potential future reference.
+>
+> Moved to meta/plans/future/MCP_TROUBLESHOOTING.md
 
 This guide helps you resolve common issues when connecting to Hoopstat Haus basketball analytics data via MCP.
 

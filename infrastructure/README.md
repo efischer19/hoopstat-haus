@@ -98,7 +98,7 @@ The infrastructure uses a two-role security model that separates infrastructure 
 - **Gold Data Access Role** (`hoopstat-haus-gold-data-access`)
   - **Purpose**: Business analytics and Gold layer data processing
   - **Used By**: Gold analytics Lambda function and GitHub Actions for Gold processing
-  - **Permissions**: Read Silver bucket, write Gold bucket (including served/ artifacts), read/write S3 Tables, CloudWatch logs
+  - **Permissions**: Read Silver bucket, write Gold bucket (including served/ artifacts), CloudWatch logs
 
 ### Security Benefits
 - **Principle of Least Privilege**: Operations workflows cannot perform administrative actions
@@ -164,9 +164,6 @@ bash tests/test_infrastructure.sh
 # Run medallion architecture specific tests  
 bash tests/test_medallion_architecture.sh
 
-# Run S3 Tables public access configuration tests
-bash tests/test_s3_tables_public_access.sh
-
 # Run observability configuration tests
 python tests/test_observability.py
 ```
@@ -176,6 +173,5 @@ python tests/test_observability.py
 - **Security checks**: No sensitive data in configuration files
 - **Resource validation**: All required resources are properly configured
 - **Medallion architecture compliance**: Data layer configuration matches requirements
-- **S3 Tables public access**: Bucket policy and public read access validation
 - **Lifecycle policies**: Retention and storage class transitions are correct
 - **IAM policies**: Least-privilege access patterns are implemented

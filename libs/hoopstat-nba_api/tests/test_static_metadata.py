@@ -130,5 +130,17 @@ class TestPlayersMetadata:
         """Test that the players file is reasonably sized."""
         players_file = get_static_dir() / "players_v1.json"
         file_size = players_file.stat().st_size
-        # Should be less than 100KB for active players only
-        assert file_size < 100 * 1024, f"Players file too large: {file_size} bytes"
+
+        # Load to count players and calculate expected size
+        with open(players_file) as f:
+            data = json.load(f)
+            player_count = len(data["players"])
+
+        # Dynamic limit: ~100 bytes per player + 10KB overhead
+        # This allows for growth while catching unreasonable file sizes
+        max_size = (player_count * 100) + (10 * 1024)
+
+        assert file_size < max_size, (
+            f"Players file too large: {file_size} bytes "
+            f"(max {max_size} for {player_count} players)"
+        )

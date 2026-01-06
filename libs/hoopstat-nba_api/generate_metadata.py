@@ -55,13 +55,21 @@ def generate_teams_metadata():
     teams_metadata = []
     for team in all_teams:
         team_id = team["id"]
+
+        # Ensure we have conference mapping for all teams
+        if team_id not in TEAM_CONFERENCES:
+            raise ValueError(
+                f"Missing conference mapping for team {team['full_name']} "
+                f"(ID: {team_id}). Please update TEAM_CONFERENCES."
+            )
+
         teams_metadata.append(
             {
                 "id": team_id,
                 "name": team["full_name"],
                 "abbreviation": team["abbreviation"],
                 "city": team["city"],
-                "conference": TEAM_CONFERENCES.get(team_id, "Unknown"),
+                "conference": TEAM_CONFERENCES[team_id],
             }
         )
 
@@ -81,7 +89,16 @@ def generate_players_metadata():
     all_players = players.get_players()
 
     # Filter to active players only
-    active_players = [p for p in all_players if p.get("is_active", False)]
+    # Validate that is_active field exists for all players
+    active_players = []
+    for p in all_players:
+        if "is_active" not in p:
+            raise ValueError(
+                f"Missing is_active field for player {p.get('full_name', 'Unknown')} "
+                f"(ID: {p.get('id', 'Unknown')})"
+            )
+        if p["is_active"]:
+            active_players.append(p)
 
     # Transform to desired format
     players_metadata = []

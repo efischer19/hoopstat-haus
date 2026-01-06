@@ -7,6 +7,7 @@ A Python library for accessing NBA data from the nba-api with respectful rate li
 - **NBA API Client**: Respectful rate-limited client for fetching NBA data
 - **Rate Limiting**: Built-in protection against API abuse with exponential backoff
 - **Error Handling**: Comprehensive error logging and retry logic
+- **Static Metadata**: Pre-generated JSON files with team and player metadata for fast lookups
 
 ## Architecture
 
@@ -30,6 +31,21 @@ client = NBAClient(rate_limiter=rate_limiter)
 game_data = client.get_games_for_date(date(2024, 1, 15))
 player_info = client.get_player_info("2544")  # LeBron James
 standings = client.get_league_standings("2023-24")
+```
+
+## Static Metadata Files
+
+The library includes pre-generated JSON metadata files for teams and players:
+
+- `hoopstat_nba_api/static/teams_v1.json`: Metadata for all 30 NBA teams
+- `hoopstat_nba_api/static/players_v1.json`: Metadata for active NBA players
+
+These files enable fast, human-readable lookups without requiring API calls. See the [static metadata README](hoopstat_nba_api/static/README.md) for details.
+
+To regenerate the metadata files:
+
+```bash
+poetry run python generate_metadata.py
 ```
 
 ## Installation

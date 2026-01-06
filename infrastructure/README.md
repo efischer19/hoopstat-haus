@@ -142,21 +142,11 @@ The infrastructure serves public basketball analytics via small JSON artifacts:
 - **Gold Presentation Layer**: Pre-computed JSON files under a `served/` prefix
 - **Public Read Access**: Anonymous GET/HEAD with CORS for browser clients
 - **Security**: Read-only bucket policy limited to `served/` prefix; logging enabled; least-privilege IAM
-- **Performance**: Cacheable via CloudFront CDN; deterministic keys; small payloads (≤100KB)
-- **Access Methods**:
-  - **CloudFront CDN (Recommended)**: `https://{cloudfront-domain}/player_daily/{date}/{player_id}.json`
-    - Lower latency with global edge caching
-    - HTTPS-only access with automatic redirect
-    - 1-hour default cache TTL, 24-hour max TTL
-  - **Direct S3**: `https://hoopstat-haus-gold.s3.us-east-1.amazonaws.com/served/player_daily/{date}/{player_id}.json`
-    - Direct bucket access with CORS enabled
-    - Useful for debugging or bypassing CDN cache
+- **Access Method**: Direct S3 access via HTTPS
+  - `https://hoopstat-haus-gold.s3.us-east-1.amazonaws.com/served/player_daily/{date}/{player_id}.json`
+  - Direct bucket access with CORS enabled for browser compatibility
+  - Small payloads (≤100KB) for fast delivery
 - **CORS Configuration**: Allows GET/HEAD from any origin (`*`) with 1-hour max-age
-- **CloudFront Features**:
-  - PriceClass_100: North America and Europe edge locations
-  - Automatic HTTPS redirect
-  - Gzip/Brotli compression enabled
-  - Custom CORS headers via response headers policy
 - **Details**: See [ADR-028](../meta/adr/ADR-028-gold_layer_final.md) and [JSON Artifact Schemas](../docs-src/JSON_ARTIFACT_SCHEMAS.md)
 
 ## File Structure

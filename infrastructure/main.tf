@@ -501,114 +501,6 @@ resource "aws_s3_bucket_lifecycle_configuration" "gold" {
   }
 }
 
-# ============================================================================
-# CloudFront Distribution for Gold Layer served/ prefix
-# ============================================================================
-
-# CloudFront Origin Access Control for S3
-resource "aws_cloudfront_origin_access_control" "gold_served" {
-  name                              = "${var.project_name}-gold-served-oac"
-  description                       = "Origin Access Control for Gold bucket served/ prefix"
-  origin_access_control_origin_type = "s3"
-  signing_behavior                  = "always"
-  signing_protocol                  = "sigv4"
-}
-
-# CloudFront distribution for Gold bucket served/ prefix
-# Cost optimization: PriceClass_100 limits edge locations to North America and Europe,
-# reducing costs while serving primary user base. Asia/Pacific/South America users
-# will have slightly higher latency but still benefit from caching and compression.
-# Estimated cost: ~$0.085/GB for first 10TB vs ~$0.17/GB for global (PriceClass_All).
-resource "aws_cloudfront_distribution" "gold_served" {
-  enabled             = true
-  is_ipv6_enabled     = true
-  comment             = "CloudFront distribution for hoopstat-haus JSON artifacts"
-  default_root_object = ""
-  price_class         = "PriceClass_100" # North America and Europe only
-
-  origin {
-    domain_name              = aws_s3_bucket.gold.bucket_regional_domain_name
-    origin_id                = "S3-${aws_s3_bucket.gold.bucket}"
-    origin_access_control_id = aws_cloudfront_origin_access_control.gold_served.id
-    origin_path              = "/served"
-  }
-
-  default_cache_behavior {
-    allowed_methods  = ["GET", "HEAD", "OPTIONS"]
-    cached_methods   = ["GET", "HEAD", "OPTIONS"]
-    target_origin_id = "S3-${aws_s3_bucket.gold.bucket}"
-
-    forwarded_values {
-      query_string = false
-      headers      = ["Origin", "Access-Control-Request-Headers", "Access-Control-Request-Method"]
-
-      cookies {
-        forward = "none"
-      }
-    }
-
-    viewer_protocol_policy = "redirect-to-https"
-    min_ttl                = 0
-    default_ttl            = 3600  # 1 hour
-    max_ttl                = 86400 # 24 hours
-    compress               = true
-
-    # Response headers policy for CORS
-    response_headers_policy_id = aws_cloudfront_response_headers_policy.gold_served_cors.id
-  }
-
-  restrictions {
-    geo_restriction {
-      restriction_type = "none"
-    }
-  }
-
-  viewer_certificate {
-    cloudfront_default_certificate = true
-  }
-
-  tags = {
-    Name    = "${var.project_name}-gold-served-cdn"
-    Purpose = "CDN for public JSON artifacts"
-  }
-}
-
-# CloudFront response headers policy for CORS
-# Wildcard origin (*) allows access from any domain, which is appropriate for
-# public JSON artifacts (ADR-028) that are designed to be consumed by browsers
-# and mobile apps from any source. Only read methods (GET/HEAD/OPTIONS) are allowed.
-resource "aws_cloudfront_response_headers_policy" "gold_served_cors" {
-  name    = "${var.project_name}-gold-served-cors"
-  comment = "CORS policy for Gold bucket served/ prefix"
-
-  cors_config {
-    access_control_allow_credentials = false
-
-    access_control_allow_headers {
-      items = ["*"]
-    }
-
-    access_control_allow_methods {
-      items = ["GET", "HEAD", "OPTIONS"]
-    }
-
-    access_control_allow_origins {
-      items = ["*"]  # Public artifacts accessible from any domain
-    }
-
-    access_control_max_age_sec = 3600
-    origin_override            = true
-  }
-
-  custom_headers_config {
-    items {
-      header   = "Cache-Control"
-      value    = "public, max-age=3600"
-      override = false
-    }
-  }
-}
-
 # S3 bucket policy for Gold layer
 # Grants public read access exclusively to served/ prefix for JSON artifacts (ADR-028)
 # Security: Resource patterns explicitly restrict access to served/* only.
@@ -620,20 +512,6 @@ resource "aws_s3_bucket_policy" "gold_public_read" {
   policy = jsonencode({
     Version = "2012-10-17"
     Statement = [
-      {
-        Sid    = "AllowCloudFrontOAC"
-        Effect = "Allow"
-        Principal = {
-          Service = "cloudfront.amazonaws.com"
-        }
-        Action   = "s3:GetObject"
-        Resource = "${aws_s3_bucket.gold.arn}/served/*"
-        Condition = {
-          StringEquals = {
-            "AWS:SourceArn" = aws_cloudfront_distribution.gold_served.arn
-          }
-        }
-      },
       {
         Sid       = "PublicReadServedArtifacts"
         Effect    = "Allow"

@@ -9,13 +9,12 @@ from datetime import date
 from typing import Any
 
 import pandas as pd
+from botocore.exceptions import BotoCoreError, ClientError
 from hoopstat_data.transforms import PlayerSeasonAggregator, TeamSeasonAggregator
 from hoopstat_observability import get_logger
 
 from .config import GoldAnalyticsConfig, load_config
-
-# TODO: IcebergS3TablesWriter removed per ADR-028 (S3 Tables out-of-scope for v1)
-# Need to implement JSON artifact writing to served/ prefix instead
+from .json_artifacts import JSONArtifactWriter
 from .performance import performance_context, performance_monitor
 from .s3_discovery import S3DataDiscovery
 from .validation import (
@@ -65,8 +64,7 @@ class GoldProcessor:
         self.team_aggregator = TeamSeasonAggregator(validation_mode="lenient")
 
         # Initialize components
-        # TODO: Replace with JSON artifact writer per ADR-028
-        # self.iceberg_writer = IcebergS3TablesWriter(gold_bucket)
+        self.json_writer = JSONArtifactWriter(gold_bucket)
         self.s3_discovery = S3DataDiscovery(self.config)
         self.validator = DataValidator(validation_mode="lenient")
 
@@ -597,6 +595,28 @@ class GoldProcessor:
                         self._store_player_analytics(player_analytics, target_date)
                     if not team_analytics.empty:
                         self._store_team_analytics(team_analytics, target_date)
+
+                    # Write JSON artifacts after successful Iceberg storage
+                    try:
+                        if not player_analytics.empty:
+                            self.json_writer.write_player_daily_artifacts(
+                                player_analytics, target_date
+                            )
+                            self.json_writer.write_top_lists(
+                                player_analytics, target_date
+                            )
+                        if not team_analytics.empty:
+                            self.json_writer.write_team_daily_artifacts(
+                                team_analytics, target_date
+                            )
+                        # Update latest index
+                        self.json_writer.write_latest_index(target_date)
+                    except (BotoCoreError, ClientError) as e:
+                        logger.error(f"S3 error writing JSON artifacts: {e}")
+                        # Don't fail the whole process if JSON writing fails
+                    except Exception as e:
+                        logger.error(f"Unexpected error writing JSON artifacts: {e}")
+                        # Don't fail the whole process if JSON writing fails
                 else:
                     logger.info(f"Would store {len(player_analytics)} player analytics")
                     logger.info(f"Would store {len(team_analytics)} team analytics")

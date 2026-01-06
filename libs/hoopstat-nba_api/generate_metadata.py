@@ -11,6 +11,41 @@ from pathlib import Path
 
 from nba_api.stats.static import players, teams
 
+# Manual conference mapping (as of 2024-25 season)
+# This is relatively stable but should be updated if teams change conferences
+TEAM_CONFERENCES = {
+    1610612737: "Eastern",  # Atlanta Hawks
+    1610612738: "Eastern",  # Boston Celtics
+    1610612751: "Eastern",  # Brooklyn Nets
+    1610612766: "Eastern",  # Charlotte Hornets
+    1610612741: "Eastern",  # Chicago Bulls
+    1610612739: "Eastern",  # Cleveland Cavaliers
+    1610612742: "Western",  # Dallas Mavericks
+    1610612743: "Western",  # Denver Nuggets
+    1610612765: "Eastern",  # Detroit Pistons
+    1610612744: "Western",  # Golden State Warriors
+    1610612745: "Western",  # Houston Rockets
+    1610612754: "Eastern",  # Indiana Pacers
+    1610612746: "Western",  # LA Clippers
+    1610612747: "Western",  # Los Angeles Lakers
+    1610612763: "Western",  # Memphis Grizzlies
+    1610612748: "Eastern",  # Miami Heat
+    1610612749: "Eastern",  # Milwaukee Bucks
+    1610612750: "Western",  # Minnesota Timberwolves
+    1610612740: "Western",  # New Orleans Pelicans
+    1610612752: "Eastern",  # New York Knicks
+    1610612760: "Western",  # Oklahoma City Thunder
+    1610612753: "Eastern",  # Orlando Magic
+    1610612755: "Eastern",  # Philadelphia 76ers
+    1610612756: "Western",  # Phoenix Suns
+    1610612757: "Western",  # Portland Trail Blazers
+    1610612758: "Western",  # Sacramento Kings
+    1610612759: "Western",  # San Antonio Spurs
+    1610612761: "Eastern",  # Toronto Raptors
+    1610612762: "Western",  # Utah Jazz
+    1610612764: "Eastern",  # Washington Wizards
+}
+
 
 def generate_teams_metadata():
     """Generate teams_v1.json with team metadata."""
@@ -19,14 +54,14 @@ def generate_teams_metadata():
     # Transform to desired format
     teams_metadata = []
     for team in all_teams:
+        team_id = team["id"]
         teams_metadata.append(
             {
-                "id": team["id"],
+                "id": team_id,
                 "name": team["full_name"],
                 "abbreviation": team["abbreviation"],
                 "city": team["city"],
-                # Note: conference is not available in nba_api static data
-                # This would require additional API calls or manual mapping
+                "conference": TEAM_CONFERENCES.get(team_id, "Unknown"),
             }
         )
 
@@ -36,7 +71,7 @@ def generate_teams_metadata():
     return {
         "schema_version": "v1",
         "generated_from": "nba_api.stats.static.teams",
-        "note": "Conference field not available in nba_api static data",
+        "note": "Conference mapping manually maintained for 2024-25 season",
         "teams": teams_metadata,
     }
 

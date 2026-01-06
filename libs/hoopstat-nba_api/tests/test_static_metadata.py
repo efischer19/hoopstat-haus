@@ -41,7 +41,7 @@ class TestTeamsMetadata:
 
     def test_team_has_required_fields(self, teams_data):
         """Test that each team has required fields."""
-        required_fields = {"id", "name", "abbreviation", "city"}
+        required_fields = {"id", "name", "abbreviation", "city", "conference"}
 
         for team in teams_data["teams"]:
             assert all(field in team for field in required_fields), (
@@ -64,6 +64,14 @@ class TestTeamsMetadata:
         assert team_names == sorted(team_names), (
             "Teams should be sorted alphabetically by name"
         )
+
+    def test_team_conferences_valid(self, teams_data):
+        """Test that team conferences are valid values."""
+        valid_conferences = {"Eastern", "Western"}
+        for team in teams_data["teams"]:
+            assert team["conference"] in valid_conferences, (
+                f"Invalid conference for team: {team}"
+            )
 
 
 class TestPlayersMetadata:

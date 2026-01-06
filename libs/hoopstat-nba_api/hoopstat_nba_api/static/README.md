@@ -12,10 +12,9 @@ Contains metadata for all NBA teams.
 - `name`: Full team name (e.g., "Los Angeles Lakers")
 - `abbreviation`: Team abbreviation (e.g., "LAL")
 - `city`: Team city (e.g., "Los Angeles")
+- `conference`: Team conference ("Eastern" or "Western")
 
-**Note:** The `conference` field is not available in the nba_api static data. To add conference information would require either:
-1. Additional API calls to fetch current team conference assignments
-2. Manual mapping/hardcoding of conference data (which may become stale)
+**Note:** Conference assignments are manually maintained for the current season (2024-25). While conferences change rarely, this mapping should be verified annually.
 
 ### players_v1.json
 Contains metadata for active NBA players only.
@@ -61,8 +60,8 @@ Both files use `schema_version: "v1"` to support future schema evolution. If fie
 
 To fully meet the original requirements, consider:
 
-1. **Conference data for teams**: Add API calls to fetch current standings/conference data, or maintain a manual mapping
-2. **Team assignments for players**: Use the `CommonPlayerInfo` endpoint to fetch current team for each player
-3. **Position data for players**: Use the `CommonPlayerInfo` endpoint to fetch player positions
-4. **Automated updates**: Schedule periodic regeneration of these files to keep data fresh
-5. **Validation**: Add tests to ensure data completeness and correctness
+1. **Team assignments for players**: Use the `CommonPlayerInfo` endpoint to fetch current team for each player
+2. **Position data for players**: Use the `CommonPlayerInfo` endpoint to fetch player positions
+3. **Automated conference updates**: Monitor for conference realignment and update mappings
+4. **Automated updates**: Schedule periodic regeneration of these files to keep player data fresh
+5. **Validation**: Expand tests to verify data against live API for accuracy

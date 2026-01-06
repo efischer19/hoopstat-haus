@@ -14,7 +14,6 @@ from hoopstat_data.transforms import PlayerSeasonAggregator, TeamSeasonAggregato
 from hoopstat_observability import get_logger
 
 from .config import GoldAnalyticsConfig, load_config
-from .iceberg_integration import IcebergS3TablesWriter
 from .json_artifacts import JSONArtifactWriter
 from .performance import performance_context, performance_monitor
 from .s3_discovery import S3DataDiscovery
@@ -65,7 +64,6 @@ class GoldProcessor:
         self.team_aggregator = TeamSeasonAggregator(validation_mode="lenient")
 
         # Initialize components
-        self.iceberg_writer = IcebergS3TablesWriter(gold_bucket)
         self.json_writer = JSONArtifactWriter(gold_bucket)
         self.s3_discovery = S3DataDiscovery(self.config)
         self.validator = DataValidator(validation_mode="lenient")

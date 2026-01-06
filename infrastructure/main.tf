@@ -451,13 +451,35 @@ resource "aws_s3_bucket_server_side_encryption_configuration" "gold" {
 }
 
 # S3 Bucket public access block for Gold layer
+# Allow public policy to enable public read access to served/ prefix
+# Security note: Setting block_public_policy=false and restrict_public_buckets=false
+# enables the bucket policy to grant public access. However, the bucket policy itself
+# (aws_s3_bucket_policy.gold_public_read) explicitly restricts access to the served/*
+# prefix pattern only. All other prefixes in the Gold bucket remain private.
+# All policy changes are tracked via version control and Terraform state.
 resource "aws_s3_bucket_public_access_block" "gold" {
   bucket = aws_s3_bucket.gold.id
 
   block_public_acls       = true
-  block_public_policy     = true
+  block_public_policy     = false  # Allow public policy for served/ prefix
   ignore_public_acls      = true
-  restrict_public_buckets = true
+  restrict_public_buckets = false  # Allow public bucket access for served/ prefix
+}
+
+# S3 Bucket CORS configuration for Gold layer
+# Wildcard origin (*) allows access from any domain, which is appropriate for
+# public JSON artifacts (ADR-028) that are designed to be consumed by browsers
+# and mobile apps from any source. Only read methods (GET/HEAD) are allowed.
+resource "aws_s3_bucket_cors_configuration" "gold" {
+  bucket = aws_s3_bucket.gold.id
+
+  cors_rule {
+    allowed_headers = ["*"]
+    allowed_methods = ["GET", "HEAD"]
+    allowed_origins = ["*"]  # Public artifacts accessible from any domain
+    expose_headers  = ["ETag", "Content-Length", "Content-Type"]
+    max_age_seconds = 3600
+  }
 }
 
 # Gold Layer Lifecycle Policy
@@ -477,6 +499,31 @@ resource "aws_s3_bucket_lifecycle_configuration" "gold" {
       days_after_initiation = 7
     }
   }
+}
+
+# S3 bucket policy for Gold layer
+# Grants public read access exclusively to served/ prefix for JSON artifacts (ADR-028)
+# Security: Resource patterns explicitly restrict access to served/* only.
+# All other prefixes in the Gold bucket (internal Parquet files, etc.) remain private.
+# Changes to this policy are tracked via version control and Terraform state.
+resource "aws_s3_bucket_policy" "gold_public_read" {
+  bucket = aws_s3_bucket.gold.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Sid       = "PublicReadServedArtifacts"
+        Effect    = "Allow"
+        Principal = "*"
+        Action = [
+          "s3:GetObject",
+          "s3:GetObjectVersion"
+        ]
+        Resource = "${aws_s3_bucket.gold.arn}/served/*"
+      }
+    ]
+  })
 }
 
 # S3 bucket for access logs

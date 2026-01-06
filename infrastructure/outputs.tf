@@ -149,3 +149,17 @@ output "gold_bucket" {
     arn  = aws_s3_bucket.gold.arn
   }
 }
+
+# ============================================================================
+# Public JSON Artifacts Access URLs
+# ============================================================================
+
+output "public_artifact_urls" {
+  description = "Public URLs for accessing JSON artifacts via S3"
+  value = {
+    s3_base_url        = "https://${aws_s3_bucket.gold.bucket}.s3.${var.aws_region}.amazonaws.com/served"
+    example_player_url = "https://${aws_s3_bucket.gold.bucket}.s3.${var.aws_region}.amazonaws.com/served/player_daily/2024-11-15/2544.json"
+    example_team_url   = "https://${aws_s3_bucket.gold.bucket}.s3.${var.aws_region}.amazonaws.com/served/team_daily/2024-11-15/1610612747.json"
+    example_index_url  = "https://${aws_s3_bucket.gold.bucket}.s3.${var.aws_region}.amazonaws.com/served/index/latest.json"
+  }
+}

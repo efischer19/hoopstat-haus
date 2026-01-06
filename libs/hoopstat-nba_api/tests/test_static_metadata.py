@@ -7,6 +7,10 @@ from pathlib import Path
 
 import pytest
 
+# Test constants
+BYTES_PER_PLAYER = 100  # Expected average bytes per player in JSON
+FILE_SIZE_OVERHEAD_KB = 10  # Fixed overhead for JSON structure
+
 
 def get_static_dir():
     """Get the path to the static directory."""
@@ -136,9 +140,8 @@ class TestPlayersMetadata:
             data = json.load(f)
             player_count = len(data["players"])
 
-        # Dynamic limit: ~100 bytes per player + 10KB overhead
-        # This allows for growth while catching unreasonable file sizes
-        max_size = (player_count * 100) + (10 * 1024)
+        # Dynamic limit based on player count
+        max_size = (player_count * BYTES_PER_PLAYER) + (FILE_SIZE_OVERHEAD_KB * 1024)
 
         assert file_size < max_size, (
             f"Players file too large: {file_size} bytes "

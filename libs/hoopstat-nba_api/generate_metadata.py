@@ -11,6 +11,9 @@ from pathlib import Path
 
 from nba_api.stats.static import players, teams
 
+# Constants
+JSON_INDENT = 2  # Consistent indentation for all JSON files
+
 # Manual conference mapping (as of 2024-25 season)
 # This is relatively stable but should be updated if teams change conferences
 TEAM_CONFERENCES = {
@@ -135,7 +138,7 @@ def main():
     teams_data = generate_teams_metadata()
     teams_file = output_dir / "teams_v1.json"
     with open(teams_file, "w", encoding="utf-8") as f:
-        json.dump(teams_data, f, indent=2, ensure_ascii=False)
+        json.dump(teams_data, f, indent=JSON_INDENT, ensure_ascii=False)
     print(f"✓ Generated {teams_file}")
     print(f"  Total teams: {len(teams_data['teams'])}")
 
@@ -143,7 +146,7 @@ def main():
     players_data = generate_players_metadata()
     players_file = output_dir / "players_v1.json"
     with open(players_file, "w", encoding="utf-8") as f:
-        json.dump(players_data, f, indent=2, ensure_ascii=False)
+        json.dump(players_data, f, indent=JSON_INDENT, ensure_ascii=False)
     print(f"✓ Generated {players_file}")
     print(f"  Total active players: {len(players_data['players'])}")
 

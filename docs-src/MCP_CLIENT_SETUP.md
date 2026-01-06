@@ -1,10 +1,16 @@
-# [Moved to Future Plans] MCP Client Setup Guide
+# [Deprecated - Future Feature] MCP Client Setup Guide
 
-> This guide is MCP-first and out of initial scope per ADR-027. It has been moved under meta/plans/future/ for later reference.
+> **Note**: This guide describes S3 Tables/MCP integration which is out of scope for v1 per ADR-028.
+> S3 Tables infrastructure has been removed. For current v1 plans, see ADR-028 which describes
+> serving public JSON artifacts instead. This document is preserved for potential future reference.
+>
+> Moved to meta/plans/future/MCP_CLIENT_SETUP.md
 
 This guide shows you how to access Hoopstat Haus basketball analytics data using the AWS S3 Tables MCP Server.
 
 ## Overview
+
+**Status**: Not implemented. S3 Tables are out-of-scope for v1 per [ADR-028](../meta/adr/ADR-028-gold_layer_final.md).
 
 Hoopstat Haus provides public read access to our Gold layer basketball analytics data through AWS S3 Tables. You can query this data using any MCP-compatible AI assistant by configuring the AWS S3 Tables MCP Server locally.
 

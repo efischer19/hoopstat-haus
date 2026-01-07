@@ -857,35 +857,36 @@ Examples:
 
 ## Access Patterns and CORS
 
-### S3 Configuration
-- **Bucket:** Public read access for `served/` prefix only
-- **CORS:** Configured to allow browser access from any origin
+### CloudFront Distribution
+- **Access:** Public read via CloudFront distribution with Origin Access Control (OAC)
+- **S3 Bucket:** Private (Block Public Access enabled); CloudFront OAC provides signed access
+- **CORS:** Configured via CloudFront response headers policy to allow browser access from any origin
 - **Cache-Control:** `max-age=3600` (1 hour) for recent data
 - **Content-Type:** `application/json; charset=utf-8`
 
 ### Example CORS Configuration
+CloudFront response headers policy:
 ```json
 {
-  "CORSRules": [
-    {
-      "AllowedOrigins": ["*"],
-      "AllowedMethods": ["GET", "HEAD"],
-      "AllowedHeaders": ["*"],
-      "MaxAgeSeconds": 3600
-    }
-  ]
+  "access_control_allow_credentials": false,
+  "access_control_allow_headers": ["*"],
+  "access_control_allow_methods": ["GET", "HEAD", "OPTIONS"],
+  "access_control_allow_origins": ["*"],
+  "access_control_max_age_sec": 3600
 }
 ```
 
 ### URL Access Pattern
 ```
-https://{bucket}.s3.{region}.amazonaws.com/served/{artifact_type}/{date}/{id}.json
+https://<cloudfront-domain>.cloudfront.net/{artifact_type}/{date}/{id}.json
 ```
 
 Example:
 ```
-https://hoopstat-haus-gold.s3.us-east-1.amazonaws.com/served/player_daily/2024-11-15/2544.json
+https://<cloudfront-domain>.cloudfront.net/player_daily/2024-11-15/2544.json
 ```
+
+**Note:** The exact CloudFront domain is available from the infrastructure Terraform outputs. See [PUBLIC_ACCESS_GUIDE.md](../infrastructure/PUBLIC_ACCESS_GUIDE.md) for details on retrieving the CloudFront URL.
 
 ## Discovery and Index Files
 

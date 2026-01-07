@@ -138,16 +138,18 @@ The infrastructure includes a fully configured ECR repository (`hoopstat-haus/pr
 - See [ECR Image Management Guide](../docs/ECR_IMAGE_MANAGEMENT.md) for detailed usage
 
 ### Public JSON Artifacts (ADR-028)
-The infrastructure serves public basketball analytics via small JSON artifacts:
-- **Gold Presentation Layer**: Pre-computed JSON files under a `served/` prefix
-- **Public Read Access**: Anonymous GET/HEAD with CORS for browser clients
-- **Security**: Read-only bucket policy limited to `served/` prefix; logging enabled; least-privilege IAM
-- **Access Method**: Direct S3 access via HTTPS
-  - `https://hoopstat-haus-gold.s3.us-east-1.amazonaws.com/served/player_daily/{date}/{player_id}.json`
-  - Direct bucket access with CORS enabled for browser compatibility
+The infrastructure serves public basketball analytics via small JSON artifacts through CloudFront:
+- **Gold Presentation Layer**: Pre-computed JSON files under a `served/` prefix in S3
+- **Public Access**: Via CloudFront distribution with Origin Access Control (OAC)
+- **Security**: Private S3 bucket (Block Public Access enabled); CloudFront OAC with signed requests; read-only access limited to `served/` prefix
+- **Access Method**: CloudFront HTTPS URLs
+  - Base URL: `https://<cloudfront-domain>.cloudfront.net/`
+  - Example: `https://<cloudfront-domain>.cloudfront.net/player_daily/{date}/{player_id}.json`
+  - Global edge caching for low latency
   - Small payloads (≤100KB) for fast delivery
-- **CORS Configuration**: Allows GET/HEAD from any origin (`*`) with 1-hour max-age
-- **Details**: See [ADR-028](../meta/adr/ADR-028-gold_layer_final.md) and [JSON Artifact Schemas](../docs-src/JSON_ARTIFACT_SCHEMAS.md)
+- **CORS Configuration**: CloudFront response headers policy allows GET/HEAD/OPTIONS from any origin (`*`) with 1-hour max-age
+- **Cache Behavior**: 1-hour default TTL with automatic gzip/brotli compression
+- **Details**: See [PUBLIC_ACCESS_GUIDE.md](PUBLIC_ACCESS_GUIDE.md), [ADR-028](../meta/adr/ADR-028-gold_layer_final.md), and [JSON Artifact Schemas](../docs-src/JSON_ARTIFACT_SCHEMAS.md)
 
 ## File Structure
 

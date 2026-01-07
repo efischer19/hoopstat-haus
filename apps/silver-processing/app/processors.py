@@ -749,6 +749,25 @@ class SilverProcessor:
                             f"Written to S3 keys: {list(written_keys.values())}"
                         )
 
+                        # 6. Write silver-ready marker to trigger Gold processing
+                        # (ADR-028: single daily trigger instead of per-object events)
+                        try:
+                            dataset_counts = {
+                                "player_stats": player_count,
+                                "team_stats": team_count,
+                                "game_stats": game_count,
+                            }
+                            marker_key = self.s3_manager.write_silver_ready_marker(
+                                target_date, dataset_counts
+                            )
+                            logger.info(
+                                f"Successfully wrote silver-ready marker: {marker_key}"
+                            )
+                        except Exception as e:
+                            logger.error(f"Failed to write silver-ready marker: {e}")
+                            # Don't fail the whole process if marker write fails
+                            # Silver data is already written successfully
+
                     except Exception as e:
                         logger.error(f"Failed to write Silver data to S3: {e}")
                         return False

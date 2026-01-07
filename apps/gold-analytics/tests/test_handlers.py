@@ -140,3 +140,50 @@ class TestLambdaHandler:
         assert response["statusCode"] == 500
         assert "error" in response["body"]
         assert "SILVER_BUCKET" in response["body"]["error"]
+
+    @patch.dict(
+        os.environ, {"SILVER_BUCKET": "test-silver", "GOLD_BUCKET": "test-gold"}
+    )
+    @patch("app.handlers.GoldProcessor")
+    @patch("app.handlers.parse_s3_event_key")
+    def test_lambda_handler_with_silver_ready_marker(
+        self, mock_parse_key, mock_processor_class
+    ):
+        """Test lambda handler with silver-ready marker event."""
+        from datetime import date
+
+        # Setup mock processor
+        mock_processor = MagicMock()
+        mock_processor.process_date.return_value = True
+        mock_processor_class.return_value = mock_processor
+
+        # Setup mock S3 key parser for marker
+        marker_key = "metadata/2024-01-15/silver-ready.json"
+        mock_parse_key.return_value = {
+            "file_type": "silver-ready-marker",
+            "season": "2023-24",
+            "date": date(2024, 1, 15),
+            "original_key": marker_key,
+            "is_marker": True,
+        }
+
+        event = {
+            "Records": [
+                {
+                    "s3": {
+                        "bucket": {"name": "test-silver"},
+                        "object": {"key": marker_key},
+                    }
+                }
+            ]
+        }
+        context = MagicMock()
+
+        response = lambda_handler(event, context)
+
+        assert response["statusCode"] == 200
+        assert response["body"]["records_processed"] == 1
+        # Verify processor was called for the date in the marker
+        mock_processor.process_date.assert_called_once_with(
+            date(2024, 1, 15), dry_run=False
+        )

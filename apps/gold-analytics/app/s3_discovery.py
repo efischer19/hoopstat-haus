@@ -354,9 +354,11 @@ def parse_s3_event_key(s3_key: str) -> dict[str, Any] | None:
     """
     Parse S3 object key to extract metadata for processing.
 
-    Supports both patterns:
-    1. With season: silver/{file_type}/season={season}/date={date}/filename
-    2. Without season: silver/{file_type}/date={date}/filename
+    Supports multiple patterns:
+    1. Silver-ready marker: metadata/{date}/silver-ready.json
+    2. Current format: silver/{file_type}/{date}/filename (ADR-032)
+    3. With season: silver/{file_type}/season={season}/date={date}/filename
+    4. Without season: silver/{file_type}/date={date}/filename
 
     Args:
         s3_key: S3 object key from event
@@ -364,7 +366,45 @@ def parse_s3_event_key(s3_key: str) -> dict[str, Any] | None:
     Returns:
         Dictionary with parsed metadata or None if parsing fails
     """
-    # Try pattern with season first
+    # First, check if this is a silver-ready marker (ADR-028 daily trigger)
+    marker_pattern = r"metadata/(?P<date>[\d-]+)/silver-ready\.json"
+    match = re.match(marker_pattern, s3_key)
+    if match:
+        try:
+            parsed_date = datetime.strptime(match.group("date"), "%Y-%m-%d").date()
+            season = _extract_season_from_date_helper(parsed_date)
+            return {
+                "file_type": "silver-ready-marker",
+                "season": season,
+                "date": parsed_date,
+                "original_key": s3_key,
+                "is_marker": True,
+            }
+        except ValueError as e:
+            logger.error(f"Failed to parse date from marker key {s3_key}: {e}")
+            return None
+
+    # Try current ADR-032 format: silver/{file_type}/{date}/filename
+    # Handles hyphens in file_type (e.g., player-stats, team-stats)
+    pattern_current = r"silver/(?P<file_type>[\w-]+)/(?P<date>[\d-]+)/.*"
+
+    match = re.match(pattern_current, s3_key)
+    if match:
+        try:
+            parsed_date = datetime.strptime(match.group("date"), "%Y-%m-%d").date()
+            season = _extract_season_from_date_helper(parsed_date)
+            return {
+                "file_type": match.group("file_type"),
+                "season": season,
+                "date": parsed_date,
+                "original_key": s3_key,
+                "is_marker": False,
+            }
+        except ValueError as e:
+            logger.error(f"Failed to parse date from S3 key {s3_key}: {e}")
+            return None
+
+    # Try pattern with season (future/legacy format with date= prefix)
     pattern_with_season = (
         r"silver/(?P<file_type>\w+)/season=(?P<season>[\d-]+)/date=(?P<date>[\d-]+)/.*"
     )
@@ -378,12 +418,13 @@ def parse_s3_event_key(s3_key: str) -> dict[str, Any] | None:
                 "season": match.group("season"),
                 "date": parsed_date,
                 "original_key": s3_key,
+                "is_marker": False,
             }
         except ValueError as e:
             logger.error(f"Failed to parse date from S3 key {s3_key}: {e}")
             return None
 
-    # Try pattern without season (current silver output format)
+    # Try pattern without season (legacy format with date= prefix)
     pattern_without_season = r"silver/(?P<file_type>\w+)/date=(?P<date>[\d-]+)/.*"
 
     match = re.match(pattern_without_season, s3_key)
@@ -397,6 +438,7 @@ def parse_s3_event_key(s3_key: str) -> dict[str, Any] | None:
                 "season": season,
                 "date": parsed_date,
                 "original_key": s3_key,
+                "is_marker": False,
             }
         except ValueError as e:
             logger.error(f"Failed to parse date from S3 key {s3_key}: {e}")

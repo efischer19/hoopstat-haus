@@ -1221,6 +1221,17 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#write_silver_ready_marker" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        write_silver_ready_marker
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#read_summary_json" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1363,6 +1374,8 @@ s3://bucket/nba-api/{data_type}/year={year}/month={month}/day={day}/hour={hour}/
 <li>Write Silver JSON data to S3 with proper partitioning.</li>
 <li><code>write_partitioned_silver_data(self, silver_data: Any, target_date: date, check_exists: bool) -&gt; Any</code></li>
 <li>Write partitioned Silver data for all entity types.</li>
+<li><code>write_silver_ready_marker(self, target_date: date, dataset_counts: Any) -&gt; str</code></li>
+<li>Write a silver-ready marker file to signal Gold processing.</li>
 <li><code>read_summary_json(self) -&gt; Any</code></li>
 <li>Read the Bronze layer summary.json file from S3.</li>
 <li><code>parse_s3_event(self, event: Any) -&gt; Any</code></li>
@@ -1499,8 +1512,22 @@ s3://bucket/nba-api/{data_type}/year={year}/month={month}/day={day}/hour={hour}/
     Dictionary mapping entity_type to S3 key where data was written</p>
 <p>Raises:
     SilverS3ManagerError: If any write operation fails</p>
+<h4 id="write_silver_ready_marker">write_silver_ready_marker<a class="headerlink" href="#write_silver_ready_marker" title="Permanent link">&para;</a></h4>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-15-1" name="__codelineno-15-1" href="#__codelineno-15-1"></a><span class="n">write_silver_ready_marker</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">target_date</span><span class="p">:</span> <span class="n">date</span><span class="p">,</span> <span class="n">dataset_counts</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span>
+</code></pre></div>
+<p>Write a silver-ready marker file to signal Gold processing.</p>
+<p>This marker file is written after all Silver data for a date has been
+successfully processed. It uses URL-safe naming per ADR-032 and triggers
+Gold processing exactly once per day per ADR-028.</p>
+<p>Args:
+    target_date: The date that was successfully processed
+    dataset_counts: Optional counts of records written per entity type</p>
+<p>Returns:
+    S3 key where marker was written</p>
+<p>Raises:
+    SilverS3ManagerError: If write operation fails</p>
 <h4 id="read_summary_json">read_summary_json<a class="headerlink" href="#read_summary_json" title="Permanent link">&para;</a></h4>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-15-1" name="__codelineno-15-1" href="#__codelineno-15-1"></a><span class="n">read_summary_json</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-16-1" name="__codelineno-16-1" href="#__codelineno-16-1"></a><span class="n">read_summary_json</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span>
 </code></pre></div>
 <p>Read the Bronze layer summary.json file from S3.</p>
 <p>This method reads the summary metadata file that contains information
@@ -1511,7 +1538,7 @@ about the last bronze ingestion, including the date that was processed.</p>
     SilverS3ManagerError: If read operation fails for reasons other
         than file not found</p>
 <h4 id="parse_s3_event">parse_s3_event<a class="headerlink" href="#parse_s3_event" title="Permanent link">&para;</a></h4>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-16-1" name="__codelineno-16-1" href="#__codelineno-16-1"></a><span class="n">parse_s3_event</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">event</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-17-1" name="__codelineno-17-1" href="#__codelineno-17-1"></a><span class="n">parse_s3_event</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">event</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span>
 </code></pre></div>
 <p>DEPRECATED: Parse S3 event records from Lambda event for Bronze data triggers.</p>
 <p>This method is deprecated and will be removed in a future version.
@@ -1522,7 +1549,7 @@ the Bronze layer summary file.</p>
 <p>Returns:
     List of parsed Bronze data events that should trigger Silver processing</p>
 <h4 id="list_bronze_data">list_bronze_data<a class="headerlink" href="#list_bronze_data" title="Permanent link">&para;</a></h4>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-17-1" name="__codelineno-17-1" href="#__codelineno-17-1"></a><span class="n">list_bronze_data</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">entity</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">start_date</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">end_date</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-18-1" name="__codelineno-18-1" href="#__codelineno-18-1"></a><span class="n">list_bronze_data</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">entity</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">start_date</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">end_date</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span>
 </code></pre></div>
 <p>List available Bronze data for an entity within a date range.</p>
 <p>Args:
@@ -1532,7 +1559,7 @@ the Bronze layer summary file.</p>
 <p>Returns:
     List of dictionaries with Bronze data information</p>
 <h4 id="list_silver_data">list_silver_data<a class="headerlink" href="#list_silver_data" title="Permanent link">&para;</a></h4>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-18-1" name="__codelineno-18-1" href="#__codelineno-18-1"></a><span class="n">list_silver_data</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">entity_type</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">start_date</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">end_date</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-19-1" name="__codelineno-19-1" href="#__codelineno-19-1"></a><span class="n">list_silver_data</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">entity_type</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">start_date</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">end_date</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span>
 </code></pre></div>
 <p>List available Silver data for an entity type within a date range.</p>
 <p>Args:

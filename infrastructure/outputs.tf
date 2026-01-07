@@ -154,12 +154,22 @@ output "gold_bucket" {
 # Public JSON Artifacts Access URLs
 # ============================================================================
 
-output "public_artifact_urls" {
-  description = "Public URLs for accessing JSON artifacts via S3"
+output "cloudfront_distribution" {
+  description = "CloudFront distribution for gold artifacts"
   value = {
-    s3_base_url        = "https://${aws_s3_bucket.gold.bucket}.s3.${var.aws_region}.amazonaws.com/served"
-    example_player_url = "https://${aws_s3_bucket.gold.bucket}.s3.${var.aws_region}.amazonaws.com/served/player_daily/2024-11-15/2544.json"
-    example_team_url   = "https://${aws_s3_bucket.gold.bucket}.s3.${var.aws_region}.amazonaws.com/served/team_daily/2024-11-15/1610612747.json"
-    example_index_url  = "https://${aws_s3_bucket.gold.bucket}.s3.${var.aws_region}.amazonaws.com/served/index/latest.json"
+    id          = aws_cloudfront_distribution.gold_artifacts.id
+    arn         = aws_cloudfront_distribution.gold_artifacts.arn
+    domain_name = aws_cloudfront_distribution.gold_artifacts.domain_name
+    status      = aws_cloudfront_distribution.gold_artifacts.status
+  }
+}
+
+output "public_artifact_urls" {
+  description = "Public URLs for accessing JSON artifacts via CloudFront"
+  value = {
+    cloudfront_base_url    = "https://${aws_cloudfront_distribution.gold_artifacts.domain_name}"
+    example_player_url     = "https://${aws_cloudfront_distribution.gold_artifacts.domain_name}/player_daily/2024-11-15/2544.json"
+    example_team_url       = "https://${aws_cloudfront_distribution.gold_artifacts.domain_name}/team_daily/2024-11-15/1610612747.json"
+    example_index_url      = "https://${aws_cloudfront_distribution.gold_artifacts.domain_name}/index/latest.json"
   }
 }

@@ -84,11 +84,22 @@ def lambda_handler(event, context):
 5. **Transformation**: Cleans and standardizes data
 6. **Quality Checks**: Validates data quality and completeness
 7. **Storage**: Writes Silver JSON to S3
-8. **Monitoring**: Logs processing results and metrics
+8. **Silver-Ready Marker**: Writes completion marker to trigger Gold processing
+9. **Monitoring**: Logs processing results and metrics
 
 ### Trigger Mechanism
 
 The Silver processing is triggered by updates to the Bronze layer summary file (`_metadata/summary.json`). When Bronze ingestion completes, it updates this summary file with metadata including the `last_ingestion_date`. The Silver Lambda reads this summary to determine which date's data to process, ensuring proper coordination between Bronze and Silver layers.
+
+### Silver→Gold Coordination
+
+After successful Silver processing, a **silver-ready marker** is written to signal Gold processing (ADR-028). This marker:
+
+- **Path**: `metadata/{YYYY-MM-DD}/silver-ready.json` (URL-safe per ADR-032)
+- **Purpose**: Triggers Gold processing exactly once per day after Silver completes
+- **Format**: JSON containing `game_date`, `generated_at`, `dataset_counts`, `schema_version`
+
+This ensures Gold runs ~1x/day after all Silver data for a date is ready, instead of triggering on every individual Silver file write.
 
 ## Configuration
 

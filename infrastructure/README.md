@@ -51,6 +51,16 @@ The infrastructure implements a three-tier medallion architecture for data proce
 - **Retention**: 90 days
 - **Storage**: Standard class with automatic cleanup
 
+### Data Pipeline Orchestration
+
+The medallion layers are connected via S3 event notifications (ADR-028):
+
+- **Bronze→Silver**: Triggered by `_metadata/summary.json` updates in Bronze bucket
+- **Silver→Gold**: Triggered by `metadata/{YYYY-MM-DD}/silver-ready.json` marker in Silver bucket
+  - Ensures Gold runs **~1x/day** after Silver completes for the day
+  - Prevents over-invocation (previously triggered on every Silver file write)
+  - URL-safe naming per ADR-032
+
 For detailed information about the data architecture strategy, see `meta/plans/medallion-data-architecture.md`.
 
 ## Deployment Workflow

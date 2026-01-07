@@ -105,6 +105,32 @@ For v1:
 - Retain or remove Lambda prototypes behind tfvars; safe to delete post-v1
 - Gate any S3 Tables resources by default; enable only if/when we adopt Iceberg formally
 
+## Superseding Note (2026-01-07)
+
+**Superseding decision date:** 2026-01-07
+
+This ADR remains the long-term architectural direction for the Gold layer, but we are intentionally **deferring** the Silver→Gold *EventBridge→Glue Workflow* portion in the near term.
+
+### Short-term plan (in-season: Jan 2026 → offseason)
+
+- **Goal:** Keep the system simple and stable while Silver is newly coming online, and ensure Gold runs **~1x/day** after ingestion + Silver processing completes.
+- **Orchestration:** Use a single Silver readiness artifact (e.g., `silver/_metadata/summary.json` or a similar daily manifest) as the coordination point.
+  - Trigger Gold from that single readiness artifact (rather than per-object `ObjectCreated` events for every Silver file).
+  - This matches the proven Bronze→Silver pattern (daily coordination via a summary/manifest file).
+- **Compute:** Keep Silver→Gold processing in the existing Gold Lambda for now, with the expectation that it remains lightweight and infrequent.
+
+### When to move to EventBridge + Glue
+
+We should revisit and implement the original Silver→Gold EventBridge→Glue Workflow plan when one or more of the following become true:
+
+- **Backfills become first-class:** We need to reprocess large historical ranges (e.g., prior seasons) where a Spark batch job is a better fit than Lambda.
+- **We approach Lambda constraints:** Gold processing begins to regularly approach AWS Lambda runtime/memory limits or becomes cost-inefficient as data volume grows.
+- **Transforms become Spark-shaped:** Gold requires heavier joins/aggregations across larger Parquet partitions where PySpark provides clear simplicity/performance.
+- **Orchestration needs expand:** We want fan-out to multiple downstream consumers, richer routing/filtering, or more explicit workflow semantics (retries, chaining, auditability) than a single Lambda trigger.
+- **Operational clarity:** We want a clearer separation between "dataset ready" events and underlying object creation, with a durable event bus for observability.
+
+If/when we make that move, we should formalize it with a dedicated superseding ADR (per ADR-001) to keep the ADR logbook immutable and unambiguous.
+
 ## Supersedes
 
 - ADR-025 (JSON Storage for MVP): JSON remains only for Bronze and public artifacts; internal Silver/Gold use Parquet

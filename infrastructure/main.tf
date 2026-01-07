@@ -525,6 +525,8 @@ resource "aws_s3_bucket_policy" "gold_cloudfront_read" {
       }
     ]
   })
+
+  depends_on = [aws_cloudfront_distribution.gold_artifacts]
 }
 
 # ============================================================================
@@ -546,7 +548,7 @@ resource "aws_cloudfront_distribution" "gold_artifacts" {
   is_ipv6_enabled     = true
   comment             = "CloudFront distribution for ${var.project_name} gold artifacts"
   default_root_object = ""
-  price_class         = "PriceClass_100" # Use only North America and Europe edge locations
+  price_class         = "PriceClass_100" # Use only North America, Europe, and Israel edge locations
 
   origin {
     domain_name              = aws_s3_bucket.gold.bucket_regional_domain_name
@@ -564,7 +566,7 @@ resource "aws_cloudfront_distribution" "gold_artifacts" {
 
     forwarded_values {
       query_string = false
-      headers      = ["Origin", "Access-Control-Request-Method", "Access-Control-Request-Headers"]
+      headers      = []
 
       cookies {
         forward = "none"

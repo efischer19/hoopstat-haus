@@ -1160,10 +1160,10 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#s3-configuration" class="md-nav__link">
+  <a href="#cloudfront-distribution" class="md-nav__link">
     <span class="md-ellipsis">
       
-        S3 Configuration
+        CloudFront Distribution
       
     </span>
   </a>
@@ -1989,10 +1989,10 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#s3-configuration" class="md-nav__link">
+  <a href="#cloudfront-distribution" class="md-nav__link">
     <span class="md-ellipsis">
       
-        S3 Configuration
+        CloudFront Distribution
       
     </span>
   </a>
@@ -2966,31 +2966,31 @@ Examples:
 <li><strong>Counts:</strong> Always integers for counting stats</li>
 </ul>
 <h2 id="access-patterns-and-cors">Access Patterns and CORS<a class="headerlink" href="#access-patterns-and-cors" title="Permanent link">&para;</a></h2>
-<h3 id="s3-configuration">S3 Configuration<a class="headerlink" href="#s3-configuration" title="Permanent link">&para;</a></h3>
+<h3 id="cloudfront-distribution">CloudFront Distribution<a class="headerlink" href="#cloudfront-distribution" title="Permanent link">&para;</a></h3>
 <ul>
-<li><strong>Bucket:</strong> Public read access for <code>served/</code> prefix only</li>
-<li><strong>CORS:</strong> Configured to allow browser access from any origin</li>
+<li><strong>Access:</strong> Public read via CloudFront distribution with Origin Access Control (OAC)</li>
+<li><strong>S3 Bucket:</strong> Private (Block Public Access enabled); CloudFront OAC provides signed access</li>
+<li><strong>CORS:</strong> Configured via CloudFront response headers policy to allow browser access from any origin</li>
 <li><strong>Cache-Control:</strong> <code>max-age=3600</code> (1 hour) for recent data</li>
 <li><strong>Content-Type:</strong> <code>application/json; charset=utf-8</code></li>
 </ul>
 <h3 id="example-cors-configuration">Example CORS Configuration<a class="headerlink" href="#example-cors-configuration" title="Permanent link">&para;</a></h3>
+<p>CloudFront response headers policy:
 <div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a><span class="p">{</span>
-<a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a><span class="w">  </span><span class="nt">&quot;CORSRules&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
-<a id="__codelineno-9-3" name="__codelineno-9-3" href="#__codelineno-9-3"></a><span class="w">    </span><span class="p">{</span>
-<a id="__codelineno-9-4" name="__codelineno-9-4" href="#__codelineno-9-4"></a><span class="w">      </span><span class="nt">&quot;AllowedOrigins&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;*&quot;</span><span class="p">],</span>
-<a id="__codelineno-9-5" name="__codelineno-9-5" href="#__codelineno-9-5"></a><span class="w">      </span><span class="nt">&quot;AllowedMethods&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;GET&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;HEAD&quot;</span><span class="p">],</span>
-<a id="__codelineno-9-6" name="__codelineno-9-6" href="#__codelineno-9-6"></a><span class="w">      </span><span class="nt">&quot;AllowedHeaders&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;*&quot;</span><span class="p">],</span>
-<a id="__codelineno-9-7" name="__codelineno-9-7" href="#__codelineno-9-7"></a><span class="w">      </span><span class="nt">&quot;MaxAgeSeconds&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">3600</span>
-<a id="__codelineno-9-8" name="__codelineno-9-8" href="#__codelineno-9-8"></a><span class="w">    </span><span class="p">}</span>
-<a id="__codelineno-9-9" name="__codelineno-9-9" href="#__codelineno-9-9"></a><span class="w">  </span><span class="p">]</span>
-<a id="__codelineno-9-10" name="__codelineno-9-10" href="#__codelineno-9-10"></a><span class="p">}</span>
-</code></pre></div>
+<a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a><span class="w">  </span><span class="nt">&quot;access_control_allow_credentials&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">false</span><span class="p">,</span>
+<a id="__codelineno-9-3" name="__codelineno-9-3" href="#__codelineno-9-3"></a><span class="w">  </span><span class="nt">&quot;access_control_allow_headers&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;*&quot;</span><span class="p">],</span>
+<a id="__codelineno-9-4" name="__codelineno-9-4" href="#__codelineno-9-4"></a><span class="w">  </span><span class="nt">&quot;access_control_allow_methods&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;GET&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;HEAD&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;OPTIONS&quot;</span><span class="p">],</span>
+<a id="__codelineno-9-5" name="__codelineno-9-5" href="#__codelineno-9-5"></a><span class="w">  </span><span class="nt">&quot;access_control_allow_origins&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;*&quot;</span><span class="p">],</span>
+<a id="__codelineno-9-6" name="__codelineno-9-6" href="#__codelineno-9-6"></a><span class="w">  </span><span class="nt">&quot;access_control_max_age_sec&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">3600</span>
+<a id="__codelineno-9-7" name="__codelineno-9-7" href="#__codelineno-9-7"></a><span class="p">}</span>
+</code></pre></div></p>
 <h3 id="url-access-pattern">URL Access Pattern<a class="headerlink" href="#url-access-pattern" title="Permanent link">&para;</a></h3>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a>https://{bucket}.s3.{region}.amazonaws.com/served/{artifact_type}/{date}/{id}.json
+<div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a>https://&lt;cloudfront-domain&gt;.cloudfront.net/{artifact_type}/{date}/{id}.json
 </code></pre></div>
 <p>Example:
-<div class="highlight"><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a>https://hoopstat-haus-gold.s3.us-east-1.amazonaws.com/served/player_daily/2024-11-15/2544.json
+<div class="highlight"><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a>https://&lt;cloudfront-domain&gt;.cloudfront.net/player_daily/2024-11-15/2544.json
 </code></pre></div></p>
+<p><strong>Note:</strong> The exact CloudFront domain is available from the infrastructure Terraform outputs. See <a href="../infrastructure/PUBLIC_ACCESS_GUIDE.md">PUBLIC_ACCESS_GUIDE.md</a> for details on retrieving the CloudFront URL.</p>
 <h2 id="discovery-and-index-files">Discovery and Index Files<a class="headerlink" href="#discovery-and-index-files" title="Permanent link">&para;</a></h2>
 <h3 id="latest-data-index">Latest Data Index<a class="headerlink" href="#latest-data-index" title="Permanent link">&para;</a></h3>
 <p><strong>Path:</strong> <code>served/index/latest.json</code></p>

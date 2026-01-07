@@ -564,19 +564,10 @@ resource "aws_cloudfront_distribution" "gold_artifacts" {
     cached_methods   = ["GET", "HEAD"]
     target_origin_id = "S3-${aws_s3_bucket.gold.bucket}"
 
-    forwarded_values {
-      query_string = false
-      headers      = []
-
-      cookies {
-        forward = "none"
-      }
-    }
+    # Use AWS managed caching policy optimized for S3
+    cache_policy_id = "658327ea-f89d-4fab-a63d-7e88639e58f6" # CachingOptimized
 
     viewer_protocol_policy = "redirect-to-https"
-    min_ttl                = 0
-    default_ttl            = 3600  # 1 hour
-    max_ttl                = 86400 # 24 hours
     compress               = true
 
     # CORS response headers

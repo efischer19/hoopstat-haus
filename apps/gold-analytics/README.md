@@ -8,6 +8,15 @@ This application processes Silver layer NBA data and transforms it into advanced
 
 **Note**: S3 Tables/Iceberg functionality has been removed per ADR-028. The application currently needs to be updated to write JSON artifacts to the `served/` prefix instead of Iceberg tables.
 
+## Trigger Mechanism
+
+Gold processing is triggered by **silver-ready markers** written by the Silver layer (ADR-028). This ensures Gold runs exactly once per day after all Silver data for a date is ready:
+
+- **Marker Path**: `metadata/{YYYY-MM-DD}/silver-ready.json`
+- **Trigger**: S3 event notification on marker creation
+- **Processing**: Idempotent - safe under retries/duplicate events
+- **Benefit**: Prevents over-invocation (previously triggered on every Silver file write)
+
 ## Features
 
 ### Analytics Metrics

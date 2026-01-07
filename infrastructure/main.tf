@@ -1383,9 +1383,10 @@ resource "aws_s3_bucket_notification" "silver_bucket_notification" {
   lambda_function {
     lambda_function_arn = aws_lambda_function.gold_processing.arn
     events              = ["s3:ObjectCreated:*"]
-    # Support both current silver output format (date=) and future format (season=)
-    filter_prefix = "silver/"
-    filter_suffix = ".json"
+    # ADR-028: Trigger Gold only on silver-ready marker (once per day)
+    # instead of every Silver object write
+    filter_prefix = "metadata/"
+    filter_suffix = "silver-ready.json"
   }
 
   depends_on = [aws_lambda_permission.s3_invoke_gold_processing]

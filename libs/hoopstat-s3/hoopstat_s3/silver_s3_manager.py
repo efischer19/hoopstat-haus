@@ -306,6 +306,70 @@ class SilverS3Manager(S3Uploader):
             logger.error(f"Failed to upload to S3: {e}")
             raise S3UploadError(f"S3 upload failed: {e}") from e
 
+    def write_silver_ready_marker(
+        self,
+        target_date: date,
+        dataset_counts: dict[str, int] | None = None,
+    ) -> str:
+        """
+        Write a silver-ready marker file to signal Gold processing.
+
+        This marker file is written after all Silver data for a date has been
+        successfully processed. It uses URL-safe naming per ADR-032 and triggers
+        Gold processing exactly once per day per ADR-028.
+
+        Args:
+            target_date: The date that was successfully processed
+            dataset_counts: Optional counts of records written per entity type
+
+        Returns:
+            S3 key where marker was written
+
+        Raises:
+            SilverS3ManagerError: If write operation fails
+        """
+        date_str = target_date.strftime("%Y-%m-%d")
+
+        # ADR-032: Use URL-safe path (no underscores, equals signs)
+        # Format: metadata/YYYY-MM-DD/silver-ready.json
+        s3_key = f"metadata/{date_str}/silver-ready.json"
+
+        try:
+            # Build marker payload
+            marker_data = {
+                "game_date": date_str,
+                "generated_at": datetime.now().isoformat(),
+                "dataset_counts": dataset_counts or {},
+                "schema_version": "1.0.0",
+            }
+
+            # Convert to JSON bytes
+            json_data = json.dumps(marker_data, indent=2).encode("utf-8")
+
+            # Add metadata
+            metadata = {
+                "marker_type": "silver-ready",
+                "target_date": date_str,
+                "upload_timestamp": datetime.now().isoformat(),
+            }
+
+            # Upload to S3
+            self._upload_to_s3(json_data, s3_key, metadata)
+
+            logger.info(
+                f"Successfully wrote silver-ready marker to "
+                f"s3://{self.bucket_name}/{s3_key}"
+            )
+
+            return s3_key
+
+        except Exception as e:
+            logger.error(
+                f"Failed to write silver-ready marker to "
+                f"s3://{self.bucket_name}/{s3_key}: {e}"
+            )
+            raise SilverS3ManagerError(f"Silver-ready marker write failed: {e}") from e
+
     def read_summary_json(self) -> dict[str, Any] | None:
         """
         Read the Bronze layer summary.json file from S3.

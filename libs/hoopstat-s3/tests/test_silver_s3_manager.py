@@ -660,3 +660,58 @@ class TestSilverS3Manager:
 
         with pytest.raises(SilverS3ManagerError, match="Summary read failed"):
             manager.read_summary_json()
+
+    @mock_aws
+    def test_write_silver_ready_marker_success(self):
+        """Test successful writing of silver-ready marker."""
+        import boto3
+
+        s3_client = boto3.client("s3", region_name="us-east-1")
+        s3_client.create_bucket(Bucket="test-bucket")
+
+        manager = SilverS3Manager("test-bucket")
+        target_date = date(2024, 1, 15)
+        dataset_counts = {
+            "player_stats": 100,
+            "team_stats": 10,
+            "game_stats": 5,
+        }
+
+        # Write the marker
+        s3_key = manager.write_silver_ready_marker(target_date, dataset_counts)
+
+        # Verify the key is correctly formatted (URL-safe per ADR-032)
+        assert s3_key == "metadata/2024-01-15/silver-ready.json"
+
+        # Verify the marker was written to S3
+        response = s3_client.get_object(Bucket="test-bucket", Key=s3_key)
+        marker_data = json.loads(response["Body"].read().decode("utf-8"))
+
+        # Verify marker content
+        assert marker_data["game_date"] == "2024-01-15"
+        assert "generated_at" in marker_data
+        assert marker_data["schema_version"] == "1.0.0"
+        assert marker_data["dataset_counts"] == dataset_counts
+
+    @mock_aws
+    def test_write_silver_ready_marker_without_counts(self):
+        """Test writing silver-ready marker without dataset counts."""
+        import boto3
+
+        s3_client = boto3.client("s3", region_name="us-east-1")
+        s3_client.create_bucket(Bucket="test-bucket")
+
+        manager = SilverS3Manager("test-bucket")
+        target_date = date(2024, 1, 15)
+
+        # Write the marker without counts
+        s3_key = manager.write_silver_ready_marker(target_date)
+
+        # Verify the marker was written
+        response = s3_client.get_object(Bucket="test-bucket", Key=s3_key)
+        marker_data = json.loads(response["Body"].read().decode("utf-8"))
+
+        # Verify marker content
+        assert marker_data["game_date"] == "2024-01-15"
+        assert marker_data["dataset_counts"] == {}
+        assert "generated_at" in marker_data

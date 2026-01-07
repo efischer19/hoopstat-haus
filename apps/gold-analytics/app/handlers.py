@@ -21,6 +21,9 @@ def lambda_handler(event: dict[str, Any], context: Any) -> dict[str, Any]:
     """
     AWS Lambda entry point for S3-triggered Gold analytics processing.
 
+    Processes silver-ready marker files (ADR-028 daily trigger) to run Gold
+    analytics exactly once per day after Silver processing completes.
+
     Args:
         event: S3 event that triggered the Lambda
         context: Lambda runtime context
@@ -66,20 +69,30 @@ def lambda_handler(event: dict[str, Any], context: Any) -> dict[str, Any]:
                             logger.warning(f"Could not parse S3 key: {object_key}")
                             continue
 
+                        # Check if this is a silver-ready marker
+                        if parsed.get("is_marker", False):
+                            logger.info(
+                                "Detected silver-ready marker for date: "
+                                f"{parsed['date']}"
+                            )
+                        else:
+                            logger.info(
+                                f"Detected Silver data file (non-marker): "
+                                f"bucket={bucket_name}, "
+                                f"file_type={parsed['file_type']}, "
+                                f"date={parsed['date']}"
+                            )
+
                         # Add to dates to process
+                        # (works for both markers and direct files)
                         target_date = parsed["date"]
                         dates_to_process.add(target_date)
-
-                        logger.info(
-                            f"Parsed S3 event: bucket={bucket_name}, "
-                            f"file_type={parsed['file_type']}, date={target_date}"
-                        )
 
                     except Exception as e:
                         logger.error(f"Failed to process S3 event record: {e}")
                         continue
 
-                # Process each unique date
+                # Process each unique date (idempotent - safe under retries)
                 for target_date in dates_to_process:
                     try:
                         logger.info(

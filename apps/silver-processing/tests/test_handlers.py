@@ -212,3 +212,56 @@ class TestLambdaHandler:
 
         assert result["statusCode"] == 500
         assert "Failed to process summary update" in result["message"]
+
+    @patch.dict(
+        "os.environ",
+        {"BRONZE_BUCKET": "test-bucket", "SILVER_BUCKET": "test-silver-bucket"},
+    )
+    def test_lambda_handler_manual_single_date(self):
+        with patch("app.handlers.SilverProcessor") as mock_processor_class:
+            mock_processor = MagicMock()
+            mock_processor.process_date.return_value = True
+            mock_processor_class.return_value = mock_processor
+
+            event = {
+                "source": "github-actions-manual",
+                "trigger_type": "workflow_dispatch",
+                "parameters": {"date": "2024-01-15", "dry_run": True},
+            }
+            context = {}
+            result = lambda_handler(event, context)
+
+            assert result["statusCode"] == 200
+            mock_processor.process_date.assert_called_once_with(
+                date(2024, 1, 15), dry_run=True
+            )
+
+    @patch.dict(
+        "os.environ",
+        {"BRONZE_BUCKET": "test-bucket", "SILVER_BUCKET": "test-silver-bucket"},
+    )
+    def test_lambda_handler_manual_date_range(self):
+        with patch("app.handlers.SilverProcessor") as mock_processor_class:
+            mock_processor = MagicMock()
+            mock_processor.process_date.return_value = True
+            mock_processor_class.return_value = mock_processor
+
+            event = {
+                "source": "github-actions-manual",
+                "trigger_type": "workflow_dispatch",
+                "parameters": {
+                    "start_date": "2024-01-15",
+                    "end_date": "2024-01-17",
+                    "dry_run": False,
+                },
+            }
+            context = {}
+            result = lambda_handler(event, context)
+
+            assert result["statusCode"] == 200
+            assert result["start_date"] == "2024-01-15"
+            assert result["end_date"] == "2024-01-17"
+            assert mock_processor.process_date.call_count == 3
+            mock_processor.process_date.assert_any_call(date(2024, 1, 15), dry_run=False)
+            mock_processor.process_date.assert_any_call(date(2024, 1, 16), dry_run=False)
+            mock_processor.process_date.assert_any_call(date(2024, 1, 17), dry_run=False)

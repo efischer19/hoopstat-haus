@@ -111,45 +111,58 @@ jobs:
           if [ "$MODE" = "single" ]; then
             DATE="${{ steps.validate.outputs.date }}"
             echo "🚀 Invoking Lambda for date: $DATE (dry_run=$DRY_RUN)"
-            PAYLOAD=$(cat << EOF
-            {
-              "source": "github-actions-manual",
-              "trigger_type": "workflow_dispatch",
-              "parameters": {
-                "date": "$DATE",
-                "dry_run": $DRY_RUN
-              },
-              "metadata": {
-                "workflow_run_id": "${{ github.run_id }}",
-                "workflow_run_number": "${{ github.run_number }}",
-                "repository": "${{ github.repository }}",
-                "triggered_at": "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
-              }
-            }
-            EOF
-            )
+            
+            # Build JSON payload using jq
+            PAYLOAD=$(jq -n \
+              --arg date "$DATE" \
+              --argjson dry_run "$DRY_RUN" \
+              --arg workflow_run_id "${{ github.run_id }}" \
+              --arg workflow_run_number "${{ github.run_number }}" \
+              --arg repository "${{ github.repository }}" \
+              --arg triggered_at "$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
+              '{
+                "source": "github-actions-manual",
+                "trigger_type": "workflow_dispatch",
+                "parameters": {
+                  "date": $date,
+                  "dry_run": $dry_run
+                },
+                "metadata": {
+                  "workflow_run_id": $workflow_run_id,
+                  "workflow_run_number": $workflow_run_number,
+                  "repository": $repository,
+                  "triggered_at": $triggered_at
+                }
+              }')
           else
             START_DATE="${{ steps.validate.outputs.start_date }}"
             END_DATE="${{ steps.validate.outputs.end_date }}"
             echo "🚀 Invoking Lambda for range: $START_DATE..$END_DATE (dry_run=$DRY_RUN)"
-            PAYLOAD=$(cat << EOF
-            {
-              "source": "github-actions-manual",
-              "trigger_type": "workflow_dispatch",
-              "parameters": {
-                "start_date": "$START_DATE",
-                "end_date": "$END_DATE",
-                "dry_run": $DRY_RUN
-              },
-              "metadata": {
-                "workflow_run_id": "${{ github.run_id }}",
-                "workflow_run_number": "${{ github.run_number }}",
-                "repository": "${{ github.repository }}",
-                "triggered_at": "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
-              }
-            }
-            EOF
-            )
+            
+            # Build JSON payload using jq
+            PAYLOAD=$(jq -n \
+              --arg start_date "$START_DATE" \
+              --arg end_date "$END_DATE" \
+              --argjson dry_run "$DRY_RUN" \
+              --arg workflow_run_id "${{ github.run_id }}" \
+              --arg workflow_run_number "${{ github.run_number }}" \
+              --arg repository "${{ github.repository }}" \
+              --arg triggered_at "$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
+              '{
+                "source": "github-actions-manual",
+                "trigger_type": "workflow_dispatch",
+                "parameters": {
+                  "start_date": $start_date,
+                  "end_date": $end_date,
+                  "dry_run": $dry_run
+                },
+                "metadata": {
+                  "workflow_run_id": $workflow_run_id,
+                  "workflow_run_number": $workflow_run_number,
+                  "repository": $repository,
+                  "triggered_at": $triggered_at
+                }
+              }')
           fi
 
           echo "📋 Invocation payload:"

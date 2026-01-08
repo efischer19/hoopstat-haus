@@ -72,13 +72,12 @@ class S3DataDiscovery:
         if file_type not in ["player_stats", "team_stats"]:
             raise ValueError(f"Invalid file_type: {file_type}")
 
-        # ADR-032: URL-safe Silver paths only.
-        # Example: silver/player-stats/2024-01-15/players.json
+        # Silver path convention (no '=' in keys):
+        # Example: silver/player_stats/2025-10-21/player_stats.json
         season = self._extract_season_from_date(target_date)
         date_str = target_date.strftime("%Y-%m-%d")
 
-        entity_type = file_type.replace("_", "-")
-        prefix = f"silver/{entity_type}/{date_str}/"
+        prefix = f"silver/{file_type}/{date_str}/"
 
         logger.info(
             f"Discovering {file_type} files for {target_date} with prefix: {prefix}"
@@ -334,7 +333,7 @@ def parse_s3_event_key(s3_key: str) -> dict[str, Any] | None:
 
     Supports multiple patterns:
     1. Silver-ready marker: metadata/{date}/silver-ready.json
-    2. Silver data: silver/{file_type}/{date}/filename (ADR-032)
+    2. Silver data: silver/{file_type}/{date}/filename (no '=' in key)
 
     Args:
         s3_key: S3 object key from event
@@ -360,9 +359,9 @@ def parse_s3_event_key(s3_key: str) -> dict[str, Any] | None:
             logger.error(f"Failed to parse date from marker key {s3_key}: {e}")
             return None
 
-    # ADR-032 format: silver/{file_type}/{date}/filename
-    # Handles hyphens in file_type (e.g., player-stats, team-stats)
-    pattern_current = r"silver/(?P<file_type>[a-z-]+)/(?P<date>[\d-]+)/.*"
+    # Silver data format: silver/{file_type}/{date}/filename
+    # Keep underscores (e.g., player_stats) and allow hyphens as well.
+    pattern_current = r"silver/(?P<file_type>[a-z_-]+)/(?P<date>[\d-]+)/.*"
 
     match = re.match(pattern_current, s3_key)
     if match:

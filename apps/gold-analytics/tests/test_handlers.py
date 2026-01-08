@@ -43,16 +43,16 @@ class TestLambdaHandler:
         mock_processor_class.return_value = mock_processor
 
         # Setup mock S3 key parser
-        test_key = "silver/player-stats/2024-01-15/players.json"
+        test_key = "silver/player_stats/2024-01-15/player_stats.json"
         mock_parse_key.return_value = {
-            "file_type": "player-stats",
+            "file_type": "player_stats",
             "season": "2023-24",
             "date": date(2024, 1, 15),
             "original_key": test_key,
             "is_marker": False,
         }
 
-        test_key2 = test_key.replace("file.parquet", "file2.parquet")
+        test_key2 = test_key.replace("player_stats.json", "player_stats_2.json")
         event = {
             "Records": [
                 {

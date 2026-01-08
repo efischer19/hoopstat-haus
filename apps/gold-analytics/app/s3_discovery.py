@@ -72,52 +72,30 @@ class S3DataDiscovery:
         if file_type not in ["player_stats", "team_stats"]:
             raise ValueError(f"Invalid file_type: {file_type}")
 
-        # Construct S3 prefix based on Silver layer patterns
-        # Try both patterns for compatibility:
-        # 1. With season: silver/player_stats/season=2023-24/date=2024-01-15/
-        # 2. Without season: silver/player_stats/date=2024-01-15/
+        # ADR-032: URL-safe Silver paths only.
+        # Example: silver/player-stats/2024-01-15/players.json
         season = self._extract_season_from_date(target_date)
         date_str = target_date.strftime("%Y-%m-%d")
 
-        # Primary pattern with season partitioning
-        prefix_with_season = f"silver/{file_type}/season={season}/date={date_str}/"
-        # Fallback pattern without season partitioning (current silver output)
-        prefix_without_season = f"silver/{file_type}/date={date_str}/"
+        entity_type = file_type.replace("_", "-")
+        prefix = f"silver/{entity_type}/{date_str}/"
 
         logger.info(
-            f"Discovering {file_type} files for {target_date} with patterns: "
-            f"{prefix_with_season} or {prefix_without_season}"
+            f"Discovering {file_type} files for {target_date} with prefix: {prefix}"
         )
 
-        # Try primary pattern first
         try:
             response = self.s3_client.list_objects_v2(
                 Bucket=self.config.silver_bucket,
-                Prefix=prefix_with_season,
+                Prefix=prefix,
                 MaxKeys=1000,  # Reasonable limit for daily files
             )
-            files_found = "Contents" in response
-        except ClientError:
-            files_found = False
-            response = None
-
-        # If no files found with season pattern, try without season
-        if not files_found:
-            logger.info(
-                f"No files found with season pattern, trying: {prefix_without_season}"
+        except ClientError as e:
+            error_code = e.response.get("Error", {}).get("Code", "Unknown")
+            logger.error(
+                f"Failed to discover files for {target_date}: {error_code} - {e}"
             )
-            try:
-                response = self.s3_client.list_objects_v2(
-                    Bucket=self.config.silver_bucket,
-                    Prefix=prefix_without_season,
-                    MaxKeys=1000,  # Reasonable limit for daily files
-                )
-            except ClientError as e:
-                error_code = e.response.get("Error", {}).get("Code", "Unknown")
-                logger.error(
-                    f"Failed to discover files for {target_date}: {error_code} - {e}"
-                )
-                raise
+            raise
 
         files = []
         if response and "Contents" in response:
@@ -356,9 +334,7 @@ def parse_s3_event_key(s3_key: str) -> dict[str, Any] | None:
 
     Supports multiple patterns:
     1. Silver-ready marker: metadata/{date}/silver-ready.json
-    2. Current format: silver/{file_type}/{date}/filename (ADR-032)
-    3. With season: silver/{file_type}/season={season}/date={date}/filename
-    4. Without season: silver/{file_type}/date={date}/filename
+    2. Silver data: silver/{file_type}/{date}/filename (ADR-032)
 
     Args:
         s3_key: S3 object key from event
@@ -384,54 +360,14 @@ def parse_s3_event_key(s3_key: str) -> dict[str, Any] | None:
             logger.error(f"Failed to parse date from marker key {s3_key}: {e}")
             return None
 
-    # Try current ADR-032 format: silver/{file_type}/{date}/filename
+    # ADR-032 format: silver/{file_type}/{date}/filename
     # Handles hyphens in file_type (e.g., player-stats, team-stats)
-    pattern_current = r"silver/(?P<file_type>[\w-]+)/(?P<date>[\d-]+)/.*"
+    pattern_current = r"silver/(?P<file_type>[a-z-]+)/(?P<date>[\d-]+)/.*"
 
     match = re.match(pattern_current, s3_key)
     if match:
         try:
             parsed_date = datetime.strptime(match.group("date"), "%Y-%m-%d").date()
-            season = _extract_season_from_date_helper(parsed_date)
-            return {
-                "file_type": match.group("file_type"),
-                "season": season,
-                "date": parsed_date,
-                "original_key": s3_key,
-                "is_marker": False,
-            }
-        except ValueError as e:
-            logger.error(f"Failed to parse date from S3 key {s3_key}: {e}")
-            return None
-
-    # Try pattern with season (future/legacy format with date= prefix)
-    pattern_with_season = (
-        r"silver/(?P<file_type>\w+)/season=(?P<season>[\d-]+)/date=(?P<date>[\d-]+)/.*"
-    )
-
-    match = re.match(pattern_with_season, s3_key)
-    if match:
-        try:
-            parsed_date = datetime.strptime(match.group("date"), "%Y-%m-%d").date()
-            return {
-                "file_type": match.group("file_type"),
-                "season": match.group("season"),
-                "date": parsed_date,
-                "original_key": s3_key,
-                "is_marker": False,
-            }
-        except ValueError as e:
-            logger.error(f"Failed to parse date from S3 key {s3_key}: {e}")
-            return None
-
-    # Try pattern without season (legacy format with date= prefix)
-    pattern_without_season = r"silver/(?P<file_type>\w+)/date=(?P<date>[\d-]+)/.*"
-
-    match = re.match(pattern_without_season, s3_key)
-    if match:
-        try:
-            parsed_date = datetime.strptime(match.group("date"), "%Y-%m-%d").date()
-            # Extract season from date for consistency
             season = _extract_season_from_date_helper(parsed_date)
             return {
                 "file_type": match.group("file_type"),

@@ -46,14 +46,14 @@ class TestParseS3EventKey:
         assert result["original_key"] == s3_key
         assert result["is_marker"] is False
 
-    def test_parse_silver_data_file_with_season(self):
-        """Test parsing Silver data file with season (legacy format)."""
-        s3_key = "silver/team_stats/season=2023-24/date=2024-01-15/teams.json"
+    def test_parse_silver_data_file_different_type(self):
+        """Test parsing Silver data file for a different entity type."""
+        s3_key = "silver/team-stats/2024-01-15/teams.json"
 
         result = parse_s3_event_key(s3_key)
 
         assert result is not None
-        assert result["file_type"] == "team_stats"
+        assert result["file_type"] == "team-stats"
         assert result["date"] == date(2024, 1, 15)
         assert result["season"] == "2023-24"
         assert result["original_key"] == s3_key

@@ -16,6 +16,24 @@ variable "environment" {
   default     = "prod"
 }
 
+variable "cloudfront_aliases" {
+  description = "Optional custom domain names (CNAMEs) for the CloudFront distribution, e.g. [\"hoopstat.haus\", \"www.hoopstat.haus\"]."
+  type        = list(string)
+  default     = []
+}
+
+variable "cloudfront_acm_certificate_arn" {
+  description = "Optional ACM certificate ARN for the CloudFront distribution (must be in us-east-1). When empty, CloudFront default certificate is used."
+  type        = string
+  default     = ""
+}
+
+variable "cloudfront_enable_www_redirect" {
+  description = "When true, redirects www.<apex> to the apex domain at the edge (viewer-request)."
+  type        = bool
+  default     = true
+}
+
 
 variable "log_retention_days" {
   description = "CloudWatch log retention periods by log type"

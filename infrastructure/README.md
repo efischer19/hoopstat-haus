@@ -191,3 +191,13 @@ python tests/test_observability.py
 - **Medallion architecture compliance**: Data layer configuration matches requirements
 - **Lifecycle policies**: Retention and storage class transitions are correct
 - **IAM policies**: Least-privilege access patterns are implemented
+
+## Optional: Vanity Domain (Custom URL)
+
+By default, the public artifacts are served at the CloudFront domain name (e.g. `https://d123.cloudfront.net/`).
+
+To serve via a vanity domain (e.g. `https://hoopstat.haus/`), configure these Terraform variables:
+- `cloudfront_aliases`: e.g. `["hoopstat.haus", "www.hoopstat.haus"]`
+- `cloudfront_acm_certificate_arn`: ACM certificate ARN (must be issued in `us-east-1`)
+
+When `cloudfront_enable_www_redirect` is true (default), CloudFront will 301 redirect `www.<apex>` to the apex domain at the edge.

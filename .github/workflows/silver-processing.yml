@@ -5,7 +5,7 @@ on:
   workflow_dispatch:
     inputs:
       date:
-        description: 'Single date to process (YYYY-MM-DD). Leave empty if using date range.'
+        description: 'Single date to reprocess (YYYY-MM-DD). Leave empty if using date range.'
         required: false
         type: string
       start_date:
@@ -17,7 +17,7 @@ on:
         required: false
         type: string
       dry_run:
-        description: 'Run in dry-run mode (no data changes)'
+        description: 'Run in dry-run mode (no data written)'
         required: false
         default: false
         type: boolean
@@ -70,196 +70,105 @@ jobs:
       - name: Validate input parameters
         id: validate
         run: |
-          # Validate that either single date or date range is provided
           if [ -n "${{ inputs.date }}" ]; then
             echo "mode=single" >> $GITHUB_OUTPUT
-            echo "📅 Mode: Single date processing"
-            echo "📅 Date: ${{ inputs.date }}"
-            
-            # Validate date format
+            echo "📅 Mode: Single date"
+            echo "date=${{ inputs.date }}" >> $GITHUB_OUTPUT
+
             if ! date -d "${{ inputs.date }}" >/dev/null 2>&1; then
-              echo "❌ Invalid date format: ${{ inputs.date }}"
-              echo "Expected format: YYYY-MM-DD"
+              echo "❌ Invalid date format: ${{ inputs.date }} (expected YYYY-MM-DD)"
               exit 1
             fi
           elif [ -n "${{ inputs.start_date }}" ] && [ -n "${{ inputs.end_date }}" ]; then
             echo "mode=range" >> $GITHUB_OUTPUT
-            echo "📅 Mode: Date range processing"
-            echo "📅 Start date: ${{ inputs.start_date }}"
-            echo "📅 End date: ${{ inputs.end_date }}"
-            
-            # Validate date formats
+            echo "📅 Mode: Date range"
+            echo "start_date=${{ inputs.start_date }}" >> $GITHUB_OUTPUT
+            echo "end_date=${{ inputs.end_date }}" >> $GITHUB_OUTPUT
+
             if ! date -d "${{ inputs.start_date }}" >/dev/null 2>&1; then
-              echo "❌ Invalid start date format: ${{ inputs.start_date }}"
-              echo "Expected format: YYYY-MM-DD"
+              echo "❌ Invalid start_date format: ${{ inputs.start_date }} (expected YYYY-MM-DD)"
               exit 1
             fi
-            
             if ! date -d "${{ inputs.end_date }}" >/dev/null 2>&1; then
-              echo "❌ Invalid end date format: ${{ inputs.end_date }}"
-              echo "Expected format: YYYY-MM-DD"
+              echo "❌ Invalid end_date format: ${{ inputs.end_date }} (expected YYYY-MM-DD)"
               exit 1
             fi
-            
-            # Validate that start_date <= end_date
             if [[ "${{ inputs.start_date }}" > "${{ inputs.end_date }}" ]]; then
-              echo "❌ Start date must be before or equal to end date"
+              echo "❌ start_date must be <= end_date"
               exit 1
             fi
           else
-            echo "❌ Invalid input: Must provide either 'date' or both 'start_date' and 'end_date'"
+            echo "❌ Provide either 'date' or both 'start_date' and 'end_date'"
             exit 1
           fi
 
-      - name: Process single date
-        if: steps.validate.outputs.mode == 'single'
-        id: single
+      - name: Invoke Silver Lambda (manual reprocess)
+        id: invoke
         run: |
-          DATE="${{ inputs.date }}"
+          MODE="${{ steps.validate.outputs.mode }}"
           DRY_RUN="${{ inputs.dry_run || 'false' }}"
-          
-          echo "🚀 Processing single date: $DATE"
-          
-          # Create JSON payload for Lambda invocation
-          PAYLOAD=$(cat << EOF
-          {
-            "source": "github-actions-manual",
-            "trigger_type": "workflow_dispatch",
-            "parameters": {
-              "date": "$DATE",
-              "dry_run": $DRY_RUN
-            },
-            "metadata": {
-              "workflow_run_id": "${{ github.run_id }}",
-              "workflow_run_number": "${{ github.run_number }}",
-              "repository": "${{ github.repository }}",
-              "triggered_at": "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
-            }
-          }
-          EOF
-          )
-          
-          echo "📋 Invocation payload:"
-          echo "$PAYLOAD" | jq '.'
-          
-          # Save payload to file
-          echo "$PAYLOAD" > /tmp/lambda_payload.json
-          
-          # Invoke Lambda function asynchronously
-          echo "🚀 Invoking Lambda function for date: $DATE"
-          aws lambda invoke \
-            --function-name $FUNCTION_NAME \
-            --invocation-type Event \
-            --payload file:///tmp/lambda_payload.json \
-            --region $AWS_REGION \
-            --cli-binary-format raw-in-base64-out \
-            /tmp/lambda_response.json
-          
-          INVOKE_RESULT=$?
-          
-          if [ $INVOKE_RESULT -eq 0 ]; then
-            echo "✅ Lambda function invoked successfully for date: $DATE"
-            REQUEST_ID=$(cat /tmp/lambda_response.json | jq -r '.ResponseMetadata.RequestId // "unknown"')
-            echo "📋 Request ID: $REQUEST_ID"
-            echo "request_id=$REQUEST_ID" >> $GITHUB_OUTPUT
-          else
-            echo "❌ Failed to invoke Lambda function for date: $DATE"
-            cat /tmp/lambda_response.json || echo "No response file found"
-            exit 1
-          fi
 
-      - name: Process date range
-        if: steps.validate.outputs.mode == 'range'
-        id: range
-        run: |
-          START_DATE="${{ inputs.start_date }}"
-          END_DATE="${{ inputs.end_date }}"
-          DRY_RUN="${{ inputs.dry_run || 'false' }}"
-          
-          echo "🚀 Processing date range: $START_DATE to $END_DATE"
-          
-          # Convert dates to epoch for iteration
-          CURRENT_DATE="$START_DATE"
-          SUCCESS_COUNT=0
-          FAILURE_COUNT=0
-          
-          while [[ "$CURRENT_DATE" <= "$END_DATE" ]]; do
-            echo ""
-            echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-            echo "📅 Processing date: $CURRENT_DATE"
-            echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-            
-            # Create JSON payload for Lambda invocation
+          if [ "$MODE" = "single" ]; then
+            DATE="${{ steps.validate.outputs.date }}"
+            echo "🚀 Invoking Lambda for date: $DATE (dry_run=$DRY_RUN)"
             PAYLOAD=$(cat << EOF
             {
               "source": "github-actions-manual",
               "trigger_type": "workflow_dispatch",
               "parameters": {
-                "date": "$CURRENT_DATE",
+                "date": "$DATE",
                 "dry_run": $DRY_RUN
               },
               "metadata": {
                 "workflow_run_id": "${{ github.run_id }}",
                 "workflow_run_number": "${{ github.run_number }}",
                 "repository": "${{ github.repository }}",
-                "triggered_at": "$(date -u +%Y-%m-%dT%H:%M:%SZ)",
-                "date_range": {
-                  "start_date": "$START_DATE",
-                  "end_date": "$END_DATE",
-                  "current_date": "$CURRENT_DATE"
-                }
+                "triggered_at": "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
               }
             }
             EOF
             )
-            
-            echo "📋 Invocation payload:"
-            echo "$PAYLOAD" | jq '.'
-            
-            # Save payload to file
-            echo "$PAYLOAD" > /tmp/lambda_payload_${CURRENT_DATE}.json
-            
-            # Invoke Lambda function asynchronously
-            echo "🚀 Invoking Lambda function..."
-            if aws lambda invoke \
-                --function-name $FUNCTION_NAME \
-                --invocation-type Event \
-                --payload file:///tmp/lambda_payload_${CURRENT_DATE}.json \
-                --region $AWS_REGION \
-                --cli-binary-format raw-in-base64-out \
-                /tmp/lambda_response_${CURRENT_DATE}.json; then
-              
-              echo "✅ Lambda function invoked successfully for date: $CURRENT_DATE"
-              REQUEST_ID=$(cat /tmp/lambda_response_${CURRENT_DATE}.json | jq -r '.ResponseMetadata.RequestId // "unknown"')
-              echo "📋 Request ID: $REQUEST_ID"
-              SUCCESS_COUNT=$((SUCCESS_COUNT + 1))
-              
-              # Small delay between invocations to avoid throttling
-              sleep 2
-            else
-              echo "❌ Failed to invoke Lambda function for date: $CURRENT_DATE"
-              cat /tmp/lambda_response_${CURRENT_DATE}.json || echo "No response file found"
-              FAILURE_COUNT=$((FAILURE_COUNT + 1))
-            fi
-            
-            # Move to next date
-            CURRENT_DATE=$(date -d "$CURRENT_DATE + 1 day" +%Y-%m-%d)
-          done
-          
-          echo ""
-          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-          echo "📊 Date Range Processing Summary"
-          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-          echo "✅ Successful invocations: $SUCCESS_COUNT"
-          echo "❌ Failed invocations: $FAILURE_COUNT"
-          echo "📅 Date range: $START_DATE to $END_DATE"
-          
-          echo "success_count=$SUCCESS_COUNT" >> $GITHUB_OUTPUT
-          echo "failure_count=$FAILURE_COUNT" >> $GITHUB_OUTPUT
-          
-          if [ $FAILURE_COUNT -gt 0 ]; then
-            exit 1
+          else
+            START_DATE="${{ steps.validate.outputs.start_date }}"
+            END_DATE="${{ steps.validate.outputs.end_date }}"
+            echo "🚀 Invoking Lambda for range: $START_DATE..$END_DATE (dry_run=$DRY_RUN)"
+            PAYLOAD=$(cat << EOF
+            {
+              "source": "github-actions-manual",
+              "trigger_type": "workflow_dispatch",
+              "parameters": {
+                "start_date": "$START_DATE",
+                "end_date": "$END_DATE",
+                "dry_run": $DRY_RUN
+              },
+              "metadata": {
+                "workflow_run_id": "${{ github.run_id }}",
+                "workflow_run_number": "${{ github.run_number }}",
+                "repository": "${{ github.repository }}",
+                "triggered_at": "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+              }
+            }
+            EOF
+            )
           fi
+
+          echo "📋 Invocation payload:"
+          echo "$PAYLOAD" | jq '.'
+
+          echo "$PAYLOAD" > /tmp/lambda_payload.json
+
+          aws lambda invoke \
+            --function-name $FUNCTION_NAME \
+            --invocation-type Event \
+            --payload fileb:///tmp/lambda_payload.json \
+            --region $AWS_REGION \
+            --cli-binary-format raw-in-base64-out \
+            /tmp/lambda_response.json
+
+          REQUEST_ID=$(cat /tmp/lambda_response.json | jq -r '.ResponseMetadata.RequestId // "unknown"')
+          echo "✅ Lambda invoke accepted"
+          echo "📋 Request ID: $REQUEST_ID"
+          echo "request_id=$REQUEST_ID" >> $GITHUB_OUTPUT
 
       - name: Wait and check execution status
         run: |
@@ -312,31 +221,12 @@ jobs:
           echo "- Trigger: ${{ github.event_name }}" >> $GITHUB_STEP_SUMMARY
           echo "- Dry Run: ${{ inputs.dry_run || 'false' }}" >> $GITHUB_STEP_SUMMARY
           echo "- Execution Time: $(date -u +%Y-%m-%dT%H:%M:%SZ)" >> $GITHUB_STEP_SUMMARY
-          
-          if [ "${{ steps.validate.outputs.mode }}" = "single" ]; then
-            echo "- Mode: Single Date" >> $GITHUB_STEP_SUMMARY
-            echo "- Date: ${{ inputs.date }}" >> $GITHUB_STEP_SUMMARY
-            
-            if [ "${{ steps.single.outcome }}" = "success" ]; then
-              echo "- Status: ✅ **Successfully Invoked**" >> $GITHUB_STEP_SUMMARY
-              echo "- Request ID: \`${{ steps.single.outputs.request_id }}\`" >> $GITHUB_STEP_SUMMARY
-            else
-              echo "- Status: ❌ **Invocation Failed**" >> $GITHUB_STEP_SUMMARY
-            fi
+
+          if [ "${{ steps.invoke.outcome }}" = "success" ]; then
+            echo "- Status: ✅ **Successfully Invoked**" >> $GITHUB_STEP_SUMMARY
+            echo "- Request ID: \`${{ steps.invoke.outputs.request_id }}\`" >> $GITHUB_STEP_SUMMARY
           else
-            echo "- Mode: Date Range" >> $GITHUB_STEP_SUMMARY
-            echo "- Start Date: ${{ inputs.start_date }}" >> $GITHUB_STEP_SUMMARY
-            echo "- End Date: ${{ inputs.end_date }}" >> $GITHUB_STEP_SUMMARY
-            
-            if [ "${{ steps.range.outcome }}" = "success" ]; then
-              echo "- Status: ✅ **Successfully Invoked**" >> $GITHUB_STEP_SUMMARY
-              echo "- Successful Invocations: ${{ steps.range.outputs.success_count }}" >> $GITHUB_STEP_SUMMARY
-              echo "- Failed Invocations: ${{ steps.range.outputs.failure_count }}" >> $GITHUB_STEP_SUMMARY
-            else
-              echo "- Status: ❌ **Some Invocations Failed**" >> $GITHUB_STEP_SUMMARY
-              echo "- Successful Invocations: ${{ steps.range.outputs.success_count }}" >> $GITHUB_STEP_SUMMARY
-              echo "- Failed Invocations: ${{ steps.range.outputs.failure_count }}" >> $GITHUB_STEP_SUMMARY
-            fi
+            echo "- Status: ❌ **Invocation Failed**" >> $GITHUB_STEP_SUMMARY
           fi
           
           echo "" >> $GITHUB_STEP_SUMMARY
@@ -351,29 +241,15 @@ jobs:
         run: |
           echo "🏁 Silver processing workflow completed"
           echo "📊 Workflow Status: ${{ job.status }}"
-          
-          if [ "${{ steps.validate.outputs.mode }}" = "single" ]; then
-            if [ "${{ steps.single.outcome }}" = "success" ]; then
-              echo "✅ Lambda function invocation successful"
-              echo "🔗 Request ID: ${{ steps.single.outputs.request_id }}"
-              exit 0
-            else
-              echo "❌ Lambda function invocation failed"
-              echo "💡 Check the workflow logs and Lambda function status"
-              exit 1
-            fi
+
+          if [ "${{ steps.invoke.outcome }}" = "success" ]; then
+            echo "✅ Lambda function invocation successful"
+            echo "🔗 Request ID: ${{ steps.invoke.outputs.request_id }}"
+            exit 0
           else
-            if [ "${{ steps.range.outcome }}" = "success" ]; then
-              echo "✅ All Lambda function invocations successful"
-              echo "📊 Successful: ${{ steps.range.outputs.success_count }}"
-              exit 0
-            else
-              echo "❌ Some Lambda function invocations failed"
-              echo "📊 Successful: ${{ steps.range.outputs.success_count }}"
-              echo "📊 Failed: ${{ steps.range.outputs.failure_count }}"
-              echo "💡 Check the workflow logs and Lambda function status"
-              exit 1
-            fi
+            echo "❌ Lambda function invocation failed"
+            echo "💡 Check the workflow logs and Lambda function status"
+            exit 1
           fi
 
       - name: Cleanup temporary files

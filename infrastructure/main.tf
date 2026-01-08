@@ -547,7 +547,7 @@ resource "aws_cloudfront_distribution" "gold_artifacts" {
   enabled             = true
   is_ipv6_enabled     = true
   comment             = "CloudFront distribution for ${var.project_name} gold artifacts"
-  default_root_object = ""
+  default_root_object = "index.html"
   price_class         = "PriceClass_100" # Use only North America, Europe, and Israel edge locations
 
   origin {

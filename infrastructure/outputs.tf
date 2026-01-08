@@ -167,9 +167,9 @@ output "cloudfront_distribution" {
 output "public_artifact_urls" {
   description = "Public URLs for accessing JSON artifacts via CloudFront"
   value = {
-    cloudfront_base_url    = "https://${aws_cloudfront_distribution.gold_artifacts.domain_name}"
-    example_player_url     = "https://${aws_cloudfront_distribution.gold_artifacts.domain_name}/player_daily/2024-11-15/2544.json"
-    example_team_url       = "https://${aws_cloudfront_distribution.gold_artifacts.domain_name}/team_daily/2024-11-15/1610612747.json"
-    example_index_url      = "https://${aws_cloudfront_distribution.gold_artifacts.domain_name}/index/latest.json"
+    cloudfront_base_url = "https://${aws_cloudfront_distribution.gold_artifacts.domain_name}"
+    example_player_url  = "https://${aws_cloudfront_distribution.gold_artifacts.domain_name}/player_daily/2024-11-15/2544.json"
+    example_team_url    = "https://${aws_cloudfront_distribution.gold_artifacts.domain_name}/team_daily/2024-11-15/1610612747.json"
+    example_index_url   = "https://${aws_cloudfront_distribution.gold_artifacts.domain_name}/index/latest.json"
   }
 }

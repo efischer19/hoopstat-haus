@@ -471,7 +471,7 @@ resource "aws_s3_bucket_cors_configuration" "gold" {
   cors_rule {
     allowed_headers = ["*"]
     allowed_methods = ["GET", "HEAD"]
-    allowed_origins = ["*"]  # Public artifacts accessible from any domain
+    allowed_origins = ["*"] # Public artifacts accessible from any domain
     expose_headers  = ["ETag", "Content-Length", "Content-Type"]
     max_age_seconds = 3600
   }
@@ -508,8 +508,8 @@ resource "aws_s3_bucket_policy" "gold_cloudfront_read" {
     Version = "2012-10-17"
     Statement = [
       {
-        Sid       = "AllowCloudFrontServicePrincipal"
-        Effect    = "Allow"
+        Sid    = "AllowCloudFrontServicePrincipal"
+        Effect = "Allow"
         Principal = {
           Service = "cloudfront.amazonaws.com"
         }
@@ -543,12 +543,55 @@ resource "aws_cloudfront_origin_access_control" "gold_artifacts" {
 }
 
 # CloudFront distribution for serving gold artifacts
+locals {
+  inferred_apex_domain = try(sort([for a in var.cloudfront_aliases : a if !startswith(a, "www.")])[0], "")
+  inferred_www_domain  = local.inferred_apex_domain != "" ? "www.${local.inferred_apex_domain}" : ""
+  enable_www_redirect = (
+    var.cloudfront_enable_www_redirect
+    && local.inferred_apex_domain != ""
+    && contains(var.cloudfront_aliases, local.inferred_www_domain)
+  )
+}
+
+resource "aws_cloudfront_function" "www_to_apex_redirect" {
+  count   = local.enable_www_redirect ? 1 : 0
+  name    = "${var.project_name}-${var.environment}-www-to-apex"
+  runtime = "cloudfront-js-1.0"
+  comment = "Redirect ${local.inferred_www_domain} to ${local.inferred_apex_domain}"
+  publish = true
+  code    = <<-JS
+function handler(event) {
+  var request = event.request;
+  var host = request.headers.host.value;
+
+  if (host === "${local.inferred_www_domain}") {
+    var uri = request.uri || "/";
+    var qs = request.querystring && request.querystring.length
+      ? "?" + request.querystring
+      : "";
+
+    return {
+      statusCode: 301,
+      statusDescription: "Moved Permanently",
+      headers: {
+        location: { value: "https://${local.inferred_apex_domain}" + uri + qs }
+      }
+    };
+  }
+
+  return request;
+}
+JS
+}
+
 resource "aws_cloudfront_distribution" "gold_artifacts" {
   enabled             = true
   is_ipv6_enabled     = true
   comment             = "CloudFront distribution for ${var.project_name} gold artifacts"
   default_root_object = "index.html"
   price_class         = "PriceClass_100" # Use only North America, Europe, and Israel edge locations
+
+  aliases = var.cloudfront_aliases
 
   origin {
     domain_name              = aws_s3_bucket.gold.bucket_regional_domain_name
@@ -572,6 +615,14 @@ resource "aws_cloudfront_distribution" "gold_artifacts" {
 
     # CORS response headers
     response_headers_policy_id = aws_cloudfront_response_headers_policy.gold_artifacts_cors.id
+
+    dynamic "function_association" {
+      for_each = local.enable_www_redirect ? [1] : []
+      content {
+        event_type   = "viewer-request"
+        function_arn = aws_cloudfront_function.www_to_apex_redirect[0].arn
+      }
+    }
   }
 
   restrictions {
@@ -581,7 +632,17 @@ resource "aws_cloudfront_distribution" "gold_artifacts" {
   }
 
   viewer_certificate {
-    cloudfront_default_certificate = true
+    cloudfront_default_certificate = var.cloudfront_acm_certificate_arn == "" ? true : false
+    acm_certificate_arn            = var.cloudfront_acm_certificate_arn != "" ? var.cloudfront_acm_certificate_arn : null
+    ssl_support_method             = var.cloudfront_acm_certificate_arn != "" ? "sni-only" : null
+    minimum_protocol_version       = var.cloudfront_acm_certificate_arn != "" ? "TLSv1.2_2021" : "TLSv1"
+  }
+
+  lifecycle {
+    precondition {
+      condition     = length(var.cloudfront_aliases) == 0 || var.cloudfront_acm_certificate_arn != ""
+      error_message = "cloudfront_aliases requires cloudfront_acm_certificate_arn (ACM cert must be in us-east-1 for CloudFront)."
+    }
   }
 
   tags = {

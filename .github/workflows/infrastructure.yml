@@ -31,6 +31,11 @@ env:
   TF_VAR_aws_region: us-east-1
   TF_VAR_project_name: hoopstat-haus
   TF_VAR_environment: prod
+  # Vanity domain (optional). These are consumed by Terraform variables in infrastructure/variables.tf
+  # List values must be JSON when passed via TF_VAR_*.
+  TF_VAR_cloudfront_aliases: '["hoopstat.haus", "www.hoopstat.haus"]'
+  # ACM cert must be in us-east-1 for CloudFront. Store this ARN in GitHub Secrets.
+  TF_VAR_cloudfront_acm_certificate_arn: ${{ secrets.CLOUDFRONT_ACM_CERTIFICATE_ARN }}
 
 jobs:
   terraform:

@@ -5,6 +5,7 @@ This module provides utilities for discovering Silver layer data files
 and loading them for processing, implementing retry logic per ADR-021.
 """
 
+import io
 import re
 from datetime import date, datetime
 from typing import Any
@@ -169,11 +170,14 @@ class S3DataDiscovery:
 
             # Load based on format
             if file_format == "parquet":
-                df = pd.read_parquet(file_content)
+                df = pd.read_parquet(io.BytesIO(file_content))
             elif file_format == "json":
-                df = pd.read_json(file_content, lines=True)  # Assume JSON Lines format
+                json_text = file_content.decode("utf-8")
+                df = pd.read_json(
+                    io.StringIO(json_text), lines=True
+                )  # Assume JSON Lines format
             elif file_format == "csv":
-                df = pd.read_csv(file_content)
+                df = pd.read_csv(io.BytesIO(file_content))
             else:
                 raise ValueError(f"Unsupported file format: {file_format}")
 

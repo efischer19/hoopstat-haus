@@ -9,7 +9,7 @@ packages = [{include = "app"}]
 [tool.poetry.dependencies]
 python = "^3.12"
 click = "^8.3.1"
-jsonschema = "^4.25.1"
+jsonschema = "^4.26.0"
 hoopstat-observability = {path = "../../libs/hoopstat-observability", develop = false}
 hoopstat-data = {path = "../../libs/hoopstat-data", develop = false}
 hoopstat-config = {path = "../../libs/hoopstat-config", develop = false}
@@ -17,7 +17,7 @@ hoopstat-s3 = {path = "../../libs/hoopstat-s3", develop = false}
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^9.0.2"
-ruff = "^0.14.8"
+ruff = "^0.14.11"
 black = "^25.12.0"
 pytest-cov = "^7.0.0"
 moto = "^5.1.19"

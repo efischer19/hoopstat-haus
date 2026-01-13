@@ -177,7 +177,12 @@ class SilverS3Manager(S3Uploader):
 
         try:
             # Convert data to JSON bytes
-            json_data = json.dumps(data, indent=2, default=str).encode("utf-8")
+            json_data = json.dumps(
+                data,
+                default=str,
+                ensure_ascii=False,
+                separators=(",", ":"),
+            ).encode("utf-8")
 
             # Add metadata for Silver layer
             metadata = {

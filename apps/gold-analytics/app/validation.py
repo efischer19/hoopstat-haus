@@ -59,7 +59,6 @@ class DataValidator:
         # Check required columns
         required_columns = [
             "player_id",
-            "team_id",
             "points",
             "rebounds",
             "assists",
@@ -71,6 +70,9 @@ class DataValidator:
         missing_columns = [col for col in required_columns if col not in df.columns]
         if missing_columns:
             issues.append(f"Missing required columns: {missing_columns}")
+
+        if "team_id" not in df.columns and "team" not in df.columns:
+            issues.append("Missing required team identifier: team_id or team")
 
         if df.empty:
             issues.append("DataFrame is empty")

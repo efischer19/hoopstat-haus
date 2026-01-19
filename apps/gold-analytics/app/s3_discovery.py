@@ -173,9 +173,11 @@ class S3DataDiscovery:
                 df = pd.read_parquet(io.BytesIO(file_content))
             elif file_format == "json":
                 json_text = file_content.decode("utf-8")
-                df = pd.read_json(
-                    io.StringIO(json_text), lines=True
-                )  # Assume JSON Lines format
+                stripped_text = json_text.lstrip()
+                if stripped_text.startswith("["):
+                    df = pd.read_json(io.StringIO(json_text), lines=False)
+                else:
+                    df = pd.read_json(io.StringIO(json_text), lines=True)
             elif file_format == "csv":
                 df = pd.read_csv(io.BytesIO(file_content))
             else:

@@ -17,7 +17,7 @@ hoopstat-s3 = {path = "../../libs/hoopstat-s3", develop = false}
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^9.0.2"
-ruff = "^0.14.13"
+ruff = "^0.14.14"
 black = "^26.1.0"
 pytest-cov = "^7.0.0"
 moto = "^5.1.20"

@@ -13,7 +13,7 @@
         <link rel="canonical" href="https://efischer19.github.io/hoopstat-haus/libraries/hoopstat-config/">
       
       
-        <link rel="prev" href="../example-math-utils/">
+        <link rel="prev" href="../">
       
       
         <link rel="next" href="../hoopstat-data/">
@@ -23,7 +23,7 @@
       
       
       <link rel="icon" href="../../assets/images/favicon.png">
-      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.1">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.4">
     
     
       
@@ -412,7 +412,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../example-math-utils/" class="md-nav__link">
+      <a href="../example-math-utils.md" class="md-nav__link">
         
   
   
@@ -557,6 +557,17 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
+  <a href="#configfield" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        ConfigField
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#configmanager" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -600,17 +611,6 @@
   
 </li>
         
-          <li class="md-nav__item">
-  <a href="#configfield" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        ConfigField
-      
-    </span>
-  </a>
-  
-</li>
-        
       </ul>
     </nav>
   
@@ -630,6 +630,28 @@
         
           <li class="md-nav__item">
   <a href="#config_field" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        config_field
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#get_env_value" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        get_env_value
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#config_field_1" class="md-nav__link">
     <span class="md-ellipsis">
       
         config_field
@@ -710,28 +732,6 @@
     <span class="md-ellipsis">
       
         get_supported_formats
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#config_field_1" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        config_field
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#get_env_value" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        get_env_value
       
     </span>
   </a>
@@ -1302,6 +1302,17 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
+  <a href="#configfield" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        ConfigField
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#configmanager" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1345,17 +1356,6 @@
   
 </li>
         
-          <li class="md-nav__item">
-  <a href="#configfield" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        ConfigField
-      
-    </span>
-  </a>
-  
-</li>
-        
       </ul>
     </nav>
   
@@ -1375,6 +1375,28 @@
         
           <li class="md-nav__item">
   <a href="#config_field" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        config_field
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#get_env_value" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        get_env_value
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#config_field_1" class="md-nav__link">
     <span class="md-ellipsis">
       
         config_field
@@ -1461,28 +1483,6 @@
   
 </li>
         
-          <li class="md-nav__item">
-  <a href="#config_field_1" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        config_field
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#get_env_value" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        get_env_value
-      
-    </span>
-  </a>
-  
-</li>
-        
       </ul>
     </nav>
   
@@ -1525,6 +1525,19 @@
 </code></pre></div>
 <h2 id="api-reference">API Reference<a class="headerlink" href="#api-reference" title="Permanent link">&para;</a></h2>
 <h3 id="classes">Classes<a class="headerlink" href="#classes" title="Permanent link">&para;</a></h3>
+<h4 id="configfield">ConfigField<a class="headerlink" href="#configfield" title="Permanent link">&para;</a></h4>
+<p>Defines a configuration field with support for environment variables and validation.</p>
+<p>This class provides a declarative way to define configuration fields with:
+- Default values
+- Environment variable mapping
+- Type conversion
+- Documentation
+- Validation</p>
+<p><strong>Methods:</strong></p>
+<ul>
+<li><code>get_env_value(self, field_type: Any) -&gt; Any</code></li>
+<li>Get and convert value from environment variable.</li>
+</ul>
 <h4 id="configmanager">ConfigManager<a class="headerlink" href="#configmanager" title="Permanent link">&para;</a></h4>
 <p>Base class for type-safe configuration management.</p>
 <p>This class provides a foundation for creating configuration classes that:
@@ -1558,22 +1571,33 @@ and other file-related issues during configuration loading.</p>
 <p>Raised when environment variable processing fails.</p>
 <p>This exception is used when environment variables cannot be parsed
 or converted to the expected types.</p>
-<h4 id="configfield">ConfigField<a class="headerlink" href="#configfield" title="Permanent link">&para;</a></h4>
-<p>Defines a configuration field with support for environment variables and validation.</p>
-<p>This class provides a declarative way to define configuration fields with:
-- Default values
-- Environment variable mapping
-- Type conversion
-- Documentation
-- Validation</p>
-<p><strong>Methods:</strong></p>
-<ul>
-<li><code>get_env_value(self, field_type: Any) -&gt; Any</code></li>
-<li>Get and convert value from environment variable.</li>
-</ul>
 <h3 id="functions">Functions<a class="headerlink" href="#functions" title="Permanent link">&para;</a></h3>
 <h4 id="config_field">config_field<a class="headerlink" href="#config_field" title="Permanent link">&para;</a></h4>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="n">config_field</span><span class="p">(</span><span class="n">default</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">env_var</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">description</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span>
+</code></pre></div>
+<p>Create a configuration field with environment variable support.</p>
+<p>This is a convenience function that creates a ConfigField and returns
+its Pydantic field for use in class definitions.</p>
+<p>Args:
+    default: Default value for the field.
+    env_var: Environment variable name to read the value from.
+    description: Human-readable description of the field.
+    **kwargs: Additional arguments passed to pydantic.Field()</p>
+<p>Returns:
+    Pydantic Field object for use in model definitions.</p>
+<h4 id="get_env_value">get_env_value<a class="headerlink" href="#get_env_value" title="Permanent link">&para;</a></h4>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="n">get_env_value</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">field_type</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span>
+</code></pre></div>
+<p>Get and convert value from environment variable.</p>
+<p>Args:
+    field_type: The expected type for the field value.</p>
+<p>Returns:
+    Converted value from environment variable, or None if not set.</p>
+<p>Raises:
+    ConfigEnvironmentError: If environment variable exists but cannot be
+        converted.</p>
+<h4 id="config_field_1">config_field<a class="headerlink" href="#config_field_1" title="Permanent link">&para;</a></h4>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="n">config_field</span><span class="p">(</span><span class="n">default</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">env_var</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">description</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span>
 </code></pre></div>
 <p>Create a configuration field with environment variable support.</p>
 <p>This function creates a Pydantic field with additional metadata
@@ -1586,7 +1610,7 @@ for environment variable handling.</p>
 <p>Returns:
     Pydantic Field for use in model definitions.</p>
 <h4 id="load">load<a class="headerlink" href="#load" title="Permanent link">&para;</a></h4>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="n">load</span><span class="p">(</span><span class="bp">cls</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">config_file</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">override_values</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">T</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="n">load</span><span class="p">(</span><span class="bp">cls</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">config_file</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">override_values</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">T</span>
 </code></pre></div>
 <p>Load configuration from multiple sources with precedence rules.</p>
 <p>Configuration sources (in order of precedence, later overrides earlier):
@@ -1603,7 +1627,7 @@ for environment variable handling.</p>
     ConfigValidationError: If configuration validation fails
     ConfigFileError: If configuration file cannot be loaded</p>
 <h4 id="load_from_file">load_from_file<a class="headerlink" href="#load_from_file" title="Permanent link">&para;</a></h4>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="n">load_from_file</span><span class="p">(</span><span class="bp">cls</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">config_file</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">T</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="n">load_from_file</span><span class="p">(</span><span class="bp">cls</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">config_file</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">T</span>
 </code></pre></div>
 <p>Load configuration from a file only (no environment variables).</p>
 <p>Args:
@@ -1614,7 +1638,7 @@ for environment variable handling.</p>
     ConfigValidationError: If configuration validation fails
     ConfigFileError: If configuration file cannot be loaded</p>
 <h4 id="get_field_sources">get_field_sources<a class="headerlink" href="#get_field_sources" title="Permanent link">&para;</a></h4>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="n">get_field_sources</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a><span class="n">get_field_sources</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span>
 </code></pre></div>
 <p>Get information about where each field value came from.</p>
 <p>Returns:
@@ -1624,19 +1648,19 @@ for environment variable handling.</p>
     - 'environment': From environment variable
     - 'override': From override values</p>
 <h4 id="get_config_summary">get_config_summary<a class="headerlink" href="#get_config_summary" title="Permanent link">&para;</a></h4>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="n">get_config_summary</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a><span class="n">get_config_summary</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span>
 </code></pre></div>
 <p>Get a human-readable summary of the configuration.</p>
 <p>Returns:
     Formatted string showing all configuration values and their sources</p>
 <h4 id="get_env_vars">get_env_vars<a class="headerlink" href="#get_env_vars" title="Permanent link">&para;</a></h4>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a><span class="n">get_env_vars</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a><span class="n">get_env_vars</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span>
 </code></pre></div>
 <p>Get environment variable names for all fields that support them.</p>
 <p>Returns:
     Dictionary mapping field names to environment variable names</p>
 <h4 id="load_config_file">load_config_file<a class="headerlink" href="#load_config_file" title="Permanent link">&para;</a></h4>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a><span class="n">load_config_file</span><span class="p">(</span><span class="n">file_path</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a><span class="n">load_config_file</span><span class="p">(</span><span class="n">file_path</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span>
 </code></pre></div>
 <p>Load configuration from a file, auto-detecting format from extension.</p>
 <p>Supported formats:
@@ -1651,35 +1675,11 @@ for environment variable handling.</p>
 <p>Raises:
     ConfigFileError: If the file cannot be read or parsed.</p>
 <h4 id="get_supported_formats">get_supported_formats<a class="headerlink" href="#get_supported_formats" title="Permanent link">&para;</a></h4>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a><span class="n">get_supported_formats</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="n">Any</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a><span class="n">get_supported_formats</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="n">Any</span>
 </code></pre></div>
 <p>Get information about supported configuration file formats.</p>
 <p>Returns:
     Dictionary mapping format names to availability status.</p>
-<h4 id="config_field_1">config_field<a class="headerlink" href="#config_field_1" title="Permanent link">&para;</a></h4>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a><span class="n">config_field</span><span class="p">(</span><span class="n">default</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">env_var</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">description</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span>
-</code></pre></div>
-<p>Create a configuration field with environment variable support.</p>
-<p>This is a convenience function that creates a ConfigField and returns
-its Pydantic field for use in class definitions.</p>
-<p>Args:
-    default: Default value for the field.
-    env_var: Environment variable name to read the value from.
-    description: Human-readable description of the field.
-    **kwargs: Additional arguments passed to pydantic.Field()</p>
-<p>Returns:
-    Pydantic Field object for use in model definitions.</p>
-<h4 id="get_env_value">get_env_value<a class="headerlink" href="#get_env_value" title="Permanent link">&para;</a></h4>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a><span class="n">get_env_value</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">field_type</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span>
-</code></pre></div>
-<p>Get and convert value from environment variable.</p>
-<p>Args:
-    field_type: The expected type for the field value.</p>
-<p>Returns:
-    Converted value from environment variable, or None if not set.</p>
-<p>Raises:
-    ConfigEnvironmentError: If environment variable exists but cannot be
-        converted.</p>
 
 
 

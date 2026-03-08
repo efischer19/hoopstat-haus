@@ -610,6 +610,11 @@ resource "aws_cloudfront_distribution" "gold_artifacts" {
     # Use AWS managed caching policy optimized for S3
     cache_policy_id = "658327ea-f89d-4fab-a63d-7e88639e58f6" # CachingOptimized
 
+    # Forward Origin and CORS preflight headers to S3 so OPTIONS works end-to-end.
+    # CachingOptimized strips all headers; this policy re-adds Origin,
+    # Access-Control-Request-Headers, and Access-Control-Request-Method.
+    origin_request_policy_id = "88a5eaf4-2fd4-4709-b370-b4c650ea3fcf" # CORS-S3Origin
+
     viewer_protocol_policy = "redirect-to-https"
     compress               = true
 

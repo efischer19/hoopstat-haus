@@ -62,25 +62,25 @@ fi
 echo "Test 5: Checking S3 bucket policy only grants s3:GetObject..."
 policy_actions=$(grep -A 20 'aws_s3_bucket_policy.*gold_cloudfront_read' main.tf \
     | grep -oP '"s3:\w+"' || true)
-if echo "$policy_actions" | grep -q '"s3:GetObject"'; then
-    # Verify no write/delete actions
-    if echo "$policy_actions" | grep -qvE '"s3:GetObject"'; then
-        echo "❌ S3 bucket policy grants actions beyond s3:GetObject"
-        exit 1
-    fi
-    echo "✅ S3 bucket policy only grants s3:GetObject"
-else
+if ! echo "$policy_actions" | grep -q '"s3:GetObject"'; then
     echo "❌ S3 bucket policy missing s3:GetObject action"
     exit 1
 fi
+action_count=$(echo "$policy_actions" | grep -c '"s3:' || true)
+if [[ "$action_count" -ne 1 ]]; then
+    echo "❌ S3 bucket policy grants actions beyond s3:GetObject (found $action_count actions)"
+    exit 1
+fi
+echo "✅ S3 bucket policy only grants s3:GetObject"
 
 # Test 6: CloudFront OAC is the only access path (bucket is fully private)
 echo "Test 6: Checking Gold bucket public access is fully blocked..."
-if grep -A 8 'aws_s3_bucket_public_access_block.*gold' main.tf \
-    | grep -c 'true' | grep -q '4'; then
+block_count=$(grep -A 8 'aws_s3_bucket_public_access_block.*gold"' main.tf \
+    | grep -c 'true' || true)
+if [[ "$block_count" -eq 4 ]]; then
     echo "✅ Gold bucket has all four public access blocks enabled"
 else
-    echo "❌ Gold bucket public access block is incomplete"
+    echo "❌ Gold bucket public access block is incomplete (found $block_count of 4)"
     exit 1
 fi
 

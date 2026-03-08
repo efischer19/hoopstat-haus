@@ -100,16 +100,16 @@ s3://hoopstat-haus-silver/
 
 ### Gold Layer (Business/Analytics-Ready)
 
-**Purpose:** Store aggregated, business-focused datasets optimized for consumption by analytics tools, dashboards, and the MCP server.
+**Purpose:** Store aggregated, business-focused datasets optimized for consumption by analytics tools, dashboards, and AI agents (via MCP local proxy adapter per ADR-033).
 
-**Note:** The exact aggregations, dimensions, and data structures in the Gold layer will be largely driven by the capabilities and requirements of our MCP server.
+**Note:** The exact aggregations, dimensions, and data structures in the Gold layer will be largely driven by the consumption patterns of our pre-computed JSON artifacts (per ADR-027) and the local MCP adapter (per ADR-033).
 
 **Data State:**
 - **Business-Aligned**: Organized by business domains and use cases
 - **Pre-Aggregated**: Common aggregations pre-computed for performance
 - **Dimension-Modeled**: Star/snowflake schema design for analytical queries
 - **Performance-Optimized**: Partitioned and indexed for sub-second query response
-- **API-Ready**: Structured for direct consumption by MCP server and applications
+- **API-Ready**: Structured for direct consumption by applications and local MCP adapter (per ADR-033)
 
 **Business Domains:**
 - **Player Performance**: Individual player statistics, trends, and advanced metrics
@@ -147,12 +147,12 @@ s3://hoopstat-haus-gold/
 - **Performance Windows**: Rolling averages (5-game, 10-game, season)
 - **Comparative**: vs. season average, vs. career average, vs. position peers
 
-**MCP Server Integration:**
-- **Optimized Datasets**: Pre-built tables for common MCP queries
+**MCP Adapter Integration (per ADR-033 — Local Proxy Pattern):**
+- **Optimized Datasets**: Pre-built JSON artifacts for common MCP queries
 - **Lookup Tables**: Fast reference data for player/team information
 - **Real-time Views**: Current season data updated within 1 hour of games
 - **Historical Context**: Easy access to comparative historical data
-- **API-Friendly Formats**: JSON-compatible schemas for direct API serving
+- **JSON Artifacts**: Pre-computed, schema-versioned JSON files served statically from S3 (per ADR-027)
 
 **Retention Policy:**
 - All aggregated data: Indefinite (core business value)
@@ -209,7 +209,7 @@ hoopstat-haus-gold      # Business-ready aggregated data
 **S3 Storage Classes:**
 - **Bronze**: Standard → Intelligent Tiering after 30 days
 - **Silver**: Standard → Standard-IA after 90 days
-- **Gold**: Standard (frequently accessed by MCP server)
+- **Gold**: Standard (frequently accessed by applications and local MCP adapter)
 
 **Cost Optimization:**
 - **Lifecycle Policies**: Automatic transition to cheaper storage classes
@@ -238,11 +238,11 @@ The following ADRs need to be proposed to support the full implementation of thi
 - **Impact**: Enables data governance, debugging, and impact analysis
 - **Dependencies**: ADR-014 (Parquet), ADR-009 (AWS infrastructure)
 
-### ADR-019: Gold Layer Aggregation and Partitioning for MCP Integration
-- **Decision Scope**: Define aggregation strategies and data structures optimized for MCP server
-- **Key Areas**: Pre-computed aggregations, API-friendly schemas, caching strategies
-- **Impact**: Optimizes performance and user experience for MCP server consumers
-- **Dependencies**: ADR-017 (data quality), future MCP server ADR
+### ADR-019: Gold Layer Aggregation and Partitioning for MCP Adapter Integration
+- **Decision Scope**: Define aggregation strategies and data structures optimized for local MCP adapter consumption (per ADR-033)
+- **Key Areas**: Pre-computed aggregations, JSON artifact schemas, caching strategies
+- **Impact**: Optimizes performance and user experience for MCP adapter consumers
+- **Dependencies**: ADR-017 (data quality), ADR-033 (local proxy MCP architecture)
 
 ### ADR-020: Data Pipeline Orchestration and Scheduling
 - **Decision Scope**: Choose orchestration platform and define scheduling patterns
@@ -305,20 +305,20 @@ Description: Build dashboard to track completeness, accuracy, timeliness, and co
 Deliverables: Monitoring dashboard with alerting for quality issues
 ```
 
-### **Phase 3: Gold Layer & MCP Integration**
+### **Phase 3: Gold Layer & MCP Adapter Integration**
 
 **6. Build Gold Layer Aggregation Engine**
 ```
-Title: Implement Gold layer pre-computed aggregations for MCP server
-Description: Create aggregation pipeline optimized for MCP server consumption patterns
-Deliverables: Star schema dimensional model with pre-computed metrics and fast lookup tables
+Title: Implement Gold layer pre-computed aggregations for MCP adapter
+Description: Create aggregation pipeline optimized for local MCP adapter consumption (per ADR-033)
+Deliverables: Star schema dimensional model with pre-computed JSON artifacts and fast lookup tables
 ```
 
-**7. Optimize Data Pipeline for MCP Server Performance**
+**7. Optimize Data Pipeline for MCP Adapter Performance**
 ```
-Title: Create MCP-optimized datasets and caching layer
-Description: Build API-ready datasets with sub-second response times for MCP server integration
-Deliverables: Partitioned Gold layer datasets with Redis caching for frequent queries
+Title: Create MCP-optimized JSON artifacts
+Description: Build pre-computed JSON artifacts with fast delivery via S3/CloudFront for local MCP adapter
+Deliverables: Partitioned Gold layer JSON artifacts under served/ prefix (per ADR-027)
 ```
 
 ### **Infrastructure & Operations**

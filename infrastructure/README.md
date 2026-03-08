@@ -41,7 +41,7 @@ The infrastructure implements a three-tier medallion architecture for data proce
 - **Security**: Same as Bronze, with read access to Bronze layer
 
 #### Gold Layer (`hoopstat-haus-gold`)
-- **Purpose**: Business-ready aggregated datasets for MCP server integration
+- **Purpose**: Business-ready aggregated datasets for public access and local MCP adapter (per [ADR-033](../meta/adr/ADR-033-local_proxy_mcp_architecture.md))
 - **Retention**: Indefinite (core business value)
 - **Storage**: Standard class (frequently accessed by applications)
 - **Security**: Same as Silver, with read access to Silver layer
@@ -61,7 +61,7 @@ The medallion layers are connected via S3 event notifications (ADR-028):
   - Prevents over-invocation (previously triggered on every Silver file write)
   - URL-safe naming per ADR-032
 
-For detailed information about the data architecture strategy, see `meta/plans/medallion-data-architecture.md`.
+For detailed information about the data architecture strategy, see `meta/plans/medallion-data-architecture.md`. For MCP integration architecture, see [ADR-033](../meta/adr/ADR-033-local_proxy_mcp_architecture.md).
 
 ## Deployment Workflow
 

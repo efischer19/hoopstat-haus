@@ -11,17 +11,17 @@ tags:
 
 ## Context
 
-* **Problem:** The Hoopstat Haus project needs an architecture for exposing Gold layer basketball analytics to AI agents via the Model Context Protocol (MCP). Earlier planning documents (`meta/plans/mcp-server-architecture.md`) assumed a cloud-hosted model using AWS Lambda and API Gateway to serve MCP requests dynamically. This approach introduces unnecessary cloud compute costs, operational complexity, and — critically — a security surface where runaway AI agent loops could trigger unbounded Lambda invocations against our AWS infrastructure.
+* **Problem:** The Hoopstat Haus project needs an architecture for exposing Gold layer basketball analytics to AI agents via the Model Context Protocol (MCP). Earlier planning documents (`meta/plans/mcp-server-architecture.md`) assumed a cloud-hosted model using AWS Lambda and API Gateway to serve MCP requests dynamically. This approach introduces unnecessary cloud compute costs, operational complexity, and -- critically -- a security surface where runaway AI agent loops could trigger unbounded Lambda invocations against our AWS infrastructure.
 
 * **Constraints:**
   - Our Gold layer already produces pre-computed, static JSON artifacts served publicly via S3/CloudFront (per ADR-027 and ADR-028).
   - Our single-environment strategy (ADR-012) and development philosophy favor minimal moving parts and static-first design.
   - MCP clients (Claude Desktop, Cursor, etc.) natively support local adapter execution via `uvx` (Python) and `npx` (Node.js) package executors.
-  - Zero additional cloud compute cost is strongly preferred — our AWS bill should not scale with the number of AI agents consuming our data.
+  - Zero additional cloud compute cost is strongly preferred -- our AWS bill should not scale with the number of AI agents consuming our data.
 
 ## Decision
 
-**We will use a Local Proxy Pattern for MCP integration.** All MCP JSON-RPC compute will execute on the AI client's local machine via a lightweight, open-source adapter script. Our cloud infrastructure will serve only static, pre-computed JSON artifacts — no Lambda functions, no API Gateway endpoints, and no dynamic server-side compute for MCP.
+**We will use a Local Proxy Pattern for MCP integration.** All MCP JSON-RPC compute will execute on the AI client's local machine via a lightweight, open-source adapter script. Our cloud infrastructure will serve only static, pre-computed JSON artifacts -- no Lambda functions, no API Gateway endpoints, and no dynamic server-side compute for MCP.
 
 The architecture has three components:
 
@@ -58,7 +58,7 @@ The architecture has three components:
 
 * **Negative:**
   - Users must have a local Python or Node.js runtime to use the MCP adapter (standard for AI agent users).
-  - No server-side ad-hoc querying capability (by design — all data is pre-computed).
+  - No server-side ad-hoc querying capability (by design -- all data is pre-computed).
   - The adapter package must be maintained and published as a separate open-source artifact.
 
 * **Future Implications:**

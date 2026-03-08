@@ -1,6 +1,6 @@
 # Hoopstat Haus v2 Architecture Diagram (Stateless JSON-First)
 
-This diagram reflects ADR-027 (stateless JSON artifacts from S3) and ADR-033 (local proxy MCP architecture — no cloud compute for MCP).
+This diagram reflects ADR-027 (stateless JSON artifacts from S3) and ADR-033 (local proxy MCP architecture -- no cloud compute for MCP).
 
 ```mermaid
 graph TB
@@ -21,7 +21,7 @@ graph TB
         S3_PUBLIC["S3/CloudFront Public Read + CORS"]
     end
 
-    subgraph "AI Agent Access (Local — per ADR-033)"
+    subgraph "AI Agent Access (Local -- per ADR-033)"
         LOCAL_MCP["Local MCP Adapter\n(uvx/npx on client machine)\n• Translates MCP JSON-RPC → HTTP GET\n• Zero cloud compute"]
     end
 

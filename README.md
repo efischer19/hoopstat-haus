@@ -26,7 +26,7 @@ All artifacts are versioned (v1) and capped at ~100 KB for fast, low-cost access
 - Format: JSON artifacts under gold/served/
 - Access: Public S3 with CORS (CDN optional)
 
-Note: MCP (Model Context Protocol) integration will use a **local proxy adapter** pattern — all MCP compute runs on the AI client's machine, not in our cloud. See [ADR-033](meta/adr/ADR-033-local_proxy_mcp_architecture.md) for architecture details.
+Note: MCP (Model Context Protocol) integration will use a **local proxy adapter** pattern -- all MCP compute runs on the AI client's machine, not in our cloud. See [ADR-033](meta/adr/ADR-033-local_proxy_mcp_architecture.md) for architecture details.
 
 ## About The Project
 

@@ -1,0 +1,10 @@
+{
+  "output": {
+    "git": {
+      "includeLogs": true,
+      "includeLogsCount": 500,
+      "includeDiffs": true,
+      "sortByChanges": true 
+    }
+  }
+}

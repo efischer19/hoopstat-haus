@@ -9,21 +9,21 @@ packages = [{include = "app"}]
 [tool.poetry.dependencies]
 python = "^3.12"
 click = "^8.3.1"
-boto3 = "^1.42.30"
+boto3 = "^1.42.45"
 pyarrow = "^17.0.0"
 pandas = "^2.3.3"
 hoopstat-observability = {path = "../../libs/hoopstat-observability", develop = false}
 hoopstat-config = {path = "../../libs/hoopstat-config", develop = false}
 hoopstat-s3 = {path = "../../libs/hoopstat-s3", develop = false}
 hoopstat-data = {path = "../../libs/hoopstat-data"}
-tenacity = "^9.0.0"
+tenacity = "^9.1.4"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^9.0.2"
-ruff = "^0.14.13"
+ruff = "^0.15.0"
 black = "^26.1.0"
 pytest-cov = "^7.0.0"
-moto = "^5.1.20"
+moto = "^5.1.21"
 pytest-mock = "^3.15.1"
 
 [tool.poetry.scripts]

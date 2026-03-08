@@ -62,7 +62,7 @@ The architecture has three components:
   - The adapter package must be maintained and published as a separate open-source artifact.
 
 * **Future Implications:**
-  - A separate ADR (ADR-034) should decide the adapter's runtime language (Python via `uvx` for consistency with ADR-002, vs. TypeScript via `npx` for broader MCP ecosystem alignment).
-  - A separate ADR (ADR-035) should formalize the Gold S3 public access strategy (direct S3 vs. CloudFront, security boundaries).
+  - ADR-034 formalizes the adapter runtime decision: both Python (`uvx`) and TypeScript (`npx`) adapters will be built for maximum adoption.
+  - ADR-035 formalizes the Gold S3 public access strategy: CloudFront with Origin Access Control, private S3 bucket.
   - The `meta/plans/mcp-server-architecture.md` planning document, which assumed a cloud-hosted Lambda model, is superseded by this decision and has been archived.
   - The Gold layer `served/` prefix and its JSON artifact schema (defined in ADR-027 and ADR-028) become the sole data contract for MCP consumption.

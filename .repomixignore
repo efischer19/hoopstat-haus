@@ -1,0 +1,59 @@
+# ==========================================
+# Hoopstat Haus - .repomixignore
+# ==========================================
+
+# 1. Community & Boilerplate Files
+# (These take up tokens but offer zero architectural value)
+CODE_OF_CONDUCT.md
+CONTRIBUTING.md
+LICENSE.md
+SECURITY.md
+.github/ISSUE_TEMPLATE/
+.github/pull_request_template.md
+.github/logo.svg
+.pre-commit-config.yaml
+
+# 2. Documentation Sources
+# (Assuming you want the LLM to read the code, not the docs describing the code)
+docs-src/
+mkdocs.yml
+docs-requirements.txt
+**/DOCUMENTATION_README.md
+
+# 3. Data Files & Mocks
+# (These are massive context-hogs)
+libs/hoopstat-mock-data/custom_data/
+libs/hoopstat-mock-data/*.json
+**/*.parquet
+**/*.csv
+**/*.json
+
+# 4. Templates
+# (No need to analyze empty scaffolding)
+templates/
+
+# 5. Frontend Static Assets
+frontend-app/assets/
+
+# 6. Lockfiles & Local Env (usually caught by .gitignore, but good to enforce)
+poetry.lock
+.terraform/
+.terraform.lock.hcl
+.terraform-version
+
+# ==========================================
+# OPTIONAL AGGRESSIVE PRUNING
+# (Uncomment these if you still need more room for commit history)
+# ==========================================
+
+# Ignore all test suites if you only want to focus on core application logic
+**/tests/
+testing/
+
+# Ignore CI/CD orchestration if you aren't actively working on deployment
+# .github/workflows/
+# .github/actions/
+# scripts/
+
+# Ignore local execution scripts
+# apps/*/setup-local.sh

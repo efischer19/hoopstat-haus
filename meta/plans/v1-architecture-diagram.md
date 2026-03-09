@@ -1,4 +1,4 @@
-> DEPRECATED: Superseded by v2 (meta/plans/v2-architecture-diagram.md) and ADR-027 stateless JSON-first. Retained for historical context.
+> **⚠️ ARCHIVED:** Superseded by v2 (`meta/plans/v2-architecture-diagram.md`), ADR-027 (stateless JSON-first), and ADR-033 (local proxy MCP architecture). This diagram reflects an earlier cloud-hosted MCP model (Lambda + API Gateway + Bedrock) that has been explicitly rejected. Retained for historical context only -- do not use for planning.
 
 # Hoopstat Haus v1 Architecture Diagram
 

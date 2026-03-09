@@ -1,3 +1,10 @@
+> **⚠️ ARCHIVED (2026-03-08):** This proposal has been formalized into Architecture Decision Records. See:
+> - [ADR-033](../adr/ADR-033-local_proxy_mcp_architecture.md) -- Local Proxy Architecture for MCP Integration
+> - [ADR-034](../adr/ADR-034-dual_runtime_mcp_adapter.md) -- Dual-Runtime MCP Adapter (Python + TypeScript)
+> - [ADR-035](../adr/ADR-035-gold_s3_public_access.md) -- Gold S3 Public Access via CloudFront with OAC
+>
+> The original proposal content is retained below for historical context.
+
 5 March 2026
 
 ---

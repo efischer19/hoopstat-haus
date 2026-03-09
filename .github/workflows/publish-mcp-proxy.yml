@@ -1,0 +1,75 @@
+name: Publish MCP Proxy to PyPI
+
+on:
+  push:
+    tags:
+      - 'mcp-proxy/v*'
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  test:
+    name: Test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python and Poetry
+        uses: ./.github/actions/setup-python-poetry
+        with:
+          working-directory: apps/mcp-local-proxy
+
+      - name: Install dependencies
+        working-directory: apps/mcp-local-proxy
+        run: poetry install
+
+      - name: Format check
+        working-directory: apps/mcp-local-proxy
+        run: poetry run ruff format --check .
+
+      - name: Lint
+        working-directory: apps/mcp-local-proxy
+        run: poetry run ruff check .
+
+      - name: Test
+        working-directory: apps/mcp-local-proxy
+        run: poetry run pytest
+
+  publish:
+    name: Publish to PyPI
+    needs: test
+    runs-on: ubuntu-latest
+    environment: pypi
+    permissions:
+      id-token: write
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python and Poetry
+        uses: ./.github/actions/setup-python-poetry
+        with:
+          working-directory: apps/mcp-local-proxy
+
+      - name: Extract version from tag
+        id: version
+        run: |
+          TAG="${GITHUB_REF#refs/tags/mcp-proxy/v}"
+          echo "version=$TAG" >> $GITHUB_OUTPUT
+          echo "Publishing version: $TAG"
+
+      - name: Set package version
+        working-directory: apps/mcp-local-proxy
+        run: poetry version "${{ steps.version.outputs.version }}"
+
+      - name: Build package
+        working-directory: apps/mcp-local-proxy
+        run: poetry build
+
+      - name: Publish to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          packages-dir: apps/mcp-local-proxy/dist/

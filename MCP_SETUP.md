@@ -7,22 +7,16 @@ endpoint -- **no API keys, no AWS credentials, no configuration required.**
 
 ## Quick Start
 
-The fastest way to run the server is via `uvx`, which downloads and executes
-the latest version automatically:
-
-```bash
-uvx hoopstat-mcp
-```
-
-Or install with `pip` and run directly:
+Install the package from PyPI and run the CLI command:
 
 ```bash
 pip install hoopstat-mcp-proxy
 hoopstat-mcp
 ```
 
-That's it. The server communicates over stdio and is ready for any MCP-capable
-AI client.
+The PyPI package is called `hoopstat-mcp-proxy`; installing it provides the
+`hoopstat-mcp` command. The server communicates over stdio and is ready for
+any MCP-capable AI client.
 
 ---
 
@@ -39,8 +33,7 @@ Add the following to your Claude Desktop MCP configuration file:
 {
   "mcpServers": {
     "hoopstat": {
-      "command": "uvx",
-      "args": ["hoopstat-mcp"]
+      "command": "hoopstat-mcp"
     }
   }
 }
@@ -55,8 +48,7 @@ Add the following to your Cursor MCP configuration file at
 {
   "mcpServers": {
     "hoopstat": {
-      "command": "uvx",
-      "args": ["hoopstat-mcp"]
+      "command": "hoopstat-mcp"
     }
   }
 }
@@ -72,8 +64,7 @@ Add the following to your VS Code `settings.json` or workspace
   "mcp": {
     "servers": {
       "hoopstat": {
-        "command": "uvx",
-        "args": ["hoopstat-mcp"]
+        "command": "hoopstat-mcp"
       }
     }
   }
@@ -85,7 +76,7 @@ Add the following to your VS Code `settings.json` or workspace
 Any MCP client that supports stdio transport can use the server. The command is:
 
 ```
-uvx hoopstat-mcp
+hoopstat-mcp
 ```
 
 No environment variables or authentication tokens are needed.

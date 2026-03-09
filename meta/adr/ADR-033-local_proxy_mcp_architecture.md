@@ -1,7 +1,7 @@
 ---
 title: "ADR-033: Local Proxy Architecture for MCP Integration"
-status: "Proposed"
-date: "2026-03-08"
+status: "Accepted"
+date: "2026-03-09"
 tags:
   - "mcp"
   - "architecture"

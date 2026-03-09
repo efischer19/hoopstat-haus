@@ -1,7 +1,7 @@
 ---
 title: "ADR-035: Gold S3 Public Access via CloudFront with Origin Access Control"
-status: "Proposed"
-date: "2026-03-08"
+status: "Accepted"
+date: "2026-03-09"
 tags:
   - "infrastructure"
   - "security"

@@ -1,7 +1,7 @@
 ---
 title: "ADR-034: Dual-Runtime MCP Adapter (Python + TypeScript)"
-status: "Proposed"
-date: "2026-03-08"
+status: "Accepted"
+date: "2026-03-09"
 tags:
   - "mcp"
   - "adapter"

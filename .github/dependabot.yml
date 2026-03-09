@@ -57,6 +57,17 @@ updates:
         patterns:
           - "*"
 
+  # Monitor pip dependencies in mcp-local-proxy
+  - package-ecosystem: "pip"
+    directory: "/apps/mcp-local-proxy"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 10
+    groups:
+      pip:
+        patterns:
+          - "*"
+
   # NOTE: When adding new Python applications to /apps/, 
   # add a new entry following this pattern:
   #

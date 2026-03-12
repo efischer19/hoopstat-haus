@@ -56,8 +56,12 @@ The `<p>` fallback inside `<canvas>` displays when canvas is unsupported or Char
 // Chart utility (in app.js or a separate charts.js)
 function createTimeSeriesChart(canvasId, labels, datasets, options = {}) {
   const ctx = document.getElementById(canvasId);
-  if (!ctx || typeof Chart === 'undefined') {
-    console.warn('Chart.js not available or canvas not found');
+  if (!ctx) {
+    console.warn(`Canvas element '${canvasId}' not found`);
+    return null;
+  }
+  if (typeof Chart === 'undefined') {
+    console.warn('Chart.js library not loaded');
     return null;
   }
 

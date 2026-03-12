@@ -124,7 +124,7 @@ function updateChartStat(chart, games, statKey) {
 ### Edge cases to handle
 
 - **Empty games array:** Show "No games data available for this player"
-- **Missing stat fields:** Skip games where the selected stat is `null` or `undefined`; do not plot zero
+- **Missing stat fields:** Skip games where the selected stat is `null` or `undefined`; do not substitute zero values for missing data
 - **Single game:** Chart still renders correctly with a single data point
 - **Very long game histories:** Limit display to last 10-20 games; add a "Show more" control if needed
 - **Artifact fetch failure:** Show error message in the chart area; do not break the data browser

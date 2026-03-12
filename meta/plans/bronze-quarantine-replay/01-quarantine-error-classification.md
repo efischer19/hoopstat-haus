@@ -10,7 +10,7 @@ Currently, all quarantine records look the same -- a list of validation issue st
 
 - [ ] An `ErrorClassification` enum is added to the bronze-ingestion app with at least these values: `TRANSIENT` (network errors, temporary API issues), `ROUNDING_MISMATCH` (player/team stat aggregation tolerance failures), `SCHEMA_CHANGE` (structural API format changes), `DATA_QUALITY` (missing fields, invalid ranges), and `UNKNOWN`.
 - [ ] A `classify_quarantine_error(validation_result)` function exists that inspects the validation issues list and returns the appropriate `ErrorClassification`.
-- [ ] The `DataQuarantine.quarantine_data()` method is updated to include the classification in the stored quarantine record's metadata (field: `error_classification`).
+- [ ] The `DataQuarantine.quarantine_data()` method is updated to include the classification in the stored quarantine record's metadata (JSON field: `error_classification`). Note: ADR-032's URL-safe naming applies to S3 object keys, not JSON field names -- snake_case is the project standard for Python/JSON fields.
 - [ ] Unit tests cover each classification path, including edge cases where multiple issue types are present (the most severe classification wins).
 - [ ] ADR-036 is proposed (status: `Proposed`) documenting the error taxonomy, the classification heuristics, and the replay lifecycle states (quarantined, replaying, resolved, failed).
 - [ ] Existing quarantine tests continue to pass without modification.

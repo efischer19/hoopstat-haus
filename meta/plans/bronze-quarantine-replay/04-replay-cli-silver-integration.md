@@ -20,8 +20,8 @@ This ticket connects the review tooling (Ticket 02) with the transformation fram
   3. Write the transformed payload to the correct Bronze location (`raw/{entity}/{date}/{id}.json`) so the Silver pipeline can pick it up
   4. Invoke the Silver validation pipeline for the affected date(s)
   5. Report success or failure with details
-- [ ] On successful replay, the quarantine record's metadata is updated with `replay_status: "resolved"`, `replay_timestamp`, and `transform_applied`.
-- [ ] On failed replay, the quarantine record's metadata is updated with `replay_status: "failed"`, `replay_timestamp`, `replay_error`, and the retry count is incremented.
+- [ ] On successful replay, the quarantine record's `status` is updated to `"resolved"` with `replay_timestamp` and `transform_applied` metadata. (Ticket 05 formalizes the full state machine; this ticket implements the initial `resolved`/`failed` transitions.)
+- [ ] On failed replay, the quarantine record's `status` is updated to `"failed"` with `replay_timestamp`, `replay_error`, and an incremented retry count.
 - [ ] Batch replay (by classification or date) processes files sequentially with a summary report at the end showing success/failure counts.
 - [ ] All replay operations emit structured JSON logs per ADR-015.
 - [ ] Unit tests cover single-file replay, batch replay, dry-run mode, transform override, and failure handling.

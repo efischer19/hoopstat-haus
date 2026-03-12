@@ -6,7 +6,7 @@ Gold layer analytics processing for NBA statistics.
 
 This application processes Silver layer NBA data and transforms it into advanced analytics metrics. Per [ADR-028](../../meta/adr/ADR-028-gold_layer_final.md), internal Gold data is stored as Parquet and a public presentation layer should be produced as small JSON artifacts under a `served/` prefix.
 
-**Note**: S3 Tables/Iceberg functionality has been removed per ADR-028. The application currently needs to be updated to write JSON artifacts to the `served/` prefix instead of Iceberg tables.
+**Note**: The application currently writes internal Parquet data and needs to be updated to write JSON artifacts to the `served/` prefix per ADR-028.
 
 ## Trigger Mechanism
 
@@ -91,8 +91,8 @@ Environment variables:
 Silver Parquet → Gold Parquet (internal) + JSON artifacts (served/) per ADR-028
 ```
 
-**Current Status**: Analytics calculation logic exists, but storage layer needs to be implemented
-to write JSON artifacts instead of S3 Tables/Iceberg.
+**Current Status**: Analytics calculation logic exists, but the storage layer needs to be implemented
+to write JSON artifacts to the `served/` prefix per ADR-028.
 
 ### Lambda Deployment
 ```bash
@@ -128,13 +128,11 @@ s3://gold-bucket/served/
 └── index/latest.json
 ```
 
-**Current Status**: Artifact writing not yet implemented. S3 Tables/Iceberg functionality 
-has been removed per ADR-028.
+**Current Status**: Artifact writing not yet implemented per ADR-028.
 
 **Details**: See [ADR-028](../../meta/adr/ADR-028-gold_layer_final.md)
 
 ## Related
 
 - [ADR-028: Gold Layer Architecture and Serving Strategy (Final)](../../meta/adr/ADR-028-gold_layer_final.md)
-- [ADR-026: S3 Tables for Gold Layer Analytics](../../meta/adr/ADR-026-s3_tables_gold_layer.md) (Superseded)
 - [Silver Processing App](../silver-processing/)

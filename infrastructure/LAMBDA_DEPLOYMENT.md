@@ -81,7 +81,7 @@ The infrastructure includes automatic S3 event-driven processing for the complet
 
 #### Complete Pipeline Flow
 ```
-Local Cron/Script → Bronze Bucket → S3 Event → Silver Lambda → S3 Event → Gold Lambda → S3 Tables
+Local Cron/Script → Bronze Bucket → S3 Event → Silver Lambda → S3 Event → Gold Lambda → Gold S3
 ```
 
 Bronze ingestion runs locally with the `bronze_data_access` IAM role to write to the bronze S3 bucket.

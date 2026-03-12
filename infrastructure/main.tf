@@ -1102,11 +1102,11 @@ resource "aws_iam_role" "gold_data_access" {
   tags = {
     Name      = "${var.project_name}-gold-data-access-role"
     DataLayer = "gold"
-    Purpose   = "Business analytics for S3 Tables integration"
+    Purpose   = "Business analytics for Gold layer data access"
   }
 }
 
-# IAM Policy for Gold Layer (S3 Tables and legacy S3)
+# IAM Policy for Gold Layer (S3 access)
 resource "aws_iam_role_policy" "gold_data_access" {
   name = "${var.project_name}-gold-data-access-policy"
   role = aws_iam_role.gold_data_access.id
@@ -1252,10 +1252,10 @@ resource "aws_iam_role" "lambda_execution" {
   }
 }
 
-# IAM policy for Lambda execution (S3, S3 Tables, CloudWatch, ECR access)
+# IAM policy for Lambda execution (S3, CloudWatch, ECR access)
 resource "aws_iam_policy" "lambda_execution" {
   name        = "${var.project_name}-lambda-execution"
-  description = "IAM policy for Lambda function execution with S3, S3 Tables, and CloudWatch access"
+  description = "IAM policy for Lambda function execution with S3 and CloudWatch access"
 
   policy = jsonencode({
     Version = "2012-10-17"

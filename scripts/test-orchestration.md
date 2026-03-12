@@ -1,13 +1,13 @@
 # S3 Event-Triggered Data Pipeline Testing Guide
 
-This document provides instructions for testing the complete S3 event-triggered data pipeline: Bronze → Silver → Gold → S3 Tables.
+This document provides instructions for testing the complete S3 event-triggered data pipeline: Bronze → Silver → Gold.
 
 ## Overview
 
 The orchestration is now implemented with simple S3 event triggers:
 
 ```
-Local Cron → Bronze Lambda → S3 Event → Silver Lambda → S3 Event → Gold Lambda → S3 Tables
+Local Cron → Bronze Lambda → S3 Event → Silver Lambda → S3 Event → Gold Lambda → Gold S3
 ```
 
 ## Prerequisites
@@ -84,7 +84,7 @@ aws s3 ls s3://hoopstat-haus-bronze/raw/box/ --recursive
 # Check silver layer
 aws s3 ls s3://hoopstat-haus-silver/silver/ --recursive
 
-# Check gold layer (S3 Tables)
+# Check gold layer
 aws s3 ls s3://hoopstat-haus-gold/ --recursive
 ```
 
@@ -112,8 +112,8 @@ aws lambda get-function --function-name hoopstat-haus-gold-analytics | jq '.Conf
 
 3. **Gold Analytics**
    - Reads: Silver data from above paths
-   - Creates: Gold analytics in S3 Tables format
-   - Stores: Advanced metrics in Apache Iceberg format
+   - Creates: Gold analytics in Parquet and JSON artifact format
+   - Stores: Advanced metrics per ADR-028
 
 ## Troubleshooting
 

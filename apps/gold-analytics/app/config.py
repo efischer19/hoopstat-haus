@@ -34,10 +34,6 @@ class GoldAnalyticsConfig:
     retry_multiplier: float = 2.0
     retry_max_delay_seconds: int = 60
 
-    # S3 Tables configuration
-    catalog_type: str = "glue"
-    iceberg_table_location_prefix: str = "s3a://"
-
     def __post_init__(self) -> None:
         """Validate configuration after initialization."""
         if not self.silver_bucket:
@@ -82,10 +78,6 @@ def load_config() -> GoldAnalyticsConfig:
         retry_delay_seconds=int(os.getenv("RETRY_DELAY_SECONDS", "5")),
         retry_multiplier=float(os.getenv("RETRY_MULTIPLIER", "2.0")),
         retry_max_delay_seconds=int(os.getenv("RETRY_MAX_DELAY_SECONDS", "60")),
-        catalog_type=os.getenv("CATALOG_TYPE", "glue"),
-        iceberg_table_location_prefix=os.getenv(
-            "ICEBERG_TABLE_LOCATION_PREFIX", "s3a://"
-        ),
     )
 
     return config
@@ -111,8 +103,6 @@ def get_configuration_dict() -> dict[str, Any]:
             "retry_delay_seconds": config.retry_delay_seconds,
             "retry_multiplier": config.retry_multiplier,
             "retry_max_delay_seconds": config.retry_max_delay_seconds,
-            "catalog_type": config.catalog_type,
-            "iceberg_table_location_prefix": config.iceberg_table_location_prefix,
         }
     except ValueError as e:
         logger.error(f"Configuration error: {e}")

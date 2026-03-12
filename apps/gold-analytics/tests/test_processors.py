@@ -378,5 +378,5 @@ class TestGoldProcessor:
 
     # TODO: Re-add storage tests once JSON artifact writing is implemented
     # per ADR-028. The following tests were removed because they tested
-    # S3 Tables/Iceberg functionality that has been removed. New tests
-    # should be added for JSON artifact writing.
+    # abandoned functionality. New tests should be added for JSON artifact
+    # writing.

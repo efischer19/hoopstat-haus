@@ -2,7 +2,7 @@
 Gold Layer Analytics Application for NBA Statistics.
 
 This application processes Silver layer data and transforms it into
-advanced analytics metrics stored in S3 Tables using Apache Iceberg format.
+advanced analytics metrics per ADR-028.
 """
 
 import os
@@ -42,7 +42,7 @@ def cli(debug: bool) -> None:
 @click.option(
     "--gold-bucket",
     type=str,
-    help="S3 bucket name for Gold S3 Tables (can also be set via GOLD_BUCKET env var)",
+    help="S3 bucket name for Gold data (can also be set via GOLD_BUCKET env var)",
 )
 def process(
     date: datetime | None,
@@ -101,7 +101,7 @@ def process(
 @click.option(
     "--gold-bucket",
     type=str,
-    help="S3 bucket name for Gold S3 Tables (can also be set via GOLD_BUCKET env var)",
+    help="S3 bucket name for Gold data (can also be set via GOLD_BUCKET env var)",
 )
 def status(gold_bucket: str | None) -> None:
     """Check the status of the gold layer analytics pipeline."""
@@ -118,10 +118,9 @@ def status(gold_bucket: str | None) -> None:
 
     try:
         # TODO: Implement status check for JSON artifacts per ADR-028
-        # S3 Tables functionality removed - need to check Gold S3 bucket instead
         logger.info("=== Gold Layer Status Check ===")
         logger.warning(
-            "S3 Tables health check removed - "
+            "Health check not yet implemented - "
             "need to implement JSON artifact validation per ADR-028"
         )
         logger.info(f"Gold Bucket: {gold_bucket_name}")
@@ -155,7 +154,7 @@ def status(gold_bucket: str | None) -> None:
 @click.option(
     "--gold-bucket",
     type=str,
-    help="S3 bucket name for Gold S3 Tables (can also be set via GOLD_BUCKET env var)",
+    help="S3 bucket name for Gold data (can also be set via GOLD_BUCKET env var)",
 )
 def season_players(
     season: str,
@@ -232,7 +231,7 @@ def season_players(
 @click.option(
     "--gold-bucket",
     type=str,
-    help="S3 bucket name for Gold S3 Tables (can also be set via GOLD_BUCKET env var)",
+    help="S3 bucket name for Gold data (can also be set via GOLD_BUCKET env var)",
 )
 def season_teams(
     season: str,
@@ -304,7 +303,7 @@ def season_teams(
 @click.option(
     "--gold-bucket",
     type=str,
-    help="S3 bucket name for Gold S3 Tables (can also be set via GOLD_BUCKET env var)",
+    help="S3 bucket name for Gold data (can also be set via GOLD_BUCKET env var)",
 )
 def incremental(
     dry_run: bool,
@@ -392,7 +391,7 @@ def incremental(
 @click.option(
     "--gold-bucket",
     type=str,
-    help="S3 bucket name for Gold S3 Tables (can also be set via GOLD_BUCKET env var)",
+    help="S3 bucket name for Gold data (can also be set via GOLD_BUCKET env var)",
 )
 def process_range(
     start_date: datetime,

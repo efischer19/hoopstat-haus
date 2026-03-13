@@ -2,7 +2,7 @@
 <html lang="en">
   <head>
     <meta charset="utf-8">
-    <meta name="description" content="Hoopstat Haus - AI-powered basketball analytics. Ask questions about NBA and WNBA statistics in natural language.">
+    <meta name="description" content="Hoopstat Haus - Browse NBA and WNBA player and team statistics from the latest data pipeline.">
     
     <title>Hoopstat Haus - Basketball Analytics</title>
     
@@ -18,70 +18,69 @@
   <body>
     <header>
       <h1>🏀 Hoopstat Haus</h1>
-      <p>AI-powered basketball analytics. Ask questions about NBA and WNBA statistics.</p>
+      <p>Browse NBA and WNBA player and team statistics.</p>
     </header>
     
     <main>
-      <div class="query-container">
-        <form id="question-form" class="question-form">
-          <div class="input-group">
-            <label for="basketball-question" class="visually-hidden">
-              Ask a basketball question
-            </label>
-            <textarea 
-              id="basketball-question" 
-              name="question"
-              placeholder="Ask a basketball question... (e.g., 'How did LeBron James perform in the 2023 playoffs?')"
-              rows="3"
-              required
-              aria-describedby="question-help"
-            ></textarea>
-            <button type="submit" id="submit-btn" class="submit-btn">
-              <span class="btn-text">Ask Question</span>
-              <span class="btn-loading" style="display: none;">Analyzing...</span>
-            </button>
-          </div>
-          <div id="question-help" class="help-text">
-            Examples: "Compare Curry's 3-point shooting this season vs last", "Show me LeBron's playoff stats"
-          </div>
-        </form>
+      <div id="latest-banner" class="latest-banner" style="display: none;">
+        <div class="banner-content">
+          <span id="latest-date" class="latest-date"></span>
+          <span id="latest-summary" class="latest-summary"></span>
+        </div>
+        <button type="button" id="refresh-btn" class="refresh-btn" aria-label="Refresh data">
+          🔄 Refresh
+        </button>
       </div>
-      
-      <div id="response-container" class="response-container" style="display: none;">
-        <div class="response-header">
-          <h2>Analysis Result</h2>
-          <button type="button" id="new-question-btn" class="new-question-btn">
-            Ask Another Question
+
+      <div id="loading-indicator" class="loading-indicator" style="display: none;">
+        <div class="spinner" aria-hidden="true"></div>
+        <p>Loading data...</p>
+      </div>
+
+      <div id="selector-container" class="selector-container" style="display: none;">
+        <div class="selector-tabs" role="tablist" aria-label="Data type">
+          <button type="button" role="tab" id="tab-players" class="tab-btn active" aria-selected="true" aria-controls="panel-players">
+            Players
+          </button>
+          <button type="button" role="tab" id="tab-teams" class="tab-btn" aria-selected="false" aria-controls="panel-teams">
+            Teams
           </button>
         </div>
-        <div id="response-content" class="response-content">
-          <!-- Response content will be inserted here -->
+
+        <div id="panel-players" class="tab-panel" role="tabpanel" aria-labelledby="tab-players">
+          <label for="player-select" class="visually-hidden">Select a player</label>
+          <select id="player-select" class="data-select">
+            <option value="">-- Select a player --</option>
+          </select>
+        </div>
+
+        <div id="panel-teams" class="tab-panel" role="tabpanel" aria-labelledby="tab-teams" style="display: none;">
+          <label for="team-select" class="visually-hidden">Select a team</label>
+          <select id="team-select" class="data-select">
+            <option value="">-- Select a team --</option>
+          </select>
         </div>
       </div>
-      
+
+      <div id="data-loading" class="loading-indicator" style="display: none;">
+        <div class="spinner" aria-hidden="true"></div>
+        <p>Fetching stats...</p>
+      </div>
+
+      <div id="data-container" class="data-container" style="display: none;">
+        <div class="data-header">
+          <h2 id="data-title">Stats</h2>
+        </div>
+        <div id="data-content" class="data-content">
+          <!-- Artifact data will be inserted here -->
+        </div>
+      </div>
+
       <div id="error-container" class="error-container" style="display: none;">
         <div class="error-content">
           <h3>⚠️ Something went wrong</h3>
-          <p id="error-message">We're having trouble processing your request right now.</p>
+          <p id="error-message">We're having trouble loading data right now.</p>
           <button type="button" id="retry-btn" class="retry-btn">Try Again</button>
-        </div>
-      </div>
-      
-      <div class="examples-section">
-        <h3>Example Questions</h3>
-        <div class="examples-grid">
-          <button type="button" class="example-btn" data-question="How did Stephen Curry perform in the 2023-24 season?">
-            "How did Stephen Curry perform in the 2023-24 season?"
-          </button>
-          <button type="button" class="example-btn" data-question="Compare LeBron James and Michael Jordan's scoring averages">
-            "Compare LeBron James and Michael Jordan's scoring averages"
-          </button>
-          <button type="button" class="example-btn" data-question="Show me the top 5 three-point shooters this season">
-            "Show me the top 5 three-point shooters this season"
-          </button>
-          <button type="button" class="example-btn" data-question="What are the Warriors' win-loss record at home?">
-            "What are the Warriors' win-loss record at home?"
-          </button>
         </div>
       </div>
     </main>

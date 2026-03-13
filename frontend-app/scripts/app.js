@@ -1,123 +1,347 @@
 /**
  * Hoopstat Haus - Frontend Application
- * Minimal JavaScript for basketball analytics interface
+ * Data browser for basketball analytics artifacts served via CloudFront
  */
 
 // Configuration
 const CONFIG = {
-  // UI timeouts
-  RESPONSE_TIMEOUT_MS: 30000, // 30 seconds
-  DEBOUNCE_MS: 300,
+  // CloudFront distribution base URL for Gold JSON artifacts.
+  // The CloudFront origin_path is "/served", so client paths omit that prefix.
+  // DEPLOY: Replace this placeholder with the actual domain from:
+  //   cd infrastructure && terraform output cloudfront_distribution
+  // or a configured vanity domain (e.g. "https://hoopstat.haus").
+  GOLD_BASE_URL: 'https://CLOUDFRONT_DOMAIN_PLACEHOLDER',
+  REQUEST_TIMEOUT_MS: 10000,
 };
 
 // Application state
 const state = {
   isLoading: false,
+  latestDate: null,
+  indexData: null,
+  activeTab: 'players',
 };
 
 // DOM elements
 let elements = {};
 
-// Initialize the application
+// ---------------------------------------------------------------------------
+// Fetch utility
+// ---------------------------------------------------------------------------
+
+async function fetchArtifact(path) {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(
+    () => controller.abort(),
+    CONFIG.REQUEST_TIMEOUT_MS,
+  );
+
+  try {
+    const response = await fetch(`${CONFIG.GOLD_BASE_URL}/${path}`, {
+      method: 'GET',
+      headers: { 'Accept': 'application/json' },
+      signal: controller.signal,
+    });
+
+    if (!response.ok) {
+      throw new Error(`Failed to fetch ${path}: HTTP ${response.status}`);
+    }
+
+    const contentType = response.headers.get('content-type') || '';
+    if (!contentType.includes('json') && !contentType.includes('octet-stream')) {
+      throw new Error(`Unexpected content type for ${path}: ${contentType}`);
+    }
+
+    return response.json();
+  } finally {
+    clearTimeout(timeoutId);
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Initialization
+// ---------------------------------------------------------------------------
+
 function initializeApp() {
-  // Cache DOM elements
   elements = {
-    form: document.getElementById('question-form'),
-    textarea: document.getElementById('basketball-question'),
-    submitBtn: document.getElementById('submit-btn'),
-    btnText: document.querySelector('.btn-text'),
-    btnLoading: document.querySelector('.btn-loading'),
-    responseContainer: document.getElementById('response-container'),
-    responseContent: document.getElementById('response-content'),
+    latestBanner: document.getElementById('latest-banner'),
+    latestDate: document.getElementById('latest-date'),
+    latestSummary: document.getElementById('latest-summary'),
+    refreshBtn: document.getElementById('refresh-btn'),
+    loadingIndicator: document.getElementById('loading-indicator'),
+    selectorContainer: document.getElementById('selector-container'),
+    tabPlayers: document.getElementById('tab-players'),
+    tabTeams: document.getElementById('tab-teams'),
+    panelPlayers: document.getElementById('panel-players'),
+    panelTeams: document.getElementById('panel-teams'),
+    playerSelect: document.getElementById('player-select'),
+    teamSelect: document.getElementById('team-select'),
+    dataLoading: document.getElementById('data-loading'),
+    dataContainer: document.getElementById('data-container'),
+    dataTitle: document.getElementById('data-title'),
+    dataContent: document.getElementById('data-content'),
     errorContainer: document.getElementById('error-container'),
     errorMessage: document.getElementById('error-message'),
-    newQuestionBtn: document.getElementById('new-question-btn'),
     retryBtn: document.getElementById('retry-btn'),
-    exampleBtns: document.querySelectorAll('.example-btn'),
   };
-  
-  // Attach event listeners
+
   attachEventListeners();
-  
-  // Set initial focus
-  elements.textarea.focus();
-  
+  loadIndex();
+
   console.log('Hoopstat Haus app initialized');
 }
 
-// Attach all event listeners
 function attachEventListeners() {
-  // Form submission
-  elements.form.addEventListener('submit', handleFormSubmit);
-  
-  // Example button clicks
-  elements.exampleBtns.forEach(btn => {
-    btn.addEventListener('click', handleExampleClick);
-  });
-  
-  // New question button
-  elements.newQuestionBtn.addEventListener('click', resetToNewQuestion);
-  
-  // Retry button
-  elements.retryBtn.addEventListener('click', resetToNewQuestion);
-  
-  // Auto-resize textarea
-  elements.textarea.addEventListener('input', autoResizeTextarea);
-  
-  // Prevent double submission
-  elements.form.addEventListener('submit', e => {
-    if (state.isLoading) {
-      e.preventDefault();
-    }
+  elements.refreshBtn.addEventListener('click', loadIndex);
+  elements.retryBtn.addEventListener('click', loadIndex);
+
+  elements.tabPlayers.addEventListener('click', () => switchTab('players'));
+  elements.tabTeams.addEventListener('click', () => switchTab('teams'));
+
+  elements.playerSelect.addEventListener('change', handlePlayerSelect);
+  elements.teamSelect.addEventListener('change', handleTeamSelect);
+}
+
+// ---------------------------------------------------------------------------
+// Index loading
+// ---------------------------------------------------------------------------
+
+async function loadIndex() {
+  hideError();
+  hideData();
+  elements.latestBanner.style.display = 'none';
+  elements.selectorContainer.style.display = 'none';
+  elements.loadingIndicator.style.display = 'flex';
+
+  try {
+    const data = await fetchArtifact('index/latest.json');
+    state.indexData = data;
+    state.latestDate = getLatestDate(data);
+
+    displayBanner(data);
+    populateSelectors(data);
+
+    elements.selectorContainer.style.display = 'block';
+  } catch (err) {
+    showError(getErrorMessage(err));
+  } finally {
+    elements.loadingIndicator.style.display = 'none';
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Banner
+// ---------------------------------------------------------------------------
+
+function displayBanner(data) {
+  const dateStr = getLatestDate(data) || 'Unknown';
+  elements.latestDate.textContent = `Latest data: ${dateStr}`;
+
+  const players = data.players || [];
+  const teams = data.teams || [];
+  const parts = [];
+  if (players.length) parts.push(`${players.length} players`);
+  if (teams.length) parts.push(`${teams.length} teams`);
+  elements.latestSummary.textContent = parts.length
+    ? parts.join(', ')
+    : '';
+
+  elements.latestBanner.style.display = 'flex';
+}
+
+// ---------------------------------------------------------------------------
+// Selectors
+// ---------------------------------------------------------------------------
+
+function populateSelectors(data) {
+  const players = data.players || [];
+  const teams = data.teams || [];
+
+  populateSelect(
+    elements.playerSelect,
+    players,
+    '-- Select a player --',
+  );
+  populateSelect(
+    elements.teamSelect,
+    teams,
+    '-- Select a team --',
+  );
+}
+
+function populateSelect(selectEl, items, placeholder) {
+  selectEl.innerHTML = '';
+  const defaultOpt = document.createElement('option');
+  defaultOpt.value = '';
+  defaultOpt.textContent = placeholder;
+  selectEl.appendChild(defaultOpt);
+
+  items.forEach(item => {
+    const opt = document.createElement('option');
+    const id = getItemId(item);
+    opt.value = id;
+    opt.textContent = getItemName(item, id);
+    selectEl.appendChild(opt);
   });
 }
 
-// Handle form submission (stubbed for artifact-fetching UI)
-function handleFormSubmit(event) {
-  event.preventDefault();
-  
-  const question = elements.textarea.value.trim();
-  if (!question) {
-    showError('Please enter a basketball question.');
+// ---------------------------------------------------------------------------
+// Tab switching
+// ---------------------------------------------------------------------------
+
+function switchTab(tab) {
+  state.activeTab = tab;
+
+  const isPlayers = tab === 'players';
+  elements.tabPlayers.classList.toggle('active', isPlayers);
+  elements.tabTeams.classList.toggle('active', !isPlayers);
+  elements.tabPlayers.setAttribute('aria-selected', String(isPlayers));
+  elements.tabTeams.setAttribute('aria-selected', String(!isPlayers));
+  elements.panelPlayers.style.display = isPlayers ? 'block' : 'none';
+  elements.panelTeams.style.display = isPlayers ? 'none' : 'block';
+
+  hideData();
+}
+
+// ---------------------------------------------------------------------------
+// Selection handlers
+// ---------------------------------------------------------------------------
+
+async function handlePlayerSelect() {
+  const playerId = elements.playerSelect.value;
+  if (!playerId) {
+    hideData();
     return;
   }
-  
-  // TODO: Implement Gold JSON artifact fetching from CloudFront (ADR-027, ADR-035)
+  const date = state.latestDate;
+  await loadArtifact(`player_daily/${date}/${playerId}.json`, 'Player Stats');
 }
 
-// Handle example question clicks
-function handleExampleClick(event) {
-  const question = event.target.dataset.question;
-  if (question) {
-    elements.textarea.value = question;
-    autoResizeTextarea();
-    elements.textarea.focus();
+async function handleTeamSelect() {
+  const teamId = elements.teamSelect.value;
+  if (!teamId) {
+    hideData();
+    return;
+  }
+  const date = state.latestDate;
+  await loadArtifact(`team_daily/${date}/${teamId}.json`, 'Team Stats');
+}
+
+async function loadArtifact(path, title) {
+  hideError();
+  hideData();
+  elements.dataLoading.style.display = 'flex';
+
+  try {
+    const data = await fetchArtifact(path);
+    showData(data, title);
+  } catch (err) {
+    showError(getErrorMessage(err));
+  } finally {
+    elements.dataLoading.style.display = 'none';
   }
 }
 
-// UI State Management
-function setLoadingState(loading) {
-  state.isLoading = loading;
-  elements.submitBtn.disabled = loading;
-  
-  if (loading) {
-    elements.btnText.style.display = 'none';
-    elements.btnLoading.style.display = 'flex';
-  } else {
-    elements.btnText.style.display = 'block';
-    elements.btnLoading.style.display = 'none';
+// ---------------------------------------------------------------------------
+// Data display
+// ---------------------------------------------------------------------------
+
+function showData(data, title) {
+  elements.dataTitle.textContent = title;
+  elements.dataContent.innerHTML = formatArtifact(data);
+  elements.dataContainer.style.display = 'block';
+  elements.dataContainer.scrollIntoView({ behavior: 'smooth' });
+}
+
+function hideData() {
+  elements.dataContainer.style.display = 'none';
+}
+
+function formatArtifact(data) {
+  if (typeof data !== 'object' || data === null) {
+    return `<p>${escapeHtml(String(data))}</p>`;
   }
+
+  // Build stat cards for top-level scalar values and tables for nested data
+  let cardsHtml = '';
+  let tablesHtml = '';
+
+  for (const [key, value] of Object.entries(data)) {
+    if (value === null || value === undefined) continue;
+
+    if (Array.isArray(value)) {
+      tablesHtml += renderArraySection(key, value);
+    } else if (typeof value === 'object') {
+      tablesHtml += renderObjectSection(key, value);
+    } else {
+      cardsHtml += `<div class="stat-card">
+        <span class="stat-label">${escapeHtml(formatLabel(key))}</span>
+        <span class="stat-value">${escapeHtml(String(value))}</span>
+      </div>`;
+    }
+  }
+
+  let html = '';
+  if (cardsHtml) {
+    html += `<div class="stat-cards">${cardsHtml}</div>`;
+  }
+  if (tablesHtml) {
+    html += tablesHtml;
+  }
+  return html || '<p>No data available.</p>';
 }
 
-function showResponse(response) {
-  elements.responseContent.innerHTML = formatResponse(response);
-  elements.responseContainer.style.display = 'block';
-  elements.responseContainer.scrollIntoView({ behavior: 'smooth' });
+function renderObjectSection(key, obj) {
+  let rows = '';
+  for (const [k, v] of Object.entries(obj)) {
+    rows += `<tr>
+      <td>${escapeHtml(formatLabel(k))}</td>
+      <td>${escapeHtml(String(v ?? ''))}</td>
+    </tr>`;
+  }
+  return `<div class="data-section">
+    <h3>${escapeHtml(formatLabel(key))}</h3>
+    <table class="stats-table"><tbody>${rows}</tbody></table>
+  </div>`;
 }
 
-function hideResponse() {
-  elements.responseContainer.style.display = 'none';
+function renderArraySection(key, arr) {
+  if (arr.length === 0) return '';
+  const first = arr[0];
+
+  if (typeof first !== 'object' || first === null) {
+    const items = arr.map(v => `<li>${escapeHtml(String(v))}</li>`).join('');
+    return `<div class="data-section">
+      <h3>${escapeHtml(formatLabel(key))}</h3>
+      <ul>${items}</ul>
+    </div>`;
+  }
+
+  const headers = Object.keys(first);
+  const thRow = headers.map(h => `<th>${escapeHtml(formatLabel(h))}</th>`).join('');
+  const bodyRows = arr
+    .map(row => {
+      const cells = headers
+        .map(h => `<td>${escapeHtml(String(row[h] ?? ''))}</td>`)
+        .join('');
+      return `<tr>${cells}</tr>`;
+    })
+    .join('');
+
+  return `<div class="data-section">
+    <h3>${escapeHtml(formatLabel(key))}</h3>
+    <div class="table-wrapper">
+      <table class="stats-table">
+        <thead><tr>${thRow}</tr></thead>
+        <tbody>${bodyRows}</tbody>
+      </table>
+    </div>
+  </div>`;
 }
+
+// ---------------------------------------------------------------------------
+// Error display
+// ---------------------------------------------------------------------------
 
 function showError(message) {
   elements.errorMessage.textContent = message;
@@ -129,69 +353,71 @@ function hideError() {
   elements.errorContainer.style.display = 'none';
 }
 
-// Format response for display
-function formatResponse(response) {
-  const answer = response.answer || 'No answer available.';
-  const confidence = response.confidence ? Math.round(response.confidence * 100) : null;
-  const sources = response.sources || [];
-  
-  let html = `<div class="response-text">${escapeHtml(answer).replace(/\n/g, '<br>')}</div>`;
-  
-  if (confidence) {
-    html += `<div class="response-meta">
-      <p><strong>Confidence:</strong> ${confidence}%</p>
-    </div>`;
-  }
-  
-  if (sources.length > 0) {
-    html += `<div class="response-sources">
-      <p><strong>Sources:</strong> ${sources.map(escapeHtml).join(', ')}</p>
-    </div>`;
-  }
-  
-  return html;
-}
-
+// ---------------------------------------------------------------------------
 // Utility functions
+// ---------------------------------------------------------------------------
+
 function escapeHtml(text) {
   const div = document.createElement('div');
   div.textContent = text;
   return div.innerHTML;
 }
 
+function formatLabel(key) {
+  return key
+    .replace(/_/g, ' ')
+    .replace(/\b\w/g, c => c.toUpperCase());
+}
+
+/**
+ * Extract the latest date from index data.
+ * Supports both "date" and "latest_date" field names to handle
+ * potential schema variations in the Gold index artifact.
+ */
+function getLatestDate(data) {
+  return data.date || data.latest_date || null;
+}
+
+/**
+ * Get a display-friendly identifier from a player or team entry.
+ * The index artifact may use "id", "player_id", or "team_id" depending
+ * on the entry type, so we check all variants defensively.
+ */
+function getItemId(item) {
+  return item.id || item.player_id || item.team_id || '';
+}
+
+/**
+ * Get a display-friendly name from a player or team entry.
+ * Supports "name", "full_name", and "team_name" field variants.
+ */
+function getItemName(item, fallbackId) {
+  return item.name || item.full_name || item.team_name || `ID ${fallbackId}`;
+}
+
 function getErrorMessage(error) {
   if (error.name === 'AbortError') {
     return 'Request timed out. Please try again.';
   }
-  
-  if (error.message?.startsWith('HTTP_')) {
-    const status = error.message.split('_')[1];
-    switch (status) {
-      case '429': return 'Too many requests. Please wait a moment and try again.';
-      case '500': return 'Server error. Please try again later.';
-      case '503': return 'Service temporarily unavailable. Please try again later.';
-      default: return 'Network error. Please check your connection and try again.';
-    }
+
+  const msg = error.message || '';
+  if (msg.includes('HTTP 404')) {
+    return 'Data not found. The requested resource may not be available yet.';
   }
-  
+  if (msg.includes('HTTP 5')) {
+    return 'Server error. Please try again later.';
+  }
+  if (msg.includes('Failed to fetch') || msg.includes('NetworkError')) {
+    return 'Network error. Please check your connection and try again.';
+  }
+
   return 'Something went wrong. Please try again.';
 }
 
-function autoResizeTextarea() {
-  const textarea = elements.textarea;
-  textarea.style.height = 'auto';
-  textarea.style.height = Math.min(textarea.scrollHeight, 200) + 'px';
-}
+// ---------------------------------------------------------------------------
+// Bootstrap
+// ---------------------------------------------------------------------------
 
-function resetToNewQuestion() {
-  elements.textarea.value = '';
-  elements.textarea.focus();
-  hideResponse();
-  hideError();
-  autoResizeTextarea();
-}
-
-// Initialize when DOM is ready
 if (document.readyState === 'loading') {
   document.addEventListener('DOMContentLoaded', initializeApp);
 } else {
@@ -203,7 +429,12 @@ if (typeof module !== 'undefined' && module.exports) {
   module.exports = {
     CONFIG,
     escapeHtml,
-    formatResponse,
+    formatLabel,
+    formatArtifact,
     getErrorMessage,
+    getLatestDate,
+    getItemId,
+    getItemName,
+    fetchArtifact,
   };
 }

@@ -62,9 +62,9 @@ def _parse_date_from_key(key: str) -> str:
         if part.startswith("year="):
             year = part.split("=")[1]
         elif part.startswith("month="):
-            month = part.split("=")[1]
+            month = part.split("=")[1].zfill(2)
         elif part.startswith("day="):
-            day = part.split("=")[1]
+            day = part.split("=")[1].zfill(2)
     return f"{year}-{month}-{day}"
 
 

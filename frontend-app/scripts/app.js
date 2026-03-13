@@ -7,8 +7,10 @@
 const CONFIG = {
   // CloudFront distribution base URL for Gold JSON artifacts.
   // The CloudFront origin_path is "/served", so client paths omit that prefix.
-  // Replace the placeholder domain with the actual Terraform output value.
-  GOLD_BASE_URL: 'https://d1example.cloudfront.net',
+  // DEPLOY: Replace this placeholder with the actual domain from:
+  //   cd infrastructure && terraform output cloudfront_distribution
+  // or a configured vanity domain (e.g. "https://hoopstat.haus").
+  GOLD_BASE_URL: 'https://CLOUDFRONT_DOMAIN_PLACEHOLDER',
   REQUEST_TIMEOUT_MS: 10000,
 };
 
@@ -114,7 +116,7 @@ async function loadIndex() {
   try {
     const data = await fetchArtifact('index/latest.json');
     state.indexData = data;
-    state.latestDate = data.date || data.latest_date || null;
+    state.latestDate = getLatestDate(data);
 
     displayBanner(data);
     populateSelectors(data);
@@ -132,7 +134,7 @@ async function loadIndex() {
 // ---------------------------------------------------------------------------
 
 function displayBanner(data) {
-  const dateStr = data.date || data.latest_date || 'Unknown';
+  const dateStr = getLatestDate(data) || 'Unknown';
   elements.latestDate.textContent = `Latest data: ${dateStr}`;
 
   const players = data.players || [];
@@ -176,8 +178,9 @@ function populateSelect(selectEl, items, placeholder) {
 
   items.forEach(item => {
     const opt = document.createElement('option');
-    opt.value = item.id || item.player_id || item.team_id || '';
-    opt.textContent = item.name || item.full_name || item.team_name || `ID ${opt.value}`;
+    const id = getItemId(item);
+    opt.value = id;
+    opt.textContent = getItemName(item, id);
     selectEl.appendChild(opt);
   });
 }
@@ -366,6 +369,32 @@ function formatLabel(key) {
     .replace(/\b\w/g, c => c.toUpperCase());
 }
 
+/**
+ * Extract the latest date from index data.
+ * Supports both "date" and "latest_date" field names to handle
+ * potential schema variations in the Gold index artifact.
+ */
+function getLatestDate(data) {
+  return data.date || data.latest_date || null;
+}
+
+/**
+ * Get a display-friendly identifier from a player or team entry.
+ * The index artifact may use "id", "player_id", or "team_id" depending
+ * on the entry type, so we check all variants defensively.
+ */
+function getItemId(item) {
+  return item.id || item.player_id || item.team_id || '';
+}
+
+/**
+ * Get a display-friendly name from a player or team entry.
+ * Supports "name", "full_name", and "team_name" field variants.
+ */
+function getItemName(item, fallbackId) {
+  return item.name || item.full_name || item.team_name || `ID ${fallbackId}`;
+}
+
 function getErrorMessage(error) {
   if (error.name === 'AbortError') {
     return 'Request timed out. Please try again.';
@@ -403,6 +432,9 @@ if (typeof module !== 'undefined' && module.exports) {
     formatLabel,
     formatArtifact,
     getErrorMessage,
+    getLatestDate,
+    getItemId,
+    getItemName,
     fetchArtifact,
   };
 }

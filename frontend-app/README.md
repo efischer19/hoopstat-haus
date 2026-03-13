@@ -61,12 +61,12 @@ The application is configured via the `CONFIG` object in `scripts/app.js`:
 
 ```javascript
 const CONFIG = {
-  GOLD_BASE_URL: 'https://<cloudfront-domain>.cloudfront.net',
+  GOLD_BASE_URL: 'https://CLOUDFRONT_DOMAIN_PLACEHOLDER',
   REQUEST_TIMEOUT_MS: 10000,
 };
 ```
 
-The `GOLD_BASE_URL` points to the CloudFront distribution that serves Gold JSON artifacts. The CloudFront distribution uses `origin_path: /served` so client URLs omit the `served/` prefix.
+The `GOLD_BASE_URL` points to the CloudFront distribution that serves Gold JSON artifacts. Replace `CLOUDFRONT_DOMAIN_PLACEHOLDER` with the actual domain from `terraform output cloudfront_distribution` or a configured vanity domain. The CloudFront distribution uses `origin_path: /served` so client URLs omit the `served/` prefix.
 
 ### Artifact Contract (ADR-027)
 

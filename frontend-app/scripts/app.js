@@ -20,7 +20,15 @@ const state = {
   latestDate: null,
   indexData: null,
   activeTab: 'players',
+  chartInstance: null,
+  currentStat: 'points',
+  currentGames: [],
 };
+
+// Default stats available for player and team artifacts
+const PLAYER_STATS = ['points', 'rebounds', 'assists', 'steals', 'blocks', 'minutes'];
+const TEAM_STATS = ['points', 'rebounds', 'assists', 'steals', 'blocks'];
+const MAX_GAMES_DISPLAYED = 20;
 
 // DOM elements
 let elements = {};
@@ -83,6 +91,11 @@ function initializeApp() {
     errorContainer: document.getElementById('error-container'),
     errorMessage: document.getElementById('error-message'),
     retryBtn: document.getElementById('retry-btn'),
+    chartSection: document.getElementById('chart-section'),
+    statSelector: document.getElementById('stat-selector'),
+    chartLoading: document.getElementById('chart-loading'),
+    noDataMessage: document.getElementById('no-data-message'),
+    trendsCanvas: document.getElementById('trends-chart'),
   };
 
   attachEventListeners();
@@ -236,6 +249,7 @@ async function loadArtifact(path, title) {
   try {
     const data = await fetchArtifact(path);
     showData(data, title);
+    renderTrendsChart(data);
   } catch (err) {
     showError(getErrorMessage(err));
   } finally {
@@ -256,6 +270,7 @@ function showData(data, title) {
 
 function hideData() {
   elements.dataContainer.style.display = 'none';
+  hideChart();
 }
 
 function formatArtifact(data) {
@@ -416,6 +431,198 @@ function getErrorMessage(error) {
 }
 
 // ---------------------------------------------------------------------------
+// Trends chart
+// ---------------------------------------------------------------------------
+
+/**
+ * Render the trends chart from an artifact's games array.
+ * Handles edge cases: missing games, empty array, missing stat fields.
+ */
+function renderTrendsChart(data) {
+  // Chart.js must be available to render trends
+  if (typeof Chart === 'undefined') return;
+
+  var games = data.games || [];
+
+  // Limit to the most recent games (last N games)
+  if (games.length > MAX_GAMES_DISPLAYED) {
+    games = games.slice(games.length - MAX_GAMES_DISPLAYED);
+  }
+
+  state.currentGames = games;
+
+  // Show/hide chart section
+  if (!elements.chartSection) return;
+
+  if (games.length === 0) {
+    elements.chartSection.style.display = 'block';
+    elements.noDataMessage.style.display = 'block';
+    elements.statSelector.style.display = 'none';
+    elements.trendsCanvas.style.display = 'none';
+    elements.chartLoading.style.display = 'none';
+    return;
+  }
+
+  elements.chartSection.style.display = 'block';
+  elements.noDataMessage.style.display = 'none';
+  elements.trendsCanvas.style.display = 'block';
+  elements.chartLoading.style.display = 'none';
+
+  // Determine available stats based on active tab
+  var availableStats = state.activeTab === 'teams' ? TEAM_STATS : PLAYER_STATS;
+  populateStatButtons(availableStats);
+
+  // Reset to default stat if current one is not available
+  if (availableStats.indexOf(state.currentStat) === -1) {
+    state.currentStat = availableStats[0] || 'points';
+  }
+
+  // Set the active button
+  setActiveStatButton(state.currentStat);
+
+  // Build chart data for the selected stat
+  var chartData = buildChartData(games, state.currentStat);
+
+  if (state.chartInstance) {
+    updateChartData(state.chartInstance, chartData.labels, chartData.datasets);
+    state.chartInstance.options.scales.y.title.text = formatLabel(state.currentStat);
+    state.chartInstance.update();
+  } else {
+    state.chartInstance = createTimeSeriesChart(
+      'trends-chart',
+      chartData.labels,
+      chartData.datasets,
+      {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { position: 'top' },
+          tooltip: { mode: 'index', intersect: false },
+        },
+        scales: {
+          x: { title: { display: true, text: 'Game Date' } },
+          y: {
+            title: { display: true, text: formatLabel(state.currentStat) },
+            beginAtZero: true,
+          },
+        },
+      },
+    );
+  }
+}
+
+/**
+ * Build labels and datasets from games data for the given stat key.
+ * Skips games where the stat value is null or undefined (does not
+ * substitute zero for missing data).
+ */
+function buildChartData(games, statKey) {
+  var labels = [];
+  var dataPoints = [];
+
+  for (var i = 0; i < games.length; i++) {
+    var game = games[i];
+    var value = game[statKey];
+    var label = game.game_date || game.date || 'Game ' + (i + 1);
+
+    if (value !== null && value !== undefined) {
+      labels.push(label);
+      dataPoints.push(value);
+    }
+  }
+
+  return {
+    labels: labels,
+    datasets: [
+      {
+        label: formatLabel(statKey),
+        data: dataPoints,
+        borderColor: '#2c5aa0',
+        backgroundColor: 'rgba(44, 90, 160, 0.1)',
+        borderWidth: 2,
+        tension: 0.3,
+        fill: true,
+        pointRadius: 4,
+        pointHoverRadius: 6,
+      },
+    ],
+  };
+}
+
+/**
+ * Update the chart to display a different stat.
+ */
+function updateChartStat(statKey) {
+  state.currentStat = statKey;
+  setActiveStatButton(statKey);
+
+  if (!state.chartInstance || state.currentGames.length === 0) return;
+
+  var chartData = buildChartData(state.currentGames, statKey);
+  updateChartData(state.chartInstance, chartData.labels, chartData.datasets);
+  state.chartInstance.options.scales.y.title.text = formatLabel(statKey);
+  state.chartInstance.update();
+}
+
+/**
+ * Populate stat selector buttons based on available stats for the data type.
+ */
+function populateStatButtons(stats) {
+  if (!elements.statSelector) return;
+
+  elements.statSelector.innerHTML = '';
+  for (var i = 0; i < stats.length; i++) {
+    var btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'stat-btn';
+    btn.setAttribute('data-stat', stats[i]);
+    btn.textContent = formatLabel(stats[i]);
+    btn.addEventListener('click', handleStatButtonClick);
+    elements.statSelector.appendChild(btn);
+  }
+  elements.statSelector.style.display = 'flex';
+}
+
+/**
+ * Handle click on a stat selector button.
+ */
+function handleStatButtonClick(event) {
+  var statKey = event.target.getAttribute('data-stat');
+  if (statKey) {
+    updateChartStat(statKey);
+  }
+}
+
+/**
+ * Set the active class on the correct stat button.
+ */
+function setActiveStatButton(statKey) {
+  if (!elements.statSelector) return;
+  var buttons = elements.statSelector.querySelectorAll('.stat-btn');
+  for (var i = 0; i < buttons.length; i++) {
+    buttons[i].classList.toggle('active', buttons[i].getAttribute('data-stat') === statKey);
+  }
+}
+
+/**
+ * Hide the chart section and destroy the chart instance to prevent
+ * stale data from showing when switching selections.
+ */
+function hideChart() {
+  if (elements.chartSection) {
+    elements.chartSection.style.display = 'none';
+  }
+  if (elements.noDataMessage) {
+    elements.noDataMessage.style.display = 'none';
+  }
+  if (state.chartInstance) {
+    state.chartInstance.destroy();
+    state.chartInstance = null;
+  }
+  state.currentGames = [];
+}
+
+// ---------------------------------------------------------------------------
 // Chart utilities
 // ---------------------------------------------------------------------------
 
@@ -499,6 +706,9 @@ if (document.readyState === 'loading') {
 if (typeof module !== 'undefined' && module.exports) {
   module.exports = {
     CONFIG,
+    PLAYER_STATS,
+    TEAM_STATS,
+    MAX_GAMES_DISPLAYED,
     escapeHtml,
     formatLabel,
     formatArtifact,
@@ -510,5 +720,9 @@ if (typeof module !== 'undefined' && module.exports) {
     createTimeSeriesChart,
     updateChartData,
     initChartSection,
+    buildChartData,
+    updateChartStat,
+    renderTrendsChart,
+    hideChart,
   };
 }

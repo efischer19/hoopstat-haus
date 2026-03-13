@@ -70,6 +70,21 @@
 
       <div class="chart-container" id="chart-section" style="display: none;">
         <h2>Performance Trends</h2>
+        <div id="stat-selector" class="stat-selector" style="display: none;" role="toolbar" aria-label="Select statistic to display">
+          <button type="button" class="stat-btn active" data-stat="points">Points</button>
+          <button type="button" class="stat-btn" data-stat="rebounds">Rebounds</button>
+          <button type="button" class="stat-btn" data-stat="assists">Assists</button>
+          <button type="button" class="stat-btn" data-stat="steals">Steals</button>
+          <button type="button" class="stat-btn" data-stat="blocks">Blocks</button>
+          <button type="button" class="stat-btn" data-stat="minutes">Minutes</button>
+        </div>
+        <div id="chart-loading" class="loading-indicator" style="display: none;">
+          <div class="spinner" aria-hidden="true"></div>
+          <p>Rendering chart...</p>
+        </div>
+        <div id="no-data-message" class="no-data-message" style="display: none;">
+          <p>No games data available for this selection.</p>
+        </div>
         <canvas id="trends-chart" aria-label="Player performance trends chart" role="img">
           <p>Chart could not be displayed. Please check your connection.</p>
         </canvas>

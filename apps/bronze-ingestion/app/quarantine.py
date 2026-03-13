@@ -7,6 +7,7 @@ and investigation while ensuring the ingestion pipeline continues.
 
 import json
 from datetime import date, datetime
+from enum import Enum
 from typing import Any
 
 from hoopstat_observability import get_logger
@@ -14,6 +15,101 @@ from hoopstat_observability import get_logger
 from .s3_manager import BronzeS3Manager
 
 logger = get_logger(__name__)
+
+
+class ErrorClassification(Enum):
+    """
+    Classification of quarantine errors by type.
+
+    Severity ordering (highest to lowest):
+    SCHEMA_CHANGE > DATA_QUALITY > ROUNDING_MISMATCH > TRANSIENT > UNKNOWN
+    """
+
+    SCHEMA_CHANGE = "schema_change"
+    DATA_QUALITY = "data_quality"
+    ROUNDING_MISMATCH = "rounding_mismatch"
+    TRANSIENT = "transient"
+    UNKNOWN = "unknown"
+
+
+# Severity ordering: higher index = higher severity
+_SEVERITY_ORDER = [
+    ErrorClassification.UNKNOWN,
+    ErrorClassification.TRANSIENT,
+    ErrorClassification.ROUNDING_MISMATCH,
+    ErrorClassification.DATA_QUALITY,
+    ErrorClassification.SCHEMA_CHANGE,
+]
+
+# Keyword-to-classification mapping for heuristic matching
+_CLASSIFICATION_KEYWORDS: dict[ErrorClassification, list[str]] = {
+    ErrorClassification.TRANSIENT: [
+        "timeout",
+        "connection",
+        "rate limit",
+        "503",
+        "502",
+        "retry",
+    ],
+    ErrorClassification.ROUNDING_MISMATCH: [
+        "rounding",
+        "sum",
+        "mismatch",
+        "tolerance",
+        "aggregate",
+    ],
+    ErrorClassification.SCHEMA_CHANGE: [
+        "schema",
+        "unexpected field",
+        "missing required",
+        "format change",
+    ],
+    ErrorClassification.DATA_QUALITY: [
+        "missing",
+        "invalid",
+        "out of range",
+        "null",
+    ],
+}
+
+
+def classify_quarantine_error(
+    validation_result: dict[str, Any],
+) -> ErrorClassification:
+    """
+    Classify quarantine error based on validation issues.
+
+    Inspects the validation issues list and returns the most severe
+    matching ErrorClassification. When multiple issue types are present,
+    the highest-severity classification wins.
+
+    Args:
+        validation_result: Validation result dict containing an "issues" list.
+
+    Returns:
+        The most severe ErrorClassification matching the issues.
+    """
+    issues = validation_result.get("issues", [])
+
+    if not issues:
+        return ErrorClassification.UNKNOWN
+
+    matched_classifications: set[ErrorClassification] = set()
+
+    for issue in issues:
+        issue_lower = issue.lower()
+        for classification, keywords in _CLASSIFICATION_KEYWORDS.items():
+            if any(keyword in issue_lower for keyword in keywords):
+                matched_classifications.add(classification)
+
+    if not matched_classifications:
+        return ErrorClassification.UNKNOWN
+
+    # Return the most severe classification
+    return max(
+        matched_classifications,
+        key=lambda c: _SEVERITY_ORDER.index(c),
+    )
 
 
 class DataQuarantine:
@@ -56,6 +152,9 @@ class DataQuarantine:
             Quarantine key/path where data was stored
         """
         try:
+            # Classify the error
+            classification = classify_quarantine_error(validation_result)
+
             # Create quarantine record
             quarantine_record = {
                 "data": data,
@@ -67,6 +166,7 @@ class DataQuarantine:
                     "context": context or {},
                     "issues_count": len(validation_result.get("issues", [])),
                     "validation_valid": validation_result.get("valid", False),
+                    "error_classification": classification.value,
                 },
             }
 
@@ -88,6 +188,7 @@ class DataQuarantine:
                     "target_date": target_date.isoformat(),
                     "issues_count": len(validation_result.get("issues", [])),
                     "validation_issues": validation_result.get("issues", []),
+                    "error_classification": classification.value,
                 },
             )
 

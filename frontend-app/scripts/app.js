@@ -86,6 +86,7 @@ function initializeApp() {
   };
 
   attachEventListeners();
+  initChartSection();
   loadIndex();
 
   console.log('Hoopstat Haus app initialized');
@@ -415,6 +416,76 @@ function getErrorMessage(error) {
 }
 
 // ---------------------------------------------------------------------------
+// Chart utilities
+// ---------------------------------------------------------------------------
+
+/**
+ * Create a time-series line chart on the given canvas element.
+ * Returns the Chart instance, or null if the canvas or Chart.js is unavailable.
+ * Supports updating data in-place via the returned instance.
+ */
+function createTimeSeriesChart(canvasId, labels, datasets, options) {
+  var ctx = document.getElementById(canvasId);
+  if (!ctx) {
+    console.warn("Canvas element '" + canvasId + "' not found");
+    return null;
+  }
+  if (typeof Chart === 'undefined') {
+    console.warn('Chart.js library not loaded');
+    return null;
+  }
+
+  var mergedOptions = Object.assign(
+    {},
+    {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { position: 'top' },
+        tooltip: { mode: 'index', intersect: false },
+      },
+      scales: {
+        x: { title: { display: true, text: 'Game Date' } },
+        y: { title: { display: true, text: 'Value' }, beginAtZero: true },
+      },
+    },
+    options || {},
+  );
+
+  return new Chart(ctx, {
+    type: 'line',
+    data: { labels: labels, datasets: datasets },
+    options: mergedOptions,
+  });
+}
+
+/**
+ * Update an existing Chart instance with new labels and datasets
+ * without destroying and recreating it.
+ */
+function updateChartData(chart, labels, datasets) {
+  if (!chart) return;
+  chart.data.labels = labels;
+  chart.data.datasets = datasets;
+  chart.update();
+}
+
+/**
+ * Progressive enhancement: show fallback message when Chart.js
+ * is unavailable (e.g. CDN failure, network blocked).
+ */
+function initChartSection() {
+  var section = document.getElementById('chart-section');
+  if (!section) return;
+
+  if (typeof Chart === 'undefined') {
+    section.style.display = 'block';
+    section.innerHTML =
+      '<p class="chart-fallback">Charts unavailable. Data is displayed below.</p>';
+  }
+}
+
+// ---------------------------------------------------------------------------
 // Bootstrap
 // ---------------------------------------------------------------------------
 
@@ -436,5 +507,8 @@ if (typeof module !== 'undefined' && module.exports) {
     getItemId,
     getItemName,
     fetchArtifact,
+    createTimeSeriesChart,
+    updateChartData,
+    initChartSection,
   };
 }

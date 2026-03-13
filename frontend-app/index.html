@@ -13,6 +13,7 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="theme-color" content="#2c5aa0">
     
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js" defer></script>
     <script src="/scripts/app.js" defer></script>
   </head>
   <body>
@@ -65,6 +66,13 @@
       <div id="data-loading" class="loading-indicator" style="display: none;">
         <div class="spinner" aria-hidden="true"></div>
         <p>Fetching stats...</p>
+      </div>
+
+      <div class="chart-container" id="chart-section" style="display: none;">
+        <h2>Performance Trends</h2>
+        <canvas id="trends-chart" aria-label="Player performance trends chart" role="img">
+          <p>Chart could not be displayed. Please check your connection.</p>
+        </canvas>
       </div>
 
       <div id="data-container" class="data-container" style="display: none;">

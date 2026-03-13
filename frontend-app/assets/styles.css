@@ -520,3 +520,18 @@ footer {
     transition-duration: 0.01ms !important;
   }
 }
+
+/* Chart Container */
+.chart-container {
+  max-width: 800px;
+  margin: var(--spacing-xl) auto;
+  padding: var(--spacing-md);
+  position: relative;
+  height: 400px;
+}
+
+.chart-fallback {
+  text-align: center;
+  color: var(--text-secondary);
+  padding: var(--spacing-xl);
+}

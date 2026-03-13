@@ -19,7 +19,7 @@ hoopstat-data = {path = "../hoopstat-data", develop = true}
 [tool.poetry.group.dev.dependencies]
 pytest = "^8.4.1"
 ruff = "^0.12.3"
-black = "^25.1.0"
+black = "^26.3.1"
 pytest-cov = "^6.2.1"
 moto = {extras = ["s3"], version = "^5.1.0"}
 

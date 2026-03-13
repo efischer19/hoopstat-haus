@@ -1,15 +1,16 @@
 # Hoopstat Haus Frontend Application
 
-A simple, static web application that provides a text input interface for basketball analytics questions. Built with vanilla HTML, CSS, and JavaScript following the project's simplicity-first philosophy.
+A simple, static web application that provides a data browser for basketball analytics. Built with vanilla HTML, CSS, and JavaScript following the project's simplicity-first philosophy.
 
 ## Features
 
-- **Simple Text Input Interface**: Clean, accessible form for asking basketball questions
+- **Data Browser Interface**: Browse player and team statistics from the Gold data pipeline
+- **Latest Data Banner**: Displays the most recent data date and a refresh button
+- **Player/Team Selector**: Tabbed interface with dropdowns populated from the latest index
+- **Formatted Data Display**: Stats shown as cards and tables, not raw JSON
 - **Mobile-Responsive Design**: Mobile-first CSS with responsive breakpoints
-- **Rate Limiting**: Built-in client-side rate limiting for cost control
-- **Error Handling**: Comprehensive error handling for network and API issues
-- **Loading States**: Visual feedback during question processing
-- **Example Questions**: Pre-built examples to guide users
+- **Error Handling**: Comprehensive error handling for network and fetch issues
+- **Loading States**: Visual feedback during data fetches
 - **Accessibility**: WCAG 2.1 AA compliant with screen reader support
 
 ## Architecture
@@ -19,7 +20,7 @@ This frontend follows a **vanilla HTML/CSS/JavaScript approach** as documented i
 - **Static-First**: No build process required, can be hosted on any web server
 - **Progressive Enhancement**: Core functionality works without JavaScript
 - **Minimal Dependencies**: Zero external libraries or frameworks
-- **API-Ready**: Prepared for integration with backend services
+- **Gold Artifacts**: Fetches JSON artifacts directly from CloudFront (ADR-027, ADR-035)
 
 ## File Structure
 
@@ -28,9 +29,9 @@ frontend-app/
 ├── index.html              # Main application entry point
 ├── assets/
 │   ├── styles.css         # Mobile-first responsive CSS
-│   └── favicon.ico        # Basic favicon
+│   └── favicon.svg        # SVG favicon
 ├── scripts/
-│   └── app.js             # JavaScript for form handling and API integration
+│   └── app.js             # JavaScript for data browsing and artifact fetching
 └── README.md              # This file
 ```
 
@@ -60,49 +61,52 @@ The application is configured via the `CONFIG` object in `scripts/app.js`:
 
 ```javascript
 const CONFIG = {
-  API_BASE_URL: 'https://api.hoopstat.haus',
-  MAX_REQUESTS_PER_MINUTE: 10,
-  REQUEST_COOLDOWN_MS: 6000,
-  ENABLE_API_CALLS: false, // Enable when backend is ready
+  GOLD_BASE_URL: 'https://<cloudfront-domain>.cloudfront.net',
+  REQUEST_TIMEOUT_MS: 10000,
 };
 ```
 
-### API Integration
+The `GOLD_BASE_URL` points to the CloudFront distribution that serves Gold JSON artifacts. The CloudFront distribution uses `origin_path: /served` so client URLs omit the `served/` prefix.
 
-Currently, the app uses mock responses for development. To enable real API calls:
+### Artifact Contract (ADR-027)
 
-1. Set `CONFIG.ENABLE_API_CALLS = true` in `app.js`
-2. Update `CONFIG.API_BASE_URL` to point to your API endpoint
-3. Ensure the API endpoint accepts POST requests to `/api/v1/ask` with the format:
+The frontend fetches these artifacts from CloudFront:
 
-```json
-{
-  "question": "How did LeBron James perform in the 2023 playoffs?",
-  "timestamp": "2024-01-21T10:30:00.000Z"
-}
-```
+- `index/latest.json` -- entry point; contains latest date, player and team lists
+- `player_daily/{date}/{player_id}.json` -- daily stats for a specific player
+- `team_daily/{date}/{team_id}.json` -- daily stats for a specific team
+- `top_lists/{date}/{metric}.json` -- top performer lists
+
+### Fetch Utility
+
+The `fetchArtifact(path)` function handles all HTTP GET requests to CloudFront with:
+
+- Timeout via `AbortController` (configurable via `REQUEST_TIMEOUT_MS`)
+- HTTP status error handling (404s, 5xx errors)
+- Content-type validation for JSON responses
+- User-friendly error messages
 
 ## Features
 
-### Rate Limiting
+### Data Browser
 
-The app implements client-side rate limiting to prevent abuse:
-- Maximum 10 requests per minute
-- 6-second cooldown between requests
-- Visual feedback when limits are reached
+On page load, the app fetches `index/latest.json` and:
+1. Displays the latest available data date in a banner
+2. Populates player and team dropdown selectors
+3. Allows selecting a player or team to view their daily stats
 
 ### Error Handling
 
 Comprehensive error handling for:
-- Network timeouts (30-second limit)
-- HTTP errors (429, 500, 503)
+- Network timeouts (configurable limit)
+- HTTP errors (404, 5xx)
 - Connection issues
-- API failures
+- Non-JSON responses
 
 ### Accessibility
 
 - Semantic HTML structure
-- ARIA labels and descriptions
+- ARIA labels and tab roles
 - Keyboard navigation support
 - Screen reader compatibility
 - High contrast mode support
@@ -123,46 +127,11 @@ This application can be deployed to any static hosting service:
 
 - **AWS S3 + CloudFront**: Recommended for integration with existing infrastructure
 - **Netlify**: Simple drag-and-drop deployment
-- **Vercel**: Git-based automatic deployments
 - **GitHub Pages**: Free hosting for open source projects
 
-### CDN Optimization
+### CORS
 
-For production deployment:
-
-1. Minify CSS and JavaScript
-2. Enable gzip compression
-3. Set appropriate cache headers
-4. Use a CDN for global distribution
-
-### Environment Configuration
-
-Update the API endpoint based on environment:
-
-```javascript
-// Production
-const CONFIG = {
-  API_BASE_URL: 'https://api.hoopstat.haus',
-  ENABLE_API_CALLS: true,
-};
-
-// Development
-const CONFIG = {
-  API_BASE_URL: 'http://localhost:8000',
-  ENABLE_API_CALLS: false,
-};
-```
-
-## Future Enhancements
-
-When the backend API is ready, the following features can be easily added:
-
-- Real-time basketball data analysis
-- Response caching for common queries
-- User query history (without authentication)
-- Data visualization components
-- Share functionality for interesting insights
-- Advanced query suggestions
+The CloudFront distribution includes CORS response headers (ADR-035) allowing GET/HEAD/OPTIONS from any origin with a 1-hour max-age.
 
 ## Browser Support
 

@@ -82,7 +82,7 @@ function handleFormSubmit(event) {
     return;
   }
   
-  // Data fetching will be implemented in a future ticket
+  // TODO: Implement Gold JSON artifact fetching from CloudFront (ADR-027, ADR-035)
 }
 
 // Handle example question clicks

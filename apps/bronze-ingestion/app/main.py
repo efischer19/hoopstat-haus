@@ -13,6 +13,7 @@ import click
 from hoopstat_observability import get_logger
 
 from .ingestion import DateScopedIngestion
+from .quarantine_cli import quarantine
 
 logger = get_logger(__name__)
 
@@ -71,6 +72,9 @@ def status() -> None:
     except Exception as e:
         logger.error(f"Status check failed: {e}")
         sys.exit(1)
+
+
+cli.add_command(quarantine)
 
 
 def main() -> None:

@@ -1,6 +1,6 @@
 ---
 title: "ADR-037: Quarantine Error Classification and Replay Strategy"
-status: "Proposed"
+status: "Accepted"
 date: "2026-03-13"
 tags:
   - "data-pipeline"

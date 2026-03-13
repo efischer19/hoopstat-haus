@@ -442,7 +442,7 @@ function renderTrendsChart(data) {
   // Chart.js must be available to render trends
   if (typeof Chart === 'undefined') return;
 
-  var games = data.games || [];
+  let games = data.games || [];
 
   // Limit to the most recent games (last N games)
   if (games.length > MAX_GAMES_DISPLAYED) {
@@ -469,7 +469,7 @@ function renderTrendsChart(data) {
   elements.chartLoading.style.display = 'none';
 
   // Determine available stats based on active tab
-  var availableStats = state.activeTab === 'teams' ? TEAM_STATS : PLAYER_STATS;
+  const availableStats = state.activeTab === 'teams' ? TEAM_STATS : PLAYER_STATS;
   populateStatButtons(availableStats);
 
   // Reset to default stat if current one is not available
@@ -481,7 +481,7 @@ function renderTrendsChart(data) {
   setActiveStatButton(state.currentStat);
 
   // Build chart data for the selected stat
-  var chartData = buildChartData(games, state.currentStat);
+  const chartData = buildChartData(games, state.currentStat);
 
   if (state.chartInstance) {
     updateChartData(state.chartInstance, chartData.labels, chartData.datasets);
@@ -517,13 +517,13 @@ function renderTrendsChart(data) {
  * substitute zero for missing data).
  */
 function buildChartData(games, statKey) {
-  var labels = [];
-  var dataPoints = [];
+  const labels = [];
+  const dataPoints = [];
 
-  for (var i = 0; i < games.length; i++) {
-    var game = games[i];
-    var value = game[statKey];
-    var label = game.game_date || game.date || 'Game ' + (i + 1);
+  for (let i = 0; i < games.length; i++) {
+    const game = games[i];
+    const value = game[statKey];
+    const label = game.game_date || game.date || 'Game ' + (i + 1);
 
     if (value !== null && value !== undefined) {
       labels.push(label);
@@ -558,7 +558,7 @@ function updateChartStat(statKey) {
 
   if (!state.chartInstance || state.currentGames.length === 0) return;
 
-  var chartData = buildChartData(state.currentGames, statKey);
+  const chartData = buildChartData(state.currentGames, statKey);
   updateChartData(state.chartInstance, chartData.labels, chartData.datasets);
   state.chartInstance.options.scales.y.title.text = formatLabel(statKey);
   state.chartInstance.update();
@@ -571,8 +571,8 @@ function populateStatButtons(stats) {
   if (!elements.statSelector) return;
 
   elements.statSelector.innerHTML = '';
-  for (var i = 0; i < stats.length; i++) {
-    var btn = document.createElement('button');
+  for (let i = 0; i < stats.length; i++) {
+    const btn = document.createElement('button');
     btn.type = 'button';
     btn.className = 'stat-btn';
     btn.setAttribute('data-stat', stats[i]);
@@ -587,7 +587,7 @@ function populateStatButtons(stats) {
  * Handle click on a stat selector button.
  */
 function handleStatButtonClick(event) {
-  var statKey = event.target.getAttribute('data-stat');
+  const statKey = event.target.getAttribute('data-stat');
   if (statKey) {
     updateChartStat(statKey);
   }
@@ -598,8 +598,8 @@ function handleStatButtonClick(event) {
  */
 function setActiveStatButton(statKey) {
   if (!elements.statSelector) return;
-  var buttons = elements.statSelector.querySelectorAll('.stat-btn');
-  for (var i = 0; i < buttons.length; i++) {
+  const buttons = elements.statSelector.querySelectorAll('.stat-btn');
+  for (let i = 0; i < buttons.length; i++) {
     buttons[i].classList.toggle('active', buttons[i].getAttribute('data-stat') === statKey);
   }
 }

@@ -1,6 +1,6 @@
 ---
 title: "ADR-036: Lightweight Charting Library -- Chart.js via CDN"
-status: "Proposed"
+status: "Accepted"
 date: "2026-03-13"
 tags:
   - "frontend"

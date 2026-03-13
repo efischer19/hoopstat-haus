@@ -133,13 +133,18 @@ jobs:
             app_matrix_items=""
             found_deployable=false
             for app in $changed_app_files; do
-              if [ -f "apps/$app/Dockerfile" ]; then
+              # Only include apps whose Dockerfile uses the Lambda base image.
+              # Non-Lambda apps (e.g. mcp-local-proxy, bronze-ingestion) have
+              # Dockerfiles for other purposes and are not deployed via this workflow.
+              if [ -f "apps/$app/Dockerfile" ] && grep -q "public.ecr.aws/lambda" "apps/$app/Dockerfile"; then
                 if [ -n "$app_matrix_items" ]; then
                   app_matrix_items="$app_matrix_items,"
                 fi
                 app_matrix_items="$app_matrix_items{\"app\":\"$app\"}"
                 found_deployable=true
-                echo "📦 Found deployable app: $app"
+                echo "📦 Found Lambda-deployable app: $app"
+              else
+                echo "⏭️  Skipping non-Lambda app: $app"
               fi
             done
 

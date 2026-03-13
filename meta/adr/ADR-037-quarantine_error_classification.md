@@ -82,7 +82,7 @@ This ordering reflects operational priority -- schema changes require code fixes
 
 * **Negative:**
   - Keyword-based matching requires ongoing maintenance as new validation messages are added.
-  - The "missing" keyword appears in both SCHEMA_CHANGE ("missing required") and DATA_QUALITY ("missing") contexts; multi-word keywords are checked first to mitigate this, and the severity ordering ensures SCHEMA_CHANGE wins when both match.
+  - The "missing" keyword appears in both SCHEMA_CHANGE ("missing required") and DATA_QUALITY ("missing") contexts; when both match on the same issue string, the severity ordering ensures SCHEMA_CHANGE wins.
 
 * **Future Implications:**
   - A CLI replay command (via ADR-022 Click CLI) should accept `--classification` filters to selectively replay quarantined records.

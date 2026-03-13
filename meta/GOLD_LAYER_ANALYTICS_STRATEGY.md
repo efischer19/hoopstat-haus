@@ -153,39 +153,29 @@ Define the specific analytics, aggregations, and data products that our Gold lay
 
 **Partitioning:** `season=YYYY-YY/league_analytics/date=YYYY-MM-DD/team_rankings.json`
 
-## Architecture Decision: S3 Tables + AWS MCP Server
+## Architecture Decision: Parquet + JSON Artifacts
 
-**Strategic Choice: Industry Standard Analytics with AWS-Native MCP Integration**
+**Strategic Choice: Simple, Static-First Architecture (per ADR-028)**
 
-After cost analysis and migration evaluation (documented in ADR-026), we chose S3 Tables for optimal learning and performance:
-
-**Cost Analysis:**
-- **S3 Tables**: ~$2.28/year (manageable within $20-50 hobby budget)
-- **Regular S3**: ~$1.68/year  
-- **Cost difference**: Only $0.60/year - negligible for learning benefits
+After iterating through multiple Gold layer options (S3 Tables/Iceberg, Glue workflows), we settled on a simpler approach per ADR-028:
 
 **Architecture Flow:**
 ```
-Bronze S3 (JSON) → Silver Lambda → Gold S3 Tables (Iceberg) → AWS MCP Server → Direct Client Access
+Silver S3 (Parquet) → Gold Lambda → Gold S3 Parquet (internal) + JSON artifacts (served/)
 ```
 
 **Key Benefits:**
-1. **Industry standard learning**: Apache Iceberg experience valuable for data engineering
-2. **Zero infrastructure maintenance**: No custom MCP server deployment or scaling
-3. **AWS-native performance**: 3x faster queries via automatic compaction and optimization
-4. **Future flexibility**: Easy migration to custom MCP server reading Iceberg if needed
-5. **Professional development**: Learn analytics table formats used in production systems
+1. **Simplicity**: No catalog, crawler, or table-format complexity pre-v1
+2. **Cost control**: Direct S3 GET of small JSONs keeps serving costs trivial
+3. **Future-ready**: Can add Iceberg or SQL endpoints later without breaking the public JSON contract
+4. **Fast delivery**: Ship analytics quickly without heavy infrastructure
 
 **Implementation Strategy:**
-- Lambda writes: Silver → Gold analytics using Apache Iceberg format via S3 Tables
-- AWS MCP Server: Handle natural language queries, schema discovery, direct S3 Tables access  
-- S3 Tables optimization: Query-friendly partitioning with automatic performance tuning
-- Client setup: Point MCP clients to our S3 Tables bucket for basketball analytics
+- Lambda writes: Silver → Gold analytics as internal Parquet + public JSON artifacts
+- Public serving: Small, versioned JSON files (≤100KB) under `served/` prefix via CDN
+- Schema evolution: Versioned JSON schemas; Parquet schemas evolve with manifests
 
-**Data Format Transition:**
-- **Breaking change from ADR-020**: Move from JSON to Apache Iceberg (Parquet + metadata)
-- **Justification**: Industry standard for analytics, better query performance, AWS-native MCP integration
-- **Migration impact**: Minimal changes to existing Gold data models
+**See:** [ADR-028](adr/ADR-028-gold_layer_final.md) for full rationale
 
 ## Analytics Prioritization
 

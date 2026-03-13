@@ -15,8 +15,10 @@ from app.transforms import (
 # -- Fixtures -----------------------------------------------------------------
 
 
-def _make_quarantine_record(data, classification="unknown", issues=None):
+def _make_quarantine_record(data, classification=None, issues=None):
     """Create a realistic quarantine record for testing."""
+    if classification is None:
+        classification = ErrorClassification.UNKNOWN.value
     return {
         "data": data,
         "validation_result": {

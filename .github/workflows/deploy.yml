@@ -143,7 +143,7 @@ jobs:
                 app_matrix_items="$app_matrix_items{\"app\":\"$app\"}"
                 found_deployable=true
                 echo "📦 Found Lambda-deployable app: $app"
-              else
+              elif [ -f "apps/$app/Dockerfile" ]; then
                 echo "⏭️  Skipping non-Lambda app: $app"
               fi
             done

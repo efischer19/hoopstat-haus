@@ -170,13 +170,13 @@ class ReplayOrchestrator:
             )
         classification_value = metadata.get("error_classification", "unknown")
 
-        # Step 2: Determine classification
+        # Step 3: Determine classification
         try:
             classification = ErrorClassification(classification_value)
         except ValueError:
             classification = ErrorClassification.UNKNOWN
 
-        # Step 3: Select transform
+        # Step 4: Select transform
         if transform_override is not None:
             transform = transform_override
         else:
@@ -193,7 +193,7 @@ class ReplayOrchestrator:
             },
         )
 
-        # Step 4: Apply transform
+        # Step 5: Apply transform
         try:
             transform_result = transform.transform(record)
         except TransformError as e:
@@ -213,7 +213,7 @@ class ReplayOrchestrator:
             "transform_type", transform_name
         )
 
-        # Step 5: Write to Bronze path (unless dry run)
+        # Step 6: Write to Bronze path (unless dry run)
         if dry_run:
             logger.info(
                 "Dry run -- skipping Bronze write and Silver processing",
@@ -249,11 +249,11 @@ class ReplayOrchestrator:
                 transform_applied=applied_transform_type,
             )
 
-        # Step 6: Invoke Silver processing
+        # Step 7: Invoke Silver processing
         target_date_str = metadata.get("target_date", "")
         silver_success = self._invoke_silver_processing(target_date_str)
 
-        # Step 7: Update quarantine record status
+        # Step 8: Update quarantine record status
         if silver_success:
             self._update_quarantine_resolved(
                 s3_key, record, applied_transform_type, transform_metadata

@@ -202,7 +202,7 @@ jobs:
           echo "| **Timestamp** | \`$(date -u +%Y-%m-%dT%H:%M:%SZ)\` |" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
 
-          if [ "$EXIT_CODE" = "0" ] || [ -z "$EXIT_CODE" ] && [ "${{ steps.replay.outcome }}" = "success" ]; then
+          if [ "$EXIT_CODE" = "0" ] || ([ -z "$EXIT_CODE" ] && [ "${{ steps.replay.outcome }}" = "success" ]); then
             echo "### ✅ Result: Success" >> $GITHUB_STEP_SUMMARY
           else
             echo "### ❌ Result: Failed" >> $GITHUB_STEP_SUMMARY

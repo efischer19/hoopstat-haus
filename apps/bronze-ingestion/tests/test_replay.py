@@ -1117,12 +1117,22 @@ class TestAttemptsAuditTrail:
 
     def test_batch_skipped_tracking(self):
         """Batch replay correctly tracks skipped items."""
-        record1 = _make_quarantine_record(game_id="001", status="resolved")
-        record2 = _make_quarantine_record(game_id="002")
+        resolved_record = _make_quarantine_record(game_id="001", status="resolved")
+        quarantined_record = _make_quarantine_record(game_id="002")
 
         self.s3_mgr.s3_client.get_object.side_effect = [
-            {"Body": Mock(read=Mock(return_value=json.dumps(record1).encode("utf-8")))},
-            {"Body": Mock(read=Mock(return_value=json.dumps(record2).encode("utf-8")))},
+            {
+                "Body": Mock(
+                    read=Mock(return_value=json.dumps(resolved_record).encode("utf-8"))
+                )
+            },
+            {
+                "Body": Mock(
+                    read=Mock(
+                        return_value=json.dumps(quarantined_record).encode("utf-8")
+                    )
+                )
+            },
         ]
 
         items = [{"key": "key1.json"}, {"key": "key2.json"}]

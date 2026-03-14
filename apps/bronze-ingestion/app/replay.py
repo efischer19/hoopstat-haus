@@ -383,6 +383,14 @@ class ReplayOrchestrator:
 
         Returns a ReplayResult to skip the record, or None if replay should proceed.
         """
+        if current_status not in VALID_STATUSES:
+            logger.warning(
+                f"Unknown status '{current_status}' on record {s3_key} "
+                "-- treating as 'quarantined'",
+                extra={"s3_key": s3_key, "status": current_status},
+            )
+            return None
+
         if current_status == "replaying":
             msg = (
                 f"Record {s3_key} is already in 'replaying' status "

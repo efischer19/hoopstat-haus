@@ -449,6 +449,8 @@ def _format_replay_result(result: ReplayResult) -> str:
     line = f"  [{status}] {result.s3_key}"
     if result.transform_applied:
         line += f"  (transform: {result.transform_applied})"
+    # Skipped results carry a reason in error, but the status line is sufficient;
+    # only show the separate Error line for actual failures.
     if result.error and not result.skipped:
         line += f"\n         Error: {result.error}"
     return line

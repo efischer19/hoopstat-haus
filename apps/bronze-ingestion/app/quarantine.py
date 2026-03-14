@@ -167,7 +167,9 @@ class DataQuarantine:
                     "issues_count": len(validation_result.get("issues", [])),
                     "validation_valid": validation_result.get("valid", False),
                     "error_classification": classification.value,
+                    "status": "quarantined",
                 },
+                "attempts": [],
             }
 
             # Generate quarantine key

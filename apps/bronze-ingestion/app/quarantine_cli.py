@@ -540,7 +540,6 @@ def quarantine_replay(
             "dry_run": dry_run,
             "force": force,
             "transform": transform_name,
-            "force": force,
         },
     )
 

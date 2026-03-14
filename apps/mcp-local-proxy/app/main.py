@@ -1,20 +1,31 @@
-"""CLI entry point for the Hoopstat Haus MCP local proxy adapter.
+"""Entry point for the Hoopstat Haus MCP local proxy adapter.
 
-Starts an MCP server using stdio transport, enabling AI agents to
-query NBA statistics data served from CloudFront.
+Defaults to CLI mode for human-readable output.  Pass ``--mcp`` to
+start the MCP JSON-RPC server over stdio for AI clients.
 
 Usage:
-    hoopstat-mcp          # via installed script
-    uvx hoopstat-mcp      # via uvx
-    python -m app.main    # direct invocation
+    hoopstat-mcp                      # interactive CLI
+    hoopstat-mcp get-index            # fetch the latest data index
+    hoopstat-mcp get-artifact URI     # fetch a specific artifact
+    hoopstat-mcp --mcp                # start MCP stdio server
+    uvx hoopstat-mcp --mcp            # via uvx
+    python -m app.main --mcp          # direct invocation
 """
 
-from app.server import mcp
+import sys
 
 
 def main():
-    """Run the MCP server with stdio transport."""
-    mcp.run(transport="stdio")
+    """Dispatch between MCP server mode and CLI mode."""
+    if "--mcp" in sys.argv:
+        sys.argv.remove("--mcp")
+        from app.server import mcp
+
+        mcp.run(transport="stdio")
+    else:
+        from app.cli import cli
+
+        cli()
 
 
 if __name__ == "__main__":

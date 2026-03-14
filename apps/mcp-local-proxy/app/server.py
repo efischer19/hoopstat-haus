@@ -1,20 +1,10 @@
 """MCP server exposing Hoopstat Haus NBA statistics as tools."""
 
-import os
-
 from mcp.server.fastmcp import FastMCP
 
-from app.http_client import ArtifactFetchError, HoopstatClient
-
-DEFAULT_BASE_URL = "https://data.hoopstat.haus"
+from app.http_client import ArtifactFetchError, get_client
 
 mcp = FastMCP("hoopstat-haus")
-
-
-def _get_client() -> HoopstatClient:
-    """Create an HTTP client using the configured base URL."""
-    base_url = os.environ.get("HOOPSTAT_BASE_URL", DEFAULT_BASE_URL)
-    return HoopstatClient(base_url)
 
 
 @mcp.tool()
@@ -25,7 +15,7 @@ async def get_index() -> str:
     datasets including player daily stats, team daily stats, and top
     performer lists along with the most recent data date.
     """
-    client = _get_client()
+    client = get_client()
     try:
         return await client.fetch_index()
     except ArtifactFetchError as exc:
@@ -47,7 +37,7 @@ async def get_artifact(resource_uri: str) -> str:
         resource_uri: Path to the artifact (e.g. "player_daily/2024-11-15/2544").
             The .json extension is added automatically if not present.
     """
-    client = _get_client()
+    client = get_client()
     try:
         return await client.fetch_artifact(resource_uri)
     except ArtifactFetchError as exc:

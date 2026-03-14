@@ -1,7 +1,9 @@
 # Hoopstat MCP Local Proxy
 
 A lightweight MCP (Model Context Protocol) proxy adapter that runs locally and
-provides AI agents with access to Hoopstat Haus NBA statistics data.
+provides AI agents with access to Hoopstat Haus NBA statistics data. It also
+doubles as a human-readable command-line tool for querying the same data
+directly from your terminal.
 
 ## Overview
 
@@ -30,8 +32,34 @@ export HOOPSTAT_BASE_URL="https://data.hoopstat.haus"
 
 ## Usage
 
-The adapter communicates via stdio and is designed to be invoked by MCP-capable
-AI agents (e.g., Claude Desktop, Cursor, VS Code).
+### CLI Mode (default)
+
+Run any command directly for human-readable, pretty-printed JSON output:
+
+```bash
+# Show available commands
+hoopstat-mcp --help
+
+# Fetch the latest data index
+hoopstat-mcp get-index
+
+# Fetch a specific player's daily stats
+hoopstat-mcp get-artifact player_daily/2024-11-15/2544
+
+# Fetch a team's daily stats
+hoopstat-mcp get-artifact team_daily/2024-11-15/1610612747
+
+# Fetch a top-scorers leaderboard
+hoopstat-mcp get-artifact top_lists/2024-11-15/points
+```
+
+### MCP Server Mode
+
+Pass the `--mcp` flag to start the JSON-RPC server over stdio for AI clients:
+
+```bash
+hoopstat-mcp --mcp
+```
 
 ### Claude Desktop Configuration
 
@@ -42,7 +70,7 @@ Add to your Claude Desktop MCP config:
   "mcpServers": {
     "hoopstat": {
       "command": "uvx",
-      "args": ["hoopstat-mcp"]
+      "args": ["hoopstat-mcp", "--mcp"]
     }
   }
 }
@@ -112,4 +140,16 @@ poetry install
 poetry run pytest
 poetry run ruff format .
 poetry run ruff check .
+
+# Run the CLI locally
+poetry run hoopstat-mcp get-index
+
+# Run the MCP server locally
+poetry run hoopstat-mcp --mcp
+
+# Use MCP inspector
+poetry run mcp dev app/server.py
+
+# Override data endpoint
+HOOPSTAT_BASE_URL="http://localhost:8000" poetry run hoopstat-mcp get-index
 ```

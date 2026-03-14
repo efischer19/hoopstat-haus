@@ -11,12 +11,14 @@ Install the package from PyPI and run the CLI command:
 
 ```bash
 pip install hoopstat-mcp-proxy
-hoopstat-mcp
+hoopstat-mcp --mcp
 ```
 
 The PyPI package is called `hoopstat-mcp-proxy`; installing it provides the
-`hoopstat-mcp` command. The server communicates over stdio and is ready for
-any MCP-capable AI client.
+`hoopstat-mcp` command. When invoked with the `--mcp` flag, the server
+communicates over stdio and is ready for any MCP-capable AI client. Without
+the flag, `hoopstat-mcp` starts an interactive CLI for querying data directly
+from your terminal.
 
 ---
 
@@ -33,7 +35,8 @@ Add the following to your Claude Desktop MCP configuration file:
 {
   "mcpServers": {
     "hoopstat": {
-      "command": "hoopstat-mcp"
+      "command": "hoopstat-mcp",
+      "args": ["--mcp"]
     }
   }
 }
@@ -48,7 +51,8 @@ Add the following to your Cursor MCP configuration file at
 {
   "mcpServers": {
     "hoopstat": {
-      "command": "hoopstat-mcp"
+      "command": "hoopstat-mcp",
+      "args": ["--mcp"]
     }
   }
 }
@@ -64,7 +68,8 @@ Add the following to your VS Code `settings.json` or workspace
   "mcp": {
     "servers": {
       "hoopstat": {
-        "command": "hoopstat-mcp"
+        "command": "hoopstat-mcp",
+        "args": ["--mcp"]
       }
     }
   }
@@ -76,7 +81,7 @@ Add the following to your VS Code `settings.json` or workspace
 Any MCP client that supports stdio transport can use the server. The command is:
 
 ```
-hoopstat-mcp
+hoopstat-mcp --mcp
 ```
 
 No environment variables or authentication tokens are needed.
@@ -104,11 +109,18 @@ To run the server locally for development and testing:
 ```bash
 cd apps/mcp-local-proxy
 poetry install
-poetry run hoopstat-mcp
+poetry run hoopstat-mcp --mcp
 ```
 
 The server starts on stdio transport. You can pipe JSON-RPC messages to it
 or use an MCP inspector tool to interact with it.
+
+You can also use the CLI to query data directly:
+
+```bash
+poetry run hoopstat-mcp get-index
+poetry run hoopstat-mcp get-artifact player_daily/2024-11-15/2544
+```
 
 ### Using the MCP Inspector
 
@@ -134,7 +146,7 @@ Set the `HOOPSTAT_BASE_URL` environment variable to point the proxy at a
 different data source (e.g. a local test server):
 
 ```bash
-HOOPSTAT_BASE_URL="http://localhost:8000" poetry run hoopstat-mcp
+HOOPSTAT_BASE_URL="http://localhost:8000" poetry run hoopstat-mcp --mcp
 ```
 
 ---

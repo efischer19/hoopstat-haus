@@ -4,6 +4,13 @@ Quarantine replay orchestration module.
 Provides the core replay logic for re-processing quarantined data through
 the Bronze-to-Silver pipeline. Handles transform selection, Bronze path
 writing, Silver processing invocation, and quarantine status updates.
+
+State machine for quarantine records:
+    quarantined -> replaying (replay initiated)
+    replaying   -> resolved  (Silver processing succeeded)
+    replaying   -> failed    (Silver processing failed)
+    failed      -> replaying (retry initiated)
+    resolved    -> replaying (only with force=True; re-processing after logic changes)
 """
 
 import json
@@ -41,6 +48,9 @@ _DATA_TYPE_TO_ENTITY: dict[str, str] = {
     "api_response": "box",
 }
 
+# Valid quarantine record statuses
+VALID_STATUSES = {"quarantined", "replaying", "resolved", "failed"}
+
 
 @dataclass
 class ReplayResult:
@@ -51,6 +61,7 @@ class ReplayResult:
     error: str | None = None
     transform_applied: str | None = None
     dry_run: bool = False
+    skipped: bool = False
 
 
 @dataclass
@@ -60,6 +71,7 @@ class BatchReplayResult:
     total: int = 0
     succeeded: int = 0
     failed: int = 0
+    skipped: int = 0
     results: list[ReplayResult] = field(default_factory=list)
 
 
@@ -124,20 +136,20 @@ class ReplayOrchestrator:
 
         Steps:
         1. Fetch the quarantine record from S3
-        2. Check if already resolved (skip unless force)
+        2. Check status and enforce state transitions
         3. Determine error classification
         4. Select transform (default or override)
         5. Apply transform to original payload
         6. Write transformed payload to Bronze path
         7. Invoke Silver processing for the date
-        8. Update quarantine record status
+        8. Update quarantine record status with attempt entry
         9. Return result
 
         Args:
             s3_key: S3 key of the quarantine record.
             transform_override: Optional transform to use instead of default.
             dry_run: If True, validate without writing.
-            force: If True, replay even if already resolved.
+            force: If True, allow replaying records in 'resolved' status.
 
         Returns:
             ReplayResult with success/failure details.
@@ -156,18 +168,21 @@ class ReplayOrchestrator:
 
         metadata = record.get("metadata", {})
 
-        # Step 2: Check if already resolved
-        status = metadata.get("status", "")
-        if status == "resolved" and not force:
-            logger.info(
-                "Skipping already-resolved record (use --force to replay)",
-                extra={"s3_key": s3_key, "status": status},
-            )
-            return ReplayResult(
-                s3_key=s3_key,
-                success=True,
-                error="Skipped: already resolved (use --force to replay)",
-            )
+        # Backward compat: treat missing status as "quarantined"
+        current_status = metadata.get("status", "quarantined")
+
+        # Initialize attempts list if missing (backward compat)
+        if "attempts" not in record:
+            record["attempts"] = []
+
+        # Step 2: Check status and enforce state transitions
+        skip_result = self._check_status_transition(s3_key, current_status, force)
+        if skip_result is not None:
+            return skip_result
+
+        # Transition to "replaying"
+        self._set_status(s3_key, record, "replaying")
+
         classification_value = metadata.get("error_classification", "unknown")
 
         # Step 3: Determine classification
@@ -223,6 +238,8 @@ class ReplayOrchestrator:
                     "transform_metadata": transform_metadata,
                 },
             )
+            # Revert status since dry run doesn't complete the replay
+            self._set_status(s3_key, record, current_status)
             return ReplayResult(
                 s3_key=s3_key,
                 success=True,
@@ -305,7 +322,7 @@ class ReplayOrchestrator:
             items: List of quarantine item dicts (must have 'key' field).
             transform_override: Optional transform override for all items.
             dry_run: If True, validate without writing.
-            force: If True, replay even if already resolved.
+            force: If True, allow replaying records in 'resolved' status.
 
         Returns:
             BatchReplayResult with summary counts and individual results.
@@ -326,7 +343,9 @@ class ReplayOrchestrator:
                 force=force,
             )
             batch_result.results.append(result)
-            if result.success:
+            if result.skipped:
+                batch_result.skipped += 1
+            elif result.success:
                 batch_result.succeeded += 1
             else:
                 batch_result.failed += 1
@@ -337,6 +356,7 @@ class ReplayOrchestrator:
                 "total": batch_result.total,
                 "succeeded": batch_result.succeeded,
                 "failed": batch_result.failed,
+                "skipped": batch_result.skipped,
             },
         )
 
@@ -354,6 +374,53 @@ class ReplayOrchestrator:
         except Exception as e:
             logger.error(f"Failed to fetch quarantine record {s3_key}: {e}")
             return None
+
+    def _check_status_transition(
+        self, s3_key: str, current_status: str, force: bool
+    ) -> ReplayResult | None:
+        """
+        Validate whether a replay is allowed based on the record's current status.
+
+        Returns a ReplayResult to skip the record, or None if replay should proceed.
+        """
+        if current_status not in VALID_STATUSES:
+            logger.warning(
+                f"Unknown status '{current_status}' on record {s3_key} "
+                "-- treating as 'quarantined'",
+                extra={"s3_key": s3_key, "status": current_status},
+            )
+            return None
+
+        if current_status == "replaying":
+            msg = (
+                f"Record {s3_key} is already in 'replaying' status "
+                "(possible concurrent replay) -- skipping"
+            )
+            logger.warning(msg, extra={"s3_key": s3_key, "status": current_status})
+            return ReplayResult(s3_key=s3_key, success=True, skipped=True, error=msg)
+
+        if current_status == "resolved":
+            if not force:
+                msg = (
+                    f"Record {s3_key} is already resolved -- "
+                    "skipping (use --force to re-process)"
+                )
+                logger.warning(msg, extra={"s3_key": s3_key, "status": current_status})
+                return ReplayResult(
+                    s3_key=s3_key, success=True, skipped=True, error=msg
+                )
+            logger.info(
+                "Force-replaying resolved record",
+                extra={"s3_key": s3_key},
+            )
+
+        # "quarantined" and "failed" can always proceed
+        return None
+
+    def _set_status(self, s3_key: str, record: dict[str, Any], status: str) -> None:
+        """Set the status field on a quarantine record and persist to S3."""
+        record["metadata"]["status"] = status
+        self._store_updated_record(s3_key, record)
 
     def _write_to_bronze(self, data: dict[str, Any], metadata: dict[str, Any]) -> str:
         """
@@ -525,12 +592,25 @@ class ReplayOrchestrator:
         """
         Update quarantine record status to 'resolved'.
 
-        Adds replay_timestamp and transform_applied metadata.
+        Adds replay_timestamp and transform_applied metadata,
+        and appends to the attempts audit trail.
         """
+        now = datetime.now(UTC).isoformat()
         record["metadata"]["status"] = "resolved"
-        record["metadata"]["replay_timestamp"] = datetime.now(UTC).isoformat()
+        record["metadata"]["replay_timestamp"] = now
         record["metadata"]["transform_applied"] = transform_type
         record["metadata"]["transform_metadata"] = transform_metadata
+
+        # Append to attempts audit trail
+        if "attempts" not in record:
+            record["attempts"] = []
+        record["attempts"].append(
+            {
+                "timestamp": now,
+                "transform": transform_type,
+                "result": "resolved",
+            }
+        )
 
         self._store_updated_record(s3_key, record)
 
@@ -544,13 +624,27 @@ class ReplayOrchestrator:
         """
         Update quarantine record status to 'failed'.
 
-        Adds replay_timestamp, replay_error, and increments retry_count.
+        Adds replay_timestamp, replay_error, increments retry_count,
+        and appends to the attempts audit trail.
         """
+        now = datetime.now(UTC).isoformat()
         record["metadata"]["status"] = "failed"
-        record["metadata"]["replay_timestamp"] = datetime.now(UTC).isoformat()
+        record["metadata"]["replay_timestamp"] = now
         record["metadata"]["replay_error"] = error_msg
         record["metadata"]["transform_applied"] = transform_type
         record["metadata"]["retry_count"] = record["metadata"].get("retry_count", 0) + 1
+
+        # Append to attempts audit trail
+        if "attempts" not in record:
+            record["attempts"] = []
+        record["attempts"].append(
+            {
+                "timestamp": now,
+                "transform": transform_type,
+                "result": "failed",
+                "error": error_msg,
+            }
+        )
 
         self._store_updated_record(s3_key, record)
 

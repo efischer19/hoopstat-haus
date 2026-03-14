@@ -224,6 +224,7 @@ def _format_inspect(record: dict[str, Any], full: bool) -> str:
     lines.append(f"  Error classification: {_format_classification(cls_value)}")
     lines.append(f"  Issues count:         {metadata.get('issues_count', 0)}")
     lines.append(f"  Validation valid:     {metadata.get('validation_valid', 'N/A')}")
+    lines.append(f"  Status:               {metadata.get('status', 'quarantined')}")
 
     # Context
     context = metadata.get("context", {})
@@ -245,6 +246,23 @@ def _format_inspect(record: dict[str, Any], full: bool) -> str:
             lines.append(f"  {i}. {issue}")
     else:
         lines.append("  No issues recorded.")
+
+    # Replay attempts
+    attempts = record.get("attempts", [])
+    lines.append("")
+    lines.append("Replay Attempts:")
+    lines.append("-" * 40)
+    if attempts:
+        for i, attempt in enumerate(attempts, 1):
+            lines.append(
+                f"  {i}. [{attempt.get('result', 'N/A')}] "
+                f"{attempt.get('timestamp', 'N/A')} "
+                f"(transform: {attempt.get('transform', 'N/A')})"
+            )
+            if attempt.get("error"):
+                lines.append(f"     Error: {attempt['error']}")
+    else:
+        lines.append("  No replay attempts recorded.")
 
     # Original payload
     data = record.get("data")
@@ -420,13 +438,20 @@ def _get_replay_orchestrator(
 
 def _format_replay_result(result: ReplayResult) -> str:
     """Format a single replay result for display."""
-    status = "OK" if result.success else "FAILED"
-    if result.dry_run:
+    if result.skipped:
+        status = "SKIPPED"
+    elif result.dry_run:
         status = "DRY-RUN OK"
+    elif result.success:
+        status = "OK"
+    else:
+        status = "FAILED"
     line = f"  [{status}] {result.s3_key}"
     if result.transform_applied:
         line += f"  (transform: {result.transform_applied})"
-    if result.error:
+    # Skipped results carry a reason in error, but the status line is sufficient;
+    # only show the separate Error line for actual failures.
+    if result.error and not result.skipped:
         line += f"\n         Error: {result.error}"
     return line
 
@@ -440,6 +465,7 @@ def _format_batch_summary(batch_result: BatchReplayResult) -> str:
     lines.append(f"Total:     {batch_result.total}")
     lines.append(f"Succeeded: {batch_result.succeeded}")
     lines.append(f"Failed:    {batch_result.failed}")
+    lines.append(f"Skipped:   {batch_result.skipped}")
     lines.append("")
     lines.append("Details:")
     lines.append("-" * 40)
@@ -514,6 +540,7 @@ def quarantine_replay(
             "dry_run": dry_run,
             "force": force,
             "transform": transform_name,
+            "force": force,
         },
     )
 

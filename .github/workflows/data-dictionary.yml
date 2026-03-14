@@ -11,6 +11,7 @@ on:
 
 permissions:
   contents: write
+  pull-requests: write
 
 jobs:
   generate-data-dictionary:
@@ -31,16 +32,14 @@ jobs:
     - name: Generate Data Dictionary
       run: python scripts/generate-data-dictionary.py
 
-    - name: Check for changes
-      id: changes
-      run: |
-        git diff --quiet docs-src/DATA_DICTIONARY.md && echo "changed=false" >> "$GITHUB_OUTPUT" || echo "changed=true" >> "$GITHUB_OUTPUT"
+    - name: Create Pull Request
+      uses: peter-evans/create-pull-request@v7
+      with:
+        commit-message: "docs: auto-update Data Dictionary from Pydantic models"
+        title: "docs: auto-update Data Dictionary"
+        body: |
+          Auto-generated update to the Data Dictionary from Pydantic model definitions.
 
-    - name: Commit updated Data Dictionary
-      if: steps.changes.outputs.changed == 'true'
-      run: |
-        git config user.name "github-actions[bot]"
-        git config user.email "github-actions[bot]@users.noreply.github.com"
-        git add docs-src/DATA_DICTIONARY.md
-        git commit -m "docs: auto-update Data Dictionary from Pydantic models"
-        git push
+          Triggered by changes to model schemas or the generator script.
+        branch: auto/update-data-dictionary
+        delete-branch: true

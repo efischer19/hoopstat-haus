@@ -277,3 +277,47 @@ This application follows the established patterns:
 3. Run local CI checks before submitting PRs
 4. Write tests for new functionality
 5. Update documentation as needed
+
+## Quarantine Replay Workflow
+
+The repository includes a GitHub Actions workflow for replaying quarantined data without needing to run scripts locally. The workflow is triggered via `workflow_dispatch` and supports the same options as the CLI.
+
+### Trigger via GitHub UI
+
+Navigate to **Actions > Quarantine Replay > Run workflow** and provide the required inputs.
+
+### Inputs
+
+| Input | Type | Required | Default | Description |
+|-------|------|----------|---------|-------------|
+| `mode` | choice | Yes | — | Replay mode: `single`, `by-classification`, or `by-date` |
+| `s3_key` | string | When `mode=single` | — | S3 key of a specific quarantine record |
+| `classification` | choice | When `mode=by-classification` | — | Error classification to replay |
+| `date` | string | When `mode=by-date` | — | Target date in `YYYY-MM-DD` format |
+| `dry_run` | boolean | No | `true` | Perform a dry run without writing to S3 |
+| `force` | boolean | No | `false` | Force replay of already-resolved records |
+
+### Usage Examples
+
+**Replay a single quarantined file (dry run):**
+
+Select `mode: single`, enter the S3 key (e.g., `quarantine/year=2024/month=01/day=15/box_score/game_123.json`), and leave `dry_run` checked.
+
+**Replay all transient errors (dry run):**
+
+Select `mode: by-classification`, choose `transient`, and leave `dry_run` checked.
+
+**Replay all quarantined data for a date (live):**
+
+Select `mode: by-date`, enter the date (e.g., `2024-01-15`), and uncheck `dry_run`.
+
+**Force re-replay of resolved records:**
+
+Check `force` to include records that have already been successfully replayed.
+
+### Safety
+
+- **Dry-run is enabled by default** -- operators must explicitly uncheck it to write data.
+- The workflow uses GitHub OIDC for AWS authentication (no long-lived credentials).
+- All inputs are logged at the start of each run for audit purposes.
+- Results are written to the GitHub Actions run summary for visibility.

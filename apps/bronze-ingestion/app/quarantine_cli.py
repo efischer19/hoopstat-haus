@@ -477,12 +477,19 @@ def _format_batch_summary(batch_result: BatchReplayResult) -> str:
     default=None,
     help="Override the default transform (e.g., 'identity', 'rounding_tolerance').",
 )
+@click.option(
+    "--force",
+    is_flag=True,
+    default=False,
+    help="Force replay of already-resolved records.",
+)
 def quarantine_replay(
     s3_key: str | None,
     filter_classification: str | None,
     filter_date: datetime | None,
     dry_run: bool,
     transform_name: str | None,
+    force: bool,
 ) -> None:
     """Replay quarantined data through the Bronze-to-Silver pipeline.
 
@@ -505,6 +512,7 @@ def quarantine_replay(
             "classification": filter_classification,
             "date": filter_date.date().isoformat() if filter_date else None,
             "dry_run": dry_run,
+            "force": force,
             "transform": transform_name,
         },
     )
@@ -527,6 +535,7 @@ def quarantine_replay(
                 s3_key,
                 transform_override=transform_override,
                 dry_run=dry_run,
+                force=force,
             )
             click.echo(_format_replay_result(result))
             if not result.success:
@@ -559,6 +568,7 @@ def quarantine_replay(
                 items,
                 transform_override=transform_override,
                 dry_run=dry_run,
+                force=force,
             )
             click.echo(_format_batch_summary(batch_result))
             if batch_result.failed > 0:

@@ -1,0 +1,215 @@
+---
+name: Quarantine Replay
+
+on:
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: "Replay mode"
+        required: true
+        type: choice
+        options:
+          - single
+          - by-classification
+          - by-date
+      s3_key:
+        description: "S3 key of a specific quarantine record (required when mode=single)"
+        required: false
+        type: string
+      classification:
+        description: "Error classification to replay (required when mode=by-classification)"
+        required: false
+        type: choice
+        options:
+          - transient
+          - rounding_mismatch
+          - schema_change
+          - data_quality
+          - unknown
+      date:
+        description: "Target date in YYYY-MM-DD format (required when mode=by-date)"
+        required: false
+        type: string
+      dry_run:
+        description: "Perform a dry run without writing to S3"
+        required: false
+        default: true
+        type: boolean
+      force:
+        description: "Force replay of already-resolved records"
+        required: false
+        default: false
+        type: boolean
+
+permissions:
+  id-token: write
+  contents: read
+
+env:
+  AWS_REGION: us-east-1
+
+jobs:
+  quarantine-replay:
+    name: Execute Quarantine Replay
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Log inputs
+        run: |
+          echo "🔍 Quarantine Replay -- Audit Trail"
+          echo "===================================="
+          echo "  Mode:           ${{ inputs.mode }}"
+          echo "  S3 Key:         ${{ inputs.s3_key }}"
+          echo "  Classification: ${{ inputs.classification }}"
+          echo "  Date:           ${{ inputs.date }}"
+          echo "  Dry Run:        ${{ inputs.dry_run }}"
+          echo "  Force:          ${{ inputs.force }}"
+          echo "  Triggered by:   ${{ github.actor }}"
+          echo "  Run ID:         ${{ github.run_id }}"
+          echo "  Timestamp:      $(date -u +%Y-%m-%dT%H:%M:%SZ)"
+
+      - name: Validate inputs
+        id: validate
+        run: |
+          MODE="${{ inputs.mode }}"
+
+          if [ "$MODE" = "single" ]; then
+            if [ -z "${{ inputs.s3_key }}" ]; then
+              echo "❌ Error: s3_key is required when mode is 'single'"
+              exit 1
+            fi
+            echo "✅ Mode: single -- replaying s3_key=${{ inputs.s3_key }}"
+          elif [ "$MODE" = "by-classification" ]; then
+            if [ -z "${{ inputs.classification }}" ]; then
+              echo "❌ Error: classification is required when mode is 'by-classification'"
+              exit 1
+            fi
+            echo "✅ Mode: by-classification -- replaying classification=${{ inputs.classification }}"
+          elif [ "$MODE" = "by-date" ]; then
+            if [ -z "${{ inputs.date }}" ]; then
+              echo "❌ Error: date is required when mode is 'by-date'"
+              exit 1
+            fi
+            if ! date -d "${{ inputs.date }}" >/dev/null 2>&1; then
+              echo "❌ Error: Invalid date format '${{ inputs.date }}' (expected YYYY-MM-DD)"
+              exit 1
+            fi
+            echo "✅ Mode: by-date -- replaying date=${{ inputs.date }}"
+          fi
+
+          if [ "${{ inputs.dry_run }}" = "true" ]; then
+            echo "🔒 Dry-run mode enabled -- no data will be written"
+          else
+            echo "⚠️  Live mode -- data WILL be written to S3"
+          fi
+
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::${{ secrets.AWS_ACCOUNT_ID }}:role/hoopstat-haus-github-actions
+          role-session-name: GitHubActions-QuarantineReplay-${{ github.run_id }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install Poetry
+        run: pip install poetry
+
+      - name: Install dependencies
+        working-directory: apps/bronze-ingestion
+        run: poetry install --no-interaction
+
+      - name: Run quarantine replay
+        id: replay
+        working-directory: apps/bronze-ingestion
+        run: |
+          # Build CLI command arguments
+          ARGS="quarantine replay"
+
+          MODE="${{ inputs.mode }}"
+
+          if [ "$MODE" = "single" ]; then
+            ARGS="$ARGS ${{ inputs.s3_key }}"
+          elif [ "$MODE" = "by-classification" ]; then
+            ARGS="$ARGS --classification ${{ inputs.classification }}"
+          elif [ "$MODE" = "by-date" ]; then
+            ARGS="$ARGS --date ${{ inputs.date }}"
+          fi
+
+          if [ "${{ inputs.dry_run }}" = "true" ]; then
+            ARGS="$ARGS --dry-run"
+          fi
+
+          if [ "${{ inputs.force }}" = "true" ]; then
+            ARGS="$ARGS --force"
+          fi
+
+          echo "🚀 Executing: poetry run start $ARGS"
+          echo ""
+
+          # Run the CLI and capture output
+          set +e
+          OUTPUT=$(poetry run start $ARGS 2>&1)
+          EXIT_CODE=$?
+          set -e
+
+          echo "$OUTPUT"
+
+          # Save output for summary step
+          echo "exit_code=$EXIT_CODE" >> $GITHUB_OUTPUT
+          {
+            echo "replay_output<<REPLAY_EOF"
+            echo "$OUTPUT"
+            echo "REPLAY_EOF"
+          } >> $GITHUB_OUTPUT
+
+          # Fail the step if CLI returned non-zero
+          exit $EXIT_CODE
+
+      - name: Write summary
+        if: always()
+        run: |
+          EXIT_CODE="${{ steps.replay.outputs.exit_code }}"
+          DRY_RUN="${{ inputs.dry_run }}"
+          MODE="${{ inputs.mode }}"
+
+          echo "## 📋 Quarantine Replay Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          echo "### Execution Details" >> $GITHUB_STEP_SUMMARY
+          echo "| Parameter | Value |" >> $GITHUB_STEP_SUMMARY
+          echo "|-----------|-------|" >> $GITHUB_STEP_SUMMARY
+          echo "| **Mode** | \`$MODE\` |" >> $GITHUB_STEP_SUMMARY
+
+          if [ "$MODE" = "single" ]; then
+            echo "| **S3 Key** | \`${{ inputs.s3_key }}\` |" >> $GITHUB_STEP_SUMMARY
+          elif [ "$MODE" = "by-classification" ]; then
+            echo "| **Classification** | \`${{ inputs.classification }}\` |" >> $GITHUB_STEP_SUMMARY
+          elif [ "$MODE" = "by-date" ]; then
+            echo "| **Date** | \`${{ inputs.date }}\` |" >> $GITHUB_STEP_SUMMARY
+          fi
+
+          echo "| **Dry Run** | \`$DRY_RUN\` |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Force** | \`${{ inputs.force }}\` |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Triggered By** | \`${{ github.actor }}\` |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Run ID** | \`${{ github.run_id }}\` |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Timestamp** | \`$(date -u +%Y-%m-%dT%H:%M:%SZ)\` |" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          if [ "$EXIT_CODE" = "0" ] || [ -z "$EXIT_CODE" ] && [ "${{ steps.replay.outcome }}" = "success" ]; then
+            echo "### ✅ Result: Success" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "### ❌ Result: Failed" >> $GITHUB_STEP_SUMMARY
+          fi
+
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Replay Output" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          echo "${{ steps.replay.outputs.replay_output }}" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY

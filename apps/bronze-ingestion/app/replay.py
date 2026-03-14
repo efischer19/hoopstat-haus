@@ -117,31 +117,34 @@ class ReplayOrchestrator:
         s3_key: str,
         transform_override: ReplayTransform | None = None,
         dry_run: bool = False,
+        force: bool = False,
     ) -> ReplayResult:
         """
         Replay a single quarantined file.
 
         Steps:
         1. Fetch the quarantine record from S3
-        2. Determine error classification
-        3. Select transform (default or override)
-        4. Apply transform to original payload
-        5. Write transformed payload to Bronze path
-        6. Invoke Silver processing for the date
-        7. Update quarantine record status
-        8. Return result
+        2. Check if already resolved (skip unless force)
+        3. Determine error classification
+        4. Select transform (default or override)
+        5. Apply transform to original payload
+        6. Write transformed payload to Bronze path
+        7. Invoke Silver processing for the date
+        8. Update quarantine record status
+        9. Return result
 
         Args:
             s3_key: S3 key of the quarantine record.
             transform_override: Optional transform to use instead of default.
             dry_run: If True, validate without writing.
+            force: If True, replay even if already resolved.
 
         Returns:
             ReplayResult with success/failure details.
         """
         logger.info(
             "Starting replay",
-            extra={"s3_key": s3_key, "dry_run": dry_run},
+            extra={"s3_key": s3_key, "dry_run": dry_run, "force": force},
         )
 
         # Step 1: Fetch quarantine record
@@ -152,6 +155,19 @@ class ReplayOrchestrator:
             return ReplayResult(s3_key=s3_key, success=False, error=error_msg)
 
         metadata = record.get("metadata", {})
+
+        # Step 2: Check if already resolved
+        status = metadata.get("status", "")
+        if status == "resolved" and not force:
+            logger.info(
+                "Skipping already-resolved record (use --force to replay)",
+                extra={"s3_key": s3_key, "status": status},
+            )
+            return ReplayResult(
+                s3_key=s3_key,
+                success=True,
+                error="Skipped: already resolved (use --force to replay)",
+            )
         classification_value = metadata.get("error_classification", "unknown")
 
         # Step 2: Determine classification
@@ -280,6 +296,7 @@ class ReplayOrchestrator:
         items: list[dict[str, Any]],
         transform_override: ReplayTransform | None = None,
         dry_run: bool = False,
+        force: bool = False,
     ) -> BatchReplayResult:
         """
         Replay multiple quarantined files sequentially.
@@ -288,6 +305,7 @@ class ReplayOrchestrator:
             items: List of quarantine item dicts (must have 'key' field).
             transform_override: Optional transform override for all items.
             dry_run: If True, validate without writing.
+            force: If True, replay even if already resolved.
 
         Returns:
             BatchReplayResult with summary counts and individual results.
@@ -296,7 +314,7 @@ class ReplayOrchestrator:
 
         logger.info(
             "Starting batch replay",
-            extra={"total_items": len(items), "dry_run": dry_run},
+            extra={"total_items": len(items), "dry_run": dry_run, "force": force},
         )
 
         for item in items:
@@ -305,6 +323,7 @@ class ReplayOrchestrator:
                 s3_key,
                 transform_override=transform_override,
                 dry_run=dry_run,
+                force=force,
             )
             batch_result.results.append(result)
             if result.success:

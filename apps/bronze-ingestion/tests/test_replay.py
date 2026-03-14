@@ -434,6 +434,51 @@ class TestReplaySingle:
         assert result.success is True
         assert result.transform_applied == "identity"
 
+    def test_resolved_record_skipped_by_default(self):
+        """Resolved record is skipped when force is False (default)."""
+        self._setup_record(
+            classification="transient",
+            game_id="0022400001",
+            status="resolved",
+        )
+
+        result = self.orchestrator.replay_single("quarantine/key.json")
+
+        assert result.success is True
+        assert "already resolved" in result.error
+        # Verify no S3 writes happened
+        self.s3_mgr.store_json.assert_not_called()
+
+    def test_resolved_record_replayed_with_force(self):
+        """Resolved record is replayed when force is True."""
+        self._setup_record(
+            classification="transient",
+            game_id="0022400001",
+            status="resolved",
+        )
+
+        result = self.orchestrator.replay_single("quarantine/key.json", force=True)
+
+        assert result.success is True
+        assert result.error is None
+        assert result.transform_applied == "identity"
+        # Verify Bronze write was called
+        self.s3_mgr.store_json.assert_called_once()
+
+    def test_non_resolved_record_not_skipped(self):
+        """Non-resolved record is not skipped even without force."""
+        self._setup_record(
+            classification="transient",
+            game_id="0022400001",
+            status="failed",
+        )
+
+        result = self.orchestrator.replay_single("quarantine/key.json")
+
+        assert result.success is True
+        assert result.transform_applied == "identity"
+        self.s3_mgr.store_json.assert_called_once()
+
 
 # -- ReplayOrchestrator.replay_batch -----------------------------------------
 
@@ -534,6 +579,46 @@ class TestReplayBatch:
 
         assert result.succeeded == 1
         assert result.results[0].transform_applied == "identity"
+
+    def test_batch_skips_resolved_by_default(self):
+        """Batch replay skips resolved items when force is False."""
+        record_resolved = _make_quarantine_record(game_id="001", status="resolved")
+        record_pending = _make_quarantine_record(game_id="002")
+
+        self.s3_mgr.s3_client.get_object.side_effect = [
+            {
+                "Body": Mock(
+                    read=Mock(return_value=json.dumps(record_resolved).encode("utf-8"))
+                )
+            },
+            {
+                "Body": Mock(
+                    read=Mock(return_value=json.dumps(record_pending).encode("utf-8"))
+                )
+            },
+        ]
+
+        items = [{"key": "resolved.json"}, {"key": "pending.json"}]
+        result = self.orchestrator.replay_batch(items)
+
+        assert result.total == 2
+        assert result.succeeded == 2
+        # First item was skipped (counts as success)
+        assert "already resolved" in result.results[0].error
+
+    def test_batch_replays_resolved_with_force(self):
+        """Batch replay processes resolved items when force is True."""
+        record = _make_quarantine_record(game_id="001", status="resolved")
+        self.s3_mgr.s3_client.get_object.return_value = {
+            "Body": Mock(read=Mock(return_value=json.dumps(record).encode("utf-8")))
+        }
+
+        items = [{"key": "resolved.json"}]
+        result = self.orchestrator.replay_batch(items, force=True)
+
+        assert result.total == 1
+        assert result.succeeded == 1
+        assert result.results[0].error is None
 
 
 # -- Silver Processing Invocation Tests ---------------------------------------
@@ -697,6 +782,7 @@ class TestQuarantineReplayCommand:
         assert "--transform" in result.output
         assert "--classification" in result.output
         assert "--date" in result.output
+        assert "--force" in result.output
 
     def test_replay_in_quarantine_help(self):
         """Replay command appears in quarantine group help."""
@@ -763,6 +849,50 @@ class TestQuarantineReplayCommand:
         assert "[DRY-RUN OK]" in result.output
         _, kwargs = mock_orch.replay_single.call_args
         assert kwargs["dry_run"] is True
+
+    @patch("app.quarantine_cli._get_replay_orchestrator")
+    def test_replay_force_flag(self, mock_get_orch):
+        """Force flag is passed through to orchestrator."""
+        mock_orch = Mock()
+        mock_orch.replay_single.return_value = ReplayResult(
+            s3_key="quarantine/key.json",
+            success=True,
+            transform_applied="identity",
+        )
+        mock_get_orch.return_value = mock_orch
+
+        result = self.runner.invoke(
+            cli, ["quarantine", "replay", "--force", "quarantine/key.json"]
+        )
+        assert result.exit_code == 0
+        _, kwargs = mock_orch.replay_single.call_args
+        assert kwargs["force"] is True
+
+    @patch("app.quarantine_cli._get_replay_orchestrator")
+    def test_replay_force_flag_batch(self, mock_get_orch):
+        """Force flag is passed through to batch replay."""
+        mock_q = Mock()
+        mock_q.list_quarantined_data.return_value = [{"key": "k1.json"}]
+        mock_orch = Mock()
+        mock_orch.quarantine = mock_q
+        mock_orch.replay_batch.return_value = BatchReplayResult(
+            total=1,
+            succeeded=1,
+            failed=0,
+            results=[
+                ReplayResult(
+                    s3_key="k1.json", success=True, transform_applied="identity"
+                )
+            ],
+        )
+        mock_get_orch.return_value = mock_orch
+
+        result = self.runner.invoke(
+            cli, ["quarantine", "replay", "--force", "--date", "2024-01-15"]
+        )
+        assert result.exit_code == 0
+        _, kwargs = mock_orch.replay_batch.call_args
+        assert kwargs["force"] is True
 
     @patch("app.quarantine_cli._get_replay_orchestrator")
     def test_replay_with_transform_override(self, mock_get_orch):

@@ -4,23 +4,24 @@ from unittest.mock import AsyncMock, patch
 
 import pytest
 
-from app.server import DEFAULT_BASE_URL, _get_client, get_artifact, get_index
+from app.http_client import DEFAULT_BASE_URL, get_client
+from app.server import get_artifact, get_index
 
 
 class TestGetClient:
-    """Tests for the _get_client helper."""
+    """Tests for the get_client helper."""
 
     def test_default_base_url(self):
         """Test that default base URL is used when env var is not set."""
         with patch.dict("os.environ", {}, clear=True):
-            client = _get_client()
+            client = get_client()
             assert client.base_url == DEFAULT_BASE_URL
 
     def test_custom_base_url_from_env(self):
         """Test that HOOPSTAT_BASE_URL env var overrides the default."""
         custom_url = "https://custom.example.com"
         with patch.dict("os.environ", {"HOOPSTAT_BASE_URL": custom_url}):
-            client = _get_client()
+            client = get_client()
             assert client.base_url == custom_url
 
 
@@ -31,7 +32,7 @@ class TestGetIndexTool:
     async def test_get_index_success(self):
         """Test successful index retrieval returns JSON content."""
         index_json = '{"date": "2024-11-15", "datasets": {}}'
-        with patch("app.server._get_client") as mock_get_client:
+        with patch("app.server.get_client") as mock_get_client:
             mock_client = AsyncMock()
             mock_client.fetch_index.return_value = index_json
             mock_get_client.return_value = mock_client
@@ -45,7 +46,7 @@ class TestGetIndexTool:
         """Test index fetch error returns formatted error message."""
         from app.http_client import ArtifactFetchError
 
-        with patch("app.server._get_client") as mock_get_client:
+        with patch("app.server.get_client") as mock_get_client:
             mock_client = AsyncMock()
             mock_client.fetch_index.side_effect = ArtifactFetchError(
                 "Could not connect to data source"
@@ -64,7 +65,7 @@ class TestGetArtifactTool:
     async def test_get_artifact_success(self):
         """Test successful artifact retrieval."""
         player_json = '{"player_id": 2544, "points": 30}'
-        with patch("app.server._get_client") as mock_get_client:
+        with patch("app.server.get_client") as mock_get_client:
             mock_client = AsyncMock()
             mock_client.fetch_artifact.return_value = player_json
             mock_get_client.return_value = mock_client
@@ -80,7 +81,7 @@ class TestGetArtifactTool:
         """Test 404 error returns formatted error message."""
         from app.http_client import ArtifactFetchError
 
-        with patch("app.server._get_client") as mock_get_client:
+        with patch("app.server.get_client") as mock_get_client:
             mock_client = AsyncMock()
             mock_client.fetch_artifact.side_effect = ArtifactFetchError(
                 "Resource not found: 'player_daily/2024-11-15/9999'",
@@ -97,7 +98,7 @@ class TestGetArtifactTool:
         """Test connection error returns formatted error message."""
         from app.http_client import ArtifactFetchError
 
-        with patch("app.server._get_client") as mock_get_client:
+        with patch("app.server.get_client") as mock_get_client:
             mock_client = AsyncMock()
             mock_client.fetch_artifact.side_effect = ArtifactFetchError(
                 "Could not connect to data source"

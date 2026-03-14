@@ -1,6 +1,20 @@
 """HTTP client for fetching Hoopstat Haus JSON artifacts from CloudFront."""
 
+import os
+
 import httpx
+
+DEFAULT_BASE_URL = "https://data.hoopstat.haus"
+
+
+def get_client() -> "HoopstatClient":
+    """Create an HTTP client using the configured base URL.
+
+    Reads ``HOOPSTAT_BASE_URL`` from the environment, falling back to
+    the default CloudFront endpoint when the variable is not set.
+    """
+    base_url = os.environ.get("HOOPSTAT_BASE_URL", DEFAULT_BASE_URL)
+    return HoopstatClient(base_url)
 
 
 class ArtifactFetchError(Exception):

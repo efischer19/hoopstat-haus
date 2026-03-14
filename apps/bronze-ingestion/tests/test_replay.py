@@ -910,3 +910,317 @@ class TestDataTypeMapping:
     def test_api_response_maps_to_box(self):
         """api_response maps to 'box' entity (default for API responses)."""
         assert _DATA_TYPE_TO_ENTITY["api_response"] == "box"
+
+
+# -- State Machine / Idempotency Tests ----------------------------------------
+
+
+class TestStatusTransitions:
+    """Test quarantine record status transitions and idempotency guards."""
+
+    def setup_method(self):
+        """Set up orchestrator with mocks."""
+        self.s3_mgr = _mock_s3_manager()
+        self.s3_mgr.store_json = Mock(return_value="raw/box/2024-01-15/0022400001.json")
+        self.quarantine_mock = _mock_quarantine(self.s3_mgr)
+        self.orchestrator = ReplayOrchestrator(self.s3_mgr, self.quarantine_mock)
+
+    def _setup_record(self, record=None, **kwargs):
+        """Set up a quarantine record in mock S3."""
+        if record is None:
+            record = _make_quarantine_record(**kwargs)
+        _setup_s3_get_object(self.s3_mgr, record)
+        return record
+
+    def test_skip_on_resolved_without_force(self):
+        """Resolved record without --force is skipped with warning."""
+        self._setup_record(
+            status="resolved", classification="transient", game_id="0022400001"
+        )
+
+        result = self.orchestrator.replay_single("quarantine/key.json")
+
+        assert result.skipped is True
+        assert result.success is True
+        assert "already resolved" in result.error
+        # No Bronze write should happen
+        self.s3_mgr.store_json.assert_not_called()
+
+    def test_skip_on_replaying_status(self):
+        """Record in 'replaying' status is skipped (concurrent replay guard)."""
+        self._setup_record(
+            status="replaying", classification="transient", game_id="0022400001"
+        )
+
+        result = self.orchestrator.replay_single("quarantine/key.json")
+
+        assert result.skipped is True
+        assert result.success is True
+        assert "already in 'replaying' status" in result.error
+        self.s3_mgr.store_json.assert_not_called()
+
+    def test_force_replay_resolved_record(self):
+        """Resolved record with --force proceeds normally."""
+        self._setup_record(
+            status="resolved", classification="transient", game_id="0022400001"
+        )
+
+        result = self.orchestrator.replay_single("quarantine/key.json", force=True)
+
+        assert result.success is True
+        assert result.skipped is False
+        assert result.transform_applied == "identity"
+        self.s3_mgr.store_json.assert_called_once()
+
+    def test_quarantined_proceeds(self):
+        """Record with 'quarantined' status proceeds normally."""
+        self._setup_record(
+            status="quarantined", classification="transient", game_id="0022400001"
+        )
+
+        result = self.orchestrator.replay_single("quarantine/key.json")
+
+        assert result.success is True
+        assert result.skipped is False
+
+    def test_failed_proceeds(self):
+        """Record with 'failed' status can be retried."""
+        self._setup_record(
+            status="failed", classification="transient", game_id="0022400001"
+        )
+
+        result = self.orchestrator.replay_single("quarantine/key.json")
+
+        assert result.success is True
+        assert result.skipped is False
+
+    def test_missing_status_treated_as_quarantined(self):
+        """Backward compat: missing status is treated as 'quarantined'."""
+        record = _make_quarantine_record(
+            classification="transient", game_id="0022400001"
+        )
+        # Ensure no status field exists (backward compat)
+        record["metadata"].pop("status", None)
+        self._setup_record(record=record)
+
+        result = self.orchestrator.replay_single("quarantine/key.json")
+
+        assert result.success is True
+        assert result.skipped is False
+
+    def test_replaying_status_set_before_processing(self):
+        """Status is set to 'replaying' before transform/write happens."""
+        self._setup_record(
+            status="quarantined", classification="transient", game_id="0022400001"
+        )
+
+        self.orchestrator.replay_single("quarantine/key.json")
+
+        # Check that put_object was called multiple times:
+        # first for 'replaying', then for 'resolved'
+        put_calls = self.s3_mgr.s3_client.put_object.call_args_list
+        assert len(put_calls) >= 2
+
+        # First call should set status to 'replaying'
+        first_record = json.loads(put_calls[0].kwargs["Body"].decode("utf-8"))
+        assert first_record["metadata"]["status"] == "replaying"
+
+        # Last call should set status to 'resolved'
+        last_record = json.loads(put_calls[-1].kwargs["Body"].decode("utf-8"))
+        assert last_record["metadata"]["status"] == "resolved"
+
+    def test_failed_replay_sets_failed_status(self):
+        """Failed replay transitions to 'failed' status."""
+        record = _make_quarantine_record(
+            classification="rounding_mismatch",
+            data={"no_box_score": True},
+            issues=["Rounding mismatch in sum"],
+            status="quarantined",
+        )
+        self._setup_record(record=record)
+
+        self.orchestrator.replay_single("quarantine/key.json")
+
+        stored_record = _get_stored_record(self.s3_mgr)
+        assert stored_record["metadata"]["status"] == "failed"
+
+
+# -- Attempts Audit Trail Tests -----------------------------------------------
+
+
+class TestAttemptsAuditTrail:
+    """Test the attempts list audit trail on quarantine records."""
+
+    def setup_method(self):
+        """Set up orchestrator with mocks."""
+        self.s3_mgr = _mock_s3_manager()
+        self.s3_mgr.store_json = Mock(return_value="raw/box/2024-01-15/0022400001.json")
+        self.quarantine_mock = _mock_quarantine(self.s3_mgr)
+        self.orchestrator = ReplayOrchestrator(self.s3_mgr, self.quarantine_mock)
+
+    def _setup_record(self, record=None, **kwargs):
+        """Set up a quarantine record in mock S3."""
+        if record is None:
+            record = _make_quarantine_record(**kwargs)
+        _setup_s3_get_object(self.s3_mgr, record)
+        return record
+
+    def test_resolved_attempt_logged(self):
+        """Successful replay appends a 'resolved' attempt entry."""
+        self._setup_record(
+            status="quarantined", classification="transient", game_id="0022400001"
+        )
+
+        self.orchestrator.replay_single("quarantine/key.json")
+
+        stored_record = _get_stored_record(self.s3_mgr)
+        attempts = stored_record.get("attempts", [])
+        assert len(attempts) == 1
+        assert attempts[0]["result"] == "resolved"
+        assert attempts[0]["transform"] == "identity"
+        assert "timestamp" in attempts[0]
+        assert "error" not in attempts[0]
+
+    def test_failed_attempt_logged(self):
+        """Failed replay appends a 'failed' attempt entry with error."""
+        record = _make_quarantine_record(
+            classification="rounding_mismatch",
+            data={"no_box_score": True},
+            issues=["Rounding mismatch in sum"],
+            status="quarantined",
+        )
+        self._setup_record(record=record)
+
+        self.orchestrator.replay_single("quarantine/key.json")
+
+        stored_record = _get_stored_record(self.s3_mgr)
+        attempts = stored_record.get("attempts", [])
+        assert len(attempts) == 1
+        assert attempts[0]["result"] == "failed"
+        assert "error" in attempts[0]
+        assert "timestamp" in attempts[0]
+
+    def test_missing_attempts_initialized(self):
+        """Backward compat: missing 'attempts' is initialized as empty list."""
+        record = _make_quarantine_record(
+            classification="transient", game_id="0022400001"
+        )
+        # Remove attempts field to simulate old record
+        record.pop("attempts", None)
+        self._setup_record(record=record)
+
+        self.orchestrator.replay_single("quarantine/key.json")
+
+        stored_record = _get_stored_record(self.s3_mgr)
+        assert "attempts" in stored_record
+        assert len(stored_record["attempts"]) == 1
+
+    def test_batch_skipped_tracking(self):
+        """Batch replay correctly tracks skipped items."""
+        resolved_record = _make_quarantine_record(game_id="001", status="resolved")
+        quarantined_record = _make_quarantine_record(game_id="002")
+
+        self.s3_mgr.s3_client.get_object.side_effect = [
+            {
+                "Body": Mock(
+                    read=Mock(return_value=json.dumps(resolved_record).encode("utf-8"))
+                )
+            },
+            {
+                "Body": Mock(
+                    read=Mock(
+                        return_value=json.dumps(quarantined_record).encode("utf-8")
+                    )
+                )
+            },
+        ]
+
+        items = [{"key": "key1.json"}, {"key": "key2.json"}]
+        result = self.orchestrator.replay_batch(items)
+
+        assert result.total == 2
+        assert result.skipped == 1
+        assert result.succeeded == 1
+        assert result.failed == 0
+
+
+# -- CLI --force Flag Tests ---------------------------------------------------
+
+
+class TestForceFlag:
+    """Test the --force CLI flag for replaying resolved records."""
+
+    def setup_method(self):
+        """Set up test fixtures."""
+        self.runner = CliRunner()
+
+    def test_replay_help_shows_force(self):
+        """--force flag appears in replay help."""
+        result = self.runner.invoke(cli, ["quarantine", "replay", "--help"])
+        assert result.exit_code == 0
+        assert "--force" in result.output
+
+    @patch("app.quarantine_cli._get_replay_orchestrator")
+    def test_force_flag_passed_to_orchestrator(self, mock_get_orch):
+        """--force flag is passed through to replay_single."""
+        mock_orch = Mock()
+        mock_orch.replay_single.return_value = ReplayResult(
+            s3_key="quarantine/key.json",
+            success=True,
+            transform_applied="identity",
+        )
+        mock_get_orch.return_value = mock_orch
+
+        result = self.runner.invoke(
+            cli,
+            ["quarantine", "replay", "--force", "quarantine/key.json"],
+        )
+        assert result.exit_code == 0
+        _, kwargs = mock_orch.replay_single.call_args
+        assert kwargs["force"] is True
+
+    @patch("app.quarantine_cli._get_replay_orchestrator")
+    def test_skipped_result_formatting(self, mock_get_orch):
+        """Skipped result is displayed with SKIPPED status."""
+        mock_orch = Mock()
+        mock_orch.replay_single.return_value = ReplayResult(
+            s3_key="quarantine/key.json",
+            success=True,
+            skipped=True,
+            error="Record is already resolved",
+        )
+        mock_get_orch.return_value = mock_orch
+
+        result = self.runner.invoke(
+            cli, ["quarantine", "replay", "quarantine/key.json"]
+        )
+        assert result.exit_code == 0
+        assert "[SKIPPED]" in result.output
+
+    def test_format_batch_summary_with_skipped(self):
+        """Batch summary includes skipped count."""
+        br = BatchReplayResult(
+            total=3,
+            succeeded=1,
+            failed=0,
+            skipped=2,
+            results=[
+                ReplayResult(
+                    s3_key="k1.json", success=True, transform_applied="identity"
+                ),
+                ReplayResult(
+                    s3_key="k2.json",
+                    success=True,
+                    skipped=True,
+                    error="already resolved",
+                ),
+                ReplayResult(
+                    s3_key="k3.json",
+                    success=True,
+                    skipped=True,
+                    error="already resolved",
+                ),
+            ],
+        )
+        output = _format_batch_summary(br)
+        assert "Skipped:   2" in output

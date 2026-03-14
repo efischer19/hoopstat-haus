@@ -14,6 +14,12 @@ import click
 from hoopstat_observability import get_logger
 
 from .quarantine import DataQuarantine, ErrorClassification
+from .replay import (
+    BatchReplayResult,
+    ReplayOrchestrator,
+    ReplayResult,
+    get_transform_by_name,
+)
 from .s3_manager import BronzeS3Manager
 
 logger = get_logger(__name__)
@@ -396,4 +402,169 @@ def quarantine_inspect(s3_key: str, full: bool) -> None:
     except Exception as e:
         logger.error(f"Failed to inspect quarantine record: {e}")
         click.echo(f"Error: Failed to inspect quarantine record: {e}", err=True)
+        sys.exit(1)
+
+
+def _get_replay_orchestrator(
+    silver_processing_dir: str | None = None,
+) -> ReplayOrchestrator:
+    """Create a ReplayOrchestrator with default configuration."""
+    s3_manager = BronzeS3Manager()
+    quarantine_instance = DataQuarantine(s3_manager)
+    return ReplayOrchestrator(
+        s3_manager=s3_manager,
+        quarantine=quarantine_instance,
+        silver_processing_dir=silver_processing_dir,
+    )
+
+
+def _format_replay_result(result: ReplayResult) -> str:
+    """Format a single replay result for display."""
+    status = "OK" if result.success else "FAILED"
+    if result.dry_run:
+        status = "DRY-RUN OK"
+    line = f"  [{status}] {result.s3_key}"
+    if result.transform_applied:
+        line += f"  (transform: {result.transform_applied})"
+    if result.error:
+        line += f"\n         Error: {result.error}"
+    return line
+
+
+def _format_batch_summary(batch_result: BatchReplayResult) -> str:
+    """Format a batch replay summary for display."""
+    lines = []
+    lines.append("")
+    lines.append("Replay Summary")
+    lines.append("=" * 60)
+    lines.append(f"Total:     {batch_result.total}")
+    lines.append(f"Succeeded: {batch_result.succeeded}")
+    lines.append(f"Failed:    {batch_result.failed}")
+    lines.append("")
+    lines.append("Details:")
+    lines.append("-" * 40)
+    for result in batch_result.results:
+        lines.append(_format_replay_result(result))
+    return "\n".join(lines)
+
+
+@quarantine.command("replay")
+@click.argument("s3_key", required=False, default=None)
+@click.option(
+    "--classification",
+    "filter_classification",
+    type=click.Choice(_VALID_CLASSIFICATIONS, case_sensitive=False),
+    default=None,
+    help="Replay all quarantined files matching a classification.",
+)
+@click.option(
+    "--date",
+    "filter_date",
+    type=click.DateTime(formats=["%Y-%m-%d"]),
+    default=None,
+    help="Replay all quarantined files for a specific date (YYYY-MM-DD).",
+)
+@click.option(
+    "--dry-run",
+    is_flag=True,
+    default=False,
+    help="Validate the transformation and show what would happen without writing.",
+)
+@click.option(
+    "--transform",
+    "transform_name",
+    type=str,
+    default=None,
+    help="Override the default transform (e.g., 'identity', 'rounding_tolerance').",
+)
+def quarantine_replay(
+    s3_key: str | None,
+    filter_classification: str | None,
+    filter_date: datetime | None,
+    dry_run: bool,
+    transform_name: str | None,
+) -> None:
+    """Replay quarantined data through the Bronze-to-Silver pipeline.
+
+    Provide an S3_KEY to replay a single file, or use --classification
+    or --date to replay matching files in batch.
+    """
+    # Validate that at least one selection method is provided
+    if s3_key is None and filter_classification is None and filter_date is None:
+        click.echo(
+            "Error: Provide an S3 key argument, or use --classification "
+            "or --date to select files.",
+            err=True,
+        )
+        sys.exit(1)
+
+    logger.info(
+        "Starting quarantine replay",
+        extra={
+            "s3_key": s3_key,
+            "classification": filter_classification,
+            "date": filter_date.isoformat() if filter_date else None,
+            "dry_run": dry_run,
+            "transform": transform_name,
+        },
+    )
+
+    try:
+        # Resolve transform override
+        transform_override = None
+        if transform_name:
+            try:
+                transform_override = get_transform_by_name(transform_name)
+            except ValueError as e:
+                click.echo(f"Error: {e}", err=True)
+                sys.exit(1)
+
+        orchestrator = _get_replay_orchestrator()
+
+        if s3_key:
+            # Single-file replay
+            result = orchestrator.replay_single(
+                s3_key,
+                transform_override=transform_override,
+                dry_run=dry_run,
+            )
+            click.echo(_format_replay_result(result))
+            if not result.success:
+                sys.exit(1)
+        else:
+            # Batch replay -- collect matching items
+            q = orchestrator.quarantine
+            target_date = filter_date.date() if filter_date else None
+            items = q.list_quarantined_data(target_date=target_date)
+
+            if not items:
+                click.echo("No quarantined items found matching the criteria.")
+                return
+
+            # Apply classification filter if specified
+            if filter_classification:
+                enriched = _enrich_items(q, items)
+                items = [
+                    item
+                    for item in enriched
+                    if item["error_classification"] == filter_classification
+                ]
+                if not items:
+                    click.echo(
+                        "No quarantined items match the specified classification."
+                    )
+                    return
+
+            batch_result = orchestrator.replay_batch(
+                items,
+                transform_override=transform_override,
+                dry_run=dry_run,
+            )
+            click.echo(_format_batch_summary(batch_result))
+            if batch_result.failed > 0:
+                sys.exit(1)
+
+    except Exception as e:
+        logger.error(f"Replay failed: {e}")
+        click.echo(f"Error: Replay failed: {e}", err=True)
         sys.exit(1)

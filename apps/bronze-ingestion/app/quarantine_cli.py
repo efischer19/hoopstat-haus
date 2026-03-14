@@ -538,8 +538,8 @@ def quarantine_replay(
             "classification": filter_classification,
             "date": filter_date.date().isoformat() if filter_date else None,
             "dry_run": dry_run,
-            "force": force,
             "transform": transform_name,
+            "force": force,
         },
     )
 

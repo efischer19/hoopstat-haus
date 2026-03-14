@@ -143,10 +143,7 @@ class TestMainEntryPoint:
             patch("sys.argv", ["hoopstat-mcp", "--mcp"]),
             patch("app.server.mcp") as mock_mcp,
         ):
-            from importlib import reload
+            from app.main import main
 
-            import app.main
-
-            reload(app.main)
-            app.main.main()
+            main()
             mock_mcp.run.assert_called_once_with(transport="stdio")

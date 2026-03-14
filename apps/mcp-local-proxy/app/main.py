@@ -18,7 +18,6 @@ import sys
 def main():
     """Dispatch between MCP server mode and CLI mode."""
     if "--mcp" in sys.argv:
-        sys.argv.remove("--mcp")
         from app.server import mcp
 
         mcp.run(transport="stdio")

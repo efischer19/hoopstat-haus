@@ -45,10 +45,16 @@ class JSONArtifactWriter:
     - served/player_daily/{date}/{player_id}.json
     - served/team_daily/{date}/{team_id}.json
     - served/top_lists/{date}/{metric}.json
-    - served/latest.json
+    - served/index/latest.json
     """
 
     MAX_ARTIFACT_SIZE_KB = 100  # Per ADR-028, artifacts should be ≤100KB
+
+    # Cache-Control header for the index file (short TTL so clients see fresh data)
+    INDEX_CACHE_CONTROL = "public, max-age=300"  # 5 minutes
+
+    # Cache-Control header for historical data (immutable, aggressive edge caching)
+    HISTORICAL_CACHE_CONTROL = "public, max-age=31536000, immutable"  # 1 year
 
     def __init__(self, gold_bucket: str, aws_region: str = "us-east-1") -> None:
         """
@@ -307,7 +313,7 @@ class JSONArtifactWriter:
             json_content = json.dumps(latest_index, indent=2)
 
             # Write to S3
-            s3_key = "served/latest.json"
+            s3_key = "served/index/latest.json"
             self._upload_json_to_s3(json_content, s3_key)
 
             logger.info(f"Wrote latest index for {date_str}")
@@ -410,6 +416,24 @@ class JSONArtifactWriter:
             "win": team_data.get("win"),
         }
 
+    def _get_cache_control(self, s3_key: str) -> str:
+        """
+        Return the appropriate Cache-Control header value based on the S3 key.
+
+        Index files get a short TTL so clients always see fresh pointers.
+        Historical data (player_daily, team_daily, top_lists) is immutable
+        and gets an aggressive 1-year TTL per ADR-038.
+
+        Args:
+            s3_key: S3 object key
+
+        Returns:
+            Cache-Control header value
+        """
+        if s3_key.startswith("served/index/"):
+            return self.INDEX_CACHE_CONTROL
+        return self.HISTORICAL_CACHE_CONTROL
+
     def _upload_json_to_s3(self, json_content: str, s3_key: str) -> None:
         """
         Upload JSON content to S3.
@@ -427,7 +451,7 @@ class JSONArtifactWriter:
                 Key=s3_key,
                 Body=json_content.encode("utf-8"),
                 ContentType="application/json",
-                CacheControl="public, max-age=3600",  # 1 hour cache
+                CacheControl=self._get_cache_control(s3_key),
             )
 
             logger.debug(f"Uploaded JSON artifact to s3://{self.gold_bucket}/{s3_key}")

@@ -1,8 +1,8 @@
 # Public Access Guide for JSON Artifacts
 
 **Status:** Production  
-**Last Updated:** 2026-01-07  
-**Related ADRs:** [ADR-028](../meta/adr/ADR-028-gold_layer_final.md)
+**Last Updated:** 2026-03-14  
+**Related ADRs:** [ADR-028](../meta/adr/ADR-028-gold_layer_final.md), [ADR-038](../meta/adr/ADR-038-cloudfront-cache-tuning.md)
 
 ## Overview
 
@@ -62,7 +62,8 @@ CloudFront automatically adds CORS headers via Response Headers Policy:
 - `Access-Control-Allow-Methods: GET, HEAD, OPTIONS`
 - `Access-Control-Allow-Headers: *`
 - `Access-Control-Max-Age: 3600`
-- `Cache-Control: public, max-age=3600`
+- `Cache-Control: public, max-age=300` (index files)
+- `Cache-Control: public, max-age=31536000, immutable` (historical data)
 
 ### S3 Bucket CORS
 
@@ -123,16 +124,23 @@ The S3 bucket also has CORS configuration as a fallback:
 
 - **CloudFront edge (cache hit):** 10-50ms (from nearest edge location)
 - **CloudFront to S3 (cache miss):** 100-300ms (first request or after cache expiration)
-- **Cache TTL:** Default 1 hour, max 24 hours
 - Small payloads (≤100KB) ensure fast delivery over any connection
 
 ### Caching Behavior
 
+Two distinct caching tiers are used based on data mutability (see [ADR-038](../meta/adr/ADR-038-cloudfront-cache-tuning.md)):
+
+**Index files** (`index/*`):
+- **Cache TTL:** 5 minutes (`max-age=300`)
+- Short-lived so clients always discover the freshest data pointer
+
+**Historical data** (`player_daily/*`, `team_daily/*`, `top_lists/*`):
+- **Cache TTL:** 1 year (`max-age=31536000, immutable`)
+- Historical game data never changes once published; aggressive caching minimizes egress costs
+
+**Common settings:**
 - **Cache key:** URL path only (no query strings)
 - **Compression:** Automatic gzip/brotli compression enabled
-- **Default TTL:** 3600 seconds (1 hour)
-- **Max TTL:** 86400 seconds (24 hours)
-- **Min TTL:** 0 seconds (immediate revalidation if needed)
 
 ## Testing Public Access
 
@@ -156,7 +164,7 @@ curl -i https://<cloudfront-domain>.cloudfront.net/index/latest.json
 # Content-Type: application/json
 # Access-Control-Allow-Origin: *
 # X-Cache: Hit from cloudfront (or Miss from cloudfront)
-# Cache-Control: public, max-age=3600
+# Cache-Control: public, max-age=300
 ```
 
 ### Verify CORS from Browser
@@ -192,6 +200,51 @@ curl -i https://<cloudfront-domain>.cloudfront.net/index/latest.json | grep X-Ca
 # Second request (cache hit)
 curl -i https://<cloudfront-domain>.cloudfront.net/index/latest.json | grep X-Cache
 # Expected: X-Cache: Hit from cloudfront
+```
+
+### Verify Cache-Control Headers
+
+After applying the CloudFront cache tuning (ADR-038), verify that each artifact
+type returns the correct `Cache-Control` header at the edge:
+
+```bash
+DOMAIN="<cloudfront-domain>.cloudfront.net"
+
+# 1. Index file -- short TTL (5 minutes)
+curl -sI "https://$DOMAIN/index/latest.json" | grep -i cache-control
+# Expected: Cache-Control: public, max-age=300
+
+# 2. Player daily -- immutable, 1-year TTL
+curl -sI "https://$DOMAIN/player_daily/2024-11-15/2544.json" | grep -i cache-control
+# Expected: Cache-Control: public, max-age=31536000, immutable
+
+# 3. Team daily -- immutable, 1-year TTL
+curl -sI "https://$DOMAIN/team_daily/2024-11-15/1610612747.json" | grep -i cache-control
+# Expected: Cache-Control: public, max-age=31536000, immutable
+
+# 4. Top lists -- immutable, 1-year TTL
+curl -sI "https://$DOMAIN/top_lists/2024-11-15/points.json" | grep -i cache-control
+# Expected: Cache-Control: public, max-age=31536000, immutable
+```
+
+**Tip:** If the S3 objects already carry `Cache-Control` metadata (set during
+upload by the gold-analytics Lambda), the `override = false` setting on the
+CloudFront response headers policy means the S3-level header takes precedence.
+To verify the origin header independently:
+
+```bash
+# Check that the S3 object metadata has the expected Cache-Control
+aws s3api head-object \
+  --bucket hoopstat-haus-gold \
+  --key served/index/latest.json \
+  --query CacheControl --output text
+# Expected: public, max-age=300
+
+aws s3api head-object \
+  --bucket hoopstat-haus-gold \
+  --key served/player_daily/2024-11-15/2544.json \
+  --query CacheControl --output text
+# Expected: public, max-age=31536000, immutable
 ```
 
 ## Monitoring
@@ -256,10 +309,11 @@ S3 access logs are stored in `hoopstat-haus-access-logs` bucket:
 **Symptom:** Stale content served or updates not visible
 
 **Solutions:**
-1. Wait for TTL to expire (default 1 hour)
+1. Wait for TTL to expire (5 minutes for index, 1 year for historical data)
 2. Create CloudFront invalidation for specific paths
-3. Check X-Cache header to verify cache behavior
-4. For testing, use unique query strings to bypass cache
+3. Check `X-Cache` header to verify cache behavior
+4. Check `Cache-Control` header to verify correct TTL tier
+5. For testing, use unique query strings to bypass cache
 
 ## Cost Optimization
 
@@ -275,12 +329,12 @@ S3 access logs are stored in `hoopstat-haus-access-logs` bucket:
 - GET requests from CloudFront: $0.0004 per 1,000 requests
 - No data transfer charges for CloudFront origin fetches
 
-**Estimated Monthly Cost (assuming 1M requests, 100KB avg, 50% cache hit ratio):**
+**Estimated Monthly Cost (assuming 1M requests, 100KB avg, >90% cache hit ratio with immutable data):**
 - CloudFront HTTPS requests (1M): $1.00
 - CloudFront data transfer (100GB): $8.50
 - S3 storage (10GB): $0.23
-- S3 GET requests (500K cache misses): $0.20
-- **Total: ~$9.93/month**
+- S3 GET requests (~100K cache misses): $0.04
+- **Total: ~$9.77/month**
 
 **Comparison to Direct S3:**
 - Direct S3 would cost ~$9.40/month (saves ~$0.53/month)
@@ -293,10 +347,11 @@ S3 access logs are stored in `hoopstat-haus-access-logs` bucket:
 ### Cost Reduction Tips
 
 1. Keep artifacts under 100KB size limit for faster delivery
-2. Monitor CloudFront cache hit ratio (aim for >80%)
+2. Monitor CloudFront cache hit ratio (aim for >90% with immutable data)
 3. Use efficient JSON serialization to minimize file sizes
 4. Consider cache invalidation costs when updating artifacts
 5. Review CloudFront price class if traffic is regional
+6. Historical data uses immutable caching to maximize edge cache hit ratio
 
 ## Publishing Artifacts
 
@@ -341,6 +396,7 @@ For automated workflows (e.g., GitHub Actions), ensure the IAM role has:
 ## References
 
 - [ADR-028: Gold Layer Architecture](../meta/adr/ADR-028-gold_layer_final.md)
+- [ADR-038: CloudFront Cache Tuning](../meta/adr/ADR-038-cloudfront-cache-tuning.md)
 - [JSON Artifact Schemas](../docs-src/JSON_ARTIFACT_SCHEMAS.md)
 - [AWS CloudFront Documentation](https://docs.aws.amazon.com/cloudfront/)
 - [AWS CloudFront OAC Documentation](https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/private-content-restricting-access-to-s3.html)

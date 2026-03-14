@@ -1,6 +1,6 @@
 ---
 title: "ADR-038: CloudFront Cache Tuning for Immutable Historical Data"
-status: "Proposed"
+status: "Accepted"
 date: "2026-03-14"
 tags:
   - "infrastructure"

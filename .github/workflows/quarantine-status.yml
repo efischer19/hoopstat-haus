@@ -1,0 +1,214 @@
+---
+name: Quarantine Status Report
+
+on:
+  workflow_dispatch: {}
+  # Future: Enable daily schedule for data-quality monitoring
+  # schedule:
+  #   - cron: '0 12 * * *'  # Noon UTC daily
+
+permissions:
+  id-token: write
+  contents: read
+
+env:
+  AWS_REGION: us-east-1
+  BRONZE_BUCKET: hoopstat-haus-bronze
+  QUARANTINE_PREFIX: quarantine/
+
+jobs:
+  quarantine-status:
+    name: Generate Quarantine Status Report
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::${{ secrets.AWS_ACCOUNT_ID }}:role/hoopstat-haus-github-actions
+          role-session-name: GitHubActions-QuarantineStatus-${{ github.run_id }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: List quarantine files
+        id: list
+        run: |
+          echo "🔍 Scanning quarantine area in s3://$BRONZE_BUCKET/$QUARANTINE_PREFIX"
+          echo ""
+
+          # List all objects under the quarantine prefix
+          OBJECTS_JSON=$(aws s3api list-objects-v2 \
+            --bucket "$BRONZE_BUCKET" \
+            --prefix "$QUARANTINE_PREFIX" \
+            --output json 2>&1) || {
+            echo "❌ Failed to list quarantine objects"
+            echo "$OBJECTS_JSON"
+            exit 1
+          }
+
+          TOTAL=$(echo "$OBJECTS_JSON" | jq '.KeyCount // 0')
+          echo "📊 Total quarantine files: $TOTAL"
+          echo "total=$TOTAL" >> "$GITHUB_OUTPUT"
+
+          if [ "$TOTAL" -eq 0 ]; then
+            echo "✅ No quarantine files found -- bronze layer is clean!"
+            echo "objects_json=[]" >> "$GITHUB_OUTPUT"
+          else
+            # Extract key list for downstream steps
+            KEYS=$(echo "$OBJECTS_JSON" | jq -c '[.Contents[]? | {key: .Key, size: .Size, last_modified: .LastModified}]')
+            echo "objects_json=$KEYS" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Classify quarantine records
+        id: classify
+        if: steps.list.outputs.total != '0'
+        run: |
+          echo "🔬 Classifying quarantine records..."
+          echo ""
+
+          OBJECTS='${{ steps.list.outputs.objects_json }}'
+          TOTAL='${{ steps.list.outputs.total }}'
+
+          # Initialize counters
+          declare -A STATUS_COUNTS
+          declare -A CLASSIFICATION_COUNTS
+          declare -A DATA_TYPE_COUNTS
+          declare -A DATE_COUNTS
+
+          CLASSIFIED=0
+          DOWNLOAD_ERRORS=0
+          DETAILS=""
+
+          # Process each quarantine file
+          for KEY in $(echo "$OBJECTS" | jq -r '.[].key'); do
+            echo "  📄 Processing: $KEY"
+
+            # Download the quarantine record
+            RECORD=$(aws s3 cp "s3://$BRONZE_BUCKET/$KEY" - 2>/dev/null) || {
+              echo "    ⚠️  Failed to download"
+              DOWNLOAD_ERRORS=$((DOWNLOAD_ERRORS + 1))
+              continue
+            }
+
+            # Extract metadata fields using jq
+            STATUS=$(echo "$RECORD" | jq -r '.metadata.status // "quarantined"')
+            CLASSIFICATION=$(echo "$RECORD" | jq -r '.metadata.error_classification // "unknown"')
+            DATA_TYPE=$(echo "$RECORD" | jq -r '.metadata.data_type // "unknown"')
+            TARGET_DATE=$(echo "$RECORD" | jq -r '.metadata.target_date // "unknown"')
+            ISSUES_COUNT=$(echo "$RECORD" | jq -r '.metadata.issues_count // 0')
+            ATTEMPTS=$(echo "$RECORD" | jq -r '.attempts | length // 0')
+
+            # Increment counters
+            STATUS_COUNTS[$STATUS]=$(( ${STATUS_COUNTS[$STATUS]:-0} + 1 ))
+            CLASSIFICATION_COUNTS[$CLASSIFICATION]=$(( ${CLASSIFICATION_COUNTS[$CLASSIFICATION]:-0} + 1 ))
+            DATA_TYPE_COUNTS[$DATA_TYPE]=$(( ${DATA_TYPE_COUNTS[$DATA_TYPE]:-0} + 1 ))
+            DATE_COUNTS[$TARGET_DATE]=$(( ${DATE_COUNTS[$TARGET_DATE]:-0} + 1 ))
+
+            CLASSIFIED=$((CLASSIFIED + 1))
+
+            # Build detail line
+            DETAILS="${DETAILS}| \`${KEY##*/}\` | ${STATUS} | ${CLASSIFICATION} | ${DATA_TYPE} | ${TARGET_DATE} | ${ISSUES_COUNT} | ${ATTEMPTS} |"$'\n'
+          done
+
+          echo ""
+          echo "📊 Classification complete: $CLASSIFIED/$TOTAL records processed"
+
+          # Write classification data to files for the summary step
+          {
+            echo "classified=$CLASSIFIED"
+            echo "download_errors=$DOWNLOAD_ERRORS"
+          } >> "$GITHUB_OUTPUT"
+
+          # Write breakdown data to temp files (too large for GITHUB_OUTPUT)
+          # Status breakdown
+          echo "## Status Breakdown" > /tmp/status_breakdown.md
+          echo "| Status | Count |" >> /tmp/status_breakdown.md
+          echo "|--------|-------|" >> /tmp/status_breakdown.md
+          for status in "${!STATUS_COUNTS[@]}"; do
+            echo "| \`$status\` | ${STATUS_COUNTS[$status]} |" >> /tmp/status_breakdown.md
+          done
+
+          # Classification breakdown
+          echo "## Error Classification Breakdown" > /tmp/classification_breakdown.md
+          echo "| Classification | Count | Action |" >> /tmp/classification_breakdown.md
+          echo "|----------------|-------|--------|" >> /tmp/classification_breakdown.md
+          for cls in "${!CLASSIFICATION_COUNTS[@]}"; do
+            case "$cls" in
+              transient) ACTION="🔄 Safe to replay" ;;
+              rounding_mismatch) ACTION="🔍 Investigate tolerance" ;;
+              schema_change) ACTION="🛠️ Requires code update" ;;
+              data_quality) ACTION="🔍 Investigate data" ;;
+              unknown) ACTION="❓ Manual review needed" ;;
+              *) ACTION="❓ Unknown" ;;
+            esac
+            echo "| \`$cls\` | ${CLASSIFICATION_COUNTS[$cls]} | $ACTION |" >> /tmp/classification_breakdown.md
+          done
+
+          # Data type breakdown
+          echo "## Data Type Breakdown" > /tmp/data_type_breakdown.md
+          echo "| Data Type | Count |" >> /tmp/data_type_breakdown.md
+          echo "|-----------|-------|" >> /tmp/data_type_breakdown.md
+          for dt in "${!DATA_TYPE_COUNTS[@]}"; do
+            echo "| \`$dt\` | ${DATA_TYPE_COUNTS[$dt]} |" >> /tmp/data_type_breakdown.md
+          done
+
+          # Date breakdown
+          echo "## Date Breakdown" > /tmp/date_breakdown.md
+          echo "| Target Date | Count |" >> /tmp/date_breakdown.md
+          echo "|-------------|-------|" >> /tmp/date_breakdown.md
+          for d in $(echo "${!DATE_COUNTS[@]}" | tr ' ' '\n' | sort -r); do
+            echo "| \`$d\` | ${DATE_COUNTS[$d]} |" >> /tmp/date_breakdown.md
+          done
+
+          # File details
+          echo "## Individual Records" > /tmp/file_details.md
+          echo "| File | Status | Classification | Type | Date | Issues | Attempts |" >> /tmp/file_details.md
+          echo "|------|--------|----------------|------|------|--------|----------|" >> /tmp/file_details.md
+          echo -n "$DETAILS" >> /tmp/file_details.md
+
+      - name: Write summary
+        if: always()
+        run: |
+          TOTAL="${{ steps.list.outputs.total }}"
+          TIMESTAMP=$(date -u +%Y-%m-%dT%H:%M:%SZ)
+
+          echo "## 📋 Quarantine Status Report" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "**Generated:** \`$TIMESTAMP\`" >> "$GITHUB_STEP_SUMMARY"
+          echo "**Bucket:** \`s3://$BRONZE_BUCKET/$QUARANTINE_PREFIX\`" >> "$GITHUB_STEP_SUMMARY"
+          echo "**Triggered by:** \`${{ github.actor }}\`" >> "$GITHUB_STEP_SUMMARY"
+          echo "**Run ID:** \`${{ github.run_id }}\`" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+
+          if [ "$TOTAL" = "0" ]; then
+            echo "### ✅ All Clear" >> "$GITHUB_STEP_SUMMARY"
+            echo "" >> "$GITHUB_STEP_SUMMARY"
+            echo "No quarantine files found. The bronze layer is clean!" >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "### ⚠️ Quarantine Issues Found: $TOTAL file(s)" >> "$GITHUB_STEP_SUMMARY"
+            echo "" >> "$GITHUB_STEP_SUMMARY"
+
+            CLASSIFIED="${{ steps.classify.outputs.classified }}"
+            DOWNLOAD_ERRORS="${{ steps.classify.outputs.download_errors }}"
+
+            echo "**Records classified:** $CLASSIFIED / $TOTAL" >> "$GITHUB_STEP_SUMMARY"
+
+            if [ -n "$DOWNLOAD_ERRORS" ] && [ "$DOWNLOAD_ERRORS" -gt 0 ]; then
+              echo "" >> "$GITHUB_STEP_SUMMARY"
+              echo "> ⚠️ $DOWNLOAD_ERRORS file(s) could not be downloaded for classification" >> "$GITHUB_STEP_SUMMARY"
+            fi
+
+            # Append breakdown sections
+            for section in /tmp/status_breakdown.md /tmp/classification_breakdown.md /tmp/data_type_breakdown.md /tmp/date_breakdown.md /tmp/file_details.md; do
+              if [ -f "$section" ]; then
+                echo "" >> "$GITHUB_STEP_SUMMARY"
+                cat "$section" >> "$GITHUB_STEP_SUMMARY"
+              fi
+            done
+
+            echo "" >> "$GITHUB_STEP_SUMMARY"
+            echo "---" >> "$GITHUB_STEP_SUMMARY"
+            echo "### 🔧 Next Steps" >> "$GITHUB_STEP_SUMMARY"
+            echo "" >> "$GITHUB_STEP_SUMMARY"
+            echo "- **Transient errors:** Use the [Quarantine Replay](${{ github.server_url }}/${{ github.repository }}/actions/workflows/quarantine-replay.yml) workflow with \`mode=by-classification\` and \`classification=transient\`" >> "$GITHUB_STEP_SUMMARY"
+            echo "- **Other errors:** Inspect individual records and fix root causes before replaying" >> "$GITHUB_STEP_SUMMARY"
+          fi

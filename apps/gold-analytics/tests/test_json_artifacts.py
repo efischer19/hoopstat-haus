@@ -249,7 +249,7 @@ class TestJSONArtifactWriter:
 
         # Verify index was written
         response = mock_s3.get_object(
-            Bucket="test-gold-bucket", Key="served/latest.json"
+            Bucket="test-gold-bucket", Key="served/index/latest.json"
         )
         assert response is not None
 
@@ -261,7 +261,7 @@ class TestJSONArtifactWriter:
 
         # Read and validate index
         response = mock_s3.get_object(
-            Bucket="test-gold-bucket", Key="served/latest.json"
+            Bucket="test-gold-bucket", Key="served/index/latest.json"
         )
         content = response["Body"].read().decode("utf-8")
         data = json.loads(content)
@@ -363,18 +363,87 @@ class TestJSONArtifactWriter:
         assert success is False
 
     def test_json_content_type_and_cache_headers(self, writer, mock_s3):
-        """Test that S3 objects have correct content type and cache headers."""
+        """Test that index objects have correct content type and short cache."""
         target_date = date(2024, 1, 15)
 
         writer.write_latest_index(target_date)
 
         # Get object metadata
         response = mock_s3.head_object(
-            Bucket="test-gold-bucket", Key="served/latest.json"
+            Bucket="test-gold-bucket", Key="served/index/latest.json"
         )
 
         assert response["ContentType"] == "application/json"
-        assert response["CacheControl"] == "public, max-age=3600"
+        assert response["CacheControl"] == "public, max-age=300"
+
+    def test_historical_data_gets_immutable_cache_headers(
+        self, writer, mock_s3, sample_player_analytics
+    ):
+        """Test that historical data artifacts get immutable 1-year cache headers."""
+        target_date = date(2024, 1, 15)
+
+        writer.write_player_daily_artifacts(sample_player_analytics, target_date)
+
+        # Get object metadata for a player daily artifact
+        response = mock_s3.head_object(
+            Bucket="test-gold-bucket",
+            Key="served/player_daily/2024-01-15/player_001.json",
+        )
+
+        assert response["ContentType"] == "application/json"
+        assert response["CacheControl"] == "public, max-age=31536000, immutable"
+
+    def test_team_daily_gets_immutable_cache_headers(
+        self, writer, mock_s3, sample_team_analytics
+    ):
+        """Test that team daily artifacts get immutable 1-year cache headers."""
+        target_date = date(2024, 1, 15)
+
+        writer.write_team_daily_artifacts(sample_team_analytics, target_date)
+
+        response = mock_s3.head_object(
+            Bucket="test-gold-bucket",
+            Key="served/team_daily/2024-01-15/team_001.json",
+        )
+
+        assert response["CacheControl"] == "public, max-age=31536000, immutable"
+
+    def test_top_lists_gets_immutable_cache_headers(
+        self, writer, mock_s3, sample_player_analytics
+    ):
+        """Test that top lists artifacts get immutable 1-year cache headers."""
+        target_date = date(2024, 1, 15)
+
+        writer.write_top_lists(sample_player_analytics, target_date)
+
+        response = mock_s3.head_object(
+            Bucket="test-gold-bucket",
+            Key="served/top_lists/2024-01-15/points.json",
+        )
+
+        assert response["CacheControl"] == "public, max-age=31536000, immutable"
+
+    def test_get_cache_control_index_path(self, writer):
+        """Test that index paths get the short TTL cache control."""
+        assert (
+            writer._get_cache_control("served/index/latest.json")
+            == "public, max-age=300"
+        )
+
+    def test_get_cache_control_historical_paths(self, writer):
+        """Test that non-index paths get the immutable cache control."""
+        assert (
+            writer._get_cache_control("served/player_daily/2024-01-15/123.json")
+            == "public, max-age=31536000, immutable"
+        )
+        assert (
+            writer._get_cache_control("served/team_daily/2024-01-15/456.json")
+            == "public, max-age=31536000, immutable"
+        )
+        assert (
+            writer._get_cache_control("served/top_lists/2024-01-15/points.json")
+            == "public, max-age=31536000, immutable"
+        )
 
     def test_prepare_player_daily_data_field_mapping(self, writer):
         """Test that player data preparation maps fields correctly."""

@@ -503,7 +503,7 @@ def quarantine_replay(
         extra={
             "s3_key": s3_key,
             "classification": filter_classification,
-            "date": filter_date.isoformat() if filter_date else None,
+            "date": filter_date.date().isoformat() if filter_date else None,
             "dry_run": dry_run,
             "transform": transform_name,
         },

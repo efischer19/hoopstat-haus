@@ -7,9 +7,10 @@ writing, Silver processing invocation, and quarantine status updates.
 """
 
 import json
+import os
 import subprocess
 from dataclasses import dataclass, field
-from datetime import date, datetime
+from datetime import UTC, date, datetime
 from pathlib import Path
 from typing import Any
 
@@ -165,7 +166,7 @@ class ReplayOrchestrator:
         else:
             transform = get_transform_for_classification(classification)
 
-        transform_name = getattr(transform, "__class__", type(transform)).__name__
+        transform_name = type(transform).__name__
 
         logger.info(
             "Applying transform",
@@ -455,8 +456,6 @@ class ReplayOrchestrator:
                 },
             )
 
-            import os
-
             run_env = {**os.environ, **env_vars}
             result = subprocess.run(
                 cmd,
@@ -510,7 +509,7 @@ class ReplayOrchestrator:
         Adds replay_timestamp and transform_applied metadata.
         """
         record["metadata"]["status"] = "resolved"
-        record["metadata"]["replay_timestamp"] = datetime.utcnow().isoformat()
+        record["metadata"]["replay_timestamp"] = datetime.now(UTC).isoformat()
         record["metadata"]["transform_applied"] = transform_type
         record["metadata"]["transform_metadata"] = transform_metadata
 
@@ -529,7 +528,7 @@ class ReplayOrchestrator:
         Adds replay_timestamp, replay_error, and increments retry_count.
         """
         record["metadata"]["status"] = "failed"
-        record["metadata"]["replay_timestamp"] = datetime.utcnow().isoformat()
+        record["metadata"]["replay_timestamp"] = datetime.now(UTC).isoformat()
         record["metadata"]["replay_error"] = error_msg
         record["metadata"]["transform_applied"] = transform_type
         record["metadata"]["retry_count"] = record["metadata"].get("retry_count", 0) + 1

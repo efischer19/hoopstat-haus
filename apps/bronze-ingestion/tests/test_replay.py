@@ -85,6 +85,13 @@ def _setup_s3_get_object(s3_manager, record):
     }
 
 
+def _get_stored_record(s3_manager_mock) -> dict:
+    """Extract the last stored quarantine record from mock put_object calls."""
+    put_calls = s3_manager_mock.s3_client.put_object.call_args_list
+    assert len(put_calls) >= 1, "No put_object calls recorded"
+    return json.loads(put_calls[-1].kwargs["Body"].decode("utf-8"))
+
+
 # -- get_transform_by_name Tests ---------------------------------------------
 
 
@@ -329,9 +336,7 @@ class TestReplaySingle:
         assert result.success is False
         assert "Transform failed" in result.error
         # Verify quarantine record was updated to failed
-        put_calls = self.s3_mgr.s3_client.put_object.call_args_list
-        assert len(put_calls) >= 1
-        stored_record = json.loads(put_calls[-1].kwargs["Body"].decode("utf-8"))
+        stored_record = _get_stored_record(self.s3_mgr)
         assert stored_record["metadata"]["status"] == "failed"
         assert stored_record["metadata"]["retry_count"] == 1
 
@@ -397,9 +402,7 @@ class TestReplaySingle:
 
         self.orchestrator.replay_single("quarantine/key.json")
 
-        put_calls = self.s3_mgr.s3_client.put_object.call_args_list
-        assert len(put_calls) >= 1
-        stored_record = json.loads(put_calls[-1].kwargs["Body"].decode("utf-8"))
+        stored_record = _get_stored_record(self.s3_mgr)
         assert stored_record["metadata"]["status"] == "resolved"
         assert "replay_timestamp" in stored_record["metadata"]
         assert stored_record["metadata"]["transform_applied"] == "identity"
@@ -416,8 +419,7 @@ class TestReplaySingle:
 
         self.orchestrator.replay_single("quarantine/key.json")
 
-        put_calls = self.s3_mgr.s3_client.put_object.call_args_list
-        stored_record = json.loads(put_calls[-1].kwargs["Body"].decode("utf-8"))
+        stored_record = _get_stored_record(self.s3_mgr)
         assert stored_record["metadata"]["retry_count"] == 3
 
     def test_unknown_classification_uses_identity(self):

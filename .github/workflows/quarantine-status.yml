@@ -41,7 +41,6 @@ jobs:
             --prefix "$QUARANTINE_PREFIX" \
             --output json 2>&1) || {
             echo "❌ Failed to list quarantine objects"
-            echo "$OBJECTS_JSON"
             exit 1
           }
 
@@ -76,7 +75,11 @@ jobs:
 
           CLASSIFIED=0
           DOWNLOAD_ERRORS=0
-          DETAILS=""
+
+          # Initialize file details output
+          echo "## Individual Records" > /tmp/file_details.md
+          echo "| File | Status | Classification | Type | Date | Issues | Attempts |" >> /tmp/file_details.md
+          echo "|------|--------|----------------|------|------|--------|----------|" >> /tmp/file_details.md
 
           # Process each quarantine file
           for KEY in $(echo "$OBJECTS" | jq -r '.[].key'); do
@@ -84,7 +87,7 @@ jobs:
 
             # Download the quarantine record
             RECORD=$(aws s3 cp "s3://$BRONZE_BUCKET/$KEY" - 2>/dev/null) || {
-              echo "    ⚠️  Failed to download"
+              echo "    ⚠️  Failed to download: $KEY"
               DOWNLOAD_ERRORS=$((DOWNLOAD_ERRORS + 1))
               continue
             }
@@ -105,8 +108,8 @@ jobs:
 
             CLASSIFIED=$((CLASSIFIED + 1))
 
-            # Build detail line
-            DETAILS="${DETAILS}| \`${KEY##*/}\` | ${STATUS} | ${CLASSIFICATION} | ${DATA_TYPE} | ${TARGET_DATE} | ${ISSUES_COUNT} | ${ATTEMPTS} |"$'\n'
+            # Write detail line directly to file
+            echo "| \`${KEY##*/}\` | ${STATUS} | ${CLASSIFICATION} | ${DATA_TYPE} | ${TARGET_DATE} | ${ISSUES_COUNT} | ${ATTEMPTS} |" >> /tmp/file_details.md
           done
 
           echo ""
@@ -158,12 +161,6 @@ jobs:
           for d in $(echo "${!DATE_COUNTS[@]}" | tr ' ' '\n' | sort -r); do
             echo "| \`$d\` | ${DATE_COUNTS[$d]} |" >> /tmp/date_breakdown.md
           done
-
-          # File details
-          echo "## Individual Records" > /tmp/file_details.md
-          echo "| File | Status | Classification | Type | Date | Issues | Attempts |" >> /tmp/file_details.md
-          echo "|------|--------|----------------|------|------|--------|----------|" >> /tmp/file_details.md
-          echo -n "$DETAILS" >> /tmp/file_details.md
 
       - name: Write summary
         if: always()

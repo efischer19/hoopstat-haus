@@ -1,0 +1,46 @@
+name: Data Dictionary
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'libs/hoopstat-data/hoopstat_data/silver_models.py'
+      - 'libs/hoopstat-data/hoopstat_data/gold_models.py'
+      - 'scripts/generate-data-dictionary.py'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  generate-data-dictionary:
+    runs-on: ubuntu-latest
+    name: Generate Data Dictionary
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.12'
+
+    - name: Install dependencies
+      run: pip install pydantic
+
+    - name: Generate Data Dictionary
+      run: python scripts/generate-data-dictionary.py
+
+    - name: Check for changes
+      id: changes
+      run: |
+        git diff --quiet docs-src/DATA_DICTIONARY.md && echo "changed=false" >> "$GITHUB_OUTPUT" || echo "changed=true" >> "$GITHUB_OUTPUT"
+
+    - name: Commit updated Data Dictionary
+      if: steps.changes.outputs.changed == 'true'
+      run: |
+        git config user.name "github-actions[bot]"
+        git config user.email "github-actions[bot]@users.noreply.github.com"
+        git add docs-src/DATA_DICTIONARY.md
+        git commit -m "docs: auto-update Data Dictionary from Pydantic models"
+        git push

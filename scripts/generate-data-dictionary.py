@@ -165,7 +165,7 @@ def generate_data_dictionary() -> str:
         "> **Auto-generated** from Pydantic model definitions. Do not edit manually."
     )
     lines.append(">")
-    now = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
+    now = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S UTC")
     lines.append(f"> Last updated: {now}")
     lines.append("")
 

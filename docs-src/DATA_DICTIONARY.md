@@ -2,7 +2,7 @@
 
 > **Auto-generated** from Pydantic model definitions. Do not edit manually.
 >
-> Last updated: 2026-03-14 12:42 UTC
+> Last updated: 2026-03-14 12:45:57 UTC
 
 ## Overview
 

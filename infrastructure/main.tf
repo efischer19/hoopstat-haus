@@ -618,8 +618,33 @@ resource "aws_cloudfront_distribution" "gold_artifacts" {
     viewer_protocol_policy = "redirect-to-https"
     compress               = true
 
-    # CORS response headers
+    # CORS + immutable cache headers for historical data (default behavior)
     response_headers_policy_id = aws_cloudfront_response_headers_policy.gold_artifacts_cors.id
+
+    dynamic "function_association" {
+      for_each = local.enable_www_redirect ? [1] : []
+      content {
+        event_type   = "viewer-request"
+        function_arn = aws_cloudfront_function.www_to_apex_redirect[0].arn
+      }
+    }
+  }
+
+  # Short-TTL cache behavior for index files (e.g. /index/latest.json)
+  ordered_cache_behavior {
+    path_pattern     = "index/*"
+    allowed_methods  = ["GET", "HEAD", "OPTIONS"]
+    cached_methods   = ["GET", "HEAD"]
+    target_origin_id = "S3-${aws_s3_bucket.gold.bucket}"
+
+    cache_policy_id          = "658327ea-f89d-4fab-a63d-7e88639e58f6" # CachingOptimized
+    origin_request_policy_id = "88a5eaf4-2fd4-4709-b370-b4c650ea3fcf" # CORS-S3Origin
+
+    viewer_protocol_policy = "redirect-to-https"
+    compress               = true
+
+    # CORS + short-TTL cache headers for index files
+    response_headers_policy_id = aws_cloudfront_response_headers_policy.gold_artifacts_index_cors.id
 
     dynamic "function_association" {
       for_each = local.enable_www_redirect ? [1] : []
@@ -656,10 +681,10 @@ resource "aws_cloudfront_distribution" "gold_artifacts" {
   }
 }
 
-# CloudFront Response Headers Policy for CORS
+# CloudFront Response Headers Policy for CORS (historical data -- immutable)
 resource "aws_cloudfront_response_headers_policy" "gold_artifacts_cors" {
   name    = "${var.project_name}-gold-artifacts-cors"
-  comment = "CORS headers for gold artifacts"
+  comment = "CORS + immutable cache headers for historical gold artifacts"
 
   cors_config {
     access_control_allow_credentials = false
@@ -683,7 +708,40 @@ resource "aws_cloudfront_response_headers_policy" "gold_artifacts_cors" {
   custom_headers_config {
     items {
       header   = "Cache-Control"
-      value    = "public, max-age=3600"
+      value    = "public, max-age=31536000, immutable"
+      override = false
+    }
+  }
+}
+
+# CloudFront Response Headers Policy for CORS (index -- short TTL)
+resource "aws_cloudfront_response_headers_policy" "gold_artifacts_index_cors" {
+  name    = "${var.project_name}-gold-artifacts-index-cors"
+  comment = "CORS + short-TTL cache headers for index artifacts"
+
+  cors_config {
+    access_control_allow_credentials = false
+
+    access_control_allow_headers {
+      items = ["*"]
+    }
+
+    access_control_allow_methods {
+      items = ["GET", "HEAD", "OPTIONS"]
+    }
+
+    access_control_allow_origins {
+      items = ["*"]
+    }
+
+    access_control_max_age_sec = 3600
+    origin_override            = true
+  }
+
+  custom_headers_config {
+    items {
+      header   = "Cache-Control"
+      value    = "public, max-age=300"
       override = false
     }
   }

@@ -333,7 +333,6 @@ class GoldProcessor:
         # Store using existing team analytics functionality
         # For season aggregations, we use a representative date (season start)
 
-        # TODO: Replace with JSON artifact writing per ADR-028
         logger.warning(
             "Storage not yet implemented - "
             "need to implement JSON artifact writing per ADR-028"
@@ -498,7 +497,6 @@ class GoldProcessor:
         # Store using existing player analytics functionality
         # For season aggregations, we use a representative date (season start)
 
-        # TODO: Replace with JSON artifact writing per ADR-028
         logger.warning(
             "Storage not yet implemented - "
             "need to implement JSON artifact writing per ADR-028"
@@ -977,7 +975,6 @@ class GoldProcessor:
             f"date {target_date}, season {season}"
         )
 
-        # TODO: Replace with JSON artifact writing per ADR-028
         logger.warning(
             "Storage not yet implemented - "
             "need to implement JSON artifact writing per ADR-028"
@@ -1006,7 +1003,6 @@ class GoldProcessor:
             f"season {season}"
         )
 
-        # TODO: Replace with JSON artifact writing per ADR-028
         logger.warning(
             "Storage not yet implemented - "
             "need to implement JSON artifact writing per ADR-028"

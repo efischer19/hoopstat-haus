@@ -31,6 +31,7 @@ class DateScopedIngestion:
         self.validator = DataValidator()
         self.quarantine = DataQuarantine(self.s3_manager)
         self.summary_manager = BronzeSummaryManager(self.s3_manager)
+        self.records_processed = 0
 
     def run(self, target_date: date, dry_run: bool = False) -> bool:
         """
@@ -94,6 +95,7 @@ class DateScopedIngestion:
                     target_date, len(games), successful_box_scores
                 )
 
+            self.records_processed = successful_box_scores
             logger.info(f"Ingestion completed for {target_date}")
             return True
 

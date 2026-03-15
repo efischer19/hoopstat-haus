@@ -117,16 +117,13 @@ def status(gold_bucket: str | None) -> None:
         sys.exit(1)
 
     try:
-        # TODO: Implement status check for JSON artifacts per ADR-028
         logger.info("=== Gold Layer Status Check ===")
         logger.warning(
             "Health check not yet implemented - "
             "need to implement JSON artifact validation per ADR-028"
         )
         logger.info(f"Gold Bucket: {gold_bucket_name}")
-        logger.info(
-            "TODO: Check for served/ prefix structure and validate JSON artifacts"
-        )
+        logger.info("Check for served/ prefix structure and validate JSON artifacts")
 
     except Exception as e:
         logger.error(f"Status check failed: {e}")

@@ -26,7 +26,7 @@ Gold processing is triggered by **silver-ready markers** written by the Silver l
 
 ### Storage & Partitions (Target for v1)
 - **Internal Parquet**: Partition by season/date/team_id/player_id to match access patterns
-- **Public JSON Artifacts**: Small, versioned JSON files (≤100KB) for browser/app consumption (TODO: Not yet implemented)
+- **Public JSON Artifacts**: Small, versioned JSON files (≤100KB) for browser/app consumption (Not yet implemented)
 - **Schema Evolution**: Versioned JSON schemas; Parquet schemas evolve with manifests
 
 ### Performance Features
@@ -110,7 +110,7 @@ docker build -f apps/gold-analytics/Dockerfile -t gold-analytics:dev .
 # Deploy via Terraform (see infrastructure/)
 ```
 
-## Public JSON Artifacts (TODO)
+## Public JSON Artifacts
 
 Per ADR-028, the Gold layer should serve public JSON artifacts for consumption:
 

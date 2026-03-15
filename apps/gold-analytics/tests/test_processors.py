@@ -376,7 +376,7 @@ class TestGoldProcessor:
         result = processor.process_team_season_aggregation("2023-24", dry_run=False)
         assert result is True  # Should succeed but with no data to process
 
-    # TODO: Re-add storage tests once JSON artifact writing is implemented
+    # Re-add storage tests once JSON artifact writing is implemented
     # per ADR-028. The following tests were removed because they tested
     # abandoned functionality. New tests should be added for JSON artifact
     # writing.

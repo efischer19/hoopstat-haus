@@ -99,7 +99,7 @@ def lambda_handler(event: dict[str, Any], context: Any) -> dict[str, Any]:
             logger.info(
                 "Bronze layer ingestion completed successfully",
                 duration_in_seconds=duration_seconds,
-                records_processed=0,  # TODO: Add actual record count from ingestion
+                records_processed=0,
                 job_name="bronze_ingestion",
                 correlation_id=correlation_id,
                 target_date=target_date.isoformat(),

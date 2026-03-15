@@ -463,7 +463,9 @@ class TestGoldProcessor:
         )
         processor.json_writer = MagicMock()
 
-        processor._store_player_analytics(pd.DataFrame(), date(2024, 1, 15))
+        processor._store_player_analytics(
+            pd.DataFrame(), date(2024, 1, 15), dry_run=False
+        )
 
         processor.json_writer.write_player_daily_artifacts.assert_not_called()
 
@@ -474,6 +476,8 @@ class TestGoldProcessor:
         )
         processor.json_writer = MagicMock()
 
-        processor._store_team_analytics(pd.DataFrame(), date(2024, 1, 15))
+        processor._store_team_analytics(
+            pd.DataFrame(), date(2024, 1, 15), dry_run=False
+        )
 
         processor.json_writer.write_team_daily_artifacts.assert_not_called()

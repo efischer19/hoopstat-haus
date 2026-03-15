@@ -705,3 +705,238 @@ class TestJSONArtifactWriter:
             writer._get_cache_control("served/season_player/2023-24/player_001.json")
             == "public, max-age=31536000, immutable"
         )
+
+    # ---- Team Season Artifact Tests ----
+
+    @pytest.fixture
+    def sample_team_season_aggregations(self):
+        """Sample team season aggregation data for testing."""
+        return {
+            "1610612747": {
+                "team_id": "1610612747",
+                "team_name": "Los Angeles Lakers",
+                "season": "2023-24",
+                "season_type": "regular",
+                "total_games": 82,
+                "total_points": 9348,
+                "total_points_allowed": 9200,
+                "points_per_game": 114.0,
+                "points_allowed_per_game": 112.2,
+                "assists_per_game": 26.5,
+                "total_rebounds_per_game": 44.3,
+                "turnovers_per_game": 13.8,
+                "field_goal_percentage": 0.478,
+                "three_point_percentage": 0.365,
+                "free_throw_percentage": 0.790,
+                "true_shooting_percentage": 0.580,
+                "effective_field_goal_percentage": 0.530,
+                "offensive_rating": 115.2,
+                "defensive_rating": 112.8,
+                "net_rating": 2.4,
+                "pace": 100.5,
+                "turnover_percentage": 0.138,
+                "offensive_rebound_percentage": 0.280,
+                "free_throw_rate": 0.250,
+                "data_quality_score": 0.95,
+            },
+            "1610612744": {
+                "team_id": "1610612744",
+                "team_name": "Golden State Warriors",
+                "season": "2023-24",
+                "season_type": "regular",
+                "total_games": 82,
+                "total_points": 9500,
+                "total_points_allowed": 9400,
+                "points_per_game": 115.9,
+                "points_allowed_per_game": 114.6,
+                "assists_per_game": 29.1,
+                "total_rebounds_per_game": 43.8,
+                "turnovers_per_game": 14.2,
+                "field_goal_percentage": 0.490,
+                "three_point_percentage": 0.388,
+                "free_throw_percentage": 0.810,
+                "true_shooting_percentage": 0.595,
+                "effective_field_goal_percentage": 0.545,
+                "offensive_rating": 116.8,
+                "defensive_rating": 114.2,
+                "net_rating": 2.6,
+                "pace": 101.2,
+                "turnover_percentage": 0.142,
+                "offensive_rebound_percentage": 0.265,
+                "free_throw_rate": 0.230,
+                "data_quality_score": 0.98,
+            },
+        }
+
+    def test_write_team_season_artifacts(
+        self, writer, mock_s3, sample_team_season_aggregations
+    ):
+        """Test writing team season aggregation artifacts to S3."""
+        success = writer.write_team_season_artifacts(
+            sample_team_season_aggregations, "2023-24"
+        )
+
+        assert success is True
+
+        # Verify files were written to S3
+        response = mock_s3.list_objects_v2(
+            Bucket="test-gold-bucket", Prefix="served/season_team/2023-24/"
+        )
+
+        assert "Contents" in response
+        assert len(response["Contents"]) == 2
+
+        # Verify file names
+        keys = [obj["Key"] for obj in response["Contents"]]
+        assert "served/season_team/2023-24/1610612747.json" in keys
+        assert "served/season_team/2023-24/1610612744.json" in keys
+
+    def test_write_team_season_artifacts_validates_json(
+        self, writer, mock_s3, sample_team_season_aggregations
+    ):
+        """Test that team season artifacts contain valid JSON with expected fields."""
+        writer.write_team_season_artifacts(sample_team_season_aggregations, "2023-24")
+
+        # Read and validate JSON
+        response = mock_s3.get_object(
+            Bucket="test-gold-bucket",
+            Key="served/season_team/2023-24/1610612747.json",
+        )
+        content = response["Body"].read().decode("utf-8")
+        data = json.loads(content)
+
+        # Verify expected fields
+        assert data["team_id"] == "1610612747"
+        assert data["team_name"] == "Los Angeles Lakers"
+        assert data["season"] == "2023-24"
+        assert data["season_type"] == "regular"
+        assert data["total_games"] == 82
+        assert data["total_points"] == 9348
+        assert data["total_points_allowed"] == 9200
+        assert data["points_per_game"] == 114.0
+        assert data["points_allowed_per_game"] == 112.2
+        assert data["assists_per_game"] == 26.5
+        assert data["field_goal_percentage"] == 0.478
+        assert data["offensive_rating"] == 115.2
+        assert data["net_rating"] == 2.4
+        assert data["data_quality_score"] == 0.95
+
+    def test_write_team_season_artifacts_empty(self, writer, mock_s3):
+        """Test writing empty team season aggregations returns True."""
+        success = writer.write_team_season_artifacts({}, "2023-24")
+
+        assert success is True
+
+        # Verify no files were written
+        response = mock_s3.list_objects_v2(
+            Bucket="test-gold-bucket", Prefix="served/season_team/2023-24/"
+        )
+        assert "Contents" not in response
+
+    def test_team_season_artifacts_immutable_cache_headers(
+        self, writer, mock_s3, sample_team_season_aggregations
+    ):
+        """Test that season team artifacts get immutable 1-year cache headers."""
+        writer.write_team_season_artifacts(sample_team_season_aggregations, "2023-24")
+
+        response = mock_s3.head_object(
+            Bucket="test-gold-bucket",
+            Key="served/season_team/2023-24/1610612747.json",
+        )
+
+        assert response["ContentType"] == "application/json"
+        assert response["CacheControl"] == "public, max-age=31536000, immutable"
+
+    def test_team_season_artifact_size_under_limit(
+        self, writer, mock_s3, sample_team_season_aggregations
+    ):
+        """Test that team season artifacts are under the 100KB size limit."""
+        writer.write_team_season_artifacts(sample_team_season_aggregations, "2023-24")
+
+        response = mock_s3.get_object(
+            Bucket="test-gold-bucket",
+            Key="served/season_team/2023-24/1610612747.json",
+        )
+        content = response["Body"].read()
+        size_kb = len(content) / 1024
+
+        assert size_kb <= 100
+
+    def test_team_season_artifact_s3_error_handling(self, writer):
+        """Test error handling when S3 upload fails for team season artifacts."""
+        aggregations = {
+            "1610612747": {
+                "team_id": "1610612747",
+                "team_name": "Los Angeles Lakers",
+                "season": "2023-24",
+                "total_games": 10,
+                "total_points": 1100,
+                "total_points_allowed": 1050,
+                "points_per_game": 110.0,
+                "points_allowed_per_game": 105.0,
+                "assists_per_game": 25.0,
+                "total_rebounds_per_game": 44.0,
+                "turnovers_per_game": 14.0,
+            },
+        }
+
+        # Mock S3 client to raise error
+        writer.s3_client.put_object = MagicMock(
+            side_effect=Exception("S3 upload failed")
+        )
+
+        success = writer.write_team_season_artifacts(aggregations, "2023-24")
+        assert success is False
+
+    def test_prepare_team_season_data_field_mapping(self, writer):
+        """Test that team season data preparation maps fields correctly."""
+        stats = {
+            "team_id": "1610612747",
+            "team_name": "Los Angeles Lakers",
+            "season": "2023-24",
+            "season_type": "regular",
+            "total_games": 82,
+            "total_points": 9348,
+            "total_points_allowed": 9200,
+            "points_per_game": 114.0,
+            "points_allowed_per_game": 112.2,
+            "assists_per_game": 26.5,
+            "total_rebounds_per_game": 44.3,
+            "turnovers_per_game": 13.8,
+            "field_goal_percentage": 0.478,
+            "three_point_percentage": 0.365,
+            "free_throw_percentage": 0.790,
+            "true_shooting_percentage": 0.580,
+            "effective_field_goal_percentage": 0.530,
+            "offensive_rating": 115.2,
+            "defensive_rating": 112.8,
+            "net_rating": 2.4,
+            "pace": 100.5,
+            "turnover_percentage": 0.138,
+            "offensive_rebound_percentage": 0.280,
+            "free_throw_rate": 0.250,
+            "data_quality_score": 0.95,
+        }
+
+        prepared = writer._prepare_team_season_data(stats, "1610612747", "2023-24")
+
+        assert prepared["team_id"] == "1610612747"
+        assert prepared["team_name"] == "Los Angeles Lakers"
+        assert prepared["season"] == "2023-24"
+        assert prepared["season_type"] == "regular"
+        assert prepared["total_games"] == 82
+        assert prepared["total_points"] == 9348
+        assert prepared["total_points_allowed"] == 9200
+        assert prepared["points_per_game"] == 114.0
+        assert prepared["points_allowed_per_game"] == 112.2
+        assert prepared["field_goal_percentage"] == 0.478
+        assert prepared["offensive_rating"] == 115.2
+        assert prepared["net_rating"] == 2.4
+        assert prepared["data_quality_score"] == 0.95
+
+    def test_get_cache_control_season_team_path(self, writer):
+        """Test that season_team paths get the immutable cache control."""
+        assert (
+            writer._get_cache_control("served/season_team/2023-24/1610612747.json")
+            == "public, max-age=31536000, immutable"
+        )

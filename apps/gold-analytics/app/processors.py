@@ -333,14 +333,18 @@ class GoldProcessor:
         # Store using existing team analytics functionality
         # For season aggregations, we use a representative date (season start)
 
-        # TODO: Replace with JSON artifact writing per ADR-028
-        logger.warning(
-            "Storage not yet implemented - "
-            "need to implement JSON artifact writing per ADR-028"
+        # Write JSON artifacts per ADR-028
+        success = self.json_writer.write_team_season_artifacts(
+            aggregated_seasons, season
         )
-        logger.info(
-            f"Would store team season aggregations for {len(aggregated_seasons)} teams"
-        )
+        if success:
+            logger.info(
+                f"Stored team season aggregations for {len(aggregated_seasons)} teams"
+            )
+        else:
+            logger.error(
+                f"Failed to store some team season aggregations for season {season}"
+            )
 
     @performance_monitor("load_season_player_games")
     def _load_season_player_games(

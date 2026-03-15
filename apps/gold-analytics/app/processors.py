@@ -499,8 +499,17 @@ class GoldProcessor:
         # For season aggregations, we use a representative date (season start)
 
         # Write JSON artifacts per ADR-028
-        self.json_writer.write_player_season_artifacts(aggregated_seasons, season)
-        logger.info(f"Stored season aggregations for {len(aggregated_seasons)} players")
+        success = self.json_writer.write_player_season_artifacts(
+            aggregated_seasons, season
+        )
+        if success:
+            logger.info(
+                f"Stored season aggregations for {len(aggregated_seasons)} players"
+            )
+        else:
+            logger.error(
+                f"Failed to store some season aggregations for season {season}"
+            )
 
     @performance_monitor("process_date")
     def process_date(self, target_date: date, dry_run: bool = False) -> bool:

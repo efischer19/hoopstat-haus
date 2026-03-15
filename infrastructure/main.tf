@@ -655,6 +655,78 @@ resource "aws_cloudfront_distribution" "gold_artifacts" {
     }
   }
 
+  # 1-hour TTL cache behavior for frontend HTML files (e.g. /index.html)
+  ordered_cache_behavior {
+    path_pattern     = "*.html"
+    allowed_methods  = ["GET", "HEAD", "OPTIONS"]
+    cached_methods   = ["GET", "HEAD"]
+    target_origin_id = "S3-${aws_s3_bucket.gold.bucket}"
+
+    cache_policy_id          = "658327ea-f89d-4fab-a63d-7e88639e58f6" # CachingOptimized
+    origin_request_policy_id = "88a5eaf4-2fd4-4709-b370-b4c650ea3fcf" # CORS-S3Origin
+
+    viewer_protocol_policy = "redirect-to-https"
+    compress               = true
+
+    response_headers_policy_id = aws_cloudfront_response_headers_policy.frontend_app.id
+
+    dynamic "function_association" {
+      for_each = local.enable_www_redirect ? [1] : []
+      content {
+        event_type   = "viewer-request"
+        function_arn = aws_cloudfront_function.www_to_apex_redirect[0].arn
+      }
+    }
+  }
+
+  # 1-hour TTL cache behavior for frontend static assets (CSS, images, etc.)
+  ordered_cache_behavior {
+    path_pattern     = "assets/*"
+    allowed_methods  = ["GET", "HEAD", "OPTIONS"]
+    cached_methods   = ["GET", "HEAD"]
+    target_origin_id = "S3-${aws_s3_bucket.gold.bucket}"
+
+    cache_policy_id          = "658327ea-f89d-4fab-a63d-7e88639e58f6" # CachingOptimized
+    origin_request_policy_id = "88a5eaf4-2fd4-4709-b370-b4c650ea3fcf" # CORS-S3Origin
+
+    viewer_protocol_policy = "redirect-to-https"
+    compress               = true
+
+    response_headers_policy_id = aws_cloudfront_response_headers_policy.frontend_app.id
+
+    dynamic "function_association" {
+      for_each = local.enable_www_redirect ? [1] : []
+      content {
+        event_type   = "viewer-request"
+        function_arn = aws_cloudfront_function.www_to_apex_redirect[0].arn
+      }
+    }
+  }
+
+  # 1-hour TTL cache behavior for frontend JavaScript
+  ordered_cache_behavior {
+    path_pattern     = "scripts/*"
+    allowed_methods  = ["GET", "HEAD", "OPTIONS"]
+    cached_methods   = ["GET", "HEAD"]
+    target_origin_id = "S3-${aws_s3_bucket.gold.bucket}"
+
+    cache_policy_id          = "658327ea-f89d-4fab-a63d-7e88639e58f6" # CachingOptimized
+    origin_request_policy_id = "88a5eaf4-2fd4-4709-b370-b4c650ea3fcf" # CORS-S3Origin
+
+    viewer_protocol_policy = "redirect-to-https"
+    compress               = true
+
+    response_headers_policy_id = aws_cloudfront_response_headers_policy.frontend_app.id
+
+    dynamic "function_association" {
+      for_each = local.enable_www_redirect ? [1] : []
+      content {
+        event_type   = "viewer-request"
+        function_arn = aws_cloudfront_function.www_to_apex_redirect[0].arn
+      }
+    }
+  }
+
   restrictions {
     geo_restriction {
       restriction_type = "none"
@@ -742,6 +814,39 @@ resource "aws_cloudfront_response_headers_policy" "gold_artifacts_index_cors" {
     items {
       header   = "Cache-Control"
       value    = "public, max-age=300"
+      override = false
+    }
+  }
+}
+
+# CloudFront Response Headers Policy for frontend app (1-hour TTL)
+resource "aws_cloudfront_response_headers_policy" "frontend_app" {
+  name    = "${var.project_name}-frontend-app"
+  comment = "CORS + 1-hour cache headers for frontend app assets"
+
+  cors_config {
+    access_control_allow_credentials = false
+
+    access_control_allow_headers {
+      items = ["*"]
+    }
+
+    access_control_allow_methods {
+      items = ["GET", "HEAD", "OPTIONS"]
+    }
+
+    access_control_allow_origins {
+      items = ["*"]
+    }
+
+    access_control_max_age_sec = 3600
+    origin_override            = true
+  }
+
+  custom_headers_config {
+    items {
+      header   = "Cache-Control"
+      value    = "public, max-age=3600"
       override = false
     }
   }

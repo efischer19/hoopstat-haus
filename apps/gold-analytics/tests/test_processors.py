@@ -481,3 +481,43 @@ class TestGoldProcessor:
         )
 
         processor.json_writer.write_team_daily_artifacts.assert_not_called()
+
+    def test_store_season_aggregations_calls_artifact_writer(self):
+        """Test that _store_season_aggregations calls write_player_season_artifacts."""
+        processor = GoldProcessor(
+            silver_bucket="test-silver-bucket", gold_bucket="test-gold-bucket"
+        )
+        processor.json_writer = MagicMock()
+        processor.validator = MagicMock()
+
+        aggregated_seasons = {
+            "player_001": {
+                "player_id": "player_001",
+                "player_name": "Test Player",
+                "total_games": 50,
+                "total_minutes": 1500.0,
+                "points_per_game": 20.0,
+                "rebounds_per_game": 5.0,
+                "assists_per_game": 4.0,
+                "steals_per_game": 1.0,
+                "blocks_per_game": 0.5,
+                "turnovers_per_game": 2.0,
+            },
+        }
+
+        processor._store_season_aggregations(aggregated_seasons, "2023-24")
+
+        processor.json_writer.write_player_season_artifacts.assert_called_once_with(
+            aggregated_seasons, "2023-24"
+        )
+
+    def test_store_season_aggregations_empty(self):
+        """Test that _store_season_aggregations handles empty dict."""
+        processor = GoldProcessor(
+            silver_bucket="test-silver-bucket", gold_bucket="test-gold-bucket"
+        )
+        processor.json_writer = MagicMock()
+
+        processor._store_season_aggregations({}, "2023-24")
+
+        processor.json_writer.write_player_season_artifacts.assert_not_called()

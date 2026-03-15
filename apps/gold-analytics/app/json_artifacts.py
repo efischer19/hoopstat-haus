@@ -12,7 +12,11 @@ from typing import Any
 import boto3
 import pandas as pd
 from botocore.exceptions import BotoCoreError, ClientError
-from hoopstat_data.gold_models import GoldPlayerDailyStats, GoldTeamDailyStats
+from hoopstat_data.gold_models import (
+    GoldPlayerDailyStats,
+    GoldPlayerSeasonSummary,
+    GoldTeamDailyStats,
+)
 from hoopstat_observability import get_logger
 
 logger = get_logger(__name__)
@@ -45,6 +49,7 @@ class JSONArtifactWriter:
     - served/player_daily/{date}/{player_id}.json
     - served/team_daily/{date}/{team_id}.json
     - served/top_lists/{date}/{metric}.json
+    - served/season_player/{season}/{player_id}.json
     - served/index/latest.json
     """
 
@@ -322,6 +327,109 @@ class JSONArtifactWriter:
         except Exception as e:
             logger.error(f"Failed to write latest index: {e}")
             return False
+
+    def write_player_season_artifacts(
+        self, aggregations: dict[str, dict], season: str
+    ) -> bool:
+        """
+        Write player season aggregation JSON artifacts to S3.
+
+        Creates individual JSON files for each player:
+        served/season_player/{season}/{player_id}.json
+
+        Args:
+            aggregations: Dictionary mapping player_id to season stats dict
+            season: Season identifier (e.g., "2023-24")
+
+        Returns:
+            True if all writes succeeded, False otherwise
+        """
+        if not aggregations:
+            logger.info("No player season aggregations to write")
+            return True
+
+        success_count = 0
+        error_count = 0
+
+        logger.info(f"Writing {len(aggregations)} player season artifacts for {season}")
+
+        for player_id, stats in aggregations.items():
+            try:
+                # Prepare data for the Pydantic model
+                model_data = self._prepare_player_season_data(stats, player_id, season)
+                player_model = GoldPlayerSeasonSummary(**model_data)
+
+                # Serialize to JSON using Pydantic
+                json_content = player_model.model_dump_json(indent=2, exclude_none=True)
+
+                # Check size constraint
+                size_kb = len(json_content.encode("utf-8")) / 1024
+                if size_kb > self.MAX_ARTIFACT_SIZE_KB:
+                    logger.warning(
+                        f"Player {player_id} season artifact exceeds size limit: "
+                        f"{size_kb:.1f}KB > {self.MAX_ARTIFACT_SIZE_KB}KB"
+                    )
+
+                # Write to S3
+                s3_key = f"served/season_player/{season}/{player_id}.json"
+                self._upload_json_to_s3(json_content, s3_key)
+                success_count += 1
+
+            except Exception as e:
+                logger.error(
+                    f"Failed to write player season artifact for {player_id}: {e}"
+                )
+                error_count += 1
+
+        logger.info(
+            f"Wrote {success_count} player season artifacts, {error_count} errors"
+        )
+        return error_count == 0
+
+    def _prepare_player_season_data(
+        self, stats: dict[str, Any], player_id: str, season: str
+    ) -> dict[str, Any]:
+        """
+        Prepare aggregated season data for GoldPlayerSeasonSummary model.
+
+        Maps the output of PlayerSeasonAggregator.aggregate_season_stats()
+        to the GoldPlayerSeasonSummary Pydantic model fields.
+
+        Args:
+            stats: Aggregated season statistics dict from the aggregator
+            player_id: Player identifier
+            season: Season identifier (e.g., "2023-24")
+
+        Returns:
+            Prepared data dict for GoldPlayerSeasonSummary initialization
+        """
+        return {
+            "player_id": str(stats.get("player_id", player_id)),
+            "player_name": stats.get("player_name"),
+            "season": stats.get("season", season),
+            "team": stats.get("team"),
+            # Season totals
+            "total_games": _safe_int(stats.get("total_games")),
+            "total_minutes": float(stats.get("total_minutes", 0)),
+            # Per-game averages
+            "points_per_game": float(stats.get("points_per_game", 0)),
+            "rebounds_per_game": float(stats.get("rebounds_per_game", 0)),
+            "assists_per_game": float(stats.get("assists_per_game", 0)),
+            "steals_per_game": float(stats.get("steals_per_game", 0)),
+            "blocks_per_game": float(stats.get("blocks_per_game", 0)),
+            "turnovers_per_game": float(stats.get("turnovers_per_game", 0)),
+            # Season shooting percentages
+            "field_goal_percentage": stats.get("field_goal_percentage"),
+            "three_point_percentage": stats.get("three_point_percentage"),
+            "free_throw_percentage": stats.get("free_throw_percentage"),
+            # Advanced metrics
+            "efficiency_rating": stats.get("efficiency_rating"),
+            "true_shooting_percentage": stats.get("true_shooting_percentage"),
+            "usage_rate": stats.get("usage_rate"),
+            # Performance trends
+            "scoring_trend": stats.get("scoring_trend"),
+            "efficiency_trend": stats.get("efficiency_trend"),
+        }
 
     def _prepare_player_daily_data(
         self, player_data: dict[str, Any], target_date: date

@@ -494,3 +494,214 @@ class TestJSONArtifactWriter:
         assert prepared["offensive_rating"] == 115.3
         assert prepared["home_game"] is True
         assert prepared["game_date"] == "2024-01-15"
+
+    @pytest.fixture
+    def sample_season_aggregations(self):
+        """Sample player season aggregation data for testing."""
+        return {
+            "player_001": {
+                "player_id": "player_001",
+                "player_name": "Test Player One",
+                "season": "2023-24",
+                "team": "TEAM1",
+                "total_games": 60,
+                "total_minutes": 1800.0,
+                "points_per_game": 22.5,
+                "rebounds_per_game": 7.3,
+                "assists_per_game": 5.1,
+                "steals_per_game": 1.5,
+                "blocks_per_game": 0.8,
+                "turnovers_per_game": 2.3,
+                "field_goal_percentage": 0.485,
+                "three_point_percentage": 0.372,
+                "free_throw_percentage": 0.885,
+                "efficiency_rating": 21.4,
+                "true_shooting_percentage": 0.592,
+                "usage_rate": 0.28,
+            },
+            "player_002": {
+                "player_id": "player_002",
+                "player_name": "Test Player Two",
+                "season": "2023-24",
+                "team": "TEAM2",
+                "total_games": 72,
+                "total_minutes": 2520.0,
+                "points_per_game": 28.1,
+                "rebounds_per_game": 4.5,
+                "assists_per_game": 8.2,
+                "steals_per_game": 1.8,
+                "blocks_per_game": 0.3,
+                "turnovers_per_game": 3.1,
+                "field_goal_percentage": 0.512,
+                "three_point_percentage": 0.401,
+                "free_throw_percentage": 0.910,
+                "efficiency_rating": 26.8,
+                "true_shooting_percentage": 0.648,
+                "usage_rate": 0.32,
+            },
+        }
+
+    def test_write_player_season_artifacts(
+        self, writer, mock_s3, sample_season_aggregations
+    ):
+        """Test writing player season aggregation artifacts to S3."""
+        success = writer.write_player_season_artifacts(
+            sample_season_aggregations, "2023-24"
+        )
+
+        assert success is True
+
+        # Verify files were written to S3
+        response = mock_s3.list_objects_v2(
+            Bucket="test-gold-bucket", Prefix="served/season_player/2023-24/"
+        )
+
+        assert "Contents" in response
+        assert len(response["Contents"]) == 2
+
+        # Verify file names
+        keys = [obj["Key"] for obj in response["Contents"]]
+        assert "served/season_player/2023-24/player_001.json" in keys
+        assert "served/season_player/2023-24/player_002.json" in keys
+
+    def test_write_player_season_artifacts_validates_json(
+        self, writer, mock_s3, sample_season_aggregations
+    ):
+        """Test that player season artifacts contain valid JSON with expected fields."""
+        writer.write_player_season_artifacts(sample_season_aggregations, "2023-24")
+
+        # Read and validate JSON
+        response = mock_s3.get_object(
+            Bucket="test-gold-bucket",
+            Key="served/season_player/2023-24/player_001.json",
+        )
+        content = response["Body"].read().decode("utf-8")
+        data = json.loads(content)
+
+        # Verify expected fields
+        assert data["player_id"] == "player_001"
+        assert data["player_name"] == "Test Player One"
+        assert data["season"] == "2023-24"
+        assert data["team"] == "TEAM1"
+        assert data["total_games"] == 60
+        assert data["total_minutes"] == 1800.0
+        assert data["points_per_game"] == 22.5
+        assert data["rebounds_per_game"] == 7.3
+        assert data["assists_per_game"] == 5.1
+        assert data["field_goal_percentage"] == 0.485
+        assert data["efficiency_rating"] == 21.4
+        assert data["true_shooting_percentage"] == 0.592
+
+    def test_write_player_season_artifacts_empty(self, writer, mock_s3):
+        """Test writing empty season aggregations returns True."""
+        success = writer.write_player_season_artifacts({}, "2023-24")
+
+        assert success is True
+
+        # Verify no files were written
+        response = mock_s3.list_objects_v2(
+            Bucket="test-gold-bucket", Prefix="served/season_player/2023-24/"
+        )
+        assert "Contents" not in response
+
+    def test_player_season_artifacts_immutable_cache_headers(
+        self, writer, mock_s3, sample_season_aggregations
+    ):
+        """Test that season player artifacts get immutable 1-year cache headers."""
+        writer.write_player_season_artifacts(sample_season_aggregations, "2023-24")
+
+        response = mock_s3.head_object(
+            Bucket="test-gold-bucket",
+            Key="served/season_player/2023-24/player_001.json",
+        )
+
+        assert response["ContentType"] == "application/json"
+        assert response["CacheControl"] == "public, max-age=31536000, immutable"
+
+    def test_player_season_artifact_size_under_limit(
+        self, writer, mock_s3, sample_season_aggregations
+    ):
+        """Test that season artifacts are under the 100KB size limit."""
+        writer.write_player_season_artifacts(sample_season_aggregations, "2023-24")
+
+        response = mock_s3.get_object(
+            Bucket="test-gold-bucket",
+            Key="served/season_player/2023-24/player_001.json",
+        )
+        content = response["Body"].read()
+        size_kb = len(content) / 1024
+
+        assert size_kb <= 100
+
+    def test_player_season_artifact_s3_error_handling(self, writer):
+        """Test error handling when S3 upload fails for season artifacts."""
+        aggregations = {
+            "player_001": {
+                "player_id": "player_001",
+                "player_name": "Test Player",
+                "season": "2023-24",
+                "team": "TST",
+                "total_games": 10,
+                "total_minutes": 300.0,
+                "points_per_game": 15.0,
+                "rebounds_per_game": 5.0,
+                "assists_per_game": 3.0,
+                "steals_per_game": 1.0,
+                "blocks_per_game": 0.5,
+                "turnovers_per_game": 2.0,
+            },
+        }
+
+        # Mock S3 client to raise error
+        writer.s3_client.put_object = MagicMock(
+            side_effect=Exception("S3 upload failed")
+        )
+
+        success = writer.write_player_season_artifacts(aggregations, "2023-24")
+        assert success is False
+
+    def test_prepare_player_season_data_field_mapping(self, writer):
+        """Test that player season data preparation maps fields correctly."""
+        stats = {
+            "player_id": "2544",
+            "player_name": "LeBron James",
+            "season": "2023-24",
+            "team": "LAL",
+            "total_games": 71,
+            "total_minutes": 2500.0,
+            "points_per_game": 25.7,
+            "rebounds_per_game": 7.3,
+            "assists_per_game": 8.3,
+            "steals_per_game": 1.3,
+            "blocks_per_game": 0.5,
+            "turnovers_per_game": 3.5,
+            "field_goal_percentage": 0.540,
+            "three_point_percentage": 0.410,
+            "free_throw_percentage": 0.750,
+            "efficiency_rating": 22.1,
+            "true_shooting_percentage": 0.640,
+            "usage_rate": 0.300,
+            "scoring_trend": 0.05,
+            "efficiency_trend": -0.02,
+        }
+
+        prepared = writer._prepare_player_season_data(stats, "2544", "2023-24")
+
+        assert prepared["player_id"] == "2544"
+        assert prepared["player_name"] == "LeBron James"
+        assert prepared["season"] == "2023-24"
+        assert prepared["team"] == "LAL"
+        assert prepared["total_games"] == 71
+        assert prepared["total_minutes"] == 2500.0
+        assert prepared["points_per_game"] == 25.7
+        assert prepared["field_goal_percentage"] == 0.540
+        assert prepared["efficiency_rating"] == 22.1
+        assert prepared["true_shooting_percentage"] == 0.640
+        assert prepared["scoring_trend"] == 0.05
+
+    def test_get_cache_control_season_player_path(self, writer):
+        """Test that season_player paths get the immutable cache control."""
+        assert (
+            writer._get_cache_control("served/season_player/2023-24/player_001.json")
+            == "public, max-age=31536000, immutable"
+        )

@@ -376,7 +376,104 @@ class TestGoldProcessor:
         result = processor.process_team_season_aggregation("2023-24", dry_run=False)
         assert result is True  # Should succeed but with no data to process
 
-    # TODO: Re-add storage tests once JSON artifact writing is implemented
-    # per ADR-028. The following tests were removed because they tested
-    # abandoned functionality. New tests should be added for JSON artifact
-    # writing.
+    def test_store_player_analytics_calls_artifact_writer(self):
+        """Test that _store_player_analytics calls write_player_daily_artifacts."""
+        processor = GoldProcessor(
+            silver_bucket="test-silver-bucket", gold_bucket="test-gold-bucket"
+        )
+        processor.json_writer = MagicMock()
+
+        analytics = pd.DataFrame(
+            {
+                "player_id": ["player_1"],
+                "points": [25],
+            }
+        )
+        target_date = date(2024, 1, 15)
+
+        processor._store_player_analytics(analytics, target_date, dry_run=False)
+
+        processor.json_writer.write_player_daily_artifacts.assert_called_once_with(
+            analytics, target_date
+        )
+
+    def test_store_team_analytics_calls_artifact_writer(self):
+        """Test that _store_team_analytics calls write_team_daily_artifacts."""
+        processor = GoldProcessor(
+            silver_bucket="test-silver-bucket", gold_bucket="test-gold-bucket"
+        )
+        processor.json_writer = MagicMock()
+
+        analytics = pd.DataFrame(
+            {
+                "team_id": ["team_1"],
+                "points": [110],
+            }
+        )
+        target_date = date(2024, 1, 15)
+
+        processor._store_team_analytics(analytics, target_date, dry_run=False)
+
+        processor.json_writer.write_team_daily_artifacts.assert_called_once_with(
+            analytics, target_date
+        )
+
+    def test_store_player_analytics_dry_run_skips_writing(self):
+        """Test that _store_player_analytics skips writing in dry-run mode."""
+        processor = GoldProcessor(
+            silver_bucket="test-silver-bucket", gold_bucket="test-gold-bucket"
+        )
+        processor.json_writer = MagicMock()
+
+        analytics = pd.DataFrame(
+            {
+                "player_id": ["player_1"],
+                "points": [25],
+            }
+        )
+        target_date = date(2024, 1, 15)
+
+        processor._store_player_analytics(analytics, target_date, dry_run=True)
+
+        processor.json_writer.write_player_daily_artifacts.assert_not_called()
+
+    def test_store_team_analytics_dry_run_skips_writing(self):
+        """Test that _store_team_analytics skips writing in dry-run mode."""
+        processor = GoldProcessor(
+            silver_bucket="test-silver-bucket", gold_bucket="test-gold-bucket"
+        )
+        processor.json_writer = MagicMock()
+
+        analytics = pd.DataFrame(
+            {
+                "team_id": ["team_1"],
+                "points": [110],
+            }
+        )
+        target_date = date(2024, 1, 15)
+
+        processor._store_team_analytics(analytics, target_date, dry_run=True)
+
+        processor.json_writer.write_team_daily_artifacts.assert_not_called()
+
+    def test_store_player_analytics_empty_dataframe(self):
+        """Test that _store_player_analytics handles empty DataFrames."""
+        processor = GoldProcessor(
+            silver_bucket="test-silver-bucket", gold_bucket="test-gold-bucket"
+        )
+        processor.json_writer = MagicMock()
+
+        processor._store_player_analytics(pd.DataFrame(), date(2024, 1, 15))
+
+        processor.json_writer.write_player_daily_artifacts.assert_not_called()
+
+    def test_store_team_analytics_empty_dataframe(self):
+        """Test that _store_team_analytics handles empty DataFrames."""
+        processor = GoldProcessor(
+            silver_bucket="test-silver-bucket", gold_bucket="test-gold-bucket"
+        )
+        processor.json_writer = MagicMock()
+
+        processor._store_team_analytics(pd.DataFrame(), date(2024, 1, 15))
+
+        processor.json_writer.write_team_daily_artifacts.assert_not_called()

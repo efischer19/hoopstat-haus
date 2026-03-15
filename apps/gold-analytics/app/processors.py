@@ -567,27 +567,19 @@ class GoldProcessor:
                         team_stats, team_analytics, "team"
                     )
 
-                # Store results
-                if not dry_run:
-                    if not player_analytics.empty:
-                        self._store_player_analytics(player_analytics, target_date)
-                    if not team_analytics.empty:
-                        self._store_team_analytics(team_analytics, target_date)
+                # Store results (writes daily JSON artifacts per ADR-028)
+                if not player_analytics.empty:
+                    self._store_player_analytics(player_analytics, target_date, dry_run)
+                if not team_analytics.empty:
+                    self._store_team_analytics(team_analytics, target_date, dry_run)
 
-                    # Write JSON artifacts
+                # Write additional JSON artifacts (top lists, index)
+                if not dry_run:
                     try:
                         if not player_analytics.empty:
-                            self.json_writer.write_player_daily_artifacts(
-                                player_analytics, target_date
-                            )
                             self.json_writer.write_top_lists(
                                 player_analytics, target_date
                             )
-                        if not team_analytics.empty:
-                            self.json_writer.write_team_daily_artifacts(
-                                team_analytics, target_date
-                            )
-                        # Update latest index
                         self.json_writer.write_latest_index(target_date)
                     except (BotoCoreError, ClientError) as e:
                         logger.error(f"S3 error writing JSON artifacts: {e}")
@@ -595,9 +587,6 @@ class GoldProcessor:
                     except Exception as e:
                         logger.error(f"Unexpected error writing JSON artifacts: {e}")
                         # Don't fail the whole process if JSON writing fails
-                else:
-                    logger.info(f"Would store {len(player_analytics)} player analytics")
-                    logger.info(f"Would store {len(team_analytics)} team analytics")
 
                 # Update context with total records processed
                 ctx["records_processed"] = len(player_analytics) + len(team_analytics)
@@ -952,14 +941,15 @@ class GoldProcessor:
         return analytics
 
     def _store_player_analytics(
-        self, analytics: pd.DataFrame, target_date: date
+        self, analytics: pd.DataFrame, target_date: date, dry_run: bool = False
     ) -> None:
         """
-        Store player analytics data.
+        Store player analytics data as JSON artifacts per ADR-028.
 
         Args:
             analytics: Player analytics data
             target_date: Date being processed
+            dry_run: If True, log what would be written without writing
         """
         if analytics.empty:
             logger.info("No player analytics data to store")
@@ -977,19 +967,25 @@ class GoldProcessor:
             f"date {target_date}, season {season}"
         )
 
-        # TODO: Replace with JSON artifact writing per ADR-028
-        logger.warning(
-            "Storage not yet implemented - "
-            "need to implement JSON artifact writing per ADR-028"
-        )
+        if dry_run:
+            logger.info(
+                f"DRY RUN: Would write {len(analytics)} player daily artifacts "
+                f"for {target_date}"
+            )
+            return
 
-    def _store_team_analytics(self, analytics: pd.DataFrame, target_date: date) -> None:
+        self.json_writer.write_player_daily_artifacts(analytics, target_date)
+
+    def _store_team_analytics(
+        self, analytics: pd.DataFrame, target_date: date, dry_run: bool = False
+    ) -> None:
         """
-        Store team analytics data.
+        Store team analytics data as JSON artifacts per ADR-028.
 
         Args:
             analytics: Team analytics data
             target_date: Date being processed
+            dry_run: If True, log what would be written without writing
         """
         if analytics.empty:
             logger.info("No team analytics data to store")
@@ -1006,11 +1002,14 @@ class GoldProcessor:
             f"season {season}"
         )
 
-        # TODO: Replace with JSON artifact writing per ADR-028
-        logger.warning(
-            "Storage not yet implemented - "
-            "need to implement JSON artifact writing per ADR-028"
-        )
+        if dry_run:
+            logger.info(
+                f"DRY RUN: Would write {len(analytics)} team daily artifacts "
+                f"for {target_date}"
+            )
+            return
+
+        self.json_writer.write_team_daily_artifacts(analytics, target_date)
 
     def process_date_range(
         self,

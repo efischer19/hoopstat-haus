@@ -9,9 +9,7 @@ import os
 import sys
 from datetime import UTC, datetime
 
-import boto3
 import click
-from botocore.exceptions import BotoCoreError, ClientError
 from hoopstat_observability import get_logger
 
 from .config import load_config
@@ -120,44 +118,11 @@ def status(gold_bucket: str | None) -> None:
 
     try:
         logger.info("=== Gold Layer Status Check ===")
+        logger.warning(
+            "Health check not yet implemented - "
+            "see #619 for JSON artifact validation per ADR-028"
+        )
         logger.info(f"Gold Bucket: {gold_bucket_name}")
-
-        s3_client = boto3.client("s3", region_name="us-east-1")
-
-        # Check served/ prefix structure per ADR-028
-        artifact_prefixes = [
-            "served/player_daily/",
-            "served/team_daily/",
-            "served/top_lists/",
-            "served/season_player/",
-            "served/index/",
-        ]
-
-        for prefix in artifact_prefixes:
-            try:
-                response = s3_client.list_objects_v2(
-                    Bucket=gold_bucket_name, Prefix=prefix, MaxKeys=1
-                )
-                count = response.get("KeyCount", 0)
-                status_str = "present" if count > 0 else "empty"
-                logger.info(f"  {prefix}: {status_str}")
-            except (ClientError, BotoCoreError) as e:
-                logger.warning(f"  {prefix}: unable to check ({e})")
-
-        # Check for latest index file
-        try:
-            s3_client.head_object(
-                Bucket=gold_bucket_name, Key="served/index/latest.json"
-            )
-            logger.info("Latest index: served/index/latest.json exists")
-        except ClientError as e:
-            error_code = e.response.get("Error", {}).get("Code", "")
-            if error_code == "404":
-                logger.warning("Latest index: served/index/latest.json not found")
-            else:
-                logger.warning(f"Latest index: unable to check ({e})")
-
-        logger.info("=== Status check complete ===")
 
     except Exception as e:
         logger.error(f"Status check failed: {e}")

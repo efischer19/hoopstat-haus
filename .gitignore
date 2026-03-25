@@ -226,3 +226,6 @@ terraform.zip
 # VS Code on Mac
 .DS_Store
 *.code-workspace
+
+# repomix output artifact
+repomix-output.xml

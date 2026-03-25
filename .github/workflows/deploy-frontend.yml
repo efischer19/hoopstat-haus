@@ -1,0 +1,83 @@
+---
+name: Deploy Frontend
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'frontend-app/**'
+      - '!frontend-app/README.md'
+  workflow_dispatch: {}
+
+permissions:
+  id-token: write
+  contents: read
+
+env:
+  AWS_REGION: us-east-1
+  S3_BUCKET: hoopstat-haus-gold
+  S3_PREFIX: served
+
+jobs:
+  deploy-frontend:
+    name: Deploy Frontend App
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::${{ secrets.AWS_ACCOUNT_ID }}:role/hoopstat-haus-github-actions
+          role-session-name: GitHubActions-DeployFrontend-${{ github.run_id }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Sync frontend assets to S3
+        run: |
+          echo "🚀 Syncing frontend app to s3://$S3_BUCKET/$S3_PREFIX/"
+
+          aws s3 sync frontend-app/ s3://$S3_BUCKET/$S3_PREFIX/ \
+            --exclude "*" \
+            --include "*.html" \
+            --include "assets/*" \
+            --include "scripts/*" \
+            --cache-control "public, max-age=3600"
+
+          echo "✅ Frontend assets synced successfully"
+
+      - name: Invalidate CloudFront cache
+        run: |
+          # Find the CloudFront distribution by its comment tag
+          DISTRIBUTION_ID=$(aws cloudfront list-distributions \
+            --query "DistributionList.Items[?Comment=='CloudFront distribution for hoopstat-haus gold artifacts'].Id | [0]" \
+            --output text)
+
+          if [ -z "$DISTRIBUTION_ID" ] || [ "$DISTRIBUTION_ID" = "None" ]; then
+            echo "⚠️  Could not find CloudFront distribution, skipping invalidation"
+            exit 0
+          fi
+
+          echo "🔄 Creating CloudFront invalidation for distribution: $DISTRIBUTION_ID"
+
+          INVALIDATION_ID=$(aws cloudfront create-invalidation \
+            --distribution-id "$DISTRIBUTION_ID" \
+            --paths "/index.html" "/assets/*" "/scripts/*" \
+            --query 'Invalidation.Id' \
+            --output text)
+
+          echo "✅ Invalidation created: $INVALIDATION_ID"
+          echo "distribution_id=$DISTRIBUTION_ID" >> $GITHUB_ENV
+
+      - name: Deployment summary
+        if: always()
+        run: |
+          echo "📋 Frontend Deployment Summary" >> $GITHUB_STEP_SUMMARY
+          echo "==============================" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Deployment Details:**" >> $GITHUB_STEP_SUMMARY
+          echo "- Bucket: \`s3://$S3_BUCKET/$S3_PREFIX/\`" >> $GITHUB_STEP_SUMMARY
+          echo "- Triggered by: ${{ github.event_name }}" >> $GITHUB_STEP_SUMMARY
+          echo "- Commit: \`${{ github.sha }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "- Status: ✅ Success" >> $GITHUB_STEP_SUMMARY

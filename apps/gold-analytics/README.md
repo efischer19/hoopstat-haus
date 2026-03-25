@@ -4,9 +4,7 @@ Gold layer analytics processing for NBA statistics.
 
 ## Overview
 
-This application processes Silver layer NBA data and transforms it into advanced analytics metrics. Per [ADR-028](../../meta/adr/ADR-028-gold_layer_final.md), internal Gold data is stored as Parquet and a public presentation layer should be produced as small JSON artifacts under a `served/` prefix.
-
-**Note**: The application currently writes internal Parquet data and needs to be updated to write JSON artifacts to the `served/` prefix per ADR-028.
+This application processes Silver layer NBA data and transforms it into advanced analytics metrics. Per [ADR-028](../../meta/adr/ADR-028-gold_layer_final.md), internal Gold data is stored as Parquet and a public presentation layer is produced as small JSON artifacts under a `served/` prefix.
 
 ## Trigger Mechanism
 
@@ -26,7 +24,7 @@ Gold processing is triggered by **silver-ready markers** written by the Silver l
 
 ### Storage & Partitions (Target for v1)
 - **Internal Parquet**: Partition by season/date/team_id/player_id to match access patterns
-- **Public JSON Artifacts**: Small, versioned JSON files (≤100KB) for browser/app consumption (not yet implemented)
+- **Public JSON Artifacts**: Small, versioned JSON files (≤100KB) for browser/app consumption via `served/` prefix
 - **Schema Evolution**: Versioned JSON schemas; Parquet schemas evolve with manifests
 
 ### Performance Features
@@ -34,7 +32,7 @@ Gold processing is triggered by **silver-ready markers** written by the Silver l
 - **Chunked Processing**: Large datasets split for optimal processing
 - **Decimal Precision**: Proper data types for analytics percentages
 
-### Data Flow (Target)
+### Data Flow
 ```
 Silver S3 (Parquet) → Gold Lambda → Gold S3 Parquet (internal) + JSON artifacts (served/)
 ```
@@ -86,13 +84,12 @@ Environment variables:
 
 ## Architecture
 
-### Outputs (Target for v1)
+### Outputs
 ```
 Silver Parquet → Gold Parquet (internal) + JSON artifacts (served/) per ADR-028
 ```
 
-**Current Status**: Analytics calculation logic exists, but the storage layer needs to be implemented
-to write JSON artifacts to the `served/` prefix per ADR-028.
+JSON artifacts are written to the `served/` prefix for player daily stats, team daily stats, top lists, player season summaries, and the latest index.
 
 ### Lambda Deployment
 ```bash
@@ -102,33 +99,24 @@ docker build -f apps/gold-analytics/Dockerfile -t gold-analytics:dev .
 # Deploy via Terraform (see infrastructure/)
 ```
 
-### Lambda Deployment
-```bash
-# Build Docker image (from repo root)
-docker build -f apps/gold-analytics/Dockerfile -t gold-analytics:dev .
+## Public JSON Artifacts
 
-# Deploy via Terraform (see infrastructure/)
-```
-
-## Public JSON Artifacts (Planned)
-
-Per ADR-028, the Gold layer should serve public JSON artifacts for consumption:
+Per ADR-028, the Gold layer serves public JSON artifacts for consumption:
 
 - **Anonymous Read Access**: Small JSON payloads (≤100KB) under `served/` prefix
-- **Low Latency**: CDN-cacheable, deterministic keys
+- **Low Latency**: CDN-cacheable, deterministic keys per ADR-038
 - **Advanced Metrics**: Player efficiency, team ratings, season aggregations
 - **Schema Versioned**: Documented JSON schemas for each artifact type
 
-### Target Artifact Structure
+### Artifact Structure
 ```
 s3://gold-bucket/served/
 ├── player_daily/{date}/{player_id}.json
 ├── team_daily/{date}/{team_id}.json
 ├── top_lists/{date}/{metric}.json
+├── season_player/{season}/{player_id}.json
 └── index/latest.json
 ```
-
-**Current Status**: Artifact writing not yet implemented per ADR-028.
 
 **Details**: See [ADR-028](../../meta/adr/ADR-028-gold_layer_final.md)
 

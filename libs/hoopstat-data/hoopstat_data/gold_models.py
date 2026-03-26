@@ -172,6 +172,87 @@ class GoldPlayerSeasonSummary(BaseGoldModel):
         return v
 
 
+class GoldTeamSeasonSummary(BaseGoldModel):
+    """Gold layer team season summary with aggregated statistics."""
+
+    team_id: str = Field(..., description="Unique identifier for the team")
+    team_name: str | None = Field(None, description="Team name")
+    season: str = Field(..., description="NBA season (e.g., '2023-24')")
+    season_type: str | None = Field(
+        None, description="Season type (e.g., 'regular', 'playoff')"
+    )
+
+    # Season totals
+    total_games: int = Field(ge=0, description="Total games played")
+    total_points: int = Field(ge=0, description="Total points scored")
+    total_points_allowed: int = Field(ge=0, description="Total points allowed")
+
+    # Per-game averages
+    points_per_game: float = Field(ge=0, description="Points per game")
+    points_allowed_per_game: float = Field(ge=0, description="Points allowed per game")
+    assists_per_game: float = Field(ge=0, description="Assists per game")
+    total_rebounds_per_game: float = Field(ge=0, description="Total rebounds per game")
+    turnovers_per_game: float = Field(ge=0, description="Turnovers per game")
+
+    # Shooting percentages
+    field_goal_percentage: float | None = Field(
+        None, ge=0, le=1, description="Season field goal percentage"
+    )
+    three_point_percentage: float | None = Field(
+        None, ge=0, le=1, description="Season three-point percentage"
+    )
+    free_throw_percentage: float | None = Field(
+        None, ge=0, le=1, description="Season free throw percentage"
+    )
+    true_shooting_percentage: float | None = Field(
+        None, ge=0, le=1, description="Season true shooting percentage"
+    )
+    effective_field_goal_percentage: float | None = Field(
+        None, ge=0, le=1, description="Effective field goal percentage"
+    )
+
+    # Efficiency metrics
+    offensive_rating: float | None = Field(
+        None, description="Offensive rating (points per 100 possessions)"
+    )
+    defensive_rating: float | None = Field(
+        None, description="Defensive rating (points allowed per 100 possessions)"
+    )
+    net_rating: float | None = Field(
+        None, description="Net rating (offensive - defensive)"
+    )
+    pace: float | None = Field(None, description="Pace (possessions per 48 minutes)")
+
+    # Four Factors
+    turnover_percentage: float | None = Field(
+        None, ge=0, le=1, description="Turnover percentage"
+    )
+    offensive_rebound_percentage: float | None = Field(
+        None, ge=0, le=1, description="Offensive rebound percentage"
+    )
+    free_throw_rate: float | None = Field(
+        None, ge=0, description="Free throw rate (FTA / FGA)"
+    )
+
+    # Data quality
+    data_quality_score: float | None = Field(
+        None, ge=0, le=1, description="Data quality score (0-1)"
+    )
+
+    # Partition metadata
+    partition_key: str | None = Field(None, description="S3 partition key")
+
+    @field_validator("season")
+    @classmethod
+    def validate_season_format(cls, v):
+        """Validate NBA season format."""
+        import re
+
+        if not re.match(r"^\d{4}-\d{2}$", v):
+            raise ValueError("Season must be in format 'YYYY-YY' (e.g., '2023-24')")
+        return v
+
+
 class GoldTeamDailyStats(BaseGoldModel):
     """Gold layer team daily statistics with computed metrics."""
 
@@ -238,6 +319,7 @@ def generate_all_gold_schemas() -> dict[str, dict[str, Any]]:
         "GoldPlayerDailyStats": GoldPlayerDailyStats,
         "GoldPlayerSeasonSummary": GoldPlayerSeasonSummary,
         "GoldTeamDailyStats": GoldTeamDailyStats,
+        "GoldTeamSeasonSummary": GoldTeamSeasonSummary,
     }
 
     return {

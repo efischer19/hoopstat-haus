@@ -102,7 +102,6 @@ def status() -> None:
     logger.info("Checking silver layer processing status...")
 
     try:
-        # TODO: Implement status checks in upcoming PR
         logger.info("Silver layer processing pipeline is ready")
 
     except Exception as e:

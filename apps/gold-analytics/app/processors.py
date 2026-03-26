@@ -333,7 +333,6 @@ class GoldProcessor:
         # Store using existing team analytics functionality
         # For season aggregations, we use a representative date (season start)
 
-        # TODO: Replace with JSON artifact writing per ADR-028
         logger.warning(
             "Storage not yet implemented - "
             "need to implement JSON artifact writing per ADR-028"

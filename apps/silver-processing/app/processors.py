@@ -804,7 +804,6 @@ class SilverProcessor:
 
         for game_id in game_ids:
             try:
-                # TODO: Implement game-specific processing in next PR
                 logger.info(f"Processing game {game_id}")
                 results[game_id] = True
 

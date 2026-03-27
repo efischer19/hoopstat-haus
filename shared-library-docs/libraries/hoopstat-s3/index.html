@@ -1045,28 +1045,6 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#silvers3managererror" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        SilverS3ManagerError
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#silvers3manager" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        SilverS3Manager
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
   <a href="#s3uploaderror" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1082,6 +1060,28 @@
     <span class="md-ellipsis">
       
         S3Uploader
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#silvers3managererror" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        SilverS3ManagerError
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#silvers3manager" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        SilverS3Manager
       
     </span>
   </a>
@@ -1154,6 +1154,61 @@
     <span class="md-ellipsis">
       
         convert_standings
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#upload_games" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        upload_games
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#upload_box_score" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        upload_box_score
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#upload_player_info" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        upload_player_info
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#upload_standings" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        upload_standings
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#list_objects" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        list_objects
       
     </span>
   </a>
@@ -1248,61 +1303,6 @@
   
 </li>
         
-          <li class="md-nav__item">
-  <a href="#upload_games" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        upload_games
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#upload_box_score" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        upload_box_score
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#upload_player_info" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        upload_player_info
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#upload_standings" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        upload_standings
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#list_objects" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        list_objects
-      
-    </span>
-  </a>
-  
-</li>
-        
       </ul>
     </nav>
   
@@ -1364,6 +1364,25 @@ Supports both Parquet (for production) and JSON (for MVP) formats.</p>
 <li><code>convert_standings(self, standings_data: Any) -&gt; bytes</code></li>
 <li>Convert league standings to Parquet format.</li>
 </ul>
+<h4 id="s3uploaderror">S3UploadError<a class="headerlink" href="#s3uploaderror" title="Permanent link">&para;</a></h4>
+<p>Custom exception for S3 upload errors.</p>
+<h4 id="s3uploader">S3Uploader<a class="headerlink" href="#s3uploader" title="Permanent link">&para;</a></h4>
+<p>S3 uploader with proper date-based partitioning for Bronze layer storage.</p>
+<p>Implements partitioning scheme from bronze-layer-ingestion.md:
+s3://bucket/nba-api/{data_type}/year={year}/month={month}/day={day}/hour={hour}/</p>
+<p><strong>Methods:</strong></p>
+<ul>
+<li><code>upload_games(self, parquet_data: bytes, target_date: date) -&gt; str</code></li>
+<li>Upload games data to S3 with proper partitioning.</li>
+<li><code>upload_box_score(self, parquet_data: bytes, game_id: str, target_date: date) -&gt; str</code></li>
+<li>Upload box score data to S3 with proper partitioning.</li>
+<li><code>upload_player_info(self, parquet_data: bytes, player_id: int) -&gt; str</code></li>
+<li>Upload player info to S3 with proper partitioning.</li>
+<li><code>upload_standings(self, parquet_data: bytes) -&gt; str</code></li>
+<li>Upload league standings to S3 with proper partitioning.</li>
+<li><code>list_objects(self, prefix: str, max_keys: int) -&gt; Any</code></li>
+<li>List objects in S3 bucket with given prefix.</li>
+</ul>
 <h4 id="silvers3managererror">SilverS3ManagerError<a class="headerlink" href="#silvers3managererror" title="Permanent link">&para;</a></h4>
 <p>Custom exception for Silver S3 Manager errors.</p>
 <h4 id="silvers3manager">SilverS3Manager<a class="headerlink" href="#silvers3manager" title="Permanent link">&para;</a></h4>
@@ -1393,25 +1412,6 @@ Supports both Parquet (for production) and JSON (for MVP) formats.</p>
 <li>List available Bronze data for an entity within a date range.</li>
 <li><code>list_silver_data(self, entity_type: str, start_date: Any, end_date: Any) -&gt; Any</code></li>
 <li>List available Silver data for an entity type within a date range.</li>
-</ul>
-<h4 id="s3uploaderror">S3UploadError<a class="headerlink" href="#s3uploaderror" title="Permanent link">&para;</a></h4>
-<p>Custom exception for S3 upload errors.</p>
-<h4 id="s3uploader">S3Uploader<a class="headerlink" href="#s3uploader" title="Permanent link">&para;</a></h4>
-<p>S3 uploader with proper date-based partitioning for Bronze layer storage.</p>
-<p>Implements partitioning scheme from bronze-layer-ingestion.md:
-s3://bucket/nba-api/{data_type}/year={year}/month={month}/day={day}/hour={hour}/</p>
-<p><strong>Methods:</strong></p>
-<ul>
-<li><code>upload_games(self, parquet_data: bytes, target_date: date) -&gt; str</code></li>
-<li>Upload games data to S3 with proper partitioning.</li>
-<li><code>upload_box_score(self, parquet_data: bytes, game_id: str, target_date: date) -&gt; str</code></li>
-<li>Upload box score data to S3 with proper partitioning.</li>
-<li><code>upload_player_info(self, parquet_data: bytes, player_id: int) -&gt; str</code></li>
-<li>Upload player info to S3 with proper partitioning.</li>
-<li><code>upload_standings(self, parquet_data: bytes) -&gt; str</code></li>
-<li>Upload league standings to S3 with proper partitioning.</li>
-<li><code>list_objects(self, prefix: str, max_keys: int) -&gt; Any</code></li>
-<li>List objects in S3 bucket with given prefix.</li>
 </ul>
 <h3 id="functions">Functions<a class="headerlink" href="#functions" title="Permanent link">&para;</a></h3>
 <h4 id="convert_to_parquet_bytes">convert_to_parquet_bytes<a class="headerlink" href="#convert_to_parquet_bytes" title="Permanent link">&para;</a></h4>
@@ -1456,8 +1456,55 @@ s3://bucket/nba-api/{data_type}/year={year}/month={month}/day={day}/hour={hour}/
     standings_data: Standings dictionary</p>
 <p>Returns:
     Parquet data as bytes</p>
+<h4 id="upload_games">upload_games<a class="headerlink" href="#upload_games" title="Permanent link">&para;</a></h4>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a><span class="n">upload_games</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">parquet_data</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">,</span> <span class="n">target_date</span><span class="p">:</span> <span class="n">date</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span>
+</code></pre></div>
+<p>Upload games data to S3 with proper partitioning.</p>
+<p>Args:
+    parquet_data: Games data in Parquet format
+    target_date: Date the games occurred</p>
+<p>Returns:
+    S3 key where data was uploaded</p>
+<p>Raises:
+    S3UploadError: If upload fails</p>
+<h4 id="upload_box_score">upload_box_score<a class="headerlink" href="#upload_box_score" title="Permanent link">&para;</a></h4>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a><span class="n">upload_box_score</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">parquet_data</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">,</span> <span class="n">game_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">target_date</span><span class="p">:</span> <span class="n">date</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span>
+</code></pre></div>
+<p>Upload box score data to S3 with proper partitioning.</p>
+<p>Args:
+    parquet_data: Box score data in Parquet format
+    game_id: NBA game ID
+    target_date: Date the game occurred</p>
+<p>Returns:
+    S3 key where data was uploaded</p>
+<h4 id="upload_player_info">upload_player_info<a class="headerlink" href="#upload_player_info" title="Permanent link">&para;</a></h4>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a><span class="n">upload_player_info</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">parquet_data</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">,</span> <span class="n">player_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span>
+</code></pre></div>
+<p>Upload player info to S3 with proper partitioning.</p>
+<p>Args:
+    parquet_data: Player info in Parquet format
+    player_id: NBA player ID</p>
+<p>Returns:
+    S3 key where data was uploaded</p>
+<h4 id="upload_standings">upload_standings<a class="headerlink" href="#upload_standings" title="Permanent link">&para;</a></h4>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a><span class="n">upload_standings</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">parquet_data</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span>
+</code></pre></div>
+<p>Upload league standings to S3 with proper partitioning.</p>
+<p>Args:
+    parquet_data: Standings data in Parquet format</p>
+<p>Returns:
+    S3 key where data was uploaded</p>
+<h4 id="list_objects">list_objects<a class="headerlink" href="#list_objects" title="Permanent link">&para;</a></h4>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a><span class="n">list_objects</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">prefix</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">max_keys</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span>
+</code></pre></div>
+<p>List objects in S3 bucket with given prefix.</p>
+<p>Args:
+    prefix: S3 prefix to filter objects
+    max_keys: Maximum number of keys to return</p>
+<p>Returns:
+    List of object metadata dictionaries</p>
 <h4 id="read_bronze_json">read_bronze_json<a class="headerlink" href="#read_bronze_json" title="Permanent link">&para;</a></h4>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a><span class="n">read_bronze_json</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">entity</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">target_date</span><span class="p">:</span> <span class="n">date</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a><span class="n">read_bronze_json</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">entity</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">target_date</span><span class="p">:</span> <span class="n">date</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span>
 </code></pre></div>
 <p>Read Bronze JSON data from S3.</p>
 <p>Args:
@@ -1468,7 +1515,7 @@ s3://bucket/nba-api/{data_type}/year={year}/month={month}/day={day}/hour={hour}/
 <p>Raises:
     SilverS3ManagerError: If read operation fails</p>
 <h4 id="write_silver_json">write_silver_json<a class="headerlink" href="#write_silver_json" title="Permanent link">&para;</a></h4>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a><span class="n">write_silver_json</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">entity_type</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">data</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">target_date</span><span class="p">:</span> <span class="n">date</span><span class="p">,</span> <span class="n">check_exists</span><span class="p">:</span> <span class="nb">bool</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a><span class="n">write_silver_json</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">entity_type</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">data</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">target_date</span><span class="p">:</span> <span class="n">date</span><span class="p">,</span> <span class="n">check_exists</span><span class="p">:</span> <span class="nb">bool</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span>
 </code></pre></div>
 <p>Write Silver JSON data to S3 with proper partitioning.</p>
 <p>Args:
@@ -1481,7 +1528,7 @@ s3://bucket/nba-api/{data_type}/year={year}/month={month}/day={day}/hour={hour}/
 <p>Raises:
     SilverS3ManagerError: If write operation fails</p>
 <h4 id="write_partitioned_silver_data">write_partitioned_silver_data<a class="headerlink" href="#write_partitioned_silver_data" title="Permanent link">&para;</a></h4>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a><span class="n">write_partitioned_silver_data</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">silver_data</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">target_date</span><span class="p">:</span> <span class="n">date</span><span class="p">,</span> <span class="n">check_exists</span><span class="p">:</span> <span class="nb">bool</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a><span class="n">write_partitioned_silver_data</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">silver_data</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">target_date</span><span class="p">:</span> <span class="n">date</span><span class="p">,</span> <span class="n">check_exists</span><span class="p">:</span> <span class="nb">bool</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span>
 </code></pre></div>
 <p>Write partitioned Silver data for all entity types.</p>
 <p>Args:
@@ -1494,7 +1541,7 @@ s3://bucket/nba-api/{data_type}/year={year}/month={month}/day={day}/hour={hour}/
 <p>Raises:
     SilverS3ManagerError: If any write operation fails</p>
 <h4 id="write_silver_ready_marker">write_silver_ready_marker<a class="headerlink" href="#write_silver_ready_marker" title="Permanent link">&para;</a></h4>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a><span class="n">write_silver_ready_marker</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">target_date</span><span class="p">:</span> <span class="n">date</span><span class="p">,</span> <span class="n">dataset_counts</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-15-1" name="__codelineno-15-1" href="#__codelineno-15-1"></a><span class="n">write_silver_ready_marker</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">target_date</span><span class="p">:</span> <span class="n">date</span><span class="p">,</span> <span class="n">dataset_counts</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span>
 </code></pre></div>
 <p>Write a silver-ready marker file to signal Gold processing.</p>
 <p>This marker file is written after all Silver data for a date has been
@@ -1508,7 +1555,7 @@ Gold processing exactly once per day per ADR-028.</p>
 <p>Raises:
     SilverS3ManagerError: If write operation fails</p>
 <h4 id="read_summary_json">read_summary_json<a class="headerlink" href="#read_summary_json" title="Permanent link">&para;</a></h4>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a><span class="n">read_summary_json</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-16-1" name="__codelineno-16-1" href="#__codelineno-16-1"></a><span class="n">read_summary_json</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span>
 </code></pre></div>
 <p>Read the Bronze layer summary.json file from S3.</p>
 <p>This method reads the summary metadata file that contains information
@@ -1519,7 +1566,7 @@ about the last bronze ingestion, including the date that was processed.</p>
     SilverS3ManagerError: If read operation fails for reasons other
         than file not found</p>
 <h4 id="parse_s3_event">parse_s3_event<a class="headerlink" href="#parse_s3_event" title="Permanent link">&para;</a></h4>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a><span class="n">parse_s3_event</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">event</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-17-1" name="__codelineno-17-1" href="#__codelineno-17-1"></a><span class="n">parse_s3_event</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">event</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span>
 </code></pre></div>
 <p>DEPRECATED: Parse S3 event records from Lambda event for Bronze data triggers.</p>
 <p>This method is deprecated and will be removed in a future version.
@@ -1530,7 +1577,7 @@ the Bronze layer summary file.</p>
 <p>Returns:
     List of parsed Bronze data events that should trigger Silver processing</p>
 <h4 id="list_bronze_data">list_bronze_data<a class="headerlink" href="#list_bronze_data" title="Permanent link">&para;</a></h4>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a><span class="n">list_bronze_data</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">entity</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">start_date</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">end_date</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-18-1" name="__codelineno-18-1" href="#__codelineno-18-1"></a><span class="n">list_bronze_data</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">entity</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">start_date</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">end_date</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span>
 </code></pre></div>
 <p>List available Bronze data for an entity within a date range.</p>
 <p>Args:
@@ -1540,7 +1587,7 @@ the Bronze layer summary file.</p>
 <p>Returns:
     List of dictionaries with Bronze data information</p>
 <h4 id="list_silver_data">list_silver_data<a class="headerlink" href="#list_silver_data" title="Permanent link">&para;</a></h4>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a><span class="n">list_silver_data</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">entity_type</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">start_date</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">end_date</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-19-1" name="__codelineno-19-1" href="#__codelineno-19-1"></a><span class="n">list_silver_data</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">entity_type</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">start_date</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">end_date</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span>
 </code></pre></div>
 <p>List available Silver data for an entity type within a date range.</p>
 <p>Args:
@@ -1549,53 +1596,6 @@ the Bronze layer summary file.</p>
     end_date: End date for filtering (optional)</p>
 <p>Returns:
     List of dictionaries with Silver data information</p>
-<h4 id="upload_games">upload_games<a class="headerlink" href="#upload_games" title="Permanent link">&para;</a></h4>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-15-1" name="__codelineno-15-1" href="#__codelineno-15-1"></a><span class="n">upload_games</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">parquet_data</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">,</span> <span class="n">target_date</span><span class="p">:</span> <span class="n">date</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span>
-</code></pre></div>
-<p>Upload games data to S3 with proper partitioning.</p>
-<p>Args:
-    parquet_data: Games data in Parquet format
-    target_date: Date the games occurred</p>
-<p>Returns:
-    S3 key where data was uploaded</p>
-<p>Raises:
-    S3UploadError: If upload fails</p>
-<h4 id="upload_box_score">upload_box_score<a class="headerlink" href="#upload_box_score" title="Permanent link">&para;</a></h4>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-16-1" name="__codelineno-16-1" href="#__codelineno-16-1"></a><span class="n">upload_box_score</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">parquet_data</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">,</span> <span class="n">game_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">target_date</span><span class="p">:</span> <span class="n">date</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span>
-</code></pre></div>
-<p>Upload box score data to S3 with proper partitioning.</p>
-<p>Args:
-    parquet_data: Box score data in Parquet format
-    game_id: NBA game ID
-    target_date: Date the game occurred</p>
-<p>Returns:
-    S3 key where data was uploaded</p>
-<h4 id="upload_player_info">upload_player_info<a class="headerlink" href="#upload_player_info" title="Permanent link">&para;</a></h4>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-17-1" name="__codelineno-17-1" href="#__codelineno-17-1"></a><span class="n">upload_player_info</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">parquet_data</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">,</span> <span class="n">player_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span>
-</code></pre></div>
-<p>Upload player info to S3 with proper partitioning.</p>
-<p>Args:
-    parquet_data: Player info in Parquet format
-    player_id: NBA player ID</p>
-<p>Returns:
-    S3 key where data was uploaded</p>
-<h4 id="upload_standings">upload_standings<a class="headerlink" href="#upload_standings" title="Permanent link">&para;</a></h4>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-18-1" name="__codelineno-18-1" href="#__codelineno-18-1"></a><span class="n">upload_standings</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">parquet_data</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span>
-</code></pre></div>
-<p>Upload league standings to S3 with proper partitioning.</p>
-<p>Args:
-    parquet_data: Standings data in Parquet format</p>
-<p>Returns:
-    S3 key where data was uploaded</p>
-<h4 id="list_objects">list_objects<a class="headerlink" href="#list_objects" title="Permanent link">&para;</a></h4>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-19-1" name="__codelineno-19-1" href="#__codelineno-19-1"></a><span class="n">list_objects</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">prefix</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">max_keys</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span>
-</code></pre></div>
-<p>List objects in S3 bucket with given prefix.</p>
-<p>Args:
-    prefix: S3 prefix to filter objects
-    max_keys: Maximum number of keys to return</p>
-<p>Returns:
-    List of object metadata dictionaries</p>
 
 
 

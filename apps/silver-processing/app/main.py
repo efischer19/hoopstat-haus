@@ -9,12 +9,17 @@ import os
 import sys
 from datetime import UTC, datetime
 
+import boto3
 import click
+from botocore.exceptions import BotoCoreError, ClientError
 from hoopstat_observability import get_logger
 
 from .processors import SilverProcessor
 
 logger = get_logger(__name__)
+
+# Silver entity type prefixes
+SILVER_ENTITY_TYPES = ["player-stats", "team-stats", "game-stats"]
 
 
 @click.group()
@@ -97,13 +102,73 @@ def process(
 
 
 @cli.command()
-def status() -> None:
+@click.option(
+    "--silver-bucket",
+    type=str,
+    help="S3 bucket name for Silver data (can also be set via SILVER_BUCKET env var)",
+)
+def status(silver_bucket: str | None) -> None:
     """Check the status of the silver layer processing pipeline."""
     logger.info("Checking silver layer processing status...")
 
-    try:
-        logger.info("Silver layer processing pipeline is ready")
+    # Get silver bucket from CLI option or environment variable
+    silver_bucket_name = silver_bucket or os.getenv("SILVER_BUCKET")
+    if not silver_bucket_name:
+        logger.error(
+            "Silver bucket not specified. Use --silver-bucket option or set "
+            "SILVER_BUCKET environment variable"
+        )
+        sys.exit(1)
 
+    try:
+        click.echo("=== Silver Layer Status Check ===")
+        click.echo(f"Silver Bucket: {silver_bucket_name}")
+
+        s3_client = boto3.client("s3", region_name="us-east-1")
+
+        # Check for silver data prefixes
+        silver_response = s3_client.list_objects_v2(
+            Bucket=silver_bucket_name, Prefix="silver/", Delimiter="/"
+        )
+        prefixes = [p["Prefix"] for p in silver_response.get("CommonPrefixes", [])]
+
+        if not prefixes:
+            logger.error("No entity types found under silver/ prefix")
+            sys.exit(1)
+
+        click.echo(f"Entity prefixes found: {prefixes}")
+
+        # Count objects per entity type
+        for entity_type in SILVER_ENTITY_TYPES:
+            prefix = f"silver/{entity_type}/"
+            count_response = s3_client.list_objects_v2(
+                Bucket=silver_bucket_name, Prefix=prefix
+            )
+            count = count_response.get("KeyCount", 0)
+            click.echo(f"Object count for {entity_type}: {count}")
+
+        # Check for recent silver-ready markers
+        marker_response = s3_client.list_objects_v2(
+            Bucket=silver_bucket_name, Prefix="metadata/", Delimiter="/"
+        )
+        marker_dates = sorted(
+            p["Prefix"].removeprefix("metadata/").rstrip("/")
+            for p in marker_response.get("CommonPrefixes", [])
+        )
+
+        if marker_dates:
+            click.echo(
+                f"Silver-ready markers found for {len(marker_dates)} date(s), "
+                f"latest: {marker_dates[-1]}"
+            )
+        else:
+            click.echo("No silver-ready markers found under metadata/")
+
+        click.echo("Silver layer status check passed")
+
+    except (BotoCoreError, ClientError) as e:
+        logger.error(f"Status check failed: {e}")
+        sys.exit(1)
     except Exception as e:
         logger.error(f"Status check failed: {e}")
         sys.exit(1)

@@ -5,17 +5,23 @@ This application processes Silver layer data and transforms it into
 advanced analytics metrics per ADR-028.
 """
 
+import json
 import os
 import sys
 from datetime import UTC, datetime
 
+import boto3
 import click
+from botocore.exceptions import BotoCoreError, ClientError
 from hoopstat_observability import get_logger
 
 from .config import load_config
 from .processors import GoldProcessor
 
 logger = get_logger(__name__)
+
+# Artifact type prefixes under served/ per ADR-028
+SERVED_ARTIFACT_TYPES = ["player_daily", "team_daily", "top_lists"]
 
 
 @click.group()
@@ -117,13 +123,50 @@ def status(gold_bucket: str | None) -> None:
         sys.exit(1)
 
     try:
-        logger.info("=== Gold Layer Status Check ===")
-        logger.warning(
-            "Health check not yet implemented - "
-            "see #619 for JSON artifact validation per ADR-028"
-        )
-        logger.info(f"Gold Bucket: {gold_bucket_name}")
+        click.echo("=== Gold Layer Status Check ===")
+        click.echo(f"Gold Bucket: {gold_bucket_name}")
 
+        s3_client = boto3.client("s3", region_name="us-east-1")
+
+        # List artifact types under served/ prefix
+        served_response = s3_client.list_objects_v2(
+            Bucket=gold_bucket_name, Prefix="served/", Delimiter="/"
+        )
+        prefixes = [p["Prefix"] for p in served_response.get("CommonPrefixes", [])]
+
+        if not prefixes:
+            logger.error("No artifact types found under served/ prefix")
+            sys.exit(1)
+
+        click.echo(f"Artifact prefixes found: {prefixes}")
+
+        # Validate served/index/latest.json is present and parseable
+        try:
+            index_response = s3_client.get_object(
+                Bucket=gold_bucket_name, Key="served/index/latest.json"
+            )
+            index_body = index_response["Body"].read().decode("utf-8")
+            index_data = json.loads(index_body)
+            latest_date = index_data.get("latest_date", "unknown")
+            click.echo(f"Index file valid — latest date: {latest_date}")
+        except (ClientError, json.JSONDecodeError) as e:
+            logger.error(f"Failed to validate served/index/latest.json: {e}")
+            sys.exit(1)
+
+        # Count artifacts per type
+        for artifact_type in SERVED_ARTIFACT_TYPES:
+            prefix = f"served/{artifact_type}/"
+            count_response = s3_client.list_objects_v2(
+                Bucket=gold_bucket_name, Prefix=prefix
+            )
+            count = count_response.get("KeyCount", 0)
+            click.echo(f"Artifact count for {artifact_type}: {count}")
+
+        click.echo("Gold layer status check passed")
+
+    except (BotoCoreError, ClientError) as e:
+        logger.error(f"Status check failed: {e}")
+        sys.exit(1)
     except Exception as e:
         logger.error(f"Status check failed: {e}")
         sys.exit(1)

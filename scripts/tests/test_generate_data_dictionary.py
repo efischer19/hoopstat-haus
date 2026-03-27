@@ -176,6 +176,7 @@ class TestGenerateDataDictionary:
         assert "### GoldPlayerDailyStats" in content
         assert "### GoldPlayerSeasonSummary" in content
         assert "### GoldTeamDailyStats" in content
+        assert "### GoldTeamSeasonSummary" in content
 
     def test_output_contains_auto_generated_notice(self):
         """Output includes the auto-generated notice."""

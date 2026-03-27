@@ -15,6 +15,7 @@ from .models import (
     GoldPlayerDailyStats,
     GoldPlayerSeasonSummary,
     GoldTeamDailyStats,
+    GoldTeamSeasonSummary,
     PlayByPlayRaw,
     PlayerRaw,
     PlayerStats,
@@ -84,6 +85,7 @@ __all__ = [
     "GoldPlayerDailyStats",
     "GoldPlayerSeasonSummary",
     "GoldTeamDailyStats",
+    "GoldTeamSeasonSummary",
     # Bronze Layer Models
     "TeamRaw",
     "PlayerRaw",

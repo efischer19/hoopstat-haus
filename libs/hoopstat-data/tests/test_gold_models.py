@@ -9,6 +9,7 @@ from hoopstat_data.models import (
     GoldPlayerDailyStats,
     GoldPlayerSeasonSummary,
     GoldTeamDailyStats,
+    GoldTeamSeasonSummary,
     ValidationMode,
 )
 
@@ -369,6 +370,104 @@ class TestGoldTeamDailyStats:
                 field_goals_attempted=88,
                 rebounds=46,
                 assists=28,
+            )
+
+
+class TestGoldTeamSeasonSummary:
+    """Test Gold layer team season summary model."""
+
+    def test_valid_gold_team_season_summary(self):
+        """Test creating valid Gold team season summary."""
+        summary = GoldTeamSeasonSummary(
+            team_id="1610612747",
+            team_name="Los Angeles Lakers",
+            season="2023-24",
+            season_type="regular",
+            total_games=82,
+            total_points=9348,
+            total_points_allowed=9180,
+            points_per_game=114.0,
+            points_allowed_per_game=112.0,
+            assists_per_game=26.5,
+            total_rebounds_per_game=44.2,
+            turnovers_per_game=13.1,
+            field_goal_percentage=0.478,
+            three_point_percentage=0.365,
+            free_throw_percentage=0.782,
+            true_shooting_percentage=0.580,
+            effective_field_goal_percentage=0.535,
+            offensive_rating=113.5,
+            defensive_rating=111.8,
+            net_rating=1.7,
+            pace=99.2,
+            turnover_percentage=0.128,
+            offensive_rebound_percentage=0.265,
+            free_throw_rate=0.245,
+            data_quality_score=0.95,
+            partition_key="season=2023-24/team_id=1610612747",
+        )
+
+        assert summary.team_id == "1610612747"
+        assert summary.team_name == "Los Angeles Lakers"
+        assert summary.season == "2023-24"
+        assert summary.total_games == 82
+        assert summary.points_per_game == 114.0
+        assert summary.offensive_rating == 113.5
+        assert summary.net_rating == 1.7
+
+    def test_minimal_team_season_summary(self):
+        """Test creating team season summary with minimal required fields."""
+        summary = GoldTeamSeasonSummary(
+            team_id="1610612747",
+            season="2023-24",
+            total_games=82,
+            total_points=9348,
+            total_points_allowed=9180,
+            points_per_game=114.0,
+            points_allowed_per_game=112.0,
+            assists_per_game=26.5,
+            total_rebounds_per_game=44.2,
+            turnovers_per_game=13.1,
+        )
+
+        assert summary.team_id == "1610612747"
+        assert summary.season == "2023-24"
+        # Optional fields should be None
+        assert summary.team_name is None
+        assert summary.offensive_rating is None
+        assert summary.defensive_rating is None
+        assert summary.net_rating is None
+
+    def test_invalid_season_format_in_team_summary(self):
+        """Test validation of invalid season format in team summary."""
+        with pytest.raises(ValueError, match="Season must be in format 'YYYY-YY'"):
+            GoldTeamSeasonSummary(
+                team_id="1610612747",
+                season="2023",  # Invalid format
+                total_games=82,
+                total_points=9348,
+                total_points_allowed=9180,
+                points_per_game=114.0,
+                points_allowed_per_game=112.0,
+                assists_per_game=26.5,
+                total_rebounds_per_game=44.2,
+                turnovers_per_game=13.1,
+            )
+
+    def test_negative_team_season_stats_validation(self):
+        """Test validation of negative team season statistics."""
+        with pytest.raises(ValueError):
+            GoldTeamSeasonSummary(
+                team_id="1610612747",
+                season="2023-24",
+                total_games=-1,  # Invalid - negative
+                total_points=9348,
+                total_points_allowed=9180,
+                points_per_game=114.0,
+                points_allowed_per_game=112.0,
+                assists_per_game=26.5,
+                total_rebounds_per_game=44.2,
+                turnovers_per_game=13.1,
             )
 
 

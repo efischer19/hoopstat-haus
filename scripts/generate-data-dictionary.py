@@ -155,6 +155,7 @@ def generate_data_dictionary() -> str:
     GoldPlayerDailyStats = gold_mod.GoldPlayerDailyStats
     GoldPlayerSeasonSummary = gold_mod.GoldPlayerSeasonSummary
     GoldTeamDailyStats = gold_mod.GoldTeamDailyStats
+    GoldTeamSeasonSummary = gold_mod.GoldTeamSeasonSummary
 
     lines = []
 
@@ -237,6 +238,7 @@ def generate_data_dictionary() -> str:
         ("GoldPlayerDailyStats", GoldPlayerDailyStats),
         ("GoldPlayerSeasonSummary", GoldPlayerSeasonSummary),
         ("GoldTeamDailyStats", GoldTeamDailyStats),
+        ("GoldTeamSeasonSummary", GoldTeamSeasonSummary),
     ]
     for name, model in gold_models:
         doc = model.__doc__.strip() if model.__doc__ else ""

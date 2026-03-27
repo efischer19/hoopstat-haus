@@ -4,6 +4,7 @@ from datetime import date
 from unittest.mock import MagicMock, patch
 
 import pandas as pd
+from botocore.exceptions import BotoCoreError, ClientError
 
 from app.processors import GoldProcessor
 
@@ -561,3 +562,254 @@ class TestGoldProcessor:
         processor._store_team_season_aggregations({}, "2023-24")
 
         processor.json_writer.write_team_season_artifacts.assert_not_called()
+
+    @patch("app.processors.S3DataDiscovery")
+    def test_process_date_calls_write_top_lists_and_latest_index(
+        self, mock_s3_discovery_class
+    ):
+        """Test that process_date calls write_top_lists and write_latest_index."""
+        mock_s3_discovery = MagicMock()
+        mock_s3_discovery.check_data_freshness.return_value = True
+
+        # Return valid DataFrames for player and team stats
+        player_df = pd.DataFrame(
+            {
+                "player_id": ["player_1"],
+                "team_id": ["team_1"],
+                "points": [25],
+                "rebounds": [8],
+                "assists": [5],
+                "steals": [2],
+                "blocks": [1],
+                "turnovers": [3],
+                "field_goals_made": [10],
+                "field_goals_attempted": [18],
+                "free_throws_made": [3],
+                "free_throws_attempted": [4],
+                "minutes_played": [35],
+            }
+        )
+        team_df = pd.DataFrame(
+            {
+                "team_id": ["team_1"],
+                "points": [110],
+                "field_goals_made": [42],
+                "field_goals_attempted": [85],
+                "rebounds": [45],
+                "turnovers": [12],
+                "possessions": [98],
+            }
+        )
+
+        def load_silver_data(target_date, entity_type):
+            if entity_type == "player_stats":
+                return player_df
+            return team_df
+
+        mock_s3_discovery.load_all_silver_data.side_effect = load_silver_data
+        mock_s3_discovery_class.return_value = mock_s3_discovery
+
+        processor = GoldProcessor(
+            silver_bucket="test-silver-bucket", gold_bucket="test-gold-bucket"
+        )
+        processor.json_writer = MagicMock()
+        processor.validator = MagicMock()
+
+        target_date = date(2024, 1, 15)
+        result = processor.process_date(target_date, dry_run=False)
+
+        assert result is True
+        processor.json_writer.write_top_lists.assert_called_once()
+        # Verify it was called with player analytics (a DataFrame) and target_date
+        call_args = processor.json_writer.write_top_lists.call_args
+        assert call_args[0][1] == target_date
+        processor.json_writer.write_latest_index.assert_called_once_with(target_date)
+
+    def test_process_date_dry_run_skips_top_lists_and_latest_index(self):
+        """Test that process_date in dry-run mode skips write_top_lists/latest_index."""
+        processor = GoldProcessor(
+            silver_bucket="test-silver-bucket", gold_bucket="test-gold-bucket"
+        )
+        processor.json_writer = MagicMock()
+
+        target_date = date(2024, 1, 15)
+        result = processor.process_date(target_date, dry_run=True)
+
+        assert result is True
+        processor.json_writer.write_top_lists.assert_not_called()
+        processor.json_writer.write_latest_index.assert_not_called()
+
+    @patch("app.processors.S3DataDiscovery")
+    def test_process_date_continues_on_artifact_writing_error(
+        self, mock_s3_discovery_class
+    ):
+        """Test that process_date returns True even when artifact writing fails."""
+        mock_s3_discovery = MagicMock()
+        mock_s3_discovery.check_data_freshness.return_value = True
+
+        player_df = pd.DataFrame(
+            {
+                "player_id": ["player_1"],
+                "team_id": ["team_1"],
+                "points": [25],
+                "rebounds": [8],
+                "assists": [5],
+                "steals": [2],
+                "blocks": [1],
+                "turnovers": [3],
+                "field_goals_made": [10],
+                "field_goals_attempted": [18],
+                "free_throws_made": [3],
+                "free_throws_attempted": [4],
+                "minutes_played": [35],
+            }
+        )
+        team_df = pd.DataFrame(
+            {
+                "team_id": ["team_1"],
+                "points": [110],
+                "field_goals_made": [42],
+                "field_goals_attempted": [85],
+                "rebounds": [45],
+                "turnovers": [12],
+                "possessions": [98],
+            }
+        )
+
+        def load_silver_data(target_date, entity_type):
+            if entity_type == "player_stats":
+                return player_df
+            return team_df
+
+        mock_s3_discovery.load_all_silver_data.side_effect = load_silver_data
+        mock_s3_discovery_class.return_value = mock_s3_discovery
+
+        processor = GoldProcessor(
+            silver_bucket="test-silver-bucket", gold_bucket="test-gold-bucket"
+        )
+        processor.json_writer = MagicMock()
+        processor.json_writer.write_top_lists.side_effect = Exception(
+            "Unexpected error"
+        )
+        processor.validator = MagicMock()
+
+        target_date = date(2024, 1, 15)
+        result = processor.process_date(target_date, dry_run=False)
+
+        # process_date should still succeed despite artifact writing error
+        assert result is True
+
+    @patch("app.processors.S3DataDiscovery")
+    def test_process_date_continues_on_s3_artifact_error(self, mock_s3_discovery_class):
+        """Test that process_date handles BotoCoreError from artifact writing."""
+        mock_s3_discovery = MagicMock()
+        mock_s3_discovery.check_data_freshness.return_value = True
+
+        player_df = pd.DataFrame(
+            {
+                "player_id": ["player_1"],
+                "team_id": ["team_1"],
+                "points": [25],
+                "rebounds": [8],
+                "assists": [5],
+                "steals": [2],
+                "blocks": [1],
+                "turnovers": [3],
+                "field_goals_made": [10],
+                "field_goals_attempted": [18],
+                "free_throws_made": [3],
+                "free_throws_attempted": [4],
+                "minutes_played": [35],
+            }
+        )
+        team_df = pd.DataFrame(
+            {
+                "team_id": ["team_1"],
+                "points": [110],
+                "field_goals_made": [42],
+                "field_goals_attempted": [85],
+                "rebounds": [45],
+                "turnovers": [12],
+                "possessions": [98],
+            }
+        )
+
+        def load_silver_data(target_date, entity_type):
+            if entity_type == "player_stats":
+                return player_df
+            return team_df
+
+        mock_s3_discovery.load_all_silver_data.side_effect = load_silver_data
+        mock_s3_discovery_class.return_value = mock_s3_discovery
+
+        processor = GoldProcessor(
+            silver_bucket="test-silver-bucket", gold_bucket="test-gold-bucket"
+        )
+        processor.json_writer = MagicMock()
+        processor.json_writer.write_top_lists.side_effect = BotoCoreError()
+        processor.validator = MagicMock()
+
+        target_date = date(2024, 1, 15)
+        result = processor.process_date(target_date, dry_run=False)
+
+        # process_date should still succeed despite S3 error in artifact writing
+        assert result is True
+
+    @patch("app.processors.S3DataDiscovery")
+    def test_process_date_continues_on_client_error(self, mock_s3_discovery_class):
+        """Test that process_date handles ClientError from artifact writing."""
+        mock_s3_discovery = MagicMock()
+        mock_s3_discovery.check_data_freshness.return_value = True
+
+        player_df = pd.DataFrame(
+            {
+                "player_id": ["player_1"],
+                "team_id": ["team_1"],
+                "points": [25],
+                "rebounds": [8],
+                "assists": [5],
+                "steals": [2],
+                "blocks": [1],
+                "turnovers": [3],
+                "field_goals_made": [10],
+                "field_goals_attempted": [18],
+                "free_throws_made": [3],
+                "free_throws_attempted": [4],
+                "minutes_played": [35],
+            }
+        )
+        team_df = pd.DataFrame(
+            {
+                "team_id": ["team_1"],
+                "points": [110],
+                "field_goals_made": [42],
+                "field_goals_attempted": [85],
+                "rebounds": [45],
+                "turnovers": [12],
+                "possessions": [98],
+            }
+        )
+
+        def load_silver_data(target_date, entity_type):
+            if entity_type == "player_stats":
+                return player_df
+            return team_df
+
+        mock_s3_discovery.load_all_silver_data.side_effect = load_silver_data
+        mock_s3_discovery_class.return_value = mock_s3_discovery
+
+        processor = GoldProcessor(
+            silver_bucket="test-silver-bucket", gold_bucket="test-gold-bucket"
+        )
+        processor.json_writer = MagicMock()
+        processor.json_writer.write_latest_index.side_effect = ClientError(
+            {"Error": {"Code": "AccessDenied", "Message": "Access Denied"}},
+            "PutObject",
+        )
+        processor.validator = MagicMock()
+
+        target_date = date(2024, 1, 15)
+        result = processor.process_date(target_date, dry_run=False)
+
+        # process_date should still succeed despite ClientError
+        assert result is True

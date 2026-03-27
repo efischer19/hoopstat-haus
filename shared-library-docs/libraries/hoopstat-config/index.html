@@ -23,7 +23,7 @@
       
       
       <link rel="icon" href="../../assets/images/favicon.png">
-      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.5">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.6">
     
     
       
@@ -568,17 +568,6 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#configmanager" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        ConfigManager
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
   <a href="#configvalidationerror" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -605,6 +594,17 @@
     <span class="md-ellipsis">
       
         ConfigEnvironmentError
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#configmanager" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        ConfigManager
       
     </span>
   </a>
@@ -1341,17 +1341,6 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#configmanager" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        ConfigManager
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
   <a href="#configvalidationerror" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1378,6 +1367,17 @@
     <span class="md-ellipsis">
       
         ConfigEnvironmentError
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#configmanager" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        ConfigManager
       
     </span>
   </a>
@@ -1566,6 +1566,18 @@
 <li><code>get_env_value(self, field_type: Any) -&gt; Any</code></li>
 <li>Get and convert value from environment variable.</li>
 </ul>
+<h4 id="configvalidationerror">ConfigValidationError<a class="headerlink" href="#configvalidationerror" title="Permanent link">&para;</a></h4>
+<p>Raised when configuration validation fails.</p>
+<p>This exception provides detailed information about validation failures
+to help developers quickly identify and fix configuration issues.</p>
+<h4 id="configfileerror">ConfigFileError<a class="headerlink" href="#configfileerror" title="Permanent link">&para;</a></h4>
+<p>Raised when configuration file loading or parsing fails.</p>
+<p>This exception is used for file system errors, parsing errors,
+and other file-related issues during configuration loading.</p>
+<h4 id="configenvironmenterror">ConfigEnvironmentError<a class="headerlink" href="#configenvironmenterror" title="Permanent link">&para;</a></h4>
+<p>Raised when environment variable processing fails.</p>
+<p>This exception is used when environment variables cannot be parsed
+or converted to the expected types.</p>
 <h4 id="configmanager">ConfigManager<a class="headerlink" href="#configmanager" title="Permanent link">&para;</a></h4>
 <p>Base class for type-safe configuration management.</p>
 <p>This class provides a foundation for creating configuration classes that:
@@ -1587,18 +1599,6 @@
 <li><code>get_env_vars(self) -&gt; Any</code></li>
 <li>Get environment variable names for all fields that support them.</li>
 </ul>
-<h4 id="configvalidationerror">ConfigValidationError<a class="headerlink" href="#configvalidationerror" title="Permanent link">&para;</a></h4>
-<p>Raised when configuration validation fails.</p>
-<p>This exception provides detailed information about validation failures
-to help developers quickly identify and fix configuration issues.</p>
-<h4 id="configfileerror">ConfigFileError<a class="headerlink" href="#configfileerror" title="Permanent link">&para;</a></h4>
-<p>Raised when configuration file loading or parsing fails.</p>
-<p>This exception is used for file system errors, parsing errors,
-and other file-related issues during configuration loading.</p>
-<h4 id="configenvironmenterror">ConfigEnvironmentError<a class="headerlink" href="#configenvironmenterror" title="Permanent link">&para;</a></h4>
-<p>Raised when environment variable processing fails.</p>
-<p>This exception is used when environment variables cannot be parsed
-or converted to the expected types.</p>
 <h3 id="functions">Functions<a class="headerlink" href="#functions" title="Permanent link">&para;</a></h3>
 <h4 id="config_field">config_field<a class="headerlink" href="#config_field" title="Permanent link">&para;</a></h4>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="n">config_field</span><span class="p">(</span><span class="n">default</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">env_var</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">description</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span>

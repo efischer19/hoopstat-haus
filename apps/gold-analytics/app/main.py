@@ -126,7 +126,8 @@ def status(gold_bucket: str | None) -> None:
         click.echo("=== Gold Layer Status Check ===")
         click.echo(f"Gold Bucket: {gold_bucket_name}")
 
-        s3_client = boto3.client("s3", region_name="us-east-1")
+        aws_region = os.getenv("AWS_REGION", "us-east-1")
+        s3_client = boto3.client("s3", region_name=aws_region)
 
         # List artifact types under served/ prefix
         served_response = s3_client.list_objects_v2(
@@ -149,8 +150,11 @@ def status(gold_bucket: str | None) -> None:
             index_data = json.loads(index_body)
             latest_date = index_data.get("latest_date", "unknown")
             click.echo(f"Index file valid — latest date: {latest_date}")
-        except (ClientError, json.JSONDecodeError) as e:
-            logger.error(f"Failed to validate served/index/latest.json: {e}")
+        except ClientError as e:
+            logger.error(f"Index file not accessible: {e}")
+            sys.exit(1)
+        except json.JSONDecodeError as e:
+            logger.error(f"Index file is not valid JSON: {e}")
             sys.exit(1)
 
         # Count artifacts per type

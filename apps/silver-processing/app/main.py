@@ -124,7 +124,8 @@ def status(silver_bucket: str | None) -> None:
         click.echo("=== Silver Layer Status Check ===")
         click.echo(f"Silver Bucket: {silver_bucket_name}")
 
-        s3_client = boto3.client("s3", region_name="us-east-1")
+        aws_region = os.getenv("AWS_REGION", "us-east-1")
+        s3_client = boto3.client("s3", region_name=aws_region)
 
         # Check for silver data prefixes
         silver_response = s3_client.list_objects_v2(

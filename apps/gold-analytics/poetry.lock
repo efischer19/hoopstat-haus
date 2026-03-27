@@ -613,7 +613,7 @@ optional = false
 python-versions = "^3.12"
 groups = ["main"]
 files = []
-develop = false
+develop = true
 
 [package.dependencies]
 fuzzywuzzy = "^0.18.0"
@@ -2017,4 +2017,4 @@ test = ["pytest", "pytest-cov"]
 [metadata]
 lock-version = "2.1"
 python-versions = "^3.12"
-content-hash = "e680110ea833836c8091b2ebdfd2564e79c18949b5f2dfbc5c40447b663309a8"
+content-hash = "abe7192f09273109da1b00adef634bc89b5a2a3f6aeb72d5b207ab89947d7353"

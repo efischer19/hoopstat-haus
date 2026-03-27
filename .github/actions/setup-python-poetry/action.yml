@@ -28,6 +28,4 @@ runs:
       uses: actions/cache@v3
       with:
         path: ${{ inputs.working-directory }}/.venv
-        key: poetry-${{ runner.os }}-${{ inputs.working-directory }}-${{ hashFiles(format('{0}/poetry.lock', inputs.working-directory)) }}
-        restore-keys: |
-          poetry-${{ runner.os }}-${{ inputs.working-directory }}-
+        key: poetry-${{ runner.os }}-${{ inputs.working-directory }}-${{ hashFiles(format('{0}/poetry.lock', inputs.working-directory), 'libs/**/*', '.github/actions/setup-python-poetry/action.yml') }}

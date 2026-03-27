@@ -33,6 +33,7 @@ from .gold_models import (
     GoldPlayerDailyStats,
     GoldPlayerSeasonSummary,
     GoldTeamDailyStats,
+    GoldTeamSeasonSummary,
     generate_all_gold_schemas,
     generate_gold_json_schema,
 )
@@ -84,6 +85,7 @@ __all__ = [
     "GoldPlayerDailyStats",
     "GoldPlayerSeasonSummary",
     "GoldTeamDailyStats",
+    "GoldTeamSeasonSummary",
     # Bronze layer models
     "TeamRaw",
     "PlayerRaw",

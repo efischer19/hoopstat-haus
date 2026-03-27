@@ -3,7 +3,27 @@
 import pytest
 from pydantic import ValidationError
 
+from hoopstat_data import GoldTeamSeasonSummary
 from hoopstat_data.models import GameStats, PlayerStats, TeamStats
+
+
+def test_gold_team_season_summary_reexport():
+    """Gold team season summaries should be re-exported for consumers."""
+    summary = GoldTeamSeasonSummary(
+        team_id="1610612747",
+        season="2023-24",
+        total_games=82,
+        total_points=9200,
+        total_points_allowed=9050,
+        points_per_game=112.2,
+        points_allowed_per_game=110.4,
+        assists_per_game=28.1,
+        total_rebounds_per_game=44.3,
+        turnovers_per_game=13.7,
+    )
+
+    assert summary.team_id == "1610612747"
+    assert summary.season == "2023-24"
 
 
 class TestPlayerStats:

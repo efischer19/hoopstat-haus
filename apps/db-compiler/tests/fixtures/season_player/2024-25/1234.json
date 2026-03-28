@@ -1,0 +1,29 @@
+{
+  "player_id": "1234",
+  "player_name": "Test Player",
+  "season": "2024-25",
+  "team": "BOS",
+  "total_games": 45,
+  "total_minutes": 1440.0,
+  "points_per_game": 19.8,
+  "rebounds_per_game": 4.1,
+  "assists_per_game": 7.5,
+  "steals_per_game": 1.8,
+  "blocks_per_game": 0.3,
+  "turnovers_per_game": 2.4,
+  "field_goal_percentage": 0.488,
+  "three_point_percentage": 0.381,
+  "free_throw_percentage": 0.832,
+  "efficiency_rating": 21.3,
+  "true_shooting_percentage": 0.601,
+  "usage_rate": 0.265,
+  "scoring_trend": -0.02,
+  "efficiency_trend": 0.01,
+  "partition_key": "season_player/2024-25",
+  "lineage": {
+    "source_system": "silver-to-gold-etl",
+    "schema_version": "1.0",
+    "transformation_stage": "gold",
+    "validation_mode": "strict"
+  }
+}

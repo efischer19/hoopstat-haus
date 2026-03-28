@@ -1,0 +1,9 @@
+{
+  "latest_date": "2024-01-15",
+  "available_data": {
+    "player_daily": "served/player_daily/2024-01-15/",
+    "team_daily": "served/team_daily/2024-01-15/",
+    "top_lists": "served/top_lists/2024-01-15/"
+  },
+  "updated_at": "2024-01-15"
+}

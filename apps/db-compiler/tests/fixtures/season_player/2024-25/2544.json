@@ -1,0 +1,29 @@
+{
+  "player_id": "2544",
+  "player_name": "LeBron James",
+  "season": "2024-25",
+  "team": "LAL",
+  "total_games": 50,
+  "total_minutes": 1680.0,
+  "points_per_game": 24.5,
+  "rebounds_per_game": 7.2,
+  "assists_per_game": 8.1,
+  "steals_per_game": 1.2,
+  "blocks_per_game": 0.8,
+  "turnovers_per_game": 3.1,
+  "field_goal_percentage": 0.522,
+  "three_point_percentage": 0.412,
+  "free_throw_percentage": 0.755,
+  "efficiency_rating": 28.5,
+  "true_shooting_percentage": 0.623,
+  "usage_rate": 0.295,
+  "scoring_trend": 0.05,
+  "efficiency_trend": 0.02,
+  "partition_key": "season_player/2024-25",
+  "lineage": {
+    "source_system": "silver-to-gold-etl",
+    "schema_version": "1.0",
+    "transformation_stage": "gold",
+    "validation_mode": "strict"
+  }
+}

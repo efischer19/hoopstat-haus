@@ -655,6 +655,32 @@ resource "aws_cloudfront_distribution" "gold_artifacts" {
     }
   }
 
+  # Cache behavior for database files (DuckDB/SQLite) with Range header support (ADR-041)
+  # DuckDB requires HTTP Range Requests for remote SQL queries — compression must be disabled
+  # and the Range header must be included in the cache key for correct partial-read behavior.
+  ordered_cache_behavior {
+    path_pattern     = "db/*"
+    allowed_methods  = ["GET", "HEAD", "OPTIONS"]
+    cached_methods   = ["GET", "HEAD"]
+    target_origin_id = "S3-${aws_s3_bucket.gold.bucket}"
+
+    cache_policy_id          = aws_cloudfront_cache_policy.db_range_requests.id
+    origin_request_policy_id = "88a5eaf4-2fd4-4709-b370-b4c650ea3fcf" # CORS-S3Origin
+
+    viewer_protocol_policy = "redirect-to-https"
+    compress               = false # Critical: do not compress — DuckDB needs raw bytes for Range requests
+
+    response_headers_policy_id = aws_cloudfront_response_headers_policy.db_cors.id
+
+    dynamic "function_association" {
+      for_each = local.enable_www_redirect ? [1] : []
+      content {
+        event_type   = "viewer-request"
+        function_arn = aws_cloudfront_function.www_to_apex_redirect[0].arn
+      }
+    }
+  }
+
   # 1-hour TTL cache behavior for pipeline health artifacts (e.g. /health/pipeline_health.json)
   ordered_cache_behavior {
     path_pattern     = "health/*"
@@ -862,6 +888,75 @@ resource "aws_cloudfront_response_headers_policy" "frontend_app" {
 
     access_control_allow_origins {
       items = ["*"]
+    }
+
+    access_control_max_age_sec = 3600
+    origin_override            = true
+  }
+
+  custom_headers_config {
+    items {
+      header   = "Cache-Control"
+      value    = "public, max-age=3600"
+      override = false
+    }
+  }
+}
+
+# CloudFront Cache Policy for database files with Range header support (ADR-041)
+# DuckDB queries remote files via HTTP Range Requests — the Range header must be part of
+# the cache key so that different byte-range requests are cached independently.
+# Compression is disabled because gzip/brotli break byte-range addressing.
+resource "aws_cloudfront_cache_policy" "db_range_requests" {
+  name    = "${var.project_name}-db-range-requests"
+  comment = "Cache policy for DuckDB database files with Range header support"
+
+  default_ttl = 3600  # 1 hour (database updates daily)
+  max_ttl     = 86400 # 24 hours
+  min_ttl     = 0
+
+  parameters_in_cache_key_and_forwarded_to_origin {
+    headers_config {
+      header_behavior = "whitelist"
+      headers {
+        items = ["Range"]
+      }
+    }
+    cookies_config {
+      cookie_behavior = "none"
+    }
+    query_strings_config {
+      query_string_behavior = "none"
+    }
+    enable_accept_encoding_brotli = false # Don't compress — DuckDB needs raw bytes
+    enable_accept_encoding_gzip   = false
+  }
+}
+
+# CloudFront Response Headers Policy for database files (ADR-041)
+# CORS headers explicitly allow the Range request header (required by DuckDB) and
+# expose Content-Range, Content-Length, Accept-Ranges so clients can read partial responses.
+resource "aws_cloudfront_response_headers_policy" "db_cors" {
+  name    = "${var.project_name}-db-cors"
+  comment = "CORS policy for DuckDB database files with Range header support"
+
+  cors_config {
+    access_control_allow_credentials = false
+
+    access_control_allow_origins {
+      items = ["*"]
+    }
+
+    access_control_allow_methods {
+      items = ["GET", "HEAD", "OPTIONS"]
+    }
+
+    access_control_allow_headers {
+      items = ["Range", "If-None-Match", "If-Modified-Since"]
+    }
+
+    access_control_expose_headers {
+      items = ["Content-Range", "Content-Length", "Accept-Ranges", "ETag"]
     }
 
     access_control_max_age_sec = 3600
@@ -1704,9 +1799,9 @@ resource "aws_iam_policy" "health_aggregator" {
       },
       # S3 Read (Bronze): list quarantine/ prefix only
       {
-        Sid    = "BronzeQuarantineList"
-        Effect = "Allow"
-        Action = ["s3:ListBucket"]
+        Sid      = "BronzeQuarantineList"
+        Effect   = "Allow"
+        Action   = ["s3:ListBucket"]
         Resource = aws_s3_bucket.bronze.arn
         Condition = {
           StringLike = {
@@ -1716,16 +1811,16 @@ resource "aws_iam_policy" "health_aggregator" {
       },
       # S3 Read (Gold): read served/index/latest.json only
       {
-        Sid    = "GoldIndexRead"
-        Effect = "Allow"
-        Action = ["s3:GetObject"]
+        Sid      = "GoldIndexRead"
+        Effect   = "Allow"
+        Action   = ["s3:GetObject"]
         Resource = "${aws_s3_bucket.gold.arn}/served/index/latest.json"
       },
       # S3 Write (Gold): write to served/health/ prefix only
       {
-        Sid    = "GoldHealthWrite"
-        Effect = "Allow"
-        Action = ["s3:PutObject"]
+        Sid      = "GoldHealthWrite"
+        Effect   = "Allow"
+        Action   = ["s3:PutObject"]
         Resource = "${aws_s3_bucket.gold.arn}/served/health/*"
       }
     ]

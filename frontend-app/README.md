@@ -152,18 +152,18 @@ cp /path/to/mock/pipeline_health.json frontend-app/health/pipeline_health.json
 
 # Serve locally
 cd frontend-app
-python -m http.server 8080
+python3 -m http.server 8080
 ```
 
 Then open http://localhost:8080/health.html in your browser.
 
-A convenience script is available at `scripts/test-health-dashboard.sh` that generates mock data and opens the dashboard automatically.
+A convenience script is available at `scripts/test-health-dashboard.sh` that generates mock data, starts a local server, and prints the URL for the dashboard.
 
 ### Graceful Degradation
 
 - If `pipeline_health.json` cannot be fetched, an error state with a retry button is shown
 - If Chart.js CDN is unavailable, the chart area shows a "Chart unavailable" fallback message
-- The dashboard works without JavaScript for basic HTML structure (progressive enhancement)
+- Without JavaScript, the dashboard renders a static no-data state with the page structure, stage cards, and table visible (progressive enhancement)
 
 ## Deployment
 

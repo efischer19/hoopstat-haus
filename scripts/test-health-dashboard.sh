@@ -5,12 +5,12 @@
 # Convenience script that:
 #   1. Runs the health-aggregator integration tests
 #   2. Generates a mock pipeline_health.json
-#   3. Serves the frontend locally and opens the dashboard
+#   3. Serves the frontend locally
 #
 # Usage:
-#   ./scripts/test-health-dashboard.sh          # run tests + serve dashboard
+#   ./scripts/test-health-dashboard.sh          # run tests + serve dashboard (open in browser manually)
 #   ./scripts/test-health-dashboard.sh --test   # run tests only
-#   ./scripts/test-health-dashboard.sh --serve  # serve dashboard only
+#   ./scripts/test-health-dashboard.sh --serve  # serve dashboard only (open in browser manually)
 # ---------------------------------------------------------------------------
 
 set -euo pipefail
@@ -147,7 +147,9 @@ serve_dashboard() {
 # ---------------------------------------------------------------------------
 cleanup() {
     if [ -f "$MOCK_HEALTH_DIR/pipeline_health.json" ]; then
-        rm -rf "$MOCK_HEALTH_DIR"
+        rm -f "$MOCK_HEALTH_DIR/pipeline_health.json"
+        # Attempt to remove the directory if it's empty; ignore failure if not empty
+        rmdir "$MOCK_HEALTH_DIR" 2>/dev/null || true
         info "Cleaned up mock data"
     fi
 }

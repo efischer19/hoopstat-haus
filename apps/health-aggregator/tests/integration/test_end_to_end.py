@@ -49,14 +49,6 @@ AWS_REGION = "us-east-1"
 
 
 @pytest.fixture()
-def _aws_env(monkeypatch):
-    """Set required environment variables for the Lambda handler."""
-    monkeypatch.setenv("BRONZE_BUCKET", BRONZE_BUCKET)
-    monkeypatch.setenv("GOLD_BUCKET", GOLD_BUCKET)
-    monkeypatch.setenv("AWS_REGION", AWS_REGION)
-
-
-@pytest.fixture()
 def s3_client():
     """Create a moto-mocked S3 client with Bronze and Gold buckets."""
     with mock_aws():
@@ -425,8 +417,12 @@ class TestScenario2BronzeFailure:
 class TestScenario3SilverQuarantine:
     """Silver processing quarantines a significant number of records."""
 
-    def test_degraded_with_high_quarantine_count(self, s3_client):
-        """High quarantine counts produce a degraded overall status."""
+    def test_high_quarantine_count_reports_correct_counts(self, s3_client):
+        """High quarantine counts are reported accurately.
+
+        Quarantine volume does not affect overall status — all stages
+        succeeded, so overall remains OPERATIONAL.
+        """
         # Most recent day: Silver has many quarantined records
         overrides = {
             0: {
@@ -700,13 +696,14 @@ class TestScenario4SecurityInjectedSecrets:
         assert "AKIA" not in fallback_json
         assert "arn:aws" not in fallback_json
 
-    def test_injected_secret_in_full_pipeline(self, s3_client):
+    def test_extra_cw_fields_stripped_by_allowlist(self, s3_client):
         """
-        Full pipeline: inject secret via CW mock data, verify sanitizer catches it.
+        Full pipeline: extra fields in CW data are stripped by allowlist reconstruction.
 
-        Even if a CloudWatch log somehow contained an AWS key in a status field,
-        the allowlist reconstruction in Pass 1 should strip it, and Pass 2
-        would catch it if Pass 1 failed.
+        The allowlist in Pass 1 only maps known fields (execution_date, stage,
+        status, etc.) into the Pydantic report.  Extra fields injected into the
+        CloudWatch rows (like a leaked secret) are never propagated into the
+        report because the aggregator only reads explicitly named fields.
         """
         # Inject an AWS key into a CloudWatch row's status field
         cw_rows = []
@@ -738,8 +735,13 @@ class TestScenario4SecurityInjectedSecrets:
         assert "AKIA" not in report_json
 
     def test_secret_in_written_artifact_never_persisted(self, s3_client):
-        """Secrets injected into mock data never appear in the S3 artifact."""
+        """Secrets injected into CW mock data never appear in the S3 artifact."""
         cw_rows = _build_7day_cw_rows()
+        # Inject secrets into CW rows — these are extra fields the aggregator
+        # does not map, so they should be stripped by the allowlist.
+        cw_rows[0]["leaked_key"] = "AKIAIOSFODNN7EXAMPLE"
+        cw_rows[1]["internal_ip"] = "10.0.1.42"
+        cw_rows[2]["auth_header"] = "Bearer eyJhbGciOiJIUzI1NiJ9.test"
         _put_gold_index(s3_client)
 
         cw_mock = MagicMock()
@@ -759,9 +761,9 @@ class TestScenario4SecurityInjectedSecrets:
         artifact = _read_health_artifact(s3_client)
         artifact_json = json.dumps(artifact)
 
-        # Verify none of the secret patterns appear
+        # Verify none of the injected secret patterns appear
         assert "AKIA" not in artifact_json
-        assert "arn:aws" not in artifact_json
+        assert "10.0.1.42" not in artifact_json
         assert "Bearer " not in artifact_json
         assert "secret_access_key" not in artifact_json.lower()
 

@@ -21,7 +21,7 @@ Invoke the Lambda directly for debugging:
 
 ```bash
 aws lambda invoke \
-  --function-name hoopstat-health-aggregator \
+  --function-name hoopstat-haus-health-aggregator \
   --payload '{}' \
   --region us-east-1 \
   /tmp/health-response.json
@@ -29,7 +29,7 @@ aws lambda invoke \
 cat /tmp/health-response.json
 ```
 
-The response includes `statusCode`, `overall_status`, and `generated_at` fields.
+The response includes a top-level `statusCode` and a `body` field; the `body` JSON contains `overall_status`, `generated_at`, and `message`.
 
 ### Via Local Execution
 

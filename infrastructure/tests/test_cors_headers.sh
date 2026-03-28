@@ -104,6 +104,91 @@ else
     exit 1
 fi
 
+# ============================================================================
+# Database serving (DuckDB/SQLite) validation — ADR-041
+# ============================================================================
+
+# Test 9: db/* cache behavior exists with compression disabled
+echo "Test 9: Checking db/* cache behavior exists with compress = false..."
+if grep -A 12 'path_pattern.*=.*"db/\*"' main.tf | grep -q 'compress.*=.*false'; then
+    echo "✅ db/* cache behavior has compression disabled"
+else
+    echo "❌ db/* cache behavior missing or compression not disabled"
+    exit 1
+fi
+
+# Test 10: db/* cache behavior uses custom Range-aware cache policy
+echo "Test 10: Checking db/* cache behavior uses db_range_requests cache policy..."
+if grep -A 12 'path_pattern.*=.*"db/\*"' main.tf \
+    | grep -q 'aws_cloudfront_cache_policy.db_range_requests'; then
+    echo "✅ db/* cache behavior uses Range-aware cache policy"
+else
+    echo "❌ db/* cache behavior not using db_range_requests cache policy"
+    exit 1
+fi
+
+# Test 11: db/* cache behavior includes CORS-S3Origin origin request policy
+echo "Test 11: Checking db/* cache behavior has origin request policy for CORS preflight..."
+if grep -A 12 'path_pattern.*=.*"db/\*"' main.tf \
+    | grep -q 'origin_request_policy_id'; then
+    echo "✅ db/* cache behavior has origin request policy (CORS preflight headers forwarded)"
+else
+    echo "❌ db/* cache behavior missing origin_request_policy_id — CORS preflight will fail"
+    exit 1
+fi
+
+# Test 12: db cache policy includes Range header in cache key
+echo "Test 12: Checking Range header is in db cache key..."
+if grep -A 20 'aws_cloudfront_cache_policy.*db_range_requests' main.tf \
+    | grep -A 5 'headers_config' | grep -q '"Range"'; then
+    echo "✅ Range header included in db cache key"
+else
+    echo "❌ Range header not found in db cache key"
+    exit 1
+fi
+
+# Test 13: db cache policy has gzip and brotli compression disabled
+echo "Test 13: Checking db cache policy disables accept-encoding compression..."
+db_policy=$(grep -A 25 'aws_cloudfront_cache_policy.*db_range_requests' main.tf)
+if echo "$db_policy" | grep -q 'enable_accept_encoding_brotli.*=.*false' && \
+   echo "$db_policy" | grep -q 'enable_accept_encoding_gzip.*=.*false'; then
+    echo "✅ db cache policy disables gzip and brotli encoding"
+else
+    echo "❌ db cache policy does not disable compression encoding"
+    exit 1
+fi
+
+# Test 14: db CORS policy allows Range request header
+echo "Test 14: Checking db CORS policy allows Range request header..."
+if grep -A 25 'aws_cloudfront_response_headers_policy.*db_cors' main.tf \
+    | grep -A 3 'access_control_allow_headers' | grep -q '"Range"'; then
+    echo "✅ db CORS policy allows Range request header"
+else
+    echo "❌ db CORS policy does not allow Range request header"
+    exit 1
+fi
+
+# Test 15: db CORS policy exposes Content-Range and Accept-Ranges response headers
+echo "Test 15: Checking db CORS policy exposes Content-Range and Accept-Ranges..."
+db_cors=$(grep -A 35 'aws_cloudfront_response_headers_policy.*db_cors' main.tf)
+if echo "$db_cors" | grep -A 5 'access_control_expose_headers' | grep -q '"Content-Range"' && \
+   echo "$db_cors" | grep -A 5 'access_control_expose_headers' | grep -q '"Accept-Ranges"'; then
+    echo "✅ db CORS policy exposes Content-Range and Accept-Ranges"
+else
+    echo "❌ db CORS policy does not expose required response headers"
+    exit 1
+fi
+
+# Test 16: db cache policy has 1-hour default TTL
+echo "Test 16: Checking db cache policy has 1-hour default TTL..."
+if grep -A 10 'aws_cloudfront_cache_policy.*db_range_requests' main.tf \
+    | grep -q 'default_ttl.*=.*3600'; then
+    echo "✅ db cache policy has 1-hour (3600s) default TTL"
+else
+    echo "❌ db cache policy does not have 1-hour default TTL"
+    exit 1
+fi
+
 echo ""
 echo "🎉 All static CORS infrastructure validation tests passed!"
 echo "📋 Summary:"
@@ -115,6 +200,9 @@ echo "   ✅ S3 bucket policy only grants s3:GetObject"
 echo "   ✅ Gold bucket is fully private (OAC-only access)"
 echo "   ✅ Origin request policy forwards CORS headers to S3"
 echo "   ✅ CORS response allows OPTIONS method"
+echo "   ✅ db/* cache behavior: compression disabled, Range-aware cache policy, CORS origin request policy"
+echo "   ✅ db cache policy: Range header in cache key, encoding compression off, 1-hour TTL"
+echo "   ✅ db CORS policy: Range header allowed, Content-Range/Accept-Ranges exposed"
 
 # ============================================================================
 # Live smoke test (requires --live flag and a CloudFront URL)

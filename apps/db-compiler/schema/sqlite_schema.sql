@@ -103,7 +103,7 @@ CREATE TABLE IF NOT EXISTS team_daily_stats (
 
     -- Gold-layer computed metrics
     offensive_rating           REAL,    -- Offensive rating (points per 100 possessions)
-    defensive_rating           REAL,    -- Defensive rating (opp points per 100 possessions)
+    defensive_rating           REAL,    -- Defensive rating (opponent points per 100 possessions)
     pace                       REAL,    -- Pace (possessions per 48 minutes)
     true_shooting_percentage   REAL,    -- Team true shooting percentage (0-1 range)
 
@@ -197,7 +197,7 @@ CREATE TABLE IF NOT EXISTS team_season_summary (
 
     -- Efficiency metrics
     offensive_rating   REAL,            -- Offensive rating (pts per 100 possessions)
-    defensive_rating   REAL,            -- Defensive rating (opp pts per 100 possessions)
+    defensive_rating   REAL,            -- Defensive rating (opponent points per 100 possessions)
     net_rating         REAL,            -- Net rating (offensive - defensive)
     pace               REAL,            -- Pace (possessions per 48 minutes)
 

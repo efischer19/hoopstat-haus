@@ -192,7 +192,7 @@ CREATE TABLE IF NOT EXISTS team_season_summary (
 
     -- Efficiency metrics
     offensive_rating   DOUBLE,          -- Offensive rating (pts per 100 possessions)
-    defensive_rating   DOUBLE,          -- Defensive rating (opp pts per 100 possessions)
+    defensive_rating   DOUBLE,          -- Defensive rating (opponent points per 100 possessions)
     net_rating         DOUBLE,          -- Net rating (offensive - defensive)
     pace               DOUBLE,          -- Pace (possessions per 48 minutes)
 

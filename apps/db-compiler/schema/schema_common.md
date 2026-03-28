@@ -155,7 +155,7 @@ Four Factors, and shooting percentages. One row per team per season.
 | `true_shooting_percentage` | `true_shooting_percentage` | `float \| None` | `DOUBLE` | `REAL` | Yes | Season TS% (0–1) |
 | `effective_field_goal_percentage` | `effective_field_goal_percentage` | `float \| None` | `DOUBLE` | `REAL` | Yes | Effective FG% (0–1) |
 | `offensive_rating` | `offensive_rating` | `float \| None` | `DOUBLE` | `REAL` | Yes | Points per 100 possessions |
-| `defensive_rating` | `defensive_rating` | `float \| None` | `DOUBLE` | `REAL` | Yes | Opp points per 100 possessions |
+| `defensive_rating` | `defensive_rating` | `float \| None` | `DOUBLE` | `REAL` | Yes | Opponent points per 100 possessions |
 | `net_rating` | `net_rating` | `float \| None` | `DOUBLE` | `REAL` | Yes | Net rating (off - def) |
 | `pace` | `pace` | `float \| None` | `DOUBLE` | `REAL` | Yes | Possessions per 48 minutes |
 | `turnover_percentage` | `turnover_percentage` | `float \| None` | `DOUBLE` | `REAL` | Yes | Turnover percentage (0–1) |

@@ -1,0 +1,3419 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="API documentation for shared Python libraries">
+      
+      
+      
+        <link rel="canonical" href="https://efischer19.github.io/hoopstat-haus/DATABASE_GUIDE/">
+      
+      
+        <link rel="prev" href="../DATA_DICTIONARY/">
+      
+      
+        <link rel="next" href="../JSON_ARTIFACT_SCHEMAS/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.6">
+    
+    
+      
+        <title>Database Guide - Hoopstat Haus Shared Libraries Documentation</title>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/stylesheets/main.484c7ddc.min.css">
+      
+        
+        <link rel="stylesheet" href="../assets/stylesheets/palette.ab4e12ef.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="blue" data-md-color-accent="orange">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#static-database-guide" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+<header class="md-header" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href=".." title="Hoopstat Haus Shared Libraries Documentation" class="md-header__button md-logo" aria-label="Hoopstat Haus Shared Libraries Documentation" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            Hoopstat Haus Shared Libraries Documentation
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Database Guide
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+    
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+            
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href=".." class="md-tabs__link">
+        
+  
+  
+    
+  
+  Home
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../libraries/" class="md-tabs__link">
+          
+  
+  
+  Shared Libraries
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+    
+  
+  
+    
+    
+      <li class="md-tabs__item md-tabs__item--active">
+        <a href="../DATA_DICTIONARY/" class="md-tabs__link">
+          
+  
+  
+  Data Architecture
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../CONTRIBUTING/" class="md-tabs__link">
+          
+  
+  
+  Development
+
+        </a>
+      </li>
+    
+  
+
+      
+    </ul>
+  </div>
+</nav>
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href=".." title="Hoopstat Haus Shared Libraries Documentation" class="md-nav__button md-logo" aria-label="Hoopstat Haus Shared Libraries Documentation" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    Hoopstat Haus Shared Libraries Documentation
+  </label>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href=".." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" >
+        
+          
+          <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Shared Libraries
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Shared Libraries
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../libraries/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../libraries/example-math-utils.md" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    example-math-utils
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../libraries/hoopstat-config/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    hoopstat-config
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../libraries/hoopstat-data/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    hoopstat-data
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../libraries/hoopstat-e2e-testing/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    hoopstat-e2e-testing
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../libraries/hoopstat-mock-data/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    hoopstat-mock-data
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../libraries/hoopstat-observability/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    hoopstat-observability
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../libraries/ingestion/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ingestion
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Data Architecture
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Data Architecture
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../DATA_DICTIONARY/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Data Dictionary
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Database Guide
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Database Guide
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#overview" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Overview
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#quick-start" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Quick Start
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Quick Start">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#duckdb-query-remotely-no-download" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        DuckDB — Query Remotely (No Download)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#duckdb-cli" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        DuckDB CLI
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#sqlite-download-then-query-zero-dependencies" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        SQLite — Download Then Query (Zero Dependencies)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#sqlite-cli" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        SQLite CLI
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#nodejs-using-better-sqlite3" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Node.js (using better-sqlite3)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#format-selection-guide" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Format Selection Guide
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Format Selection Guide">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#key-differences" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Key Differences
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#schema-documentation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Schema Documentation
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Schema Documentation">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#tables-at-a-glance" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Tables at a Glance
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#views" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Views
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#table-player_daily_stats" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Table: player_daily_stats
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#table-team_daily_stats" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Table: team_daily_stats
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#table-player_season_summary" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Table: player_season_summary
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#table-team_season_summary" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Table: team_season_summary
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#table-top_lists" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Table: top_lists
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#indexes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Indexes
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#type-mapping-reference" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Type Mapping Reference
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#example-sql-queries" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Example SQL Queries
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Example SQL Queries">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#1-top-10-scorers-this-season" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1. Top 10 Scorers This Season
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#2-players-averaging-a-double-double" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2. Players Averaging a Double-Double
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#3-team-offensive-ratings-from-a-specific-date" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3. Team Offensive Ratings From a Specific Date
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#4-player-shooting-efficiency-trend-last-10-games" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4. Player Shooting Efficiency Trend (Last 10 Games)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#5-best-3-point-shooters-minimum-20-games-played" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5. Best 3-Point Shooters (Minimum 20 Games Played)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#6-teams-with-best-home-records" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        6. Teams With Best Home Records
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#7-players-with-improving-efficiency-positive-trend" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        7. Players With Improving Efficiency (Positive Trend)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#8-high-scoring-games-on-a-date" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        8. High-Scoring Games on a Date
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#9-team-comparison-query" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        9. Team Comparison Query
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#10-cross-table-join-player-stats-with-team-context" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        10. Cross-Table Join: Player Stats With Team Context
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#11-season-standings-via-view" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        11. Season Standings via View
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#12-player-current-form-via-view" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        12. Player Current Form via View
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#mcp-integration" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        MCP Integration
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#troubleshooting" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Troubleshooting
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Troubleshooting">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#cors-errors-in-the-browser" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        CORS Errors in the Browser
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#http-range-request-failures-duckdb-remote" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        HTTP Range Request Failures (DuckDB Remote)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#version-mismatch-duckdb" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Version Mismatch (DuckDB)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#sqlite-database-is-locked-or-read-only-errors" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        SQLite "Database is Locked" or Read-Only Errors
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#empty-query-results" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Empty Query Results
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#references" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        References
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../JSON_ARTIFACT_SCHEMAS/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    JSON Artifact Schemas
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Development
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Development
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../CONTRIBUTING/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Contributing
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../DEVELOPMENT_PHILOSOPHY/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Development Philosophy
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../BUILD_ORCHESTRATION/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Build Orchestration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../E2E_TESTING/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    E2E Testing
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../LOCAL_DEVELOPMENT_DEPENDENCIES/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Local Development
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../SHARED_LIBRARY_VERSIONING/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Shared Library Versioning
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#overview" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Overview
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#quick-start" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Quick Start
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Quick Start">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#duckdb-query-remotely-no-download" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        DuckDB — Query Remotely (No Download)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#duckdb-cli" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        DuckDB CLI
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#sqlite-download-then-query-zero-dependencies" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        SQLite — Download Then Query (Zero Dependencies)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#sqlite-cli" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        SQLite CLI
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#nodejs-using-better-sqlite3" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Node.js (using better-sqlite3)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#format-selection-guide" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Format Selection Guide
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Format Selection Guide">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#key-differences" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Key Differences
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#schema-documentation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Schema Documentation
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Schema Documentation">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#tables-at-a-glance" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Tables at a Glance
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#views" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Views
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#table-player_daily_stats" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Table: player_daily_stats
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#table-team_daily_stats" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Table: team_daily_stats
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#table-player_season_summary" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Table: player_season_summary
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#table-team_season_summary" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Table: team_season_summary
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#table-top_lists" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Table: top_lists
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#indexes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Indexes
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#type-mapping-reference" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Type Mapping Reference
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#example-sql-queries" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Example SQL Queries
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Example SQL Queries">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#1-top-10-scorers-this-season" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1. Top 10 Scorers This Season
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#2-players-averaging-a-double-double" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2. Players Averaging a Double-Double
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#3-team-offensive-ratings-from-a-specific-date" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3. Team Offensive Ratings From a Specific Date
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#4-player-shooting-efficiency-trend-last-10-games" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4. Player Shooting Efficiency Trend (Last 10 Games)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#5-best-3-point-shooters-minimum-20-games-played" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5. Best 3-Point Shooters (Minimum 20 Games Played)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#6-teams-with-best-home-records" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        6. Teams With Best Home Records
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#7-players-with-improving-efficiency-positive-trend" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        7. Players With Improving Efficiency (Positive Trend)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#8-high-scoring-games-on-a-date" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        8. High-Scoring Games on a Date
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#9-team-comparison-query" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        9. Team Comparison Query
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#10-cross-table-join-player-stats-with-team-context" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        10. Cross-Table Join: Player Stats With Team Context
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#11-season-standings-via-view" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        11. Season Standings via View
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#12-player-current-form-via-view" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        12. Player Current Form via View
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#mcp-integration" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        MCP Integration
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#troubleshooting" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Troubleshooting
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Troubleshooting">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#cors-errors-in-the-browser" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        CORS Errors in the Browser
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#http-range-request-failures-duckdb-remote" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        HTTP Range Request Failures (DuckDB Remote)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#version-mismatch-duckdb" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Version Mismatch (DuckDB)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#sqlite-database-is-locked-or-read-only-errors" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        SQLite "Database is Locked" or Read-Only Errors
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#empty-query-results" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Empty Query Results
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#references" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        References
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+
+<h1 id="static-database-guide">Static Database Guide<a class="headerlink" href="#static-database-guide" title="Permanent link">&para;</a></h1>
+<p><strong>Status:</strong> Production
+<strong>Last Updated:</strong> 2026-03-28
+<strong>Related ADRs:</strong> <a href="../meta/adr/ADR-041-static-database-artifacts.md">ADR-041</a>, <a href="../meta/adr/ADR-028-gold_layer_final.md">ADR-028</a></p>
+<h2 id="overview">Overview<a class="headerlink" href="#overview" title="Permanent link">&para;</a></h2>
+<p>Hoopstat Haus publishes the entire Gold layer analytics dataset as static database files that you can query directly with SQL. Two formats are available:</p>
+<table>
+<thead>
+<tr>
+<th>Format</th>
+<th>URL</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>DuckDB</strong></td>
+<td><code>https://data.hoopstat.haus/db/nba_current_season.duckdb</code></td>
+</tr>
+<tr>
+<td><strong>SQLite</strong></td>
+<td><code>https://data.hoopstat.haus/db/nba_current_season.sqlite</code></td>
+</tr>
+</tbody>
+</table>
+<p>Both files are updated daily (2–4 hours after games complete) and contain identical data. Choose the format that best fits your use case — see <a href="#format-selection-guide">Format Selection Guide</a> below.</p>
+<hr />
+<h2 id="quick-start">Quick Start<a class="headerlink" href="#quick-start" title="Permanent link">&para;</a></h2>
+<h3 id="duckdb-query-remotely-no-download">DuckDB — Query Remotely (No Download)<a class="headerlink" href="#duckdb-query-remotely-no-download" title="Permanent link">&para;</a></h3>
+<p>DuckDB supports HTTP Range Requests, so you can query the database directly over the network:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="kn">import</span><span class="w"> </span><span class="nn">duckdb</span>
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>
+<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="c1"># Query the remote database directly (uses HTTP Range Requests)</span>
+<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="n">result</span> <span class="o">=</span> <span class="n">duckdb</span><span class="o">.</span><span class="n">sql</span><span class="p">(</span><span class="s2">&quot;&quot;&quot;</span>
+<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a><span class="s2">    SELECT player_name, points_per_game, assists_per_game</span>
+<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a><span class="s2">    FROM &#39;https://data.hoopstat.haus/db/nba_current_season.duckdb&#39;.player_season_summary</span>
+<a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a><span class="s2">    ORDER BY points_per_game DESC</span>
+<a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a><span class="s2">    LIMIT 10</span>
+<a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a><span class="s2">&quot;&quot;&quot;</span><span class="p">)</span>
+<a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a><span class="nb">print</span><span class="p">(</span><span class="n">result</span><span class="p">)</span>
+</code></pre></div>
+<h3 id="duckdb-cli">DuckDB CLI<a class="headerlink" href="#duckdb-cli" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="c1"># Install DuckDB CLI (macOS)</span>
+<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>brew<span class="w"> </span>install<span class="w"> </span>duckdb
+<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>
+<a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a><span class="c1"># Query the remote database</span>
+<a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a>duckdb<span class="w"> </span>-c<span class="w"> </span><span class="s2">&quot;</span>
+<a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a><span class="s2">    ATTACH &#39;https://data.hoopstat.haus/db/nba_current_season.duckdb&#39; AS nba (READ_ONLY);</span>
+<a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a><span class="s2">    SELECT player_name, points_per_game</span>
+<a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a><span class="s2">    FROM nba.player_season_summary</span>
+<a id="__codelineno-1-9" name="__codelineno-1-9" href="#__codelineno-1-9"></a><span class="s2">    ORDER BY points_per_game DESC</span>
+<a id="__codelineno-1-10" name="__codelineno-1-10" href="#__codelineno-1-10"></a><span class="s2">    LIMIT 10;</span>
+<a id="__codelineno-1-11" name="__codelineno-1-11" href="#__codelineno-1-11"></a><span class="s2">&quot;</span>
+</code></pre></div>
+<h3 id="sqlite-download-then-query-zero-dependencies">SQLite — Download Then Query (Zero Dependencies)<a class="headerlink" href="#sqlite-download-then-query-zero-dependencies" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="kn">import</span><span class="w"> </span><span class="nn">urllib.request</span>
+<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="kn">import</span><span class="w"> </span><span class="nn">sqlite3</span>
+<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>
+<a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a><span class="c1"># Download the database (only ~2-5MB)</span>
+<a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a><span class="n">urllib</span><span class="o">.</span><span class="n">request</span><span class="o">.</span><span class="n">urlretrieve</span><span class="p">(</span>
+<a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a>    <span class="s2">&quot;https://data.hoopstat.haus/db/nba_current_season.sqlite&quot;</span><span class="p">,</span>
+<a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a>    <span class="s2">&quot;nba_current_season.sqlite&quot;</span>
+<a id="__codelineno-2-8" name="__codelineno-2-8" href="#__codelineno-2-8"></a><span class="p">)</span>
+<a id="__codelineno-2-9" name="__codelineno-2-9" href="#__codelineno-2-9"></a>
+<a id="__codelineno-2-10" name="__codelineno-2-10" href="#__codelineno-2-10"></a><span class="c1"># Query locally with zero dependencies</span>
+<a id="__codelineno-2-11" name="__codelineno-2-11" href="#__codelineno-2-11"></a><span class="n">conn</span> <span class="o">=</span> <span class="n">sqlite3</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="s2">&quot;nba_current_season.sqlite&quot;</span><span class="p">)</span>
+<a id="__codelineno-2-12" name="__codelineno-2-12" href="#__codelineno-2-12"></a><span class="k">for</span> <span class="n">row</span> <span class="ow">in</span> <span class="n">conn</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="s2">&quot;&quot;&quot;</span>
+<a id="__codelineno-2-13" name="__codelineno-2-13" href="#__codelineno-2-13"></a><span class="s2">    SELECT player_name, points_per_game, assists_per_game</span>
+<a id="__codelineno-2-14" name="__codelineno-2-14" href="#__codelineno-2-14"></a><span class="s2">    FROM player_season_summary</span>
+<a id="__codelineno-2-15" name="__codelineno-2-15" href="#__codelineno-2-15"></a><span class="s2">    ORDER BY points_per_game DESC</span>
+<a id="__codelineno-2-16" name="__codelineno-2-16" href="#__codelineno-2-16"></a><span class="s2">    LIMIT 10</span>
+<a id="__codelineno-2-17" name="__codelineno-2-17" href="#__codelineno-2-17"></a><span class="s2">&quot;&quot;&quot;</span><span class="p">):</span>
+<a id="__codelineno-2-18" name="__codelineno-2-18" href="#__codelineno-2-18"></a>    <span class="nb">print</span><span class="p">(</span><span class="n">row</span><span class="p">)</span>
+</code></pre></div>
+<h3 id="sqlite-cli">SQLite CLI<a class="headerlink" href="#sqlite-cli" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="c1"># Download and query (sqlite3 is pre-installed on macOS/Linux)</span>
+<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>curl<span class="w"> </span>-o<span class="w"> </span>nba.sqlite<span class="w"> </span>https://data.hoopstat.haus/db/nba_current_season.sqlite
+<a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a>sqlite3<span class="w"> </span>nba.sqlite<span class="w"> </span><span class="s2">&quot;SELECT player_name, points_per_game FROM player_season_summary ORDER BY points_per_game DESC LIMIT 10;&quot;</span>
+</code></pre></div>
+<h3 id="nodejs-using-better-sqlite3">Node.js (using better-sqlite3)<a class="headerlink" href="#nodejs-using-better-sqlite3" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="kd">const</span><span class="w"> </span><span class="nx">Database</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">require</span><span class="p">(</span><span class="s1">&#39;better-sqlite3&#39;</span><span class="p">);</span>
+<a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a><span class="kd">const</span><span class="w"> </span><span class="nx">https</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">require</span><span class="p">(</span><span class="s1">&#39;https&#39;</span><span class="p">);</span>
+<a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a><span class="kd">const</span><span class="w"> </span><span class="nx">fs</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">require</span><span class="p">(</span><span class="s1">&#39;fs&#39;</span><span class="p">);</span>
+<a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a>
+<a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a><span class="c1">// Download the SQLite database</span>
+<a id="__codelineno-4-6" name="__codelineno-4-6" href="#__codelineno-4-6"></a><span class="kd">const</span><span class="w"> </span><span class="nx">file</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">fs</span><span class="p">.</span><span class="nx">createWriteStream</span><span class="p">(</span><span class="s1">&#39;nba.sqlite&#39;</span><span class="p">);</span>
+<a id="__codelineno-4-7" name="__codelineno-4-7" href="#__codelineno-4-7"></a><span class="nx">https</span><span class="p">.</span><span class="nx">get</span><span class="p">(</span><span class="s1">&#39;https://data.hoopstat.haus/db/nba_current_season.sqlite&#39;</span><span class="p">,</span><span class="w"> </span><span class="p">(</span><span class="nx">res</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-4-8" name="__codelineno-4-8" href="#__codelineno-4-8"></a><span class="w">  </span><span class="nx">res</span><span class="p">.</span><span class="nx">pipe</span><span class="p">(</span><span class="nx">file</span><span class="p">);</span>
+<a id="__codelineno-4-9" name="__codelineno-4-9" href="#__codelineno-4-9"></a><span class="w">  </span><span class="nx">file</span><span class="p">.</span><span class="nx">on</span><span class="p">(</span><span class="s1">&#39;finish&#39;</span><span class="p">,</span><span class="w"> </span><span class="p">()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-4-10" name="__codelineno-4-10" href="#__codelineno-4-10"></a><span class="w">    </span><span class="kd">const</span><span class="w"> </span><span class="nx">db</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="ow">new</span><span class="w"> </span><span class="nx">Database</span><span class="p">(</span><span class="s1">&#39;nba.sqlite&#39;</span><span class="p">,</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">readonly</span><span class="o">:</span><span class="w"> </span><span class="kc">true</span><span class="w"> </span><span class="p">});</span>
+<a id="__codelineno-4-11" name="__codelineno-4-11" href="#__codelineno-4-11"></a><span class="w">    </span><span class="kd">const</span><span class="w"> </span><span class="nx">rows</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">db</span><span class="p">.</span><span class="nx">prepare</span><span class="p">(</span><span class="sb">`</span>
+<a id="__codelineno-4-12" name="__codelineno-4-12" href="#__codelineno-4-12"></a><span class="sb">      SELECT player_name, points_per_game</span>
+<a id="__codelineno-4-13" name="__codelineno-4-13" href="#__codelineno-4-13"></a><span class="sb">      FROM player_season_summary</span>
+<a id="__codelineno-4-14" name="__codelineno-4-14" href="#__codelineno-4-14"></a><span class="sb">      ORDER BY points_per_game DESC</span>
+<a id="__codelineno-4-15" name="__codelineno-4-15" href="#__codelineno-4-15"></a><span class="sb">      LIMIT 10</span>
+<a id="__codelineno-4-16" name="__codelineno-4-16" href="#__codelineno-4-16"></a><span class="sb">    `</span><span class="p">).</span><span class="nx">all</span><span class="p">();</span>
+<a id="__codelineno-4-17" name="__codelineno-4-17" href="#__codelineno-4-17"></a><span class="w">    </span><span class="nx">console</span><span class="p">.</span><span class="nx">table</span><span class="p">(</span><span class="nx">rows</span><span class="p">);</span>
+<a id="__codelineno-4-18" name="__codelineno-4-18" href="#__codelineno-4-18"></a><span class="w">  </span><span class="p">});</span>
+<a id="__codelineno-4-19" name="__codelineno-4-19" href="#__codelineno-4-19"></a><span class="p">});</span>
+</code></pre></div>
+<hr />
+<h2 id="format-selection-guide">Format Selection Guide<a class="headerlink" href="#format-selection-guide" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>Use Case</th>
+<th>Recommended Format</th>
+<th>Why</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>AI agent / MCP proxy queries</td>
+<td>DuckDB</td>
+<td>Rich analytical SQL, HTTP Range Requests for remote querying</td>
+</tr>
+<tr>
+<td>Data science / Jupyter notebooks</td>
+<td>DuckDB</td>
+<td>Window functions, CTEs, columnar execution for analytics</td>
+</tr>
+<tr>
+<td>iOS / Android mobile app</td>
+<td>SQLite</td>
+<td>Built-in OS support, no third-party drivers needed</td>
+</tr>
+<tr>
+<td>Flask / Django web app</td>
+<td>SQLite</td>
+<td>Standard library <code>sqlite3</code>, zero dependencies</td>
+</tr>
+<tr>
+<td>PHP backend</td>
+<td>SQLite</td>
+<td>PDO SQLite driver is universal</td>
+</tr>
+<tr>
+<td>Browser-based SQL (WASM)</td>
+<td>Either</td>
+<td>DuckDB WASM or sql.js (SQLite WASM) both work</td>
+</tr>
+<tr>
+<td>Quick CLI exploration</td>
+<td>DuckDB</td>
+<td><code>duckdb</code> CLI with remote <code>ATTACH</code>; or <code>sqlite3</code> for local file</td>
+</tr>
+</tbody>
+</table>
+<h3 id="key-differences">Key Differences<a class="headerlink" href="#key-differences" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Feature</th>
+<th>DuckDB</th>
+<th>SQLite</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Remote query (no download)</td>
+<td>✅ HTTP Range Requests</td>
+<td>❌ Must download first</td>
+</tr>
+<tr>
+<td>Window functions</td>
+<td>✅ Full support</td>
+<td>⚠️ Partial (no <code>ROWS BETWEEN</code> in older versions)</td>
+</tr>
+<tr>
+<td>Date type</td>
+<td>✅ Native <code>DATE</code></td>
+<td>⚠️ <code>TEXT</code> (ISO 8601 strings)</td>
+</tr>
+<tr>
+<td>Boolean type</td>
+<td>✅ Native <code>BOOLEAN</code></td>
+<td>⚠️ <code>INTEGER</code> (0/1)</td>
+</tr>
+<tr>
+<td>Platform support</td>
+<td>Requires DuckDB library</td>
+<td>Built into every OS and language</td>
+</tr>
+<tr>
+<td>File size</td>
+<td>Slightly larger (columnar)</td>
+<td>Smaller</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="schema-documentation">Schema Documentation<a class="headerlink" href="#schema-documentation" title="Permanent link">&para;</a></h2>
+<p>The database contains five tables and up to three views, all derived from the Gold layer Pydantic models (<code>gold_models.py</code>). Data is compiled from Gold JSON artifacts in a single build pass.</p>
+<h3 id="tables-at-a-glance">Tables at a Glance<a class="headerlink" href="#tables-at-a-glance" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Table</th>
+<th>Grain</th>
+<th>Primary Key</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>player_daily_stats</code></td>
+<td>Player + Game</td>
+<td><code>(player_id, game_id)</code></td>
+<td>Per-game player box scores with advanced metrics</td>
+</tr>
+<tr>
+<td><code>team_daily_stats</code></td>
+<td>Team + Game</td>
+<td><code>(team_id, game_id)</code></td>
+<td>Per-game team stats with offensive/defensive ratings</td>
+</tr>
+<tr>
+<td><code>player_season_summary</code></td>
+<td>Player + Season</td>
+<td><code>(player_id, season)</code></td>
+<td>Season averages, shooting %, and performance trends</td>
+</tr>
+<tr>
+<td><code>team_season_summary</code></td>
+<td>Team + Season</td>
+<td><code>(team_id, season)</code></td>
+<td>Season efficiency metrics and Four Factors</td>
+</tr>
+<tr>
+<td><code>top_lists</code></td>
+<td>Metric + Date + Rank</td>
+<td><code>(metric, list_date, rank)</code></td>
+<td>Daily leaderboards by metric</td>
+</tr>
+</tbody>
+</table>
+<h3 id="views">Views<a class="headerlink" href="#views" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>View</th>
+<th>Compatibility</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>v_team_standings</code></td>
+<td>Both</td>
+<td>Season standings with W/L records and average ratings</td>
+</tr>
+<tr>
+<td><code>v_player_current_averages</code></td>
+<td>Both</td>
+<td>Season summary joined with latest daily game stats</td>
+</tr>
+<tr>
+<td><code>v_player_game_log</code></td>
+<td>DuckDB only</td>
+<td>Daily stats enriched with rolling 10-game averages</td>
+</tr>
+</tbody>
+</table>
+<h3 id="table-player_daily_stats">Table: <code>player_daily_stats</code><a class="headerlink" href="#table-player_daily_stats" title="Permanent link">&para;</a></h3>
+<p>Per-game player box score statistics with Gold-layer computed advanced metrics. One row per player per game.</p>
+<table>
+<thead>
+<tr>
+<th>Column</th>
+<th>DuckDB Type</th>
+<th>SQLite Type</th>
+<th>Nullable</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>player_id</code></td>
+<td>VARCHAR</td>
+<td>TEXT</td>
+<td>NOT NULL</td>
+<td>Unique player identifier (NBA API string ID)</td>
+</tr>
+<tr>
+<td><code>player_name</code></td>
+<td>VARCHAR</td>
+<td>TEXT</td>
+<td>Yes</td>
+<td>Player display name</td>
+</tr>
+<tr>
+<td><code>team</code></td>
+<td>VARCHAR</td>
+<td>TEXT</td>
+<td>Yes</td>
+<td>Team abbreviation (e.g., 'LAL', 'BOS')</td>
+</tr>
+<tr>
+<td><code>position</code></td>
+<td>VARCHAR</td>
+<td>TEXT</td>
+<td>Yes</td>
+<td>Player position (e.g., 'PG', 'SF')</td>
+</tr>
+<tr>
+<td><code>game_id</code></td>
+<td>VARCHAR</td>
+<td>TEXT</td>
+<td>Yes</td>
+<td>Unique game identifier</td>
+</tr>
+<tr>
+<td><code>game_date</code></td>
+<td>DATE</td>
+<td>TEXT</td>
+<td>Yes</td>
+<td>Game date (ISO 8601 YYYY-MM-DD)</td>
+</tr>
+<tr>
+<td><code>season</code></td>
+<td>VARCHAR</td>
+<td>TEXT</td>
+<td>Yes</td>
+<td>NBA season identifier (e.g., '2025-26')</td>
+</tr>
+<tr>
+<td><code>points</code></td>
+<td>INTEGER</td>
+<td>INTEGER</td>
+<td>NOT NULL</td>
+<td>Points scored (≥0)</td>
+</tr>
+<tr>
+<td><code>rebounds</code></td>
+<td>INTEGER</td>
+<td>INTEGER</td>
+<td>NOT NULL</td>
+<td>Total rebounds (≥0)</td>
+</tr>
+<tr>
+<td><code>assists</code></td>
+<td>INTEGER</td>
+<td>INTEGER</td>
+<td>NOT NULL</td>
+<td>Assists (≥0)</td>
+</tr>
+<tr>
+<td><code>steals</code></td>
+<td>INTEGER</td>
+<td>INTEGER</td>
+<td>NOT NULL</td>
+<td>Steals (≥0)</td>
+</tr>
+<tr>
+<td><code>blocks</code></td>
+<td>INTEGER</td>
+<td>INTEGER</td>
+<td>NOT NULL</td>
+<td>Blocks (≥0)</td>
+</tr>
+<tr>
+<td><code>turnovers</code></td>
+<td>INTEGER</td>
+<td>INTEGER</td>
+<td>NOT NULL</td>
+<td>Turnovers (≥0)</td>
+</tr>
+<tr>
+<td><code>field_goals_made</code></td>
+<td>INTEGER</td>
+<td>INTEGER</td>
+<td>Yes</td>
+<td>Field goals made</td>
+</tr>
+<tr>
+<td><code>field_goals_attempted</code></td>
+<td>INTEGER</td>
+<td>INTEGER</td>
+<td>Yes</td>
+<td>Field goals attempted</td>
+</tr>
+<tr>
+<td><code>three_pointers_made</code></td>
+<td>INTEGER</td>
+<td>INTEGER</td>
+<td>Yes</td>
+<td>Three-point field goals made</td>
+</tr>
+<tr>
+<td><code>three_pointers_attempted</code></td>
+<td>INTEGER</td>
+<td>INTEGER</td>
+<td>Yes</td>
+<td>Three-point field goals attempted</td>
+</tr>
+<tr>
+<td><code>free_throws_made</code></td>
+<td>INTEGER</td>
+<td>INTEGER</td>
+<td>Yes</td>
+<td>Free throws made</td>
+</tr>
+<tr>
+<td><code>free_throws_attempted</code></td>
+<td>INTEGER</td>
+<td>INTEGER</td>
+<td>Yes</td>
+<td>Free throws attempted</td>
+</tr>
+<tr>
+<td><code>minutes_played</code></td>
+<td>DOUBLE</td>
+<td>REAL</td>
+<td>Yes</td>
+<td>Minutes played (float for partial minutes)</td>
+</tr>
+<tr>
+<td><code>efficiency_rating</code></td>
+<td>DOUBLE</td>
+<td>REAL</td>
+<td>Yes</td>
+<td>Player efficiency rating (PER-like metric)</td>
+</tr>
+<tr>
+<td><code>true_shooting_percentage</code></td>
+<td>DOUBLE</td>
+<td>REAL</td>
+<td>Yes</td>
+<td>True shooting percentage (0–1 range)</td>
+</tr>
+<tr>
+<td><code>usage_rate</code></td>
+<td>DOUBLE</td>
+<td>REAL</td>
+<td>Yes</td>
+<td>Usage rate percentage (0–1 range)</td>
+</tr>
+<tr>
+<td><code>plus_minus</code></td>
+<td>INTEGER</td>
+<td>INTEGER</td>
+<td>Yes</td>
+<td>Plus/minus rating (can be negative)</td>
+</tr>
+</tbody>
+</table>
+<h3 id="table-team_daily_stats">Table: <code>team_daily_stats</code><a class="headerlink" href="#table-team_daily_stats" title="Permanent link">&para;</a></h3>
+<p>Per-game team statistics with Gold-layer computed ratings. One row per team per game.</p>
+<table>
+<thead>
+<tr>
+<th>Column</th>
+<th>DuckDB Type</th>
+<th>SQLite Type</th>
+<th>Nullable</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>team_id</code></td>
+<td>VARCHAR</td>
+<td>TEXT</td>
+<td>NOT NULL</td>
+<td>Unique team identifier (NBA API string ID)</td>
+</tr>
+<tr>
+<td><code>team_name</code></td>
+<td>VARCHAR</td>
+<td>TEXT</td>
+<td>NOT NULL</td>
+<td>Team display name (e.g., 'Los Angeles Lakers')</td>
+</tr>
+<tr>
+<td><code>game_id</code></td>
+<td>VARCHAR</td>
+<td>TEXT</td>
+<td>Yes</td>
+<td>Unique game identifier</td>
+</tr>
+<tr>
+<td><code>game_date</code></td>
+<td>DATE</td>
+<td>TEXT</td>
+<td>Yes</td>
+<td>Game date (ISO 8601 YYYY-MM-DD)</td>
+</tr>
+<tr>
+<td><code>season</code></td>
+<td>VARCHAR</td>
+<td>TEXT</td>
+<td>Yes</td>
+<td>NBA season identifier (e.g., '2025-26')</td>
+</tr>
+<tr>
+<td><code>points</code></td>
+<td>INTEGER</td>
+<td>INTEGER</td>
+<td>NOT NULL</td>
+<td>Total points scored (≥0)</td>
+</tr>
+<tr>
+<td><code>field_goals_made</code></td>
+<td>INTEGER</td>
+<td>INTEGER</td>
+<td>NOT NULL</td>
+<td>Total field goals made (≥0)</td>
+</tr>
+<tr>
+<td><code>field_goals_attempted</code></td>
+<td>INTEGER</td>
+<td>INTEGER</td>
+<td>NOT NULL</td>
+<td>Total field goals attempted (≥0)</td>
+</tr>
+<tr>
+<td><code>three_pointers_made</code></td>
+<td>INTEGER</td>
+<td>INTEGER</td>
+<td>Yes</td>
+<td>Total three-pointers made</td>
+</tr>
+<tr>
+<td><code>three_pointers_attempted</code></td>
+<td>INTEGER</td>
+<td>INTEGER</td>
+<td>Yes</td>
+<td>Total three-pointers attempted</td>
+</tr>
+<tr>
+<td><code>free_throws_made</code></td>
+<td>INTEGER</td>
+<td>INTEGER</td>
+<td>Yes</td>
+<td>Total free throws made</td>
+</tr>
+<tr>
+<td><code>free_throws_attempted</code></td>
+<td>INTEGER</td>
+<td>INTEGER</td>
+<td>Yes</td>
+<td>Total free throws attempted</td>
+</tr>
+<tr>
+<td><code>rebounds</code></td>
+<td>INTEGER</td>
+<td>INTEGER</td>
+<td>NOT NULL</td>
+<td>Total rebounds (≥0)</td>
+</tr>
+<tr>
+<td><code>assists</code></td>
+<td>INTEGER</td>
+<td>INTEGER</td>
+<td>NOT NULL</td>
+<td>Total assists (≥0)</td>
+</tr>
+<tr>
+<td><code>steals</code></td>
+<td>INTEGER</td>
+<td>INTEGER</td>
+<td>Yes</td>
+<td>Total steals</td>
+</tr>
+<tr>
+<td><code>blocks</code></td>
+<td>INTEGER</td>
+<td>INTEGER</td>
+<td>Yes</td>
+<td>Total blocks</td>
+</tr>
+<tr>
+<td><code>turnovers</code></td>
+<td>INTEGER</td>
+<td>INTEGER</td>
+<td>Yes</td>
+<td>Total turnovers</td>
+</tr>
+<tr>
+<td><code>fouls</code></td>
+<td>INTEGER</td>
+<td>INTEGER</td>
+<td>Yes</td>
+<td>Total fouls</td>
+</tr>
+<tr>
+<td><code>offensive_rating</code></td>
+<td>DOUBLE</td>
+<td>REAL</td>
+<td>Yes</td>
+<td>Offensive rating (pts per 100 possessions)</td>
+</tr>
+<tr>
+<td><code>defensive_rating</code></td>
+<td>DOUBLE</td>
+<td>REAL</td>
+<td>Yes</td>
+<td>Defensive rating (opponent pts per 100 possessions)</td>
+</tr>
+<tr>
+<td><code>pace</code></td>
+<td>DOUBLE</td>
+<td>REAL</td>
+<td>Yes</td>
+<td>Pace (possessions per 48 minutes)</td>
+</tr>
+<tr>
+<td><code>true_shooting_percentage</code></td>
+<td>DOUBLE</td>
+<td>REAL</td>
+<td>Yes</td>
+<td>Team true shooting percentage (0–1 range)</td>
+</tr>
+<tr>
+<td><code>opponent_team_id</code></td>
+<td>VARCHAR</td>
+<td>TEXT</td>
+<td>Yes</td>
+<td>Opponent team identifier</td>
+</tr>
+<tr>
+<td><code>home_game</code></td>
+<td>BOOLEAN</td>
+<td>INTEGER</td>
+<td>Yes</td>
+<td>Whether this was a home game (SQLite: 0/1)</td>
+</tr>
+<tr>
+<td><code>win</code></td>
+<td>BOOLEAN</td>
+<td>INTEGER</td>
+<td>Yes</td>
+<td>Whether the team won (SQLite: 0/1)</td>
+</tr>
+</tbody>
+</table>
+<h3 id="table-player_season_summary">Table: <code>player_season_summary</code><a class="headerlink" href="#table-player_season_summary" title="Permanent link">&para;</a></h3>
+<p>Season-aggregated player statistics with per-game averages, shooting percentages, advanced metrics, and performance trends. One row per player per season.</p>
+<table>
+<thead>
+<tr>
+<th>Column</th>
+<th>DuckDB Type</th>
+<th>SQLite Type</th>
+<th>Nullable</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>player_id</code></td>
+<td>VARCHAR</td>
+<td>TEXT</td>
+<td>NOT NULL</td>
+<td>Unique player identifier</td>
+</tr>
+<tr>
+<td><code>player_name</code></td>
+<td>VARCHAR</td>
+<td>TEXT</td>
+<td>Yes</td>
+<td>Player display name</td>
+</tr>
+<tr>
+<td><code>season</code></td>
+<td>VARCHAR</td>
+<td>TEXT</td>
+<td>NOT NULL</td>
+<td>NBA season identifier (e.g., '2025-26')</td>
+</tr>
+<tr>
+<td><code>team</code></td>
+<td>VARCHAR</td>
+<td>TEXT</td>
+<td>Yes</td>
+<td>Primary team for the season</td>
+</tr>
+<tr>
+<td><code>total_games</code></td>
+<td>INTEGER</td>
+<td>INTEGER</td>
+<td>NOT NULL</td>
+<td>Total games played (≥0)</td>
+</tr>
+<tr>
+<td><code>total_minutes</code></td>
+<td>DOUBLE</td>
+<td>REAL</td>
+<td>NOT NULL</td>
+<td>Total minutes played (≥0)</td>
+</tr>
+<tr>
+<td><code>points_per_game</code></td>
+<td>DOUBLE</td>
+<td>REAL</td>
+<td>NOT NULL</td>
+<td>Points per game (≥0)</td>
+</tr>
+<tr>
+<td><code>rebounds_per_game</code></td>
+<td>DOUBLE</td>
+<td>REAL</td>
+<td>NOT NULL</td>
+<td>Rebounds per game (≥0)</td>
+</tr>
+<tr>
+<td><code>assists_per_game</code></td>
+<td>DOUBLE</td>
+<td>REAL</td>
+<td>NOT NULL</td>
+<td>Assists per game (≥0)</td>
+</tr>
+<tr>
+<td><code>steals_per_game</code></td>
+<td>DOUBLE</td>
+<td>REAL</td>
+<td>NOT NULL</td>
+<td>Steals per game (≥0)</td>
+</tr>
+<tr>
+<td><code>blocks_per_game</code></td>
+<td>DOUBLE</td>
+<td>REAL</td>
+<td>NOT NULL</td>
+<td>Blocks per game (≥0)</td>
+</tr>
+<tr>
+<td><code>turnovers_per_game</code></td>
+<td>DOUBLE</td>
+<td>REAL</td>
+<td>NOT NULL</td>
+<td>Turnovers per game (≥0)</td>
+</tr>
+<tr>
+<td><code>field_goal_percentage</code></td>
+<td>DOUBLE</td>
+<td>REAL</td>
+<td>Yes</td>
+<td>Season FG% (0–1 range)</td>
+</tr>
+<tr>
+<td><code>three_point_percentage</code></td>
+<td>DOUBLE</td>
+<td>REAL</td>
+<td>Yes</td>
+<td>Season 3P% (0–1 range)</td>
+</tr>
+<tr>
+<td><code>free_throw_percentage</code></td>
+<td>DOUBLE</td>
+<td>REAL</td>
+<td>Yes</td>
+<td>Season FT% (0–1 range)</td>
+</tr>
+<tr>
+<td><code>efficiency_rating</code></td>
+<td>DOUBLE</td>
+<td>REAL</td>
+<td>Yes</td>
+<td>Season efficiency rating</td>
+</tr>
+<tr>
+<td><code>true_shooting_percentage</code></td>
+<td>DOUBLE</td>
+<td>REAL</td>
+<td>Yes</td>
+<td>Season true shooting % (0–1 range)</td>
+</tr>
+<tr>
+<td><code>usage_rate</code></td>
+<td>DOUBLE</td>
+<td>REAL</td>
+<td>Yes</td>
+<td>Season usage rate (0–1 range)</td>
+</tr>
+<tr>
+<td><code>scoring_trend</code></td>
+<td>DOUBLE</td>
+<td>REAL</td>
+<td>Yes</td>
+<td>Points per game trend (% change)</td>
+</tr>
+<tr>
+<td><code>efficiency_trend</code></td>
+<td>DOUBLE</td>
+<td>REAL</td>
+<td>Yes</td>
+<td>Efficiency rating trend (% change)</td>
+</tr>
+</tbody>
+</table>
+<h3 id="table-team_season_summary">Table: <code>team_season_summary</code><a class="headerlink" href="#table-team_season_summary" title="Permanent link">&para;</a></h3>
+<p>Season-aggregated team statistics with per-game averages, efficiency metrics, Four Factors, and shooting percentages. One row per team per season.</p>
+<table>
+<thead>
+<tr>
+<th>Column</th>
+<th>DuckDB Type</th>
+<th>SQLite Type</th>
+<th>Nullable</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>team_id</code></td>
+<td>VARCHAR</td>
+<td>TEXT</td>
+<td>NOT NULL</td>
+<td>Unique team identifier</td>
+</tr>
+<tr>
+<td><code>team_name</code></td>
+<td>VARCHAR</td>
+<td>TEXT</td>
+<td>Yes</td>
+<td>Team display name</td>
+</tr>
+<tr>
+<td><code>season</code></td>
+<td>VARCHAR</td>
+<td>TEXT</td>
+<td>NOT NULL</td>
+<td>NBA season identifier (e.g., '2025-26')</td>
+</tr>
+<tr>
+<td><code>season_type</code></td>
+<td>VARCHAR</td>
+<td>TEXT</td>
+<td>Yes</td>
+<td>Season type (e.g., 'regular', 'playoff')</td>
+</tr>
+<tr>
+<td><code>total_games</code></td>
+<td>INTEGER</td>
+<td>INTEGER</td>
+<td>NOT NULL</td>
+<td>Total games played (≥0)</td>
+</tr>
+<tr>
+<td><code>total_points</code></td>
+<td>INTEGER</td>
+<td>INTEGER</td>
+<td>NOT NULL</td>
+<td>Total points scored (≥0)</td>
+</tr>
+<tr>
+<td><code>total_points_allowed</code></td>
+<td>INTEGER</td>
+<td>INTEGER</td>
+<td>NOT NULL</td>
+<td>Total points allowed (≥0)</td>
+</tr>
+<tr>
+<td><code>points_per_game</code></td>
+<td>DOUBLE</td>
+<td>REAL</td>
+<td>NOT NULL</td>
+<td>Points per game (≥0)</td>
+</tr>
+<tr>
+<td><code>points_allowed_per_game</code></td>
+<td>DOUBLE</td>
+<td>REAL</td>
+<td>NOT NULL</td>
+<td>Points allowed per game (≥0)</td>
+</tr>
+<tr>
+<td><code>assists_per_game</code></td>
+<td>DOUBLE</td>
+<td>REAL</td>
+<td>NOT NULL</td>
+<td>Assists per game (≥0)</td>
+</tr>
+<tr>
+<td><code>total_rebounds_per_game</code></td>
+<td>DOUBLE</td>
+<td>REAL</td>
+<td>NOT NULL</td>
+<td>Total rebounds per game (≥0)</td>
+</tr>
+<tr>
+<td><code>turnovers_per_game</code></td>
+<td>DOUBLE</td>
+<td>REAL</td>
+<td>NOT NULL</td>
+<td>Turnovers per game (≥0)</td>
+</tr>
+<tr>
+<td><code>field_goal_percentage</code></td>
+<td>DOUBLE</td>
+<td>REAL</td>
+<td>Yes</td>
+<td>Season FG% (0–1 range)</td>
+</tr>
+<tr>
+<td><code>three_point_percentage</code></td>
+<td>DOUBLE</td>
+<td>REAL</td>
+<td>Yes</td>
+<td>Season 3P% (0–1 range)</td>
+</tr>
+<tr>
+<td><code>free_throw_percentage</code></td>
+<td>DOUBLE</td>
+<td>REAL</td>
+<td>Yes</td>
+<td>Season FT% (0–1 range)</td>
+</tr>
+<tr>
+<td><code>true_shooting_percentage</code></td>
+<td>DOUBLE</td>
+<td>REAL</td>
+<td>Yes</td>
+<td>Season TS% (0–1 range)</td>
+</tr>
+<tr>
+<td><code>effective_field_goal_percentage</code></td>
+<td>DOUBLE</td>
+<td>REAL</td>
+<td>Yes</td>
+<td>Effective FG% (0–1 range)</td>
+</tr>
+<tr>
+<td><code>offensive_rating</code></td>
+<td>DOUBLE</td>
+<td>REAL</td>
+<td>Yes</td>
+<td>Offensive rating (pts per 100 possessions)</td>
+</tr>
+<tr>
+<td><code>defensive_rating</code></td>
+<td>DOUBLE</td>
+<td>REAL</td>
+<td>Yes</td>
+<td>Defensive rating (opponent pts per 100 possessions)</td>
+</tr>
+<tr>
+<td><code>net_rating</code></td>
+<td>DOUBLE</td>
+<td>REAL</td>
+<td>Yes</td>
+<td>Net rating (offensive − defensive)</td>
+</tr>
+<tr>
+<td><code>pace</code></td>
+<td>DOUBLE</td>
+<td>REAL</td>
+<td>Yes</td>
+<td>Pace (possessions per 48 minutes)</td>
+</tr>
+<tr>
+<td><code>turnover_percentage</code></td>
+<td>DOUBLE</td>
+<td>REAL</td>
+<td>Yes</td>
+<td>Turnover percentage (0–1 range)</td>
+</tr>
+<tr>
+<td><code>offensive_rebound_percentage</code></td>
+<td>DOUBLE</td>
+<td>REAL</td>
+<td>Yes</td>
+<td>Offensive rebound percentage (0–1 range)</td>
+</tr>
+<tr>
+<td><code>free_throw_rate</code></td>
+<td>DOUBLE</td>
+<td>REAL</td>
+<td>Yes</td>
+<td>Free throw rate (FTA / FGA)</td>
+</tr>
+<tr>
+<td><code>data_quality_score</code></td>
+<td>DOUBLE</td>
+<td>REAL</td>
+<td>Yes</td>
+<td>Data quality score (0–1 range)</td>
+</tr>
+</tbody>
+</table>
+<h3 id="table-top_lists">Table: <code>top_lists</code><a class="headerlink" href="#table-top_lists" title="Permanent link">&para;</a></h3>
+<p>Daily leaderboards by metric. Each row represents one player's ranking in a specific metric on a specific date.</p>
+<table>
+<thead>
+<tr>
+<th>Column</th>
+<th>DuckDB Type</th>
+<th>SQLite Type</th>
+<th>Nullable</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>metric</code></td>
+<td>VARCHAR</td>
+<td>TEXT</td>
+<td>NOT NULL</td>
+<td>Metric name (e.g., 'Points Leaders')</td>
+</tr>
+<tr>
+<td><code>list_date</code></td>
+<td>DATE</td>
+<td>TEXT</td>
+<td>NOT NULL</td>
+<td>Date of the leaderboard (ISO 8601)</td>
+</tr>
+<tr>
+<td><code>rank</code></td>
+<td>INTEGER</td>
+<td>INTEGER</td>
+<td>NOT NULL</td>
+<td>Player rank within the leaderboard (1-based)</td>
+</tr>
+<tr>
+<td><code>player_id</code></td>
+<td>VARCHAR</td>
+<td>TEXT</td>
+<td>NOT NULL</td>
+<td>Player identifier</td>
+</tr>
+<tr>
+<td><code>player_name</code></td>
+<td>VARCHAR</td>
+<td>TEXT</td>
+<td>Yes</td>
+<td>Player display name</td>
+</tr>
+<tr>
+<td><code>team</code></td>
+<td>VARCHAR</td>
+<td>TEXT</td>
+<td>Yes</td>
+<td>Team abbreviation</td>
+</tr>
+<tr>
+<td><code>value</code></td>
+<td>DOUBLE</td>
+<td>REAL</td>
+<td>NOT NULL</td>
+<td>Metric value for this player on this date</td>
+</tr>
+</tbody>
+</table>
+<h3 id="indexes">Indexes<a class="headerlink" href="#indexes" title="Permanent link">&para;</a></h3>
+<p>All indexes are designed for read-heavy analytical queries. See <code>apps/db-compiler/schema/index_rationale.md</code> for design rationale.</p>
+<table>
+<thead>
+<tr>
+<th>Index</th>
+<th>Table</th>
+<th>Columns</th>
+<th>Purpose</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>idx_pds_player_date</code></td>
+<td>player_daily_stats</td>
+<td><code>(player_id, game_date)</code></td>
+<td>Player temporal lookups</td>
+</tr>
+<tr>
+<td><code>idx_pds_game_date</code></td>
+<td>player_daily_stats</td>
+<td><code>(game_date)</code></td>
+<td>Date-based filtering</td>
+</tr>
+<tr>
+<td><code>idx_pds_season_player</code></td>
+<td>player_daily_stats</td>
+<td><code>(season, player_id)</code></td>
+<td>Season-scoped player queries</td>
+</tr>
+<tr>
+<td><code>idx_tds_team_date</code></td>
+<td>team_daily_stats</td>
+<td><code>(team_id, game_date)</code></td>
+<td>Team temporal lookups</td>
+</tr>
+<tr>
+<td><code>idx_tds_game_date</code></td>
+<td>team_daily_stats</td>
+<td><code>(game_date)</code></td>
+<td>Date-based filtering</td>
+</tr>
+<tr>
+<td><code>idx_pss_season_player</code></td>
+<td>player_season_summary</td>
+<td><code>(season, player_id)</code></td>
+<td>Season-scoped player queries</td>
+</tr>
+<tr>
+<td><code>idx_pss_season_ppg</code></td>
+<td>player_season_summary</td>
+<td><code>(season, points_per_game DESC)</code></td>
+<td>Leaderboard queries</td>
+</tr>
+<tr>
+<td><code>idx_tss_season_team</code></td>
+<td>team_season_summary</td>
+<td><code>(season, team_id)</code></td>
+<td>Season-scoped team queries</td>
+</tr>
+<tr>
+<td><code>idx_tl_date_metric</code></td>
+<td>top_lists</td>
+<td><code>(list_date, metric)</code></td>
+<td>Date-based leaderboard lookups</td>
+</tr>
+</tbody>
+</table>
+<h3 id="type-mapping-reference">Type Mapping Reference<a class="headerlink" href="#type-mapping-reference" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Pydantic</th>
+<th>DuckDB</th>
+<th>SQLite</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>str</code></td>
+<td>VARCHAR</td>
+<td>TEXT</td>
+<td>IDs, names, abbreviations</td>
+</tr>
+<tr>
+<td><code>int</code></td>
+<td>INTEGER</td>
+<td>INTEGER</td>
+<td>Counting stats (≥0)</td>
+</tr>
+<tr>
+<td><code>float</code></td>
+<td>DOUBLE</td>
+<td>REAL</td>
+<td>Metrics, percentages</td>
+</tr>
+<tr>
+<td><code>str</code> (date)</td>
+<td>DATE</td>
+<td>TEXT</td>
+<td>ISO 8601 format (YYYY-MM-DD)</td>
+</tr>
+<tr>
+<td><code>str</code> (season)</td>
+<td>VARCHAR</td>
+<td>TEXT</td>
+<td>Format "YYYY-YY" (e.g., '2025-26')</td>
+</tr>
+<tr>
+<td><code>bool</code></td>
+<td>BOOLEAN</td>
+<td>INTEGER</td>
+<td>DuckDB uses native booleans; SQLite uses 0/1</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="example-sql-queries">Example SQL Queries<a class="headerlink" href="#example-sql-queries" title="Permanent link">&para;</a></h2>
+<p>The following queries are compatible with <strong>both DuckDB and SQLite</strong> unless noted otherwise. Dates used in examples are illustrative — replace with actual dates from your dataset.</p>
+<h3 id="1-top-10-scorers-this-season">1. Top 10 Scorers This Season<a class="headerlink" href="#1-top-10-scorers-this-season" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="k">SELECT</span><span class="w"> </span><span class="n">player_name</span><span class="p">,</span><span class="w"> </span><span class="n">team</span><span class="p">,</span><span class="w"> </span><span class="n">points_per_game</span>
+<a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a><span class="k">FROM</span><span class="w"> </span><span class="n">player_season_summary</span>
+<a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a><span class="k">ORDER</span><span class="w"> </span><span class="k">BY</span><span class="w"> </span><span class="n">points_per_game</span><span class="w"> </span><span class="k">DESC</span>
+<a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a><span class="k">LIMIT</span><span class="w"> </span><span class="mi">10</span><span class="p">;</span>
+</code></pre></div>
+<h3 id="2-players-averaging-a-double-double">2. Players Averaging a Double-Double<a class="headerlink" href="#2-players-averaging-a-double-double" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="k">SELECT</span><span class="w"> </span><span class="n">player_name</span><span class="p">,</span><span class="w"> </span><span class="n">team</span><span class="p">,</span><span class="w"> </span><span class="n">points_per_game</span><span class="p">,</span><span class="w"> </span><span class="n">rebounds_per_game</span><span class="p">,</span><span class="w"> </span><span class="n">assists_per_game</span>
+<a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a><span class="k">FROM</span><span class="w"> </span><span class="n">player_season_summary</span>
+<a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a><span class="k">WHERE</span><span class="w"> </span><span class="p">(</span><span class="n">points_per_game</span><span class="w"> </span><span class="o">&gt;=</span><span class="w"> </span><span class="mi">10</span><span class="w"> </span><span class="k">AND</span><span class="w"> </span><span class="n">rebounds_per_game</span><span class="w"> </span><span class="o">&gt;=</span><span class="w"> </span><span class="mi">10</span><span class="p">)</span>
+<a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a><span class="w">   </span><span class="k">OR</span><span class="w"> </span><span class="p">(</span><span class="n">points_per_game</span><span class="w"> </span><span class="o">&gt;=</span><span class="w"> </span><span class="mi">10</span><span class="w"> </span><span class="k">AND</span><span class="w"> </span><span class="n">assists_per_game</span><span class="w"> </span><span class="o">&gt;=</span><span class="w"> </span><span class="mi">10</span><span class="p">)</span>
+<a id="__codelineno-6-5" name="__codelineno-6-5" href="#__codelineno-6-5"></a><span class="k">ORDER</span><span class="w"> </span><span class="k">BY</span><span class="w"> </span><span class="n">points_per_game</span><span class="w"> </span><span class="k">DESC</span><span class="p">;</span>
+</code></pre></div>
+<h3 id="3-team-offensive-ratings-from-a-specific-date">3. Team Offensive Ratings From a Specific Date<a class="headerlink" href="#3-team-offensive-ratings-from-a-specific-date" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a><span class="k">SELECT</span><span class="w"> </span><span class="n">team_name</span><span class="p">,</span><span class="w"> </span><span class="n">offensive_rating</span><span class="p">,</span><span class="w"> </span><span class="n">defensive_rating</span><span class="p">,</span>
+<a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a><span class="w">       </span><span class="n">offensive_rating</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">defensive_rating</span><span class="w"> </span><span class="k">AS</span><span class="w"> </span><span class="n">net_rating</span>
+<a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a><span class="k">FROM</span><span class="w"> </span><span class="n">team_daily_stats</span>
+<a id="__codelineno-7-4" name="__codelineno-7-4" href="#__codelineno-7-4"></a><span class="k">WHERE</span><span class="w"> </span><span class="n">game_date</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">&#39;2026-03-25&#39;</span>
+<a id="__codelineno-7-5" name="__codelineno-7-5" href="#__codelineno-7-5"></a><span class="k">ORDER</span><span class="w"> </span><span class="k">BY</span><span class="w"> </span><span class="n">net_rating</span><span class="w"> </span><span class="k">DESC</span><span class="p">;</span>
+</code></pre></div>
+<h3 id="4-player-shooting-efficiency-trend-last-10-games">4. Player Shooting Efficiency Trend (Last 10 Games)<a class="headerlink" href="#4-player-shooting-efficiency-trend-last-10-games" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a><span class="k">SELECT</span><span class="w"> </span><span class="n">game_date</span><span class="p">,</span><span class="w"> </span><span class="n">points</span><span class="p">,</span><span class="w"> </span><span class="n">true_shooting_percentage</span><span class="p">,</span><span class="w"> </span><span class="n">efficiency_rating</span>
+<a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a><span class="k">FROM</span><span class="w"> </span><span class="n">player_daily_stats</span>
+<a id="__codelineno-8-3" name="__codelineno-8-3" href="#__codelineno-8-3"></a><span class="k">WHERE</span><span class="w"> </span><span class="n">player_name</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">&#39;Luka Doncic&#39;</span>
+<a id="__codelineno-8-4" name="__codelineno-8-4" href="#__codelineno-8-4"></a><span class="k">ORDER</span><span class="w"> </span><span class="k">BY</span><span class="w"> </span><span class="n">game_date</span><span class="w"> </span><span class="k">DESC</span>
+<a id="__codelineno-8-5" name="__codelineno-8-5" href="#__codelineno-8-5"></a><span class="k">LIMIT</span><span class="w"> </span><span class="mi">10</span><span class="p">;</span>
+</code></pre></div>
+<h3 id="5-best-3-point-shooters-minimum-20-games-played">5. Best 3-Point Shooters (Minimum 20 Games Played)<a class="headerlink" href="#5-best-3-point-shooters-minimum-20-games-played" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a><span class="k">SELECT</span><span class="w"> </span><span class="n">player_name</span><span class="p">,</span><span class="w"> </span><span class="n">team</span><span class="p">,</span><span class="w"> </span><span class="n">three_point_percentage</span><span class="p">,</span>
+<a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a><span class="w">       </span><span class="k">CAST</span><span class="p">(</span><span class="n">total_games</span><span class="w"> </span><span class="k">AS</span><span class="w"> </span><span class="nb">INTEGER</span><span class="p">)</span><span class="w"> </span><span class="k">AS</span><span class="w"> </span><span class="n">games</span>
+<a id="__codelineno-9-3" name="__codelineno-9-3" href="#__codelineno-9-3"></a><span class="k">FROM</span><span class="w"> </span><span class="n">player_season_summary</span>
+<a id="__codelineno-9-4" name="__codelineno-9-4" href="#__codelineno-9-4"></a><span class="k">WHERE</span><span class="w"> </span><span class="n">three_point_percentage</span><span class="w"> </span><span class="k">IS</span><span class="w"> </span><span class="k">NOT</span><span class="w"> </span><span class="k">NULL</span>
+<a id="__codelineno-9-5" name="__codelineno-9-5" href="#__codelineno-9-5"></a><span class="w">  </span><span class="k">AND</span><span class="w"> </span><span class="n">total_games</span><span class="w"> </span><span class="o">&gt;=</span><span class="w"> </span><span class="mi">20</span>
+<a id="__codelineno-9-6" name="__codelineno-9-6" href="#__codelineno-9-6"></a><span class="k">ORDER</span><span class="w"> </span><span class="k">BY</span><span class="w"> </span><span class="n">three_point_percentage</span><span class="w"> </span><span class="k">DESC</span>
+<a id="__codelineno-9-7" name="__codelineno-9-7" href="#__codelineno-9-7"></a><span class="k">LIMIT</span><span class="w"> </span><span class="mi">15</span><span class="p">;</span>
+</code></pre></div>
+<h3 id="6-teams-with-best-home-records">6. Teams With Best Home Records<a class="headerlink" href="#6-teams-with-best-home-records" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a><span class="k">SELECT</span><span class="w"> </span><span class="n">team_name</span><span class="p">,</span>
+<a id="__codelineno-10-2" name="__codelineno-10-2" href="#__codelineno-10-2"></a><span class="w">       </span><span class="k">SUM</span><span class="p">(</span><span class="k">CASE</span><span class="w"> </span><span class="k">WHEN</span><span class="w"> </span><span class="n">win</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">1</span><span class="w"> </span><span class="k">AND</span><span class="w"> </span><span class="n">home_game</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">1</span><span class="w"> </span><span class="k">THEN</span><span class="w"> </span><span class="mi">1</span><span class="w"> </span><span class="k">ELSE</span><span class="w"> </span><span class="mi">0</span><span class="w"> </span><span class="k">END</span><span class="p">)</span><span class="w"> </span><span class="k">AS</span><span class="w"> </span><span class="n">home_wins</span><span class="p">,</span>
+<a id="__codelineno-10-3" name="__codelineno-10-3" href="#__codelineno-10-3"></a><span class="w">       </span><span class="k">SUM</span><span class="p">(</span><span class="k">CASE</span><span class="w"> </span><span class="k">WHEN</span><span class="w"> </span><span class="n">home_game</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">1</span><span class="w"> </span><span class="k">THEN</span><span class="w"> </span><span class="mi">1</span><span class="w"> </span><span class="k">ELSE</span><span class="w"> </span><span class="mi">0</span><span class="w"> </span><span class="k">END</span><span class="p">)</span><span class="w"> </span><span class="k">AS</span><span class="w"> </span><span class="n">home_games</span>
+<a id="__codelineno-10-4" name="__codelineno-10-4" href="#__codelineno-10-4"></a><span class="k">FROM</span><span class="w"> </span><span class="n">team_daily_stats</span>
+<a id="__codelineno-10-5" name="__codelineno-10-5" href="#__codelineno-10-5"></a><span class="k">GROUP</span><span class="w"> </span><span class="k">BY</span><span class="w"> </span><span class="n">team_name</span>
+<a id="__codelineno-10-6" name="__codelineno-10-6" href="#__codelineno-10-6"></a><span class="k">ORDER</span><span class="w"> </span><span class="k">BY</span><span class="w"> </span><span class="n">home_wins</span><span class="w"> </span><span class="k">DESC</span><span class="p">;</span>
+</code></pre></div>
+<h3 id="7-players-with-improving-efficiency-positive-trend">7. Players With Improving Efficiency (Positive Trend)<a class="headerlink" href="#7-players-with-improving-efficiency-positive-trend" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a><span class="k">SELECT</span><span class="w"> </span><span class="n">player_name</span><span class="p">,</span><span class="w"> </span><span class="n">team</span><span class="p">,</span><span class="w"> </span><span class="n">efficiency_rating</span><span class="p">,</span><span class="w"> </span><span class="n">efficiency_trend</span>
+<a id="__codelineno-11-2" name="__codelineno-11-2" href="#__codelineno-11-2"></a><span class="k">FROM</span><span class="w"> </span><span class="n">player_season_summary</span>
+<a id="__codelineno-11-3" name="__codelineno-11-3" href="#__codelineno-11-3"></a><span class="k">WHERE</span><span class="w"> </span><span class="n">efficiency_trend</span><span class="w"> </span><span class="o">&gt;</span><span class="w"> </span><span class="mi">0</span>
+<a id="__codelineno-11-4" name="__codelineno-11-4" href="#__codelineno-11-4"></a><span class="k">ORDER</span><span class="w"> </span><span class="k">BY</span><span class="w"> </span><span class="n">efficiency_trend</span><span class="w"> </span><span class="k">DESC</span>
+<a id="__codelineno-11-5" name="__codelineno-11-5" href="#__codelineno-11-5"></a><span class="k">LIMIT</span><span class="w"> </span><span class="mi">10</span><span class="p">;</span>
+</code></pre></div>
+<h3 id="8-high-scoring-games-on-a-date">8. High-Scoring Games on a Date<a class="headerlink" href="#8-high-scoring-games-on-a-date" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a><span class="k">SELECT</span><span class="w"> </span><span class="n">p</span><span class="p">.</span><span class="n">player_name</span><span class="p">,</span><span class="w"> </span><span class="n">p</span><span class="p">.</span><span class="n">team</span><span class="p">,</span><span class="w"> </span><span class="n">p</span><span class="p">.</span><span class="n">points</span><span class="p">,</span><span class="w"> </span><span class="n">p</span><span class="p">.</span><span class="n">assists</span><span class="p">,</span><span class="w"> </span><span class="n">p</span><span class="p">.</span><span class="n">rebounds</span><span class="p">,</span>
+<a id="__codelineno-12-2" name="__codelineno-12-2" href="#__codelineno-12-2"></a><span class="w">       </span><span class="n">p</span><span class="p">.</span><span class="n">true_shooting_percentage</span>
+<a id="__codelineno-12-3" name="__codelineno-12-3" href="#__codelineno-12-3"></a><span class="k">FROM</span><span class="w"> </span><span class="n">player_daily_stats</span><span class="w"> </span><span class="n">p</span>
+<a id="__codelineno-12-4" name="__codelineno-12-4" href="#__codelineno-12-4"></a><span class="k">WHERE</span><span class="w"> </span><span class="n">p</span><span class="p">.</span><span class="n">game_date</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">&#39;2026-03-25&#39;</span>
+<a id="__codelineno-12-5" name="__codelineno-12-5" href="#__codelineno-12-5"></a><span class="w">  </span><span class="k">AND</span><span class="w"> </span><span class="n">p</span><span class="p">.</span><span class="n">points</span><span class="w"> </span><span class="o">&gt;=</span><span class="w"> </span><span class="mi">30</span>
+<a id="__codelineno-12-6" name="__codelineno-12-6" href="#__codelineno-12-6"></a><span class="k">ORDER</span><span class="w"> </span><span class="k">BY</span><span class="w"> </span><span class="n">p</span><span class="p">.</span><span class="n">points</span><span class="w"> </span><span class="k">DESC</span><span class="p">;</span>
+</code></pre></div>
+<h3 id="9-team-comparison-query">9. Team Comparison Query<a class="headerlink" href="#9-team-comparison-query" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a><span class="k">SELECT</span><span class="w"> </span><span class="n">team_name</span><span class="p">,</span>
+<a id="__codelineno-13-2" name="__codelineno-13-2" href="#__codelineno-13-2"></a><span class="w">       </span><span class="k">AVG</span><span class="p">(</span><span class="n">offensive_rating</span><span class="p">)</span><span class="w"> </span><span class="k">AS</span><span class="w"> </span><span class="n">avg_off_rating</span><span class="p">,</span>
+<a id="__codelineno-13-3" name="__codelineno-13-3" href="#__codelineno-13-3"></a><span class="w">       </span><span class="k">AVG</span><span class="p">(</span><span class="n">defensive_rating</span><span class="p">)</span><span class="w"> </span><span class="k">AS</span><span class="w"> </span><span class="n">avg_def_rating</span><span class="p">,</span>
+<a id="__codelineno-13-4" name="__codelineno-13-4" href="#__codelineno-13-4"></a><span class="w">       </span><span class="k">AVG</span><span class="p">(</span><span class="n">offensive_rating</span><span class="p">)</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="k">AVG</span><span class="p">(</span><span class="n">defensive_rating</span><span class="p">)</span><span class="w"> </span><span class="k">AS</span><span class="w"> </span><span class="n">avg_net_rating</span>
+<a id="__codelineno-13-5" name="__codelineno-13-5" href="#__codelineno-13-5"></a><span class="k">FROM</span><span class="w"> </span><span class="n">team_daily_stats</span>
+<a id="__codelineno-13-6" name="__codelineno-13-6" href="#__codelineno-13-6"></a><span class="k">WHERE</span><span class="w"> </span><span class="n">season</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">&#39;2025-26&#39;</span>
+<a id="__codelineno-13-7" name="__codelineno-13-7" href="#__codelineno-13-7"></a><span class="k">GROUP</span><span class="w"> </span><span class="k">BY</span><span class="w"> </span><span class="n">team_name</span>
+<a id="__codelineno-13-8" name="__codelineno-13-8" href="#__codelineno-13-8"></a><span class="k">ORDER</span><span class="w"> </span><span class="k">BY</span><span class="w"> </span><span class="n">avg_net_rating</span><span class="w"> </span><span class="k">DESC</span><span class="p">;</span>
+</code></pre></div>
+<h3 id="10-cross-table-join-player-stats-with-team-context">10. Cross-Table Join: Player Stats With Team Context<a class="headerlink" href="#10-cross-table-join-player-stats-with-team-context" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a><span class="k">SELECT</span><span class="w"> </span><span class="n">p</span><span class="p">.</span><span class="n">player_name</span><span class="p">,</span><span class="w"> </span><span class="n">p</span><span class="p">.</span><span class="n">points</span><span class="p">,</span><span class="w"> </span><span class="n">p</span><span class="p">.</span><span class="n">assists</span><span class="p">,</span>
+<a id="__codelineno-14-2" name="__codelineno-14-2" href="#__codelineno-14-2"></a><span class="w">       </span><span class="n">t</span><span class="p">.</span><span class="n">team_name</span><span class="p">,</span><span class="w"> </span><span class="n">t</span><span class="p">.</span><span class="n">win</span><span class="p">,</span><span class="w"> </span><span class="n">t</span><span class="p">.</span><span class="n">offensive_rating</span>
+<a id="__codelineno-14-3" name="__codelineno-14-3" href="#__codelineno-14-3"></a><span class="k">FROM</span><span class="w"> </span><span class="n">player_daily_stats</span><span class="w"> </span><span class="n">p</span>
+<a id="__codelineno-14-4" name="__codelineno-14-4" href="#__codelineno-14-4"></a><span class="k">JOIN</span><span class="w"> </span><span class="n">team_daily_stats</span><span class="w"> </span><span class="n">t</span>
+<a id="__codelineno-14-5" name="__codelineno-14-5" href="#__codelineno-14-5"></a><span class="w">  </span><span class="k">ON</span><span class="w"> </span><span class="n">p</span><span class="p">.</span><span class="n">game_date</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">t</span><span class="p">.</span><span class="n">game_date</span><span class="w"> </span><span class="k">AND</span><span class="w"> </span><span class="n">p</span><span class="p">.</span><span class="n">team</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">t</span><span class="p">.</span><span class="n">team_name</span>
+<a id="__codelineno-14-6" name="__codelineno-14-6" href="#__codelineno-14-6"></a><span class="k">WHERE</span><span class="w"> </span><span class="n">p</span><span class="p">.</span><span class="n">game_date</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">&#39;2026-03-25&#39;</span>
+<a id="__codelineno-14-7" name="__codelineno-14-7" href="#__codelineno-14-7"></a><span class="k">ORDER</span><span class="w"> </span><span class="k">BY</span><span class="w"> </span><span class="n">p</span><span class="p">.</span><span class="n">points</span><span class="w"> </span><span class="k">DESC</span>
+<a id="__codelineno-14-8" name="__codelineno-14-8" href="#__codelineno-14-8"></a><span class="k">LIMIT</span><span class="w"> </span><span class="mi">20</span><span class="p">;</span>
+</code></pre></div>
+<blockquote>
+<p><strong>Note:</strong> The <code>player_daily_stats.team</code> column stores team abbreviations
+(e.g., 'LAL'), while <code>team_daily_stats.team_name</code> stores full names
+(e.g., 'Los Angeles Lakers'). If the join above returns no rows, use
+<code>team_id</code> instead:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-15-1" name="__codelineno-15-1" href="#__codelineno-15-1"></a><span class="k">JOIN</span><span class="w"> </span><span class="n">team_daily_stats</span><span class="w"> </span><span class="n">t</span>
+<a id="__codelineno-15-2" name="__codelineno-15-2" href="#__codelineno-15-2"></a><span class="w">  </span><span class="k">ON</span><span class="w"> </span><span class="n">p</span><span class="p">.</span><span class="n">game_date</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">t</span><span class="p">.</span><span class="n">game_date</span>
+<a id="__codelineno-15-3" name="__codelineno-15-3" href="#__codelineno-15-3"></a><span class="w">  </span><span class="k">AND</span><span class="w"> </span><span class="n">p</span><span class="p">.</span><span class="n">team</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">(</span><span class="k">SELECT</span><span class="w"> </span><span class="n">team_name</span><span class="w"> </span><span class="k">FROM</span><span class="w"> </span><span class="n">team_season_summary</span><span class="w"> </span><span class="k">WHERE</span><span class="w"> </span><span class="n">team_id</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">t</span><span class="p">.</span><span class="n">team_id</span><span class="w"> </span><span class="k">LIMIT</span><span class="w"> </span><span class="mi">1</span><span class="p">)</span>
+</code></pre></div>
+<p>Or join via a subquery on <code>player_daily_stats.player_id</code> and
+<code>team_daily_stats.team_id</code> if both reference the same team ID format.</p>
+</blockquote>
+<h3 id="11-season-standings-via-view">11. Season Standings via View<a class="headerlink" href="#11-season-standings-via-view" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-16-1" name="__codelineno-16-1" href="#__codelineno-16-1"></a><span class="k">SELECT</span><span class="w"> </span><span class="n">team_name</span><span class="p">,</span><span class="w"> </span><span class="n">wins</span><span class="p">,</span><span class="w"> </span><span class="n">losses</span><span class="p">,</span><span class="w"> </span><span class="n">avg_offensive_rating</span><span class="p">,</span><span class="w"> </span><span class="n">avg_defensive_rating</span>
+<a id="__codelineno-16-2" name="__codelineno-16-2" href="#__codelineno-16-2"></a><span class="k">FROM</span><span class="w"> </span><span class="n">v_team_standings</span>
+<a id="__codelineno-16-3" name="__codelineno-16-3" href="#__codelineno-16-3"></a><span class="k">WHERE</span><span class="w"> </span><span class="n">season</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">&#39;2025-26&#39;</span>
+<a id="__codelineno-16-4" name="__codelineno-16-4" href="#__codelineno-16-4"></a><span class="k">ORDER</span><span class="w"> </span><span class="k">BY</span><span class="w"> </span><span class="n">wins</span><span class="w"> </span><span class="k">DESC</span><span class="p">;</span>
+</code></pre></div>
+<h3 id="12-player-current-form-via-view">12. Player Current Form via View<a class="headerlink" href="#12-player-current-form-via-view" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-17-1" name="__codelineno-17-1" href="#__codelineno-17-1"></a><span class="k">SELECT</span><span class="w"> </span><span class="n">player_name</span><span class="p">,</span><span class="w"> </span><span class="n">team</span><span class="p">,</span><span class="w"> </span><span class="n">points_per_game</span><span class="p">,</span>
+<a id="__codelineno-17-2" name="__codelineno-17-2" href="#__codelineno-17-2"></a><span class="w">       </span><span class="n">latest_points</span><span class="p">,</span><span class="w"> </span><span class="n">latest_game_date</span><span class="p">,</span>
+<a id="__codelineno-17-3" name="__codelineno-17-3" href="#__codelineno-17-3"></a><span class="w">       </span><span class="n">scoring_trend</span>
+<a id="__codelineno-17-4" name="__codelineno-17-4" href="#__codelineno-17-4"></a><span class="k">FROM</span><span class="w"> </span><span class="n">v_player_current_averages</span>
+<a id="__codelineno-17-5" name="__codelineno-17-5" href="#__codelineno-17-5"></a><span class="k">WHERE</span><span class="w"> </span><span class="n">season</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">&#39;2025-26&#39;</span>
+<a id="__codelineno-17-6" name="__codelineno-17-6" href="#__codelineno-17-6"></a><span class="k">ORDER</span><span class="w"> </span><span class="k">BY</span><span class="w"> </span><span class="n">points_per_game</span><span class="w"> </span><span class="k">DESC</span>
+<a id="__codelineno-17-7" name="__codelineno-17-7" href="#__codelineno-17-7"></a><span class="k">LIMIT</span><span class="w"> </span><span class="mi">10</span><span class="p">;</span>
+</code></pre></div>
+<hr />
+<h2 id="mcp-integration">MCP Integration<a class="headerlink" href="#mcp-integration" title="Permanent link">&para;</a></h2>
+<p>The Hoopstat MCP server provides an <code>execute_nba_sql_query</code> tool that lets AI agents run SQL queries against the DuckDB database. See <a href="../MCP_SETUP.md">MCP_SETUP.md</a> for full setup instructions.</p>
+<p><strong>Example natural language prompts an AI agent can answer via SQL:</strong></p>
+<ul>
+<li>"Who are the top 10 scorers in the NBA this season?"</li>
+<li>"Show me players averaging a triple-double"</li>
+<li>"Compare the Celtics and Lakers offensive efficiency"</li>
+<li>"Which players have the best true shooting percentage with at least 20 games played?"</li>
+<li>"What was the highest-scoring game last week?"</li>
+</ul>
+<hr />
+<h2 id="troubleshooting">Troubleshooting<a class="headerlink" href="#troubleshooting" title="Permanent link">&para;</a></h2>
+<h3 id="cors-errors-in-the-browser">CORS Errors in the Browser<a class="headerlink" href="#cors-errors-in-the-browser" title="Permanent link">&para;</a></h3>
+<p><strong>Symptom:</strong> Browser console shows CORS errors when fetching <code>.duckdb</code> or <code>.sqlite</code> files.</p>
+<p><strong>Solutions:</strong></p>
+<ol>
+<li>Verify you are using the CloudFront URL (<code>https://data.hoopstat.haus/db/...</code>), not a direct S3 URL.</li>
+<li>Ensure the request uses HTTPS (not HTTP).</li>
+<li>Check that the CloudFront distribution status is "Deployed".</li>
+<li>For DuckDB WASM, ensure your page origin is allowed by CORS policy.</li>
+</ol>
+<h3 id="http-range-request-failures-duckdb-remote">HTTP Range Request Failures (DuckDB Remote)<a class="headerlink" href="#http-range-request-failures-duckdb-remote" title="Permanent link">&para;</a></h3>
+<p><strong>Symptom:</strong> DuckDB remote ATTACH or query fails with a network error.</p>
+<p><strong>Solutions:</strong></p>
+<ol>
+<li>Verify the URL is correct and the file exists: <code>curl -I https://data.hoopstat.haus/db/nba_current_season.duckdb</code></li>
+<li>Confirm Range Requests are supported: look for <code>Accept-Ranges: bytes</code> in the response headers.</li>
+<li>Update DuckDB to the latest version — older versions may have HTTP client issues.</li>
+<li>If behind a corporate proxy, the proxy may strip Range headers. Try downloading the file instead.</li>
+</ol>
+<h3 id="version-mismatch-duckdb">Version Mismatch (DuckDB)<a class="headerlink" href="#version-mismatch-duckdb" title="Permanent link">&para;</a></h3>
+<p><strong>Symptom:</strong> "Serialization Error: Failed to deserialize" or similar when opening the DuckDB file.</p>
+<p><strong>Solutions:</strong></p>
+<ol>
+<li>The <code>.duckdb</code> file format is tied to the DuckDB version that created it. Update your DuckDB CLI or library to match.</li>
+<li>Check the database build metadata: <code>duckdb -c "SELECT * FROM duckdb_extensions();"</code> to see the version.</li>
+<li>As a fallback, use the SQLite file instead — the SQLite format is stable across versions.</li>
+</ol>
+<h3 id="sqlite-database-is-locked-or-read-only-errors">SQLite "Database is Locked" or Read-Only Errors<a class="headerlink" href="#sqlite-database-is-locked-or-read-only-errors" title="Permanent link">&para;</a></h3>
+<p><strong>Symptom:</strong> Cannot open the downloaded SQLite file.</p>
+<p><strong>Solutions:</strong></p>
+<ol>
+<li>Ensure the file downloaded completely (check file size matches <code>Content-Length</code> header).</li>
+<li>Open in read-only mode: <code>sqlite3 -readonly nba.sqlite</code> or <code>sqlite3.connect("nba.sqlite", uri=True)</code> with <code>?mode=ro</code>.</li>
+<li>On Windows, ensure no other process has the file open.</li>
+</ol>
+<h3 id="empty-query-results">Empty Query Results<a class="headerlink" href="#empty-query-results" title="Permanent link">&para;</a></h3>
+<p><strong>Symptom:</strong> Queries return no rows.</p>
+<p><strong>Solutions:</strong></p>
+<ol>
+<li>Check available seasons: <code>SELECT DISTINCT season FROM player_season_summary;</code></li>
+<li>Check available dates: <code>SELECT DISTINCT game_date FROM player_daily_stats ORDER BY game_date DESC LIMIT 10;</code></li>
+<li>Verify player/team names match exactly: <code>SELECT DISTINCT player_name FROM player_season_summary ORDER BY player_name;</code></li>
+<li>For date-filtered queries, ensure the date format matches ISO 8601 (<code>YYYY-MM-DD</code>).</li>
+</ol>
+<hr />
+<h2 id="references">References<a class="headerlink" href="#references" title="Permanent link">&para;</a></h2>
+<ul>
+<li><a href="../meta/adr/ADR-041-static-database-artifacts.md">ADR-041: Polyglot Static Database Artifacts</a></li>
+<li><a href="../meta/adr/ADR-028-gold_layer_final.md">ADR-028: Gold Layer Architecture</a></li>
+<li><a href="../DATA_DICTIONARY/">Data Dictionary</a> — Full Pydantic model documentation</li>
+<li><a href="../JSON_ARTIFACT_SCHEMAS/">JSON Artifact Schemas</a> — JSON artifact format reference</li>
+<li><a href="../infrastructure/PUBLIC_ACCESS_GUIDE.md">Public Access Guide</a> — CloudFront infrastructure details</li>
+<li><a href="../MCP_SETUP.md">MCP Setup Guide</a> — AI agent integration via MCP</li>
+</ul>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+        
+<div class="md-social">
+  
+    
+    
+    
+    
+      
+      
+    
+    <a href="https://github.com/efischer19/hoopstat-haus" target="_blank" rel="noopener" title="github.com" class="md-social__link">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": ["navigation.tabs", "navigation.sections", "search.suggest", "search.highlight"], "search": "../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../assets/javascripts/bundle.79ae519e.min.js"></script>
+      
+    
+  </body>
+</html>

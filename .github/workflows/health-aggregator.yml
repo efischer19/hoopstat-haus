@@ -1,0 +1,188 @@
+---
+name: Health Aggregator
+
+on:
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: 'Run in dry-run mode (generates JSON but does not write to S3)'
+        required: false
+        default: false
+        type: boolean
+
+permissions:
+  id-token: write
+  contents: read
+
+env:
+  AWS_REGION: us-east-1
+  FUNCTION_NAME: hoopstat-haus-health-aggregator
+  LOG_GROUP: /hoopstat-haus/data-pipeline
+
+jobs:
+  health-aggregator:
+    name: Execute Health Aggregator
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::${{ secrets.AWS_ACCOUNT_ID }}:role/hoopstat-haus-github-actions
+          role-session-name: GitHubActions-HealthAggregator-${{ github.run_id }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Check Lambda function exists
+        run: |
+          echo "🔍 Checking if Lambda function exists..."
+
+          if aws lambda get-function \
+              --function-name $FUNCTION_NAME \
+              --region $AWS_REGION >/dev/null 2>&1; then
+            echo "✅ Lambda function found: $FUNCTION_NAME"
+
+            FUNCTION_QUERY='Configuration.[FunctionName,State,LastModified,Runtime,Timeout,MemorySize]'
+            aws lambda get-function \
+              --function-name $FUNCTION_NAME \
+              --region $AWS_REGION \
+              --query "$FUNCTION_QUERY" \
+              --output table
+          else
+            echo "❌ Lambda function not found: $FUNCTION_NAME"
+            echo "🔧 Please ensure the function is deployed via the deploy workflow"
+            exit 1
+          fi
+
+      - name: Invoke Health Aggregator Lambda
+        id: invoke
+        run: |
+          DRY_RUN="${{ inputs.dry_run || 'false' }}"
+          echo "🚀 Invoking Health Aggregator Lambda (dry_run=$DRY_RUN)"
+
+          # Build JSON payload using jq
+          PAYLOAD=$(jq -n \
+            --argjson dry_run "$DRY_RUN" \
+            --arg workflow_run_id "${{ github.run_id }}" \
+            --arg workflow_run_number "${{ github.run_number }}" \
+            --arg repository "${{ github.repository }}" \
+            --arg triggered_at "$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
+            '{
+              "source": "github-actions-manual",
+              "trigger_type": "workflow_dispatch",
+              "parameters": {
+                "dry_run": $dry_run
+              },
+              "metadata": {
+                "workflow_run_id": $workflow_run_id,
+                "workflow_run_number": $workflow_run_number,
+                "repository": $repository,
+                "triggered_at": $triggered_at
+              }
+            }')
+
+          echo "📋 Invocation payload:"
+          echo "$PAYLOAD" | jq '.'
+
+          echo "$PAYLOAD" > /tmp/lambda_payload.json
+
+          aws lambda invoke \
+            --function-name $FUNCTION_NAME \
+            --invocation-type Event \
+            --payload fileb:///tmp/lambda_payload.json \
+            --region $AWS_REGION \
+            --cli-binary-format raw-in-base64-out \
+            /tmp/lambda_response.json
+
+          REQUEST_ID=$(jq -r '.ResponseMetadata.RequestId // "unknown"' /tmp/lambda_response.json)
+          echo "✅ Lambda invoke accepted"
+          echo "📋 Request ID: $REQUEST_ID"
+          echo "request_id=$REQUEST_ID" >> $GITHUB_OUTPUT
+
+      - name: Wait and check execution status
+        run: |
+          echo "⏳ Waiting for function execution to start..."
+          sleep 30
+
+          echo "🔍 Checking recent Lambda function logs..."
+
+          # Check if log group exists and get recent logs
+          if aws logs describe-log-groups \
+              --log-group-name-prefix "$LOG_GROUP" \
+              --region $AWS_REGION \
+              --query 'logGroups[0].logGroupName' \
+              --output text | grep -q "$LOG_GROUP"; then
+
+            echo "📋 Recent log events from $LOG_GROUP:"
+
+            # Get logs from the last 5 minutes
+            START_TIME=$(($(date +%s) - 300))
+            START_TIME_MS=$((START_TIME * 1000))
+
+            QUERY='events[?contains(message, `health-aggregator`) || contains(message, `ERROR`) || contains(message, `Starting`)].message'
+            aws logs filter-log-events \
+              --log-group-name "$LOG_GROUP" \
+              --start-time $START_TIME_MS \
+              --region $AWS_REGION \
+              --query "$QUERY" \
+              --output table || echo "No recent log events found"
+
+          else
+            echo "ℹ️  Log group $LOG_GROUP not found"
+            echo "    Function may not have executed yet"
+          fi
+
+          echo "💡 For complete execution logs, check CloudWatch Logs:"
+          CLOUDWATCH_URL="https://console.aws.amazon.com/cloudwatch/home?region=$AWS_REGION#logsV2:log-groups/log-group/$LOG_GROUP"
+          echo "   $CLOUDWATCH_URL"
+
+      - name: Set up notification summary
+        id: summary
+        if: always()
+        run: |
+          echo "📋 Health Aggregator Summary" >> $GITHUB_STEP_SUMMARY
+          echo "=====================================" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Execution Details:**" >> $GITHUB_STEP_SUMMARY
+          echo "- Function: \`$FUNCTION_NAME\`" >> $GITHUB_STEP_SUMMARY
+          echo "- Trigger: ${{ github.event_name }}" >> $GITHUB_STEP_SUMMARY
+          echo "- Dry Run: ${{ inputs.dry_run || 'false' }}" >> $GITHUB_STEP_SUMMARY
+          echo "- Execution Time: $(date -u +%Y-%m-%dT%H:%M:%SZ)" >> $GITHUB_STEP_SUMMARY
+
+          if [ "${{ steps.invoke.outcome }}" = "success" ]; then
+            echo "- Status: ✅ **Successfully Invoked**" >> $GITHUB_STEP_SUMMARY
+            echo "- Request ID: \`${{ steps.invoke.outputs.request_id }}\`" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "- Status: ❌ **Invocation Failed**" >> $GITHUB_STEP_SUMMARY
+          fi
+
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Next Steps:**" >> $GITHUB_STEP_SUMMARY
+          CLOUDWATCH_URL="https://console.aws.amazon.com/cloudwatch/home?region=$AWS_REGION#logsV2:log-groups/log-group/$LOG_GROUP"
+          LAMBDA_URL="https://console.aws.amazon.com/lambda/home?region=$AWS_REGION#/functions/$FUNCTION_NAME"
+          echo "- Monitor execution in [CloudWatch Logs]($CLOUDWATCH_URL)" >> $GITHUB_STEP_SUMMARY
+          echo "- Check [Lambda Function]($LAMBDA_URL) for detailed metrics" >> $GITHUB_STEP_SUMMARY
+
+      - name: Report execution status
+        if: always()
+        run: |
+          echo "🏁 Health aggregator workflow completed"
+          echo "📊 Workflow Status: ${{ job.status }}"
+
+          if [ "${{ steps.invoke.outcome }}" = "success" ]; then
+            echo "✅ Lambda function invocation successful"
+            echo "🔗 Request ID: ${{ steps.invoke.outputs.request_id }}"
+            exit 0
+          else
+            echo "❌ Lambda function invocation failed"
+            echo "💡 Check the workflow logs and Lambda function status"
+            exit 1
+          fi
+
+      - name: Cleanup temporary files
+        if: always()
+        run: |
+          # Clean up temporary files
+          rm -f /tmp/lambda_payload.json /tmp/lambda_response.json

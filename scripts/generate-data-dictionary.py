@@ -147,6 +147,9 @@ def generate_data_dictionary() -> str:
     gold_mod = _load_module_from_file(
         "hoopstat_data.gold_models", models_dir / "gold_models.py"
     )
+    health_mod = _load_module_from_file(
+        "hoopstat_data.health_models", models_dir / "health_models.py"
+    )
 
     DataLineage = silver_mod.DataLineage
     PlayerStats = silver_mod.PlayerStats
@@ -155,6 +158,12 @@ def generate_data_dictionary() -> str:
     GoldPlayerDailyStats = gold_mod.GoldPlayerDailyStats
     GoldPlayerSeasonSummary = gold_mod.GoldPlayerSeasonSummary
     GoldTeamDailyStats = gold_mod.GoldTeamDailyStats
+    PipelineHealthReport = health_mod.PipelineHealthReport
+    StageStatus = health_mod.StageStatus
+    BronzeDailySummary = health_mod.BronzeDailySummary
+    SilverDailySummary = health_mod.SilverDailySummary
+    GoldDailySummary = health_mod.GoldDailySummary
+    DailySummary = health_mod.DailySummary
 
     lines = []
 
@@ -187,6 +196,10 @@ def generate_data_dictionary() -> str:
     lines.append(
         "- **Gold Layer** -- Analytics-ready models with pre-computed "
         "metrics from the Silver-to-Gold ETL"
+    )
+    lines.append(
+        "- **Pipeline Health** -- Models for the pipeline health dashboard "
+        "artifact (pipeline_health.json)"
     )
     lines.append("")
 
@@ -239,6 +252,30 @@ def generate_data_dictionary() -> str:
         ("GoldTeamDailyStats", GoldTeamDailyStats),
     ]
     for name, model in gold_models:
+        doc = model.__doc__.strip() if model.__doc__ else ""
+        lines.extend(generate_model_table(name, model, doc))
+
+    # ---- Pipeline Health Models ----
+    lines.append("---")
+    lines.append("")
+    lines.append("## Pipeline Health Models")
+    lines.append("")
+    lines.append(
+        "Models for the pipeline_health.json artifact consumed by the "
+        "health dashboard. Captures a rolling 7-day window of daily "
+        "pipeline execution summaries across Medallion layers."
+    )
+    lines.append("")
+
+    health_models = [
+        ("PipelineHealthReport", PipelineHealthReport),
+        ("StageStatus", StageStatus),
+        ("DailySummary", DailySummary),
+        ("BronzeDailySummary", BronzeDailySummary),
+        ("SilverDailySummary", SilverDailySummary),
+        ("GoldDailySummary", GoldDailySummary),
+    ]
+    for name, model in health_models:
         doc = model.__doc__.strip() if model.__doc__ else ""
         lines.extend(generate_model_table(name, model, doc))
 

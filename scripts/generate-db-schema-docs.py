@@ -184,15 +184,23 @@ def main():
     repo_root = Path(__file__).resolve().parent.parent
     schema_dir = repo_root / "apps" / "db-compiler" / "schema"
 
-    duckdb_ddl = (schema_dir / "duckdb_schema.sql").read_text()
-    sqlite_ddl = (schema_dir / "sqlite_schema.sql").read_text()
+    try:
+        duckdb_ddl = (schema_dir / "duckdb_schema.sql").read_text()
+        sqlite_ddl = (schema_dir / "sqlite_schema.sql").read_text()
+    except FileNotFoundError as e:
+        print(f"Error: Schema file not found: {e}", file=sys.stderr)
+        return 1
 
     content = generate_schema_docs(duckdb_ddl, sqlite_ddl)
 
     if args.output:
         output_path = Path(args.output)
-        output_path.parent.mkdir(parents=True, exist_ok=True)
-        output_path.write_text(content)
+        try:
+            output_path.parent.mkdir(parents=True, exist_ok=True)
+            output_path.write_text(content)
+        except OSError as e:
+            print(f"Error writing output file: {e}", file=sys.stderr)
+            return 1
         print(f"Database schema docs generated -> {output_path}")
     else:
         print(content)

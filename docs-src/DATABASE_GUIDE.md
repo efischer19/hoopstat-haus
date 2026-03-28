@@ -434,6 +434,20 @@ ORDER BY p.points DESC
 LIMIT 20;
 ```
 
+> **Note:** The `player_daily_stats.team` column stores team abbreviations
+> (e.g., 'LAL'), while `team_daily_stats.team_name` stores full names
+> (e.g., 'Los Angeles Lakers'). If the join above returns no rows, use
+> `team_id` instead:
+>
+> ```sql
+> JOIN team_daily_stats t
+>   ON p.game_date = t.game_date
+>   AND p.team = (SELECT team_name FROM team_season_summary WHERE team_id = t.team_id LIMIT 1)
+> ```
+>
+> Or join via a subquery on `player_daily_stats.player_id` and
+> `team_daily_stats.team_id` if both reference the same team ID format.
+
 ### 11. Season Standings via View
 
 ```sql

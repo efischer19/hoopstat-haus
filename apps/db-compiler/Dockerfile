@@ -17,11 +17,11 @@ WORKDIR /src
 COPY pyproject.toml poetry.lock* README.md ./
 
 # Install only runtime dependencies
-RUN poetry install --only=main --no-root --no-ansi && \
+RUN poetry install --only=main --no-ansi && \
     poetry cache clear pypi --all || true
 
 # Copy application source and schema files
 COPY app ./app
 COPY schema ./schema
 
-ENTRYPOINT ["python", "-m", "app.main"]
+ENTRYPOINT ["db-compiler"]

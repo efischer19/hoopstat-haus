@@ -1,7 +1,7 @@
 ---
 title: "ADR-041: Polyglot Static Database Artifacts (DuckDB & SQLite) for SQL-Native Analytics"
-status: "Proposed"
-date: "2026-03-26"
+status: "Accepted"
+date: "2026-03-28"
 tags:
   - "data-architecture"
   - "duckdb"

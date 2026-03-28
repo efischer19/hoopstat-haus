@@ -24,6 +24,7 @@ on:
           - bronze-ingestion
           - silver-processing
           - gold-analytics
+          - health-aggregator
 
 permissions:
   id-token: write

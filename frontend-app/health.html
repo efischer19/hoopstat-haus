@@ -46,6 +46,12 @@
         border-left: 4px solid #ef4444;
       }
 
+      .health-banner.no-data {
+        background: #f9fafb;
+        border: 1px solid #e5e7eb;
+        border-left: 4px solid #9ca3af;
+      }
+
       .health-banner-title {
         font-size: var(--font-size-lg);
         font-weight: 700;
@@ -258,8 +264,8 @@
     </header>
 
     <main>
-      <!-- Loading state -->
-      <div id="health-loading" class="health-loading">
+      <!-- Loading state (hidden by default, shown by JS) -->
+      <div id="health-loading" class="health-loading" style="display: none;">
         <div class="spinner" aria-hidden="true"></div>
         <p>Loading pipeline status…</p>
       </div>
@@ -273,21 +279,41 @@
         </div>
       </div>
 
-      <!-- Dashboard (hidden until data loads) -->
-      <div id="health-dashboard" style="display: none;">
+      <!-- Dashboard (visible by default for no-JS progressive enhancement) -->
+      <div id="health-dashboard">
 
         <!-- Overall status banner -->
-        <div id="overall-banner" class="health-banner" role="status" aria-live="polite">
+        <div id="overall-banner" class="health-banner no-data" role="status" aria-live="polite">
           <div>
-            <div id="overall-status-text" class="health-banner-title"></div>
-            <div id="overall-updated" class="health-banner-subtitle"></div>
+            <div id="overall-status-text" class="health-banner-title">System Status: No Data</div>
+            <div id="overall-updated" class="health-banner-subtitle">Waiting for pipeline data…</div>
           </div>
         </div>
 
         <!-- Stage indicators -->
         <section aria-label="Pipeline stage status">
           <div class="stages-grid" id="stages-grid">
-            <!-- Populated by JS -->
+            <div class="stage-card" role="status" aria-label="Bronze Ingestion: No Data">
+              <div class="stage-dot no-data" aria-hidden="true"></div>
+              <div class="stage-info">
+                <div class="stage-name">Bronze Ingestion</div>
+                <div class="stage-status-label no-data">No Data</div>
+              </div>
+            </div>
+            <div class="stage-card" role="status" aria-label="Silver Processing: No Data">
+              <div class="stage-dot no-data" aria-hidden="true"></div>
+              <div class="stage-info">
+                <div class="stage-name">Silver Processing</div>
+                <div class="stage-status-label no-data">No Data</div>
+              </div>
+            </div>
+            <div class="stage-card" role="status" aria-label="Gold Analytics: No Data">
+              <div class="stage-dot no-data" aria-hidden="true"></div>
+              <div class="stage-info">
+                <div class="stage-name">Gold Analytics</div>
+                <div class="stage-status-label no-data">No Data</div>
+              </div>
+            </div>
           </div>
         </section>
 

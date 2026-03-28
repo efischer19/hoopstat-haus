@@ -27,11 +27,13 @@ This frontend follows a **vanilla HTML/CSS/JavaScript approach** as documented i
 ```
 frontend-app/
 ├── index.html              # Main application entry point
+├── health.html             # Pipeline health dashboard
 ├── assets/
 │   ├── styles.css         # Mobile-first responsive CSS
 │   └── favicon.svg        # SVG favicon
 ├── scripts/
-│   └── app.js             # JavaScript for data browsing and artifact fetching
+│   ├── app.js             # JavaScript for data browsing and artifact fetching
+│   └── health.js          # JavaScript for health dashboard rendering
 └── README.md              # This file
 ```
 
@@ -118,6 +120,50 @@ Comprehensive error handling for:
 - Touch-friendly interface elements
 - Optimized typography for small screens
 - Progressive enhancement for larger screens
+
+## Health Dashboard
+
+The `health.html` page provides an at-a-glance view of pipeline health status, implemented per [ADR-040 — Static Pipeline Health Dashboard](../meta/adr/ADR-040-static-pipeline-health-dashboard.md).
+
+### What It Displays
+
+- **Overall status banner** — Traffic-light indicator (Operational / Degraded / Outage) for the entire pipeline
+- **Stage indicator cards** — Individual status for Bronze Ingestion, Silver Processing, and Gold Analytics with last-success timestamps
+- **7-day data quality trend** — Chart.js stacked bar chart showing records ingested vs quarantined over the past week
+- **Daily breakdown table** — Per-day status icons for each stage and quarantine counts
+
+### Data Source
+
+The dashboard fetches `pipeline_health.json` from the CloudFront CDN (path: `/health/pipeline_health.json`). This JSON artifact is:
+
+- Generated daily by the [health-aggregator](../apps/health-aggregator/) Lambda
+- Cached with `Cache-Control: public, max-age=3600` (1-hour TTL)
+- Schema-validated by Pydantic models in `hoopstat-data`
+- Sanitized to remove any AWS credentials, ARNs, or internal IPs
+
+### Local Testing
+
+To test the health dashboard locally, serve the frontend with a mock `pipeline_health.json`:
+
+```bash
+# Create a mock health JSON file
+mkdir -p frontend-app/health
+cp /path/to/mock/pipeline_health.json frontend-app/health/pipeline_health.json
+
+# Serve locally
+cd frontend-app
+python3 -m http.server 8080
+```
+
+Then open http://localhost:8080/health.html in your browser.
+
+A convenience script is available at `scripts/test-health-dashboard.sh` that generates mock data, starts a local server, and prints the URL for the dashboard.
+
+### Graceful Degradation
+
+- If `pipeline_health.json` cannot be fetched, an error state with a retry button is shown
+- If Chart.js CDN is unavailable, the chart area shows a "Chart unavailable" fallback message
+- Without JavaScript, the dashboard renders a static no-data state with the page structure, stage cards, and table visible (progressive enhancement)
 
 ## Deployment
 

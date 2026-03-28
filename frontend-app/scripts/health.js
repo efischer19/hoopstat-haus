@@ -296,6 +296,7 @@ async function loadDashboard() {
     hide('health-loading');
     show('health-dashboard');
   } catch (err) {
+    hide('health-loading');
     const msg = err.name === 'AbortError'
       ? 'Request timed out. Please try again later.'
       : 'Unable to load pipeline status. Please try again later.';

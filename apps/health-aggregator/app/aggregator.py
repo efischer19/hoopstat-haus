@@ -7,7 +7,6 @@ defined in hoopstat_data.health_models.
 """
 
 import datetime as dt
-import re
 from typing import Any
 
 from hoopstat_data.health_models import (
@@ -22,19 +21,12 @@ from hoopstat_data.health_models import (
 )
 from hoopstat_observability import get_logger
 
+from .sanitizer import sanitize_report  # noqa: F401 — re-exported for callers
+
 logger = get_logger(__name__)
 
 # Number of days to include in the rolling window
 LOOKBACK_DAYS = 7
-
-# Patterns that must never appear in the sanitized output (ADR-040 security model).
-# If any are detected the aggregator writes a degraded report rather than
-# leaking internal infrastructure metadata.
-_SENSITIVE_PATTERNS = [
-    re.compile(r"AKIA[0-9A-Z]{16}"),  # AWS access key ID
-    re.compile(r"arn:aws:[a-z0-9\-]+:[a-z0-9\-]*:\d{12}:"),  # AWS ARN
-    re.compile(r"(?i)secret[_\-]?access[_\-]?key"),  # secret key references
-]
 
 
 def _parse_date(date_str: str) -> dt.date | None:
@@ -288,51 +280,6 @@ def _derive_overall_status(
     return OverallSystemStatus.OPERATIONAL
 
 
-def sanitize_report(report_dict: dict) -> dict:
-    """
-    Basic sanitization pass on the serialised report dict (ADR-040 placeholder).
-
-    Scans every string value in the serialised JSON for patterns that must
-    not appear in public output (AWS ARNs, access key IDs, etc.).  If any
-    are found a ValueError is raised so the caller can substitute a degraded
-    report.
-
-    This is a placeholder for the comprehensive sanitization logic planned in
-    a later issue.  Currently it applies the allowlist approach described in
-    ADR-040 §Security Model by only retaining explicitly permitted top-level
-    keys, and scanning string values for known-sensitive patterns.
-
-    Args:
-        report_dict: Serialised report as a plain Python dict.
-
-    Returns:
-        The same dict, unchanged, if no sensitive data is detected.
-
-    Raises:
-        ValueError: If any sensitive patterns are detected.
-    """
-
-    # Flatten all string values for scanning
-    def _iter_strings(obj: Any):
-        if isinstance(obj, str):
-            yield obj
-        elif isinstance(obj, dict):
-            for v in obj.values():
-                yield from _iter_strings(v)
-        elif isinstance(obj, list):
-            for item in obj:
-                yield from _iter_strings(item)
-
-    for text in _iter_strings(report_dict):
-        for pattern in _SENSITIVE_PATTERNS:
-            if pattern.search(text):
-                raise ValueError(
-                    f"Sensitive pattern detected in report output: {pattern.pattern}"
-                )
-
-    return report_dict
-
-
 class HealthAggregator:
     """
     Orchestrates the collection, compilation, and validation of pipeline health data.
@@ -371,13 +318,11 @@ class HealthAggregator:
         4. Build daily summaries.
         5. Derive stage and overall statuses.
         6. Validate output against the Pydantic schema.
-        7. Sanitize output.
+        7. Sanitize output (allowlist reconstruction + secret scan).
 
         Returns:
-            A fully populated and validated PipelineHealthReport.
-
-        Raises:
-            ValueError: If the sanitization check detects sensitive data.
+            A fully populated and validated PipelineHealthReport, or a minimal
+            degraded fallback if the sanitizer detected sensitive patterns.
         """
         generated_at = dt.datetime.now(dt.UTC)
 
@@ -417,13 +362,12 @@ class HealthAggregator:
             daily_summaries=daily_summaries,
         )
 
-        # --- Step 7: Sanitize ---
-        report_dict = report.model_dump(mode="json")
-        sanitize_report(report_dict)  # raises ValueError on sensitive data
+        # --- Step 7: Sanitize (allowlist reconstruction + secret scan) ---
+        report = sanitize_report(report)
 
         logger.info(
-            f"Health report compiled: overall_status={overall_status} "
-            f"days={len(daily_summaries)}"
+            f"Health report compiled: overall_status={report.overall_status} "
+            f"days={len(report.daily_summaries)}"
         )
         return report
 

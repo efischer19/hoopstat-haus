@@ -655,6 +655,31 @@ resource "aws_cloudfront_distribution" "gold_artifacts" {
     }
   }
 
+  # 1-hour TTL cache behavior for pipeline health artifacts (e.g. /health/pipeline_health.json)
+  ordered_cache_behavior {
+    path_pattern     = "health/*"
+    allowed_methods  = ["GET", "HEAD"]
+    cached_methods   = ["GET", "HEAD"]
+    target_origin_id = "S3-${aws_s3_bucket.gold.bucket}"
+
+    cache_policy_id          = "658327ea-f89d-4fab-a63d-7e88639e58f6" # CachingOptimized
+    origin_request_policy_id = "88a5eaf4-2fd4-4709-b370-b4c650ea3fcf" # CORS-S3Origin
+
+    viewer_protocol_policy = "redirect-to-https"
+    compress               = true
+
+    # 1-hour cache + CORS headers (consistent with frontend asset caching, ADR-038)
+    response_headers_policy_id = aws_cloudfront_response_headers_policy.frontend_app.id
+
+    dynamic "function_association" {
+      for_each = local.enable_www_redirect ? [1] : []
+      content {
+        event_type   = "viewer-request"
+        function_arn = aws_cloudfront_function.www_to_apex_redirect[0].arn
+      }
+    }
+  }
+
   # 1-hour TTL cache behavior for frontend HTML files (e.g. /index.html)
   ordered_cache_behavior {
     path_pattern     = "*.html"
@@ -1619,6 +1644,163 @@ resource "aws_s3_bucket_notification" "silver_bucket_notification" {
   }
 
   depends_on = [aws_lambda_permission.s3_invoke_gold_processing]
+}
+
+# ============================================================================
+# Health Aggregator Lambda and IAM Role
+# ============================================================================
+
+# Dedicated IAM Role for Health Aggregator Lambda (least-privilege, per ADR-011)
+resource "aws_iam_role" "health_aggregator" {
+  name = "${var.project_name}-health-aggregator"
+
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Action = "sts:AssumeRole"
+        Effect = "Allow"
+        Principal = {
+          Service = "lambda.amazonaws.com"
+        }
+      }
+    ]
+  })
+
+  tags = {
+    Component = "health-aggregator"
+    Purpose   = "Least-privilege execution role for health aggregator Lambda"
+  }
+}
+
+# IAM policy for Health Aggregator Lambda (strictly read-only + targeted write)
+resource "aws_iam_policy" "health_aggregator" {
+  name        = "${var.project_name}-health-aggregator"
+  description = "Least-privilege policy for health aggregator Lambda"
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      # CloudWatch Logs: standard Lambda execution logging
+      {
+        Sid    = "LambdaLogging"
+        Effect = "Allow"
+        Action = [
+          "logs:CreateLogStream",
+          "logs:PutLogEvents"
+        ]
+        Resource = "${aws_cloudwatch_log_group.data_pipeline.arn}:*"
+      },
+      # CloudWatch Logs Insights: query the data-pipeline log group only
+      {
+        Sid    = "CloudWatchLogsInsights"
+        Effect = "Allow"
+        Action = [
+          "logs:StartQuery",
+          "logs:StopQuery",
+          "logs:GetQueryResults"
+        ]
+        Resource = aws_cloudwatch_log_group.data_pipeline.arn
+      },
+      # S3 Read (Bronze): list quarantine/ prefix only
+      {
+        Sid    = "BronzeQuarantineList"
+        Effect = "Allow"
+        Action = ["s3:ListBucket"]
+        Resource = aws_s3_bucket.bronze.arn
+        Condition = {
+          StringLike = {
+            "s3:prefix" = ["quarantine/*"]
+          }
+        }
+      },
+      # S3 Read (Gold): read served/index/latest.json only
+      {
+        Sid    = "GoldIndexRead"
+        Effect = "Allow"
+        Action = ["s3:GetObject"]
+        Resource = "${aws_s3_bucket.gold.arn}/served/index/latest.json"
+      },
+      # S3 Write (Gold): write to served/health/ prefix only
+      {
+        Sid    = "GoldHealthWrite"
+        Effect = "Allow"
+        Action = ["s3:PutObject"]
+        Resource = "${aws_s3_bucket.gold.arn}/served/health/*"
+      }
+    ]
+  })
+}
+
+# Attach the custom policy to the health aggregator role
+resource "aws_iam_role_policy_attachment" "health_aggregator" {
+  role       = aws_iam_role.health_aggregator.name
+  policy_arn = aws_iam_policy.health_aggregator.arn
+}
+
+# Health Aggregator Lambda Function
+resource "aws_lambda_function" "health_aggregator" {
+  function_name = "${var.project_name}-health-aggregator"
+  role          = aws_iam_role.health_aggregator.arn
+  package_type  = "Image"
+  image_uri     = "${aws_ecr_repository.main.repository_url}:health-aggregator-latest"
+
+  timeout     = var.lambda_config.health_aggregator.timeout
+  memory_size = var.lambda_config.health_aggregator.memory_size
+
+  environment {
+    variables = {
+      LOG_LEVEL      = "INFO"
+      APP_NAME       = "health-aggregator"
+      GOLD_BUCKET    = aws_s3_bucket.gold.bucket
+      BRONZE_BUCKET  = aws_s3_bucket.bronze.bucket
+      LOG_GROUP_NAME = aws_cloudwatch_log_group.data_pipeline.name
+    }
+  }
+
+  logging_config {
+    log_format = "JSON"
+    log_group  = aws_cloudwatch_log_group.data_pipeline.name
+  }
+
+  tags = {
+    Component = "health-aggregator"
+    Type      = "data-pipeline"
+  }
+
+  # Lifecycle rule to ignore image_uri changes (managed by deployment workflow)
+  lifecycle {
+    ignore_changes = [image_uri]
+  }
+}
+
+# ============================================================================
+# S3 Event Notifications for Health Aggregation
+# ============================================================================
+
+# Lambda permission for S3 to invoke health-aggregator function
+resource "aws_lambda_permission" "s3_invoke_health_aggregator" {
+  statement_id   = "AllowExecutionFromS3Bucket"
+  action         = "lambda:InvokeFunction"
+  function_name  = aws_lambda_function.health_aggregator.function_name
+  principal      = "s3.amazonaws.com"
+  source_arn     = aws_s3_bucket.gold.arn
+  source_account = data.aws_caller_identity.current.account_id
+}
+
+# S3 bucket notification for gold bucket to trigger health aggregation
+# Fires when served/index/latest.json is created/updated (Gold processing completed)
+resource "aws_s3_bucket_notification" "gold_bucket_notification" {
+  bucket = aws_s3_bucket.gold.id
+
+  lambda_function {
+    lambda_function_arn = aws_lambda_function.health_aggregator.arn
+    events              = ["s3:ObjectCreated:*"]
+    filter_prefix       = "served/index/"
+    filter_suffix       = "latest.json"
+  }
+
+  depends_on = [aws_lambda_permission.s3_invoke_health_aggregator]
 }
 
 # ============================================================================

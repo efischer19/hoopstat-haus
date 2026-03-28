@@ -66,6 +66,10 @@ variable "lambda_config" {
       timeout     = number
       memory_size = number
     })
+    health_aggregator = object({
+      timeout     = number
+      memory_size = number
+    })
   })
   default = {
     silver_processing = {
@@ -75,6 +79,10 @@ variable "lambda_config" {
     gold_processing = {
       timeout     = 300  # 5 minutes for complex aggregations
       memory_size = 1024 # 1GB matching silver-processing
+    }
+    health_aggregator = {
+      timeout     = 60  # 60 seconds; CloudWatch Logs Insights queries take 10-20s
+      memory_size = 256 # 256 MB; primarily I/O bound
     }
   }
 }

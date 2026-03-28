@@ -568,10 +568,10 @@ class TestScenario4SecurityInjectedSecrets:
             StageStatus,
         )
 
-        # Inject the secret into the generated_at field is not possible
-        # (datetime type), so we test via the sanitizer's serialized JSON
-        # scanning by creating a valid report first, then verifying that
-        # the sanitizer catches secrets that might leak through an allowlist
+        # Cannot inject the secret into the generated_at field (datetime
+        # type), so we test via the sanitizer's serialized JSON scanning
+        # by creating a valid report first, then verifying that the
+        # sanitizer catches secrets that might leak through an allowlist
         # bug.
         return PipelineHealthReport(
             generated_at=dt.datetime(2024, 1, 15, 0, 0, 0, tzinfo=dt.UTC),

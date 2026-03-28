@@ -12,6 +12,7 @@ on:
           - bronze-ingestion
           - silver-processing
           - gold-analytics
+          - health-aggregator
       environment:
         description: 'Target environment'
         required: true

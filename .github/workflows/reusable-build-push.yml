@@ -28,6 +28,7 @@ on:
           - bronze-ingestion
           - silver-processing
           - gold-analytics
+          - health-aggregator
           - example-calculator-app
       push:
         description: 'Push to ECR?'

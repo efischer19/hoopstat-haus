@@ -1,0 +1,215 @@
+---
+name: Build Database
+
+on:
+  schedule:
+    - cron: '0 6 * * *'
+  workflow_dispatch:
+    inputs:
+      season:
+        description: 'Target a specific season (e.g. 2024-25). Leave empty for all seasons.'
+        required: false
+        type: string
+
+permissions:
+  id-token: write
+  contents: read
+
+env:
+  AWS_REGION: us-east-1
+  S3_BUCKET: hoopstat-haus-gold
+  OUTPUT_DIR: /tmp/db
+
+jobs:
+  build-database:
+    name: Compile and Publish Databases
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::${{ secrets.AWS_ACCOUNT_ID }}:role/hoopstat-haus-github-actions
+          role-session-name: GitHubActions-BuildDatabase-${{ github.run_id }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Set up Python and Poetry
+        uses: ./.github/actions/setup-python-poetry
+        with:
+          working-directory: apps/db-compiler
+
+      - name: Install db-compiler dependencies
+        working-directory: apps/db-compiler
+        run: poetry install --no-interaction
+
+      - name: Check Gold data availability
+        id: data_check
+        run: |
+          echo "🔍 Checking Gold data availability..."
+
+          if aws s3api head-object \
+              --bucket "$S3_BUCKET" \
+              --key "served/index/latest.json" \
+              --region "$AWS_REGION" >/dev/null 2>&1; then
+
+            LAST_MODIFIED=$(aws s3api head-object \
+              --bucket "$S3_BUCKET" \
+              --key "served/index/latest.json" \
+              --region "$AWS_REGION" \
+              --query 'LastModified' \
+              --output text)
+
+            echo "✅ Gold index found (last modified: $LAST_MODIFIED)"
+            echo "data_available=true" >> $GITHUB_OUTPUT
+          else
+            echo "⚠️  No Gold index found at served/index/latest.json"
+            echo "    This may be expected during the off-season."
+            echo "data_available=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: List Gold artifacts from S3
+        if: steps.data_check.outputs.data_available == 'true'
+        run: |
+          echo "📋 Listing Gold artifact counts from S3..."
+
+          for prefix in player_daily team_daily season_player season_team top_lists; do
+            COUNT=$(aws s3 ls "s3://$S3_BUCKET/served/$prefix/" --recursive \
+              --region "$AWS_REGION" | grep '\.json$' | wc -l)
+            echo "  $prefix: $COUNT files"
+          done
+
+      - name: Compile databases
+        id: compile
+        if: steps.data_check.outputs.data_available == 'true'
+        working-directory: apps/db-compiler
+        run: |
+          mkdir -p "$OUTPUT_DIR"
+
+          SEASON_ARG=""
+          if [ -n "${{ inputs.season }}" ]; then
+            SEASON_ARG="--season ${{ inputs.season }}"
+            echo "🎯 Targeting season: ${{ inputs.season }}"
+          fi
+
+          echo "🚀 Running db-compiler (S3 mode)..."
+          poetry run compile \
+            --s3-bucket "$S3_BUCKET" \
+            --output-dir "$OUTPUT_DIR" \
+            --aws-region "$AWS_REGION" \
+            $SEASON_ARG \
+            2>&1 | tee /tmp/compile_output.txt
+
+          EXIT_CODE=${PIPESTATUS[0]}
+          if [ $EXIT_CODE -ne 0 ]; then
+            echo "❌ Compilation failed with exit code $EXIT_CODE"
+            exit $EXIT_CODE
+          fi
+
+          echo "✅ Compilation successful"
+
+          # Capture file sizes for the summary
+          if [ -f "$OUTPUT_DIR/nba_current_season.duckdb" ]; then
+            DUCKDB_SIZE=$(du -sh "$OUTPUT_DIR/nba_current_season.duckdb" | cut -f1)
+          else
+            DUCKDB_SIZE="File not found"
+          fi
+          if [ -f "$OUTPUT_DIR/nba_current_season.sqlite" ]; then
+            SQLITE_SIZE=$(du -sh "$OUTPUT_DIR/nba_current_season.sqlite" | cut -f1)
+          else
+            SQLITE_SIZE="File not found"
+          fi
+          echo "duckdb_size=$DUCKDB_SIZE" >> $GITHUB_OUTPUT
+          echo "sqlite_size=$SQLITE_SIZE" >> $GITHUB_OUTPUT
+
+      - name: Upload DuckDB file to S3
+        if: steps.data_check.outputs.data_available == 'true'
+        run: |
+          echo "⬆️  Uploading DuckDB database to S3..."
+
+          aws s3 cp "$OUTPUT_DIR/nba_current_season.duckdb" \
+            "s3://$S3_BUCKET/served/db/nba_current_season.duckdb" \
+            --content-type "application/octet-stream" \
+            --cache-control "public, max-age=3600" \
+            --metadata "built-at=$(date -u +%Y-%m-%dT%H:%M:%SZ),workflow-run=$GITHUB_RUN_ID" \
+            --region "$AWS_REGION"
+
+          echo "✅ DuckDB file uploaded"
+
+      - name: Upload SQLite file to S3
+        if: steps.data_check.outputs.data_available == 'true'
+        run: |
+          echo "⬆️  Uploading SQLite database to S3..."
+
+          aws s3 cp "$OUTPUT_DIR/nba_current_season.sqlite" \
+            "s3://$S3_BUCKET/served/db/nba_current_season.sqlite" \
+            --content-type "application/x-sqlite3" \
+            --cache-control "public, max-age=3600" \
+            --metadata "built-at=$(date -u +%Y-%m-%dT%H:%M:%SZ),workflow-run=$GITHUB_RUN_ID" \
+            --region "$AWS_REGION"
+
+          echo "✅ SQLite file uploaded"
+
+      - name: Invalidate CloudFront cache
+        if: steps.data_check.outputs.data_available == 'true'
+        run: |
+          DISTRIBUTION_ID=$(aws cloudfront list-distributions \
+            --query "DistributionList.Items[?Comment=='CloudFront distribution for hoopstat-haus gold artifacts'].Id | [0]" \
+            --output text)
+
+          if [ -z "$DISTRIBUTION_ID" ] || [ "$DISTRIBUTION_ID" = "None" ]; then
+            echo "⚠️  Could not find CloudFront distribution, skipping invalidation"
+            exit 0
+          fi
+
+          echo "🔄 Creating CloudFront invalidation for distribution: $DISTRIBUTION_ID"
+
+          INVALIDATION_ID=$(aws cloudfront create-invalidation \
+            --distribution-id "$DISTRIBUTION_ID" \
+            --paths "/db/*" \
+            --query 'Invalidation.Id' \
+            --output text)
+
+          echo "✅ Invalidation created: $INVALIDATION_ID"
+
+      - name: Post workflow summary
+        if: always()
+        run: |
+          echo "## 🏀 Database Build Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Run Details:**" >> $GITHUB_STEP_SUMMARY
+          echo "- Trigger: \`${{ github.event_name }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "- Run ID: \`$GITHUB_RUN_ID\`" >> $GITHUB_STEP_SUMMARY
+          echo "- Built at: \`$(date -u +%Y-%m-%dT%H:%M:%SZ)\`" >> $GITHUB_STEP_SUMMARY
+          if [ -n "${{ inputs.season }}" ]; then
+            echo "- Season filter: \`${{ inputs.season }}\`" >> $GITHUB_STEP_SUMMARY
+          fi
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          if [ "${{ steps.data_check.outputs.data_available }}" != "true" ]; then
+            echo "### ⚠️ No Gold Data Available" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "No Gold index found at \`served/index/latest.json\`." >> $GITHUB_STEP_SUMMARY
+            echo "This is expected during the off-season. No databases were compiled." >> $GITHUB_STEP_SUMMARY
+            exit 0
+          fi
+
+          echo "### 📦 Output Files" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| File | Size | S3 Path |" >> $GITHUB_STEP_SUMMARY
+          echo "|------|------|---------|" >> $GITHUB_STEP_SUMMARY
+          echo "| \`nba_current_season.duckdb\` | ${{ steps.compile.outputs.duckdb_size }} | \`s3://$S3_BUCKET/served/db/nba_current_season.duckdb\` |" >> $GITHUB_STEP_SUMMARY
+          echo "| \`nba_current_season.sqlite\` | ${{ steps.compile.outputs.sqlite_size }} | \`s3://$S3_BUCKET/served/db/nba_current_season.sqlite\` |" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          echo "### 🔍 Validation Output" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          if [ -f /tmp/compile_output.txt ]; then
+            echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+            cat /tmp/compile_output.txt >> $GITHUB_STEP_SUMMARY
+            echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "_No compilation output captured._" >> $GITHUB_STEP_SUMMARY
+          fi

@@ -1,12 +1,12 @@
-# Public Access Guide for JSON Artifacts
+# Public Access Guide for JSON Artifacts and Static Databases
 
 **Status:** Production  
-**Last Updated:** 2026-03-14  
-**Related ADRs:** [ADR-028](../meta/adr/ADR-028-gold_layer_final.md), [ADR-038](../meta/adr/ADR-038-cloudfront-cache-tuning.md)
+**Last Updated:** 2026-03-28  
+**Related ADRs:** [ADR-028](../meta/adr/ADR-028-gold_layer_final.md), [ADR-038](../meta/adr/ADR-038-cloudfront-cache-tuning.md), [ADR-041](../meta/adr/ADR-041-static-database-artifacts.md)
 
 ## Overview
 
-This guide documents the public access configuration for JSON artifacts served from the Gold layer S3 bucket via CloudFront. The infrastructure uses CloudFront with Origin Access Control (OAC) to enable secure public access while keeping the S3 bucket private.
+This guide documents the public access configuration for JSON artifacts and static database files served from the Gold layer S3 bucket via CloudFront. The infrastructure uses CloudFront with Origin Access Control (OAC) to enable secure public access while keeping the S3 bucket private.
 
 ## Architecture
 
@@ -22,7 +22,10 @@ S3 Gold Bucket (private, served/ prefix only)
         ├── player_daily/{date}/{player_id}.json
         ├── team_daily/{date}/{team_id}.json
         ├── top_lists/{date}/{metric}.json
-        └── index/latest.json
+        ├── index/latest.json
+        └── db/
+            ├── nba_current_season.duckdb
+            └── nba_current_season.sqlite
 ```
 
 ## Access Method
@@ -43,6 +46,8 @@ https://<cloudfront-domain>.cloudfront.net/player_daily/2024-11-15/2544.json
 https://<cloudfront-domain>.cloudfront.net/team_daily/2024-11-15/1610612747.json
 https://<cloudfront-domain>.cloudfront.net/top_lists/2024-11-15/top_scorers.json
 https://<cloudfront-domain>.cloudfront.net/index/latest.json
+https://<cloudfront-domain>.cloudfront.net/db/nba_current_season.duckdb
+https://<cloudfront-domain>.cloudfront.net/db/nba_current_season.sqlite
 ```
 
 **Features:**
@@ -52,6 +57,20 @@ https://<cloudfront-domain>.cloudfront.net/index/latest.json
 - S3 bucket remains private (Block Public Access enabled)
 - Origin Access Control (OAC) for secure S3 access
 - Small payloads (≤100KB) for fast delivery
+- DuckDB and SQLite static databases for SQL access (see [Database Guide](../docs-src/DATABASE_GUIDE.md))
+
+### Static Database Endpoints
+
+In addition to JSON artifacts, static database files are served under the `db/` path:
+
+| Format | Endpoint |
+|--------|----------|
+| DuckDB | `https://<cloudfront-domain>.cloudfront.net/db/nba_current_season.duckdb` |
+| SQLite | `https://<cloudfront-domain>.cloudfront.net/db/nba_current_season.sqlite` |
+
+**DuckDB** supports HTTP Range Requests, allowing remote querying without downloading the full file. **SQLite** requires a full download but is universally supported.
+
+See the [Database Guide](../docs-src/DATABASE_GUIDE.md) for schema documentation, example queries, and integration instructions.
 
 ## CORS Configuration
 
@@ -397,6 +416,8 @@ For automated workflows (e.g., GitHub Actions), ensure the IAM role has:
 
 - [ADR-028: Gold Layer Architecture](../meta/adr/ADR-028-gold_layer_final.md)
 - [ADR-038: CloudFront Cache Tuning](../meta/adr/ADR-038-cloudfront-cache-tuning.md)
+- [ADR-041: Polyglot Static Database Artifacts](../meta/adr/ADR-041-static-database-artifacts.md)
+- [Database Guide](../docs-src/DATABASE_GUIDE.md)
 - [JSON Artifact Schemas](../docs-src/JSON_ARTIFACT_SCHEMAS.md)
 - [AWS CloudFront Documentation](https://docs.aws.amazon.com/cloudfront/)
 - [AWS CloudFront OAC Documentation](https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/private-content-restricting-access-to-s3.html)

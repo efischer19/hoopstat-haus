@@ -90,15 +90,57 @@ No environment variables or authentication tokens are needed.
 
 ## Available Tools
 
-Once connected, the server exposes two tools:
+Once connected, the server exposes the following tools:
 
 | Tool | Description |
 |------|-------------|
 | `get_index` | Fetch the latest data index listing all available datasets, dates, and resource URIs. |
 | `get_artifact` | Fetch a specific JSON artifact by resource URI (e.g. `player_daily/2024-11-15/2544`). |
+| `execute_nba_sql_query` | Execute a SQL query against the Hoopstat DuckDB database and return results. |
 
-**Recommended workflow:** Call `get_index` first to discover available dates and
-resource URIs, then call `get_artifact` with a specific URI.
+**Recommended workflow for JSON artifacts:** Call `get_index` first to discover
+available dates and resource URIs, then call `get_artifact` with a specific URI.
+
+**Recommended workflow for SQL queries:** Use `execute_nba_sql_query` to run
+analytical SQL directly. The tool queries the remote DuckDB database using HTTP
+Range Requests — no file download needed.
+
+### SQL Query Tool: `execute_nba_sql_query`
+
+The `execute_nba_sql_query` tool lets AI agents run arbitrary read-only SQL
+against the Hoopstat Haus DuckDB database. This enables rich analytical queries
+that go far beyond what individual JSON artifacts can provide.
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `query` | string | Yes | A read-only SQL query to execute against the NBA statistics database. |
+
+**Example natural language prompts that AI agents can answer via SQL:**
+
+> "Who are the top 10 scorers in the NBA this season?"
+
+> "Show me players averaging a triple-double"
+
+> "Compare the Celtics and Lakers offensive efficiency"
+
+> "Which players have the best true shooting percentage with at least 20 games played?"
+
+> "What was the highest-scoring game last week?"
+
+> "Show me the teams with the best home records this season"
+
+> "Which players have improving efficiency trends?"
+
+**Available tables:** `player_daily_stats`, `team_daily_stats`,
+`player_season_summary`, `team_season_summary`, `top_lists`
+
+**Available views:** `v_team_standings`, `v_player_current_averages`,
+`v_player_game_log`
+
+For full schema documentation and example queries, see the
+[Database Guide](docs-src/DATABASE_GUIDE.md).
 
 ---
 

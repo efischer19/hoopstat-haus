@@ -8,11 +8,41 @@ A GenAI-powered data lakehouse for NBA/WNBA stats. Your go-to for advanced hoops
 
 > **Note:** This project is currently under active development and is not yet functional. The infrastructure and core components are being built. Please check back for updates!
 
-## 🚀 Quick Start: Access Basketball Analytics (Stateless JSON)
+## 🚀 Quick Start: Access Basketball Analytics
 
-Per ADR-027, initial public access is provided via small, precomputed JSON artifacts served directly from S3. No auth required.
+### 🗄️ Static SQL Databases (NEW)
 
-### What’s available
+Query the entire Gold analytics dataset with SQL — no API keys, no auth required. Two formats available:
+
+| Format | URL | Best For |
+|--------|-----|----------|
+| **DuckDB** | `https://data.hoopstat.haus/db/nba_current_season.duckdb` | Remote queries, analytics, AI agents |
+| **SQLite** | `https://data.hoopstat.haus/db/nba_current_season.sqlite` | Mobile apps, web backends, zero-dep scripts |
+
+**DuckDB — query remotely (no download needed):**
+```python
+import duckdb
+result = duckdb.sql("""
+    SELECT player_name, points_per_game
+    FROM 'https://data.hoopstat.haus/db/nba_current_season.duckdb'.player_season_summary
+    ORDER BY points_per_game DESC LIMIT 10
+""")
+print(result)
+```
+
+**SQLite — download and query with zero dependencies:**
+```bash
+curl -o nba.sqlite https://data.hoopstat.haus/db/nba_current_season.sqlite
+sqlite3 nba.sqlite "SELECT player_name, points_per_game FROM player_season_summary ORDER BY points_per_game DESC LIMIT 10;"
+```
+
+👉 **[Full Database Guide](docs-src/DATABASE_GUIDE.md)** — schema docs, 12+ example queries, format comparison, Python/Node.js examples, and troubleshooting.
+
+### 📦 Stateless JSON Artifacts
+
+Per ADR-027, initial public access is also provided via small, precomputed JSON artifacts served directly from S3. No auth required.
+
+#### What’s available
 - player_daily: per-player daily metrics
 - team_daily: per-team daily metrics
 - top_lists: curated top metrics (e.g., top_ts, top_per, top_efg, top_net)
@@ -23,8 +53,8 @@ All artifacts are versioned (v1) and capped at ~100 KB for fast, low-cost access
 ### 📊 Data Availability
 - Coverage: 2023-24 NBA season onwards
 - Updates: Daily, 2–4 hours after games complete
-- Format: JSON artifacts under gold/served/
-- Access: Public S3 with CORS (CDN optional)
+- Format: JSON artifacts + DuckDB / SQLite databases under gold/served/
+- Access: Public CloudFront with CORS — no auth required
 
 Note: MCP (Model Context Protocol) integration will use a **local proxy adapter** pattern -- all MCP compute runs on the AI client's machine, not in our cloud. See [ADR-033](meta/adr/ADR-033-local_proxy_mcp_architecture.md) for architecture details.
 

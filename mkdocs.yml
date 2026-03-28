@@ -30,6 +30,7 @@ nav:
     - ingestion: libraries/ingestion.md
   - Data Architecture:
     - Data Dictionary: DATA_DICTIONARY.md
+    - Database Guide: DATABASE_GUIDE.md
     - JSON Artifact Schemas: JSON_ARTIFACT_SCHEMAS.md
   - Development:
     - Contributing: CONTRIBUTING.md

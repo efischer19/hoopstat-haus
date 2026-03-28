@@ -1,7 +1,7 @@
 ---
 title: "ADR-040: Static Pipeline Health Dashboard Architecture"
-status: "Proposed"
-date: "2026-03-26"
+status: "Accepted"
+date: "2026-03-28"
 tags:
   - "observability"
   - "security"

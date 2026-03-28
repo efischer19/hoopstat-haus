@@ -1,0 +1,20 @@
+{
+  "metric": "Assists Leaders",
+  "date": "2024-01-15",
+  "players": [
+    {
+      "rank": 1,
+      "player_id": "1234",
+      "player_name": "Test Player",
+      "team": "BOS",
+      "value": 12.0
+    },
+    {
+      "rank": 2,
+      "player_id": "2544",
+      "player_name": "LeBron James",
+      "team": "LAL",
+      "value": 9.0
+    }
+  ]
+}

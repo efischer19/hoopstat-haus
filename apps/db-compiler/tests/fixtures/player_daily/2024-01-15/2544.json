@@ -1,0 +1,33 @@
+{
+  "player_id": "2544",
+  "player_name": "LeBron James",
+  "team": "LAL",
+  "position": "SF",
+  "points": 28,
+  "rebounds": 8,
+  "assists": 6,
+  "steals": 1,
+  "blocks": 0,
+  "turnovers": 3,
+  "field_goals_made": 10,
+  "field_goals_attempted": 20,
+  "three_pointers_made": 2,
+  "three_pointers_attempted": 6,
+  "free_throws_made": 6,
+  "free_throws_attempted": 8,
+  "minutes_played": 36.0,
+  "game_id": "0022400001",
+  "game_date": "2024-01-15",
+  "efficiency_rating": 22.5,
+  "true_shooting_percentage": 0.588,
+  "usage_rate": 0.32,
+  "plus_minus": 8,
+  "season": "2024-25",
+  "partition_key": "player_daily/2024-01-15",
+  "lineage": {
+    "source_system": "silver-to-gold-etl",
+    "schema_version": "1.0",
+    "transformation_stage": "gold",
+    "validation_mode": "strict"
+  }
+}

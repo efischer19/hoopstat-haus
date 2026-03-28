@@ -33,7 +33,7 @@ The separation follows these principles:
 
 3. **Shared CloudFront Distribution:** The existing CloudFront distribution continues to serve both data artifacts (from this repo's pipeline) and frontend assets (deployed from the new repo). Both repos deploy to the same S3 bucket (`served/` prefix) using separate GitHub Actions workflows. The new repo receives a scoped IAM role or shares the existing OIDC role with path-restricted permissions.
 
-4. **ADR Ownership Transfer:** Frontend-specific ADRs (ADR-019: Vanilla Approach, ADR-036: Chart.js) become the new repository's concern. They are annotated as "Moved" in this repo with a pointer to the new repo. ADR-040 (Health Dashboard) remains here since the health dashboard stays.
+4. **ADR Ownership Transfer:** Frontend-specific ADRs (ADR-019: Vanilla Approach, ADR-036: Chart.js) become the new repository's concern. They are annotated as "Transferred" in this repo with a pointer to the new repo. ADR-040 (Health Dashboard) remains here since the health dashboard stays.
 
 5. **Template-Child Relationship:** The new `hoopstat-haus-frontend` repository is created as a template-child of `static-js-aws-monorepo-template`, inheriting its CI/CD patterns, linting configuration, and deployment conventions.
 

@@ -4,7 +4,7 @@
 
 ## What do you want to build?
 
-Update all documentation and ADRs in this repository to reflect the post-separation state. This includes annotating frontend-specific ADRs as "Moved", updating the README to remove frontend references, and cleaning up any plans or docs that reference `frontend-app/` as if it's part of this repo.
+Update all documentation and ADRs in this repository to reflect the post-separation state. This includes annotating frontend-specific ADRs as "Transferred", updating the README to remove frontend references, and cleaning up any plans or docs that reference `frontend-app/` as if it's part of this repo.
 
 ### ADR changes
 

@@ -21,7 +21,7 @@ This epic splits the Hoopstat Haus frontend application (`frontend-app/`) into a
 - `frontend-app/index.html`, `frontend-app/assets/`, `frontend-app/scripts/app.js`
 - Frontend-specific documentation (`frontend-app/README.md`)
 - A new deployment workflow targeting the same S3 bucket and CloudFront distribution
-- Ownership of ADR-019 (Vanilla Approach) and ADR-036 (Chart.js) decisions — these are annotated as "Moved" in this repo
+- Ownership of ADR-019 (Vanilla Approach) and ADR-036 (Chart.js) decisions — these are annotated as "Transferred" in this repo
 
 ### What Is Shared
 

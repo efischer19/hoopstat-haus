@@ -345,40 +345,31 @@ class TestDeriveOverallStatus:
 
 
 # ---------------------------------------------------------------------------
-# sanitize_report
+# sanitize_report (re-exported from sanitizer — basic contract tests)
 # ---------------------------------------------------------------------------
 
 
 class TestSanitizeReport:
-    def test_clean_report_passes(self):
-        report = {
-            "overall_status": "operational",
-            "generated_at": "2024-01-15T00:00:00Z",
-        }
+    """Verify that sanitize_report is importable from app.aggregator and works."""
+
+    def _make_clean_report(self) -> PipelineHealthReport:
+        return PipelineHealthReport(
+            generated_at=dt.datetime(2024, 1, 15, 0, 0, 0, tzinfo=dt.UTC),
+            overall_status=OverallSystemStatus.OPERATIONAL,
+            stages={},
+            daily_summaries=[],
+        )
+
+    def test_clean_report_passes_through(self):
+        report = self._make_clean_report()
         result = sanitize_report(report)
-        assert result is report  # same object returned
+        assert isinstance(result, PipelineHealthReport)
+        assert result.overall_status == OverallSystemStatus.OPERATIONAL
 
-    def test_aws_arn_raises(self):
-        report = {"message": "arn:aws:iam::123456789012:role/MyRole caused an error"}
-        with pytest.raises(ValueError, match="Sensitive pattern"):
-            sanitize_report(report)
-
-    def test_aws_access_key_raises(self):
-        report = {"key": "AKIAIOSFODNN7EXAMPLE"}
-        with pytest.raises(ValueError, match="Sensitive pattern"):
-            sanitize_report(report)
-
-    def test_nested_sensitive_data_raises(self):
-        report = {
-            "stages": {"bronze": {"message": "AKIAIOSFODNN7EXAMPLE in nested field"}}
-        }
-        with pytest.raises(ValueError, match="Sensitive pattern"):
-            sanitize_report(report)
-
-    def test_list_sensitive_data_raises(self):
-        report = {"errors": ["AKIAIOSFODNN7EXAMPLE"]}
-        with pytest.raises(ValueError, match="Sensitive pattern"):
-            sanitize_report(report)
+    def test_sanitize_report_returns_pipeline_health_report(self):
+        report = self._make_clean_report()
+        result = sanitize_report(report)
+        assert isinstance(result, PipelineHealthReport)
 
 
 # ---------------------------------------------------------------------------

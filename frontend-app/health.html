@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="description" content="Hoopstat Haus — Pipeline Health Dashboard. At-a-glance status for Bronze, Silver, and Gold data pipeline layers.">
+
+    <title>Hoopstat Haus — Pipeline Health</title>
+
+    <link rel="stylesheet" type="text/css" href="/assets/styles.css" media="all">
+    <link rel="icon" type="image/svg+xml" href="/assets/favicon.svg">
+
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="theme-color" content="#2c5aa0">
+
+    <style>
+      /* Health Dashboard — page-specific styles */
+
+      /* Overall status banner */
+      .health-banner {
+        border-radius: var(--border-radius);
+        padding: var(--spacing-md) var(--spacing-lg);
+        margin-bottom: var(--spacing-xl);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: var(--spacing-sm);
+      }
+
+      .health-banner.operational {
+        background: #f0fdf4;
+        border: 1px solid #bbf7d0;
+        border-left: 4px solid #22c55e;
+      }
+
+      .health-banner.degraded {
+        background: #fefce8;
+        border: 1px solid #fef08a;
+        border-left: 4px solid #eab308;
+      }
+
+      .health-banner.outage {
+        background: #fff1f2;
+        border: 1px solid #fecdd3;
+        border-left: 4px solid #ef4444;
+      }
+
+      .health-banner-title {
+        font-size: var(--font-size-lg);
+        font-weight: 700;
+      }
+
+      .health-banner-subtitle {
+        font-size: var(--font-size-sm);
+        color: var(--text-secondary);
+        margin-top: var(--spacing-xs);
+      }
+
+      /* Stage indicators */
+      .stages-grid {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: var(--spacing-md);
+        margin-bottom: var(--spacing-xl);
+      }
+
+      @media (min-width: 480px) {
+        .stages-grid {
+          grid-template-columns: repeat(3, 1fr);
+        }
+      }
+
+      .stage-card {
+        background: var(--bg-primary);
+        border: 1px solid var(--border-color);
+        border-radius: var(--border-radius);
+        padding: var(--spacing-md) var(--spacing-lg);
+        display: flex;
+        align-items: flex-start;
+        gap: var(--spacing-md);
+        box-shadow: var(--box-shadow);
+      }
+
+      .stage-dot {
+        width: 14px;
+        height: 14px;
+        border-radius: 50%;
+        flex-shrink: 0;
+        margin-top: 4px;
+      }
+
+      .stage-dot.operational { background: #22c55e; }
+      .stage-dot.degraded    { background: #eab308; }
+      .stage-dot.outage      { background: #ef4444; }
+      .stage-dot.no-data     { background: #9ca3af; }
+
+      .stage-info {
+        flex: 1;
+        min-width: 0;
+      }
+
+      .stage-name {
+        font-weight: 700;
+        font-size: var(--font-size-base);
+        color: var(--text-primary);
+      }
+
+      .stage-status-label {
+        font-size: var(--font-size-sm);
+        margin-top: var(--spacing-xs);
+      }
+
+      .stage-status-label.operational { color: #16a34a; }
+      .stage-status-label.degraded    { color: #ca8a04; }
+      .stage-status-label.outage      { color: #dc2626; }
+      .stage-status-label.no-data     { color: #6b7280; }
+
+      .stage-last-success {
+        font-size: var(--font-size-sm);
+        color: var(--text-secondary);
+        margin-top: var(--spacing-xs);
+      }
+
+      /* Section card */
+      .health-section {
+        background: var(--bg-primary);
+        border: 1px solid var(--border-color);
+        border-radius: var(--border-radius);
+        margin-bottom: var(--spacing-xl);
+        box-shadow: var(--box-shadow);
+      }
+
+      .health-section-header {
+        padding: var(--spacing-md) var(--spacing-lg);
+        border-bottom: 1px solid var(--border-color);
+        background: var(--bg-secondary);
+        border-radius: var(--border-radius) var(--border-radius) 0 0;
+      }
+
+      .health-section-header h2 {
+        font-size: var(--font-size-xl);
+        color: var(--text-primary);
+        margin: 0;
+      }
+
+      .health-section-body {
+        padding: var(--spacing-lg);
+      }
+
+      /* Chart wrapper */
+      .health-chart-wrapper {
+        position: relative;
+        height: 280px;
+      }
+
+      .chart-unavailable {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        height: 100%;
+        color: var(--text-secondary);
+        font-size: var(--font-size-sm);
+        border: 1px dashed var(--border-color);
+        border-radius: var(--border-radius);
+      }
+
+      /* Health table */
+      .health-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: var(--font-size-sm);
+      }
+
+      .health-table th,
+      .health-table td {
+        padding: var(--spacing-sm) var(--spacing-md);
+        text-align: center;
+        border-bottom: 1px solid var(--border-color);
+        white-space: nowrap;
+      }
+
+      .health-table th:first-child,
+      .health-table td:first-child {
+        text-align: left;
+      }
+
+      .health-table th {
+        background: var(--bg-secondary);
+        font-weight: 600;
+        color: var(--text-primary);
+        position: sticky;
+        top: 0;
+      }
+
+      .health-table tbody tr:hover {
+        background: var(--bg-secondary);
+      }
+
+      .table-wrapper {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+      }
+
+      /* Status icon in table */
+      .status-icon {
+        font-size: 1rem;
+      }
+
+      /* Quarantine badge */
+      .quarantine-count {
+        display: inline-block;
+        padding: 1px 8px;
+        border-radius: 9999px;
+        font-size: var(--font-size-sm);
+        font-weight: 600;
+      }
+
+      .quarantine-count.none {
+        background: #f0fdf4;
+        color: #16a34a;
+      }
+
+      .quarantine-count.some {
+        background: #fefce8;
+        color: #ca8a04;
+      }
+
+      /* Footer note */
+      .health-footer-note {
+        font-size: var(--font-size-sm);
+        color: var(--text-secondary);
+        text-align: center;
+        padding-top: var(--spacing-md);
+        border-top: 1px solid var(--border-color);
+        margin-top: var(--spacing-lg);
+      }
+
+      /* Loading skeleton */
+      .health-loading {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        padding: var(--spacing-xxl);
+        color: var(--text-secondary);
+        gap: var(--spacing-md);
+      }
+    </style>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js" defer></script>
+    <script src="/scripts/health.js" defer></script>
+  </head>
+  <body>
+    <header>
+      <h1>🏀 Hoopstat Haus</h1>
+      <p>Pipeline Health Dashboard</p>
+    </header>
+
+    <main>
+      <!-- Loading state -->
+      <div id="health-loading" class="health-loading">
+        <div class="spinner" aria-hidden="true"></div>
+        <p>Loading pipeline status…</p>
+      </div>
+
+      <!-- Error state -->
+      <div id="health-error" class="error-container" style="display: none;">
+        <div class="error-content">
+          <h3>⚠️ Unable to load pipeline status</h3>
+          <p id="health-error-message">Please try again later.</p>
+          <button type="button" id="health-retry-btn" class="retry-btn">Retry</button>
+        </div>
+      </div>
+
+      <!-- Dashboard (hidden until data loads) -->
+      <div id="health-dashboard" style="display: none;">
+
+        <!-- Overall status banner -->
+        <div id="overall-banner" class="health-banner" role="status" aria-live="polite">
+          <div>
+            <div id="overall-status-text" class="health-banner-title"></div>
+            <div id="overall-updated" class="health-banner-subtitle"></div>
+          </div>
+        </div>
+
+        <!-- Stage indicators -->
+        <section aria-label="Pipeline stage status">
+          <div class="stages-grid" id="stages-grid">
+            <!-- Populated by JS -->
+          </div>
+        </section>
+
+        <!-- 7-Day Chart -->
+        <section class="health-section" aria-label="7-day data quality trend">
+          <div class="health-section-header">
+            <h2>7-Day Data Quality Trend</h2>
+          </div>
+          <div class="health-section-body">
+            <div class="health-chart-wrapper">
+              <canvas id="health-chart" aria-label="Stacked bar chart: records ingested vs quarantined over 7 days" role="img">
+                <p>Chart could not be displayed.</p>
+              </canvas>
+              <div id="chart-unavailable" class="chart-unavailable" style="display: none;">
+                Chart unavailable — Chart.js failed to load.
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Daily breakdown table -->
+        <section class="health-section" aria-label="Daily pipeline breakdown">
+          <div class="health-section-header">
+            <h2>Daily Breakdown</h2>
+          </div>
+          <div class="health-section-body">
+            <div class="table-wrapper">
+              <table class="health-table" id="daily-table">
+                <thead>
+                  <tr>
+                    <th scope="col">Date</th>
+                    <th scope="col">Bronze</th>
+                    <th scope="col">Silver</th>
+                    <th scope="col">Gold</th>
+                    <th scope="col">Quarantined</th>
+                  </tr>
+                </thead>
+                <tbody id="daily-table-body">
+                  <!-- Populated by JS -->
+                </tbody>
+              </table>
+            </div>
+
+            <p class="health-footer-note">
+              Data provided by <code>pipeline_health.json</code> ·
+              Refreshes hourly · No authentication required
+            </p>
+          </div>
+        </section>
+
+      </div><!-- /#health-dashboard -->
+    </main>
+
+    <footer>
+      <div class="footer-content">
+        <p>&copy; 2024 Hoopstat Haus. Powered by AI and basketball data.</p>
+        <div class="footer-links">
+          <a href="/">Home</a>
+          <a href="https://github.com/efischer19/hoopstat-haus" target="_blank" rel="noopener">Source</a>
+        </div>
+      </div>
+    </footer>
+  </body>
+</html>

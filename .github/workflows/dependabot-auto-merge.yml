@@ -19,6 +19,10 @@ jobs:
         with:
           github-token: "${{ secrets.GITHUB_TOKEN }}"
 
+      - name: Wait for PR to be ready
+        if: steps.metadata.outputs.update-type != 'version-update:semver-major'
+        run: sleep 10
+
       - name: Approve PR
         if: steps.metadata.outputs.update-type != 'version-update:semver-major'
         run: gh pr review --approve "$PR_URL"
@@ -28,7 +32,20 @@ jobs:
 
       - name: Enable auto-merge
         if: steps.metadata.outputs.update-type != 'version-update:semver-major'
-        run: gh pr merge --auto --squash "$PR_URL"
+        run: |
+          for attempt in 1 2 3; do
+            echo "Attempt $attempt of 3"
+            if gh pr merge --auto --squash "$PR_URL"; then
+              echo "Auto-merge enabled successfully"
+              exit 0
+            fi
+            if [ "$attempt" -lt 3 ]; then
+              echo "Merge failed, retrying in 30s..."
+              sleep 30
+            fi
+          done
+          echo "All attempts failed"
+          exit 1
         env:
           PR_URL: ${{ github.event.pull_request.html_url }}
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

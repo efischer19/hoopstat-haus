@@ -664,7 +664,8 @@ resource "aws_cloudfront_distribution" "gold_artifacts" {
     cached_methods   = ["GET", "HEAD"]
     target_origin_id = "S3-${aws_s3_bucket.gold.bucket}"
 
-    cache_policy_id = aws_cloudfront_cache_policy.db_range_requests.id
+    cache_policy_id          = aws_cloudfront_cache_policy.db_range_requests.id
+    origin_request_policy_id = "88a5eaf4-2fd4-4709-b370-b4c650ea3fcf" # CORS-S3Origin
 
     viewer_protocol_policy = "redirect-to-https"
     compress               = false # Critical: do not compress — DuckDB needs raw bytes for Range requests

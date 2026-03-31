@@ -31,12 +31,12 @@ This document maps every folder and file in the hoopstat-haus monorepo to its in
 | `.gitignore` | **Multiple** | Adapt | Each repo needs its own `.gitignore`. Python repos share the Python portion; frontend repo gets JS-specific rules. Blueprint repos get generalized versions |
 | `.pre-commit-config.yaml` | **python-project-blueprint** | Copy as-is | Pre-commit hooks for ruff formatting/linting are a Python project convention |
 | `.repomixignore` | **Multiple** | Adapt | Each repo that uses repomix gets its own version scoped to that repo's structure |
-| `CODE_OF_CONDUCT.md` | **blueprint-repo-blueprints** | Copy as-is | Community standard document; identical across all repos |
+| `CODE_OF_CONDUCT.md` | **blueprint-repo-blueprints** | Copy as-is | Community standard document; canonical source in blueprint, propagated to all derived repos |
 | `CONTRIBUTING.md` | **blueprint-repo-blueprints** | Adapt | General contribution guidelines propagate everywhere; product-specific sections removed |
-| `LICENSE.md` | **blueprint-repo-blueprints** | Copy as-is | License is identical across all repos |
+| `LICENSE.md` | **blueprint-repo-blueprints** | Copy as-is | License file; canonical source in blueprint, propagated to all derived repos |
 | `MCP_SETUP.md` | **hoopstat-data** | Copy as-is | MCP proxy setup is specific to the hoopstat data pipeline |
 | `README.md` | **Discard** | Rewrite | Every repo gets a new README tailored to its purpose; the monorepo README is not reusable |
-| `SECURITY.md` | **blueprint-repo-blueprints** | Copy as-is | Security policy is a community standard; identical across all repos |
+| `SECURITY.md` | **blueprint-repo-blueprints** | Copy as-is | Security policy; canonical source in blueprint, propagated to all derived repos |
 | `docker-compose.test.yml` | **hoopstat-data** | Adapt | Integration test orchestration is product-specific; blueprint repos get a generalized version |
 | `docs-requirements.txt` | **python-project-blueprint** | Adapt | MkDocs dependencies for documentation generation; generalize package list |
 | `mkdocs.yml` | **Multiple** | Adapt | Each repo with docs gets its own `mkdocs.yml`. Blueprint version is a skeleton; hoopstat-data gets the current nav adapted |
@@ -230,7 +230,7 @@ ADRs are split between general development conventions (blueprint repos) and pro
 | `ADR-038-cloudfront-cache-tuning.md` | CloudFront Cache Tuning | **hoopstat-data** | Copy as-is | Product-specific cache tuning |
 | `ADR-040-static-pipeline-health-dashboard.md` | Static Health Dashboard | **hoopstat-data** | Copy as-is | Product-specific dashboard architecture |
 | `ADR-041-static-database-artifacts.md` | Static Database Artifacts | **hoopstat-data** | Copy as-is | Product-specific DuckDB/SQLite decision |
-| `TEMPLATE.md` | **blueprint-repo-blueprints** | Copy as-is | ADR template is a general convention for any repo using ADRs |
+| `TEMPLATE.md` | ADR Template | **blueprint-repo-blueprints** | Copy as-is | ADR template is a general convention for any repo using ADRs |
 
 ### `meta/plans/` — Planning Documents
 

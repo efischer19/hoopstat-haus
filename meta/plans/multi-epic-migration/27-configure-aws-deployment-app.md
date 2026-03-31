@@ -29,9 +29,4 @@ The OIDC role for hoopstat-app needs different permissions than hoopstat-data:
 - CloudFront: CreateInvalidation on the distribution
 - No Lambda, ECR, or data bucket access needed
 
-The actual AWS resources (S3 bucket, CloudFront distribution, OIDC provider) must exist before this workflow can run. Those resources could be:
-1. Defined in hoopstat-data's Terraform (if the frontend infra is part of the data stack)
-2. Defined in a separate shared infrastructure repo
-3. Created manually
-
-This decision should be made during Epic 9 planning. For now, configure the workflow to use variables and document what needs to exist.
+The actual AWS resources (S3 bucket, CloudFront distribution, OIDC provider) must exist before this workflow can run. Per the file-mapping, the CloudFront distribution and S3 buckets are managed by hoopstat-data's Terraform (ticket 22). The hoopstat-app deploy workflow references these resources via GitHub repository variables (`S3_BUCKET_NAME`, `CLOUDFRONT_DISTRIBUTION_ID`) whose values come from hoopstat-data's Terraform outputs.

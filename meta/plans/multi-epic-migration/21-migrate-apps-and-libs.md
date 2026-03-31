@@ -27,9 +27,15 @@ Migrate the core data pipeline applications and shared libraries from hoopstat-h
 - [ ] `poetry run ruff format --check .` passes in every app and lib
 - [ ] `poetry run ruff check .` passes in every app and lib
 - [ ] `poetry run pytest` passes in every app and lib
-- [ ] Relevant documentation is migrated: `docs-src/`, `mkdocs.yml`, `docs-requirements.txt`
-- [ ] Utility scripts are migrated: `scripts/` (relevant ones per file mapping)
-- [ ] Project-specific ADRs are migrated to `meta/adr/` (per file mapping document)
+- [ ] Relevant documentation is migrated to `docs-src/`: DATABASE_GUIDE.md, DATA_DICTIONARY.md, E2E_TESTING.md, ECR_IMAGE_MANAGEMENT.md, HEALTH_DASHBOARD_RUNBOOK.md, JSON_ARTIFACT_SCHEMAS.md, BUILD_ORCHESTRATION.md, libraries/
+- [ ] `mkdocs.yml` and `docs-requirements.txt` are adapted for hoopstat-data
+- [ ] Product-specific utility scripts are migrated: ecr-helper.sh, generate-data-dictionary.py, generate-db-schema-docs.py, generate-docs.py, test-health-dashboard.sh, test-orchestration.md, validate-orchestration.sh, scripts/tests/
+- [ ] Product-specific ADRs are migrated to `meta/adr/`: ADR-012 through ADR-014, ADR-017 through ADR-018, ADR-020, ADR-024 through ADR-028, ADR-030 through ADR-035, ADR-037 through ADR-038, ADR-040, ADR-041
+- [ ] Product-specific meta files are migrated: `meta/DATA_AVAILABILITY_POLICY.md`, `meta/GOLD_LAYER_ANALYTICS_STRATEGY.md`
+- [ ] Product-specific plans are migrated: all `meta/plans/` documents except `multi-epic-migration/`
+- [ ] `testing/` directory is migrated: Dockerfile.test (adapt paths), test_integration_pipeline.py, validate_e2e_framework.py
+- [ ] `MCP_SETUP.md` is migrated
+- [ ] `docker-compose.test.yml` is migrated and adapted for standalone repo context
 - [ ] `templates/python-app-template/` and `templates/python-lib-template/` are present
 
 ## Implementation Notes (Optional)

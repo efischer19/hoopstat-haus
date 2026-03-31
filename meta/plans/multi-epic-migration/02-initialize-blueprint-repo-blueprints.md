@@ -15,6 +15,8 @@ Create the `blueprint-repo-blueprints` repository on GitHub as a **template repo
 - [ ] Root `README.md` explains the template's purpose and how to use it
 - [ ] `.github/pull_request_template.md` is present
 - [ ] `.github/ISSUE_TEMPLATE/feature-request.yml` is present
+- [ ] `.github/ISSUE_TEMPLATE/bug-report.yml` is present
+- [ ] `.github/ISSUE_TEMPLATE/config.yml` is present
 - [ ] ADR template (`meta/adr/TEMPLATE.md`) is present
 - [ ] ADR-001 (Use ADRs) is present as an accepted ADR, adapted for general use
 

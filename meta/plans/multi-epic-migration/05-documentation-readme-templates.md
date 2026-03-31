@@ -8,6 +8,8 @@ Add documentation scaffolding to the `blueprint-repo-blueprints` template: a doc
 
 - [ ] `docs-src/index.md` exists with a placeholder homepage template
 - [ ] `docs-src/DEVELOPMENT_PHILOSOPHY.md` is symlinked or references `meta/DEVELOPMENT_PHILOSOPHY.md`
+- [ ] `docs-src/CONTRIBUTING.md` is present (adapted from hoopstat-haus — general contributing guide, product-specific references removed)
+- [ ] `docs-src/feature-request-automation.md` is present (adapted from hoopstat-haus — general workflow guide)
 - [ ] `mkdocs.yml` exists with Material theme configuration (adapted from hoopstat-haus, with template placeholders for site name/URL)
 - [ ] `docs-requirements.txt` lists MkDocs dependencies
 - [ ] `scripts/build-docs.sh` exists to build documentation locally

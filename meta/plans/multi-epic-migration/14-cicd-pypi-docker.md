@@ -11,6 +11,7 @@ Add CI/CD workflows to the `python-project-blueprint` template that demonstrate 
 - [ ] CI workflow uses caching for Poetry virtual environments (keyed on poetry.lock hash)
 - [ ] `.github/workflows/publish.yml` exists with a PyPI publish job that is commented out at the key `twine upload` / `poetry publish` step, with clear instructions on how to enable
 - [ ] `.github/workflows/build-docker.yml` exists, builds Docker images for apps with Dockerfiles, and uploads as GitHub Actions artifacts (no ECR push)
+- [ ] `.github/workflows/documentation.yml` exists to build and deploy MkDocs documentation (adapted from hoopstat-haus — generalized for any Python project with docs)
 - [ ] A minimal `Dockerfile` exists in the example app showing the multi-stage build pattern
 - [ ] `.github/dependabot.yml` is updated to monitor pip ecosystem for each app/lib directory
 - [ ] All workflows pass on the template repo with the example app/lib

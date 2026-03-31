@@ -7,6 +7,7 @@ Populate the `blueprint-repo-blueprints` template with the core development phil
 ## Acceptance Criteria
 
 - [ ] `meta/DEVELOPMENT_PHILOSOPHY.md` is present, adapted from hoopstat-haus (remove hoopstat-specific references, keep universal principles)
+- [ ] `meta/ROBOT_ETHICS.md` is present (copy as-is from hoopstat-haus — AI ethics policy applies to all repos)
 - [ ] `.github/copilot-instructions.md` is present with generalized AI contributor instructions (adapted from hoopstat-haus, no project-specific references)
 - [ ] `CONTRIBUTING.md` is present with general contribution guidelines
 - [ ] `meta/adr/` contains ADR-001 (Use ADRs) adapted for general use
@@ -19,6 +20,7 @@ Populate the `blueprint-repo-blueprints` template with the core development phil
 
 Source material from hoopstat-haus to adapt:
 - `meta/DEVELOPMENT_PHILOSOPHY.md` — Core principles (Humans First, Simplicity, Sacred Main, Testing, Boy Scout, Commit Hygiene). These are universal; copy and generalize.
+- `meta/ROBOT_ETHICS.md` — AI ethics policy. Copy as-is; this is already general-purpose.
 - `.github/copilot-instructions.md` — AI contributor workflow. Remove hoopstat-specific paths and commands; keep the structured workflow (review philosophy → check ADRs → understand codebase → minimal changes → test → commit).
 - `CONTRIBUTING.md` — Generalize for template usage.
 

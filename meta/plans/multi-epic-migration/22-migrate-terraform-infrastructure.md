@@ -6,21 +6,22 @@ Migrate the Terraform infrastructure from hoopstat-haus to hoopstat-data, adapti
 
 ## Acceptance Criteria
 
-- [ ] `infrastructure/main.tf` contains all data pipeline infrastructure (adapted from hoopstat-haus):
+- [ ] `infrastructure/main.tf` contains all infrastructure from hoopstat-haus (copy as-is per file-mapping):
   - S3 buckets (bronze, silver, gold layers)
   - Lambda functions for each pipeline stage
   - ECR repositories for each app's Docker image
   - IAM roles and policies (Lambda execution, S3 access, ECR pull)
   - CloudWatch log groups and alarms
   - EventBridge rules for scheduling
+  - CloudFront distribution and Origin Access Control (serves gold layer data and frontend)
 - [ ] `infrastructure/backend.tf` is updated with new state bucket name/key
 - [ ] `infrastructure/variables.tf` is updated with hoopstat-data-specific variables
 - [ ] `infrastructure/outputs.tf` is updated with relevant outputs
 - [ ] `infrastructure/versions.tf` pins the same provider versions as hoopstat-haus
-- [ ] `infrastructure/GITHUB_ACTIONS_ROLE.md` documents the new OIDC role requirements
+- [ ] All infrastructure documentation is migrated: GITHUB_ACTIONS_ROLE.md, LAMBDA_DEPLOYMENT.md, PUBLIC_ACCESS_GUIDE.md, observability_README.md, SETUP.md
 - [ ] `infrastructure/README.md` is updated for the new repo context
+- [ ] `infrastructure/tests/` are migrated
 - [ ] `terraform validate` passes (with `-backend=false`)
-- [ ] CloudFront-related resources are NOT included (those belong in hoopstat-app or are shared infrastructure)
 - [ ] No hardcoded values from the old hoopstat-haus infrastructure remain
 
 ## Implementation Notes (Optional)
@@ -28,26 +29,23 @@ Migrate the Terraform infrastructure from hoopstat-haus to hoopstat-data, adapti
 The infrastructure migration is sensitive. Key considerations:
 
 **What moves to hoopstat-data:**
+Per the file-mapping, ALL `infrastructure/` content copies as-is to hoopstat-data:
 - S3 bucket definitions (bronze, silver, gold data buckets)
 - Lambda function definitions (bronze-ingestion, silver-processing, gold-analytics, health-aggregator, db-compiler)
 - ECR repository definitions
 - IAM roles for Lambda execution
 - CloudWatch monitoring (log groups, alarms, dashboards)
 - EventBridge scheduling rules
+- CloudFront distribution and Origin Access Control (serves both gold data and frontend)
 - State backend configuration (new bucket/key)
+- All documentation (GITHUB_ACTIONS_ROLE.md, LAMBDA_DEPLOYMENT.md, PUBLIC_ACCESS_GUIDE.md, SETUP.md, observability_README.md)
+- Infrastructure tests
 
-**What does NOT move to hoopstat-data:**
-- CloudFront distribution (serves the frontend — goes to hoopstat-app or shared infra)
-- Route53 records (shared infrastructure, managed separately)
-- The gold/served S3 path's public access policy (this bridges data and app — needs careful handling)
+**CloudFront ownership:**
+The file-mapping places CloudFront in hoopstat-data because the distribution serves the gold layer data. The hoopstat-app repo only pushes frontend files to S3 — the CloudFront distribution itself is managed as data infrastructure. This means hoopstat-app's deploy workflow needs to reference the CloudFront distribution ID from hoopstat-data's infrastructure outputs.
 
 **The gold layer public access question:**
-The gold layer S3 bucket contains data that CloudFront serves to the frontend. This creates a dependency between hoopstat-data (writes the data) and hoopstat-app (serves it via CloudFront). Options:
-1. hoopstat-data owns the S3 bucket, hoopstat-app references it via data source
-2. Shared infrastructure module owns the bucket
-3. hoopstat-data writes to a path that hoopstat-app's CloudFront is configured to read from
-
-This should be documented as a decision in the file-mapping investigation (ticket 01) and may warrant its own ADR.
+The gold layer S3 bucket contains data that CloudFront serves to the frontend. Since both the distribution and the bucket live in hoopstat-data's Terraform, hoopstat-app's deploy workflow just needs the distribution ID and S3 bucket name as configuration inputs. This simplifies the cross-repo dependency.
 
 **State migration:**
 The existing Terraform state will need to be migrated or the infrastructure re-created. Since we're keeping the old repo alive during migration (Epic 8 is last), we have time to handle this carefully. Consider:

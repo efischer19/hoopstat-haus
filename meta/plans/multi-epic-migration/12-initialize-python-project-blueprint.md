@@ -15,16 +15,20 @@ Create the `python-project-blueprint` repository using the `blueprint-repo-bluep
 - [ ] `libs/README.md` explains the libs directory purpose and conventions
 - [ ] `.github/copilot-instructions.md` is updated with Python-specific development workflow (Poetry, ruff, pytest)
 - [ ] `.python-version` file specifies 3.12+
+- [ ] `.dockerignore` is present with Python-specific Docker ignore rules (adapted from hoopstat-haus)
 - [ ] ADR for "Use Python 3.12+" is present (adapted from hoopstat-haus ADR-002)
 - [ ] ADR for "Use Poetry for Dependency Management" is present (adapted from ADR-003)
+- [ ] All applicable general Python ADRs are present (per file-mapping): ADR-004 (pytest), ADR-005 (Ruff), ADR-006 (Docker), ADR-008 (Monorepo /apps, adapted), ADR-015 (JSON Logging), ADR-016 (Shared Library Versioning, adapted), ADR-021 (Tenacity), ADR-022 (Click CLI), ADR-023 (MkDocs), ADR-029 (Piwheels ARM builds)
 
 ## Implementation Notes (Optional)
 
-This is where the Python ecosystem choices from hoopstat-haus get generalized. Key ADRs to adapt:
-- ADR-002 (Python 3.12+) → General-purpose ADR for this template
-- ADR-003 (Poetry) → General-purpose ADR for this template
-- ADR-004 (pytest) → General-purpose ADR for this template
-- ADR-005 (Ruff) → General-purpose ADR for this template (note: hoopstat-haus uses Ruff for both linting AND formatting now, not Black separately)
-- ADR-008 (Monorepo with /apps) → General-purpose ADR for this template
+This is where the Python ecosystem choices from hoopstat-haus get generalized. The file-mapping identifies 12 ADRs that belong here:
+- ADR-002 (Python 3.12+), ADR-003 (Poetry), ADR-004 (pytest), ADR-005 (Ruff) — Core tooling
+- ADR-006 (Docker Containers) — General containerization pattern (not AWS-specific)
+- ADR-008 (Monorepo /apps Structure) — Adapt for single-project focus
+- ADR-015 (JSON Logging) — Logging strategy for all Python repos
+- ADR-016 (Shared Library Versioning) — Adapt for multi-repo context
+- ADR-021 (Tenacity Retry Logic), ADR-022 (Click CLI), ADR-023 (MkDocs) — Library/tool choices
+- ADR-029 (Piwheels ARM Builds) — ARM build optimization for Docker
 
-Do NOT include Docker, AWS, or infrastructure concerns here — those belong in `python-aws-data-blueprint`. This template should be usable for any Python project, whether it's a CLI tool, library, web app, or data pipeline.
+Do NOT include AWS, Terraform, or cloud-specific concerns here — those belong in `python-aws-data-blueprint`. Docker is included as a general containerization practice, but ECR and Lambda-specific Docker patterns are not.

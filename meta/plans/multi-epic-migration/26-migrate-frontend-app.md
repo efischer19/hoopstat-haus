@@ -19,6 +19,7 @@ Migrate the frontend application from hoopstat-haus's `frontend-app/` directory 
 - [ ] The dashboard renders correctly when served locally (e.g., via `python -m http.server`)
 - [ ] Accessibility attributes from the original are preserved
 - [ ] `README.md` is updated with hoopstat-app-specific documentation
+- [ ] `.github/logo.svg` is present (copy as-is from hoopstat-haus — product-specific branding)
 - [ ] ADR-019 (Vanilla HTML/CSS/JS) is present in `meta/adr/` as a project-specific ADR
 - [ ] ADR-036 (Chart.js via CDN) is present in `meta/adr/`
 

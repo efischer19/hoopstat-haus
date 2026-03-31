@@ -11,6 +11,8 @@ Add CI/CD configuration and code quality tooling to the `blueprint-repo-blueprin
 - [ ] The CI workflow triggers on push to `main` and on pull requests
 - [ ] `.github/dependabot.yml` is present with GitHub Actions ecosystem monitoring
 - [ ] `.github/workflows/accept-adrs.yml` or equivalent ADR status workflow is present (adapted from hoopstat-haus)
+- [ ] `.github/workflows/dependabot-auto-merge.yml` is present (copy as-is from hoopstat-haus — general convenience workflow)
+- [ ] `.github/workflows/validate-dependabot.yml` is present (copy as-is from hoopstat-haus — general CI convenience)
 - [ ] All workflows use pinned action versions (not `@latest` or `@main`)
 - [ ] A `scripts/local-ci-check.sh` stub exists explaining how to run checks locally
 - [ ] The CI pipeline passes on the template repo itself (no false failures from placeholder content)

@@ -12,6 +12,8 @@ Add AWS integration scaffolding to the `python-aws-data-blueprint` template: Ter
 - [ ] `infrastructure/outputs.tf` exists with useful output values
 - [ ] `infrastructure/versions.tf` exists pinning AWS provider version
 - [ ] `infrastructure/README.md` explains the infrastructure structure and how to customize
+- [ ] `infrastructure/GITHUB_ACTIONS_ROLE.md` exists with generalized OIDC role setup guide (adapted from hoopstat-haus)
+- [ ] `infrastructure/SETUP.md` exists with generalized Terraform setup guide (adapted from hoopstat-haus)
 - [ ] `.github/workflows/infrastructure.yml` exists with Terraform plan (on PR) and apply (on merge) jobs
 - [ ] `.github/workflows/deploy.yml` exists with ECR push and Lambda update jobs (using placeholder values)
 - [ ] `.github/workflows/reusable-build-push.yml` exists as a reusable Docker build/push workflow (adapted from hoopstat-haus)

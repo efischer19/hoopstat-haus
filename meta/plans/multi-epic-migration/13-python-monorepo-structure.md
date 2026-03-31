@@ -16,6 +16,9 @@ Flesh out the Python monorepo structure in `python-project-blueprint` with examp
 - [ ] `scripts/setup-local-deps.py` exists to install local dependencies across the monorepo (adapted from hoopstat-haus)
 - [ ] Example app and lib both pass `poetry install && poetry run ruff format --check . && poetry run ruff check . && poetry run pytest`
 - [ ] `docker-compose.test.yml` stub exists showing how to run tests in containers (optional)
+- [ ] `docs-src/DOCUMENTATION_README.md` is present (adapted from hoopstat-haus — generalized MkDocs documentation guide)
+- [ ] `docs-src/LOCAL_DEVELOPMENT_DEPENDENCIES.md` is present (adapted from hoopstat-haus — generalized tool list)
+- [ ] `docs-src/SHARED_LIBRARY_VERSIONING.md` is present (adapted from hoopstat-haus — updated for multi-repo context)
 
 ## Implementation Notes (Optional)
 

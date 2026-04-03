@@ -51,7 +51,7 @@ jobs:
             const commitSha = `${{ inputs.commit_sha }}`.trim();
             const filePath = `${{ inputs.file_path }}`.trim();
             const folderPath = `${{ inputs.folder_path }}`.trim();
-            const humanReviewed = `${{ inputs.human_reviewed }}`.trim().toLowerCase() === 'true';
+            const humanReviewed = ${{ toJSON(inputs.human_reviewed) }};
 
             function fail(message) {
               core.setFailed(message);
@@ -160,7 +160,7 @@ jobs:
                 fail(`Expected plan format not met in '${sourcePath}': missing "Acceptance Criteria" section.`);
               }
               if (!/^\s*-\s*\[[ xX]\]\s+\S+/m.test(acceptance)) {
-                fail(`Expected plan format not met in '${sourcePath}': Acceptance Criteria must include checkbox items.`);
+                fail(`Expected plan format not met in '${sourcePath}': Acceptance Criteria must include at least one non-empty checkbox item.`);
               }
 
               return { title, what, acceptance, notes };
@@ -197,10 +197,15 @@ jobs:
                 .split('\n')
                 .map((line) => line.trim())
                 .filter(Boolean)
-                .filter((path) => path.toLowerCase().endsWith('.md'))
                 // Skip executive summary files (e.g., 00-executive-summary.md) and process ticket-style plan files.
-                .filter((path) => !/\/00-.*\.md$/i.test(path))
-                .filter((path) => !path.toLowerCase().endsWith('/readme.md'));
+                .filter((path) => {
+                  const lowerPath = path.toLowerCase();
+                  return (
+                    lowerPath.endsWith('.md') &&
+                    !/\/00-.*\.md$/i.test(path) &&
+                    !lowerPath.endsWith('/readme.md')
+                  );
+                });
             }
 
             filesToProcess = [...new Set(filesToProcess)].sort();
@@ -213,7 +218,7 @@ jobs:
             const createdIssues = [];
 
             for (const path of filesToProcess) {
-              validatePath(path, `resolved file path (${path})`);
+              validatePath(path, 'resolved file path');
               let markdown = '';
               try {
                 markdown = runGit(['show', `${ref}:${path}`]);

@@ -1,0 +1,264 @@
+name: Create Planned Issues
+
+on:
+  workflow_dispatch:
+    inputs:
+      branch:
+        description: "Branch name to read plan files from (provide branch OR commit_sha)"
+        required: false
+        type: string
+      commit_sha:
+        description: "Commit SHA to read plan files from (provide commit_sha OR branch)"
+        required: false
+        type: string
+      file_path:
+        description: "Single plan file path to process (provide file_path OR folder_path)"
+        required: false
+        type: string
+      folder_path:
+        description: "Folder path containing plan files (provide folder_path OR file_path)"
+        required: false
+        type: string
+      human_reviewed:
+        description: "A human has reviewed these plans and agrees with them"
+        required: true
+        type: choice
+        options:
+          - "select"
+          - "no"
+          - "yes"
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  create-issues:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Fetch all refs
+        run: git fetch --all --tags --prune
+
+      - name: Create issues from plan files
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const { execFileSync } = require('node:child_process');
+
+            const branch = `${{ inputs.branch }}`.trim();
+            const commitSha = `${{ inputs.commit_sha }}`.trim();
+            const filePath = `${{ inputs.file_path }}`.trim();
+            const folderPath = `${{ inputs.folder_path }}`.trim();
+            const humanReviewed = `${{ inputs.human_reviewed }}`.trim().toLowerCase() === 'yes';
+
+            function fail(message) {
+              core.setFailed(message);
+              throw new Error(message);
+            }
+
+            function exactlyOneProvided(values) {
+              return values.filter((v) => Boolean(v)).length === 1;
+            }
+
+            function runGit(args) {
+              try {
+                return execFileSync('git', args, { encoding: 'utf8' }).trim();
+              } catch (error) {
+                const detail = error?.stderr?.toString()?.trim() || error?.message || 'unknown git error';
+                fail(`Git command failed: git ${args.join(' ')}\n${detail}`);
+              }
+            }
+
+            function validateRef(value, fieldName) {
+              if (!/^[A-Za-z0-9._/-]+$/.test(value)) {
+                fail(`Invalid ${fieldName} value. Only letters, numbers, dot, slash, underscore, and dash are allowed.`);
+              }
+              if (value.includes('..') || value.includes('//') || value.startsWith('-') || value.endsWith('/')) {
+                fail(`Invalid ${fieldName} value.`);
+              }
+            }
+
+            function validatePath(value, fieldName) {
+              if (!/^[A-Za-z0-9._/-]+$/.test(value)) {
+                fail(`Invalid ${fieldName} value. Only letters, numbers, dot, slash, underscore, and dash are allowed.`);
+              }
+              if (value.includes('..') || value.includes('//') || value.startsWith('/') || value.startsWith('-') || value.endsWith('/')) {
+                fail(`Invalid ${fieldName} value.`);
+              }
+              const segments = value.split('/');
+              if (segments.some((segment) => segment === '.' || segment === '..' || segment.length === 0)) {
+                fail(`Invalid ${fieldName} value.`);
+              }
+            }
+
+            function normalizeHeading(line) {
+              return line
+                .replace(/^#{1,6}\s*/, '')
+                .trim()
+                .replace(/:$/, '')
+                .trim()
+                .toLowerCase();
+            }
+
+            function parsePlanMarkdown(content, sourcePath) {
+              const text = content.replace(/\r\n/g, '\n');
+              const lines = text.split('\n');
+
+              let title = '';
+              const titleLine = lines.find((line) => /^Title:\s*\S+/i.test(line.trim()));
+              if (titleLine) {
+                title = titleLine.replace(/^Title:\s*/i, '').trim();
+              } else {
+                const h1Line = lines.find((line) => /^#\s+\S+/.test(line.trim()));
+                if (h1Line) {
+                  title = h1Line.replace(/^#\s+/, '').trim();
+                }
+              }
+
+              const sectionNames = {
+                what: ['what do you want to build?'],
+                acceptance: ['acceptance criteria'],
+                notes: ['implementation notes (optional)', 'implementation notes'],
+              };
+
+              const headingToSection = new Map();
+              Object.entries(sectionNames).forEach(([section, names]) => {
+                names.forEach((name) => headingToSection.set(name, section));
+              });
+
+              const sections = { what: [], acceptance: [], notes: [] };
+              let currentSection = null;
+
+              for (const rawLine of lines) {
+                if (!/^#{1,6}\s+/.test(rawLine.trim())) {
+                  if (currentSection) {
+                    sections[currentSection].push(rawLine);
+                  }
+                  continue;
+                }
+                const normalized = normalizeHeading(rawLine);
+                if (headingToSection.has(normalized)) {
+                  currentSection = headingToSection.get(normalized);
+                  continue;
+                }
+                currentSection = null;
+              }
+
+              const what = sections.what.join('\n').trim();
+              const acceptance = sections.acceptance.join('\n').trim();
+              const notes = sections.notes.join('\n').trim();
+
+              if (!title) {
+                fail(`Expected plan format not met in '${sourcePath}': missing Title or H1 heading.`);
+              }
+              if (!what) {
+                fail(`Expected plan format not met in '${sourcePath}': missing "What do you want to build?" section.`);
+              }
+              if (!acceptance) {
+                fail(`Expected plan format not met in '${sourcePath}': missing "Acceptance Criteria" section.`);
+              }
+              if (!/^\s*-\s*\[\s\]\s+\S.*\S/m.test(acceptance)) {
+                fail(`Expected plan format not met in '${sourcePath}': Acceptance Criteria must include at least one checkbox item with text.`);
+              }
+
+              return { title, what, acceptance, notes };
+            }
+
+            function isPlanFile(path) {
+              const lowerPath = path.toLowerCase();
+              return (
+                lowerPath.endsWith('.md') &&
+                !/\/00-.*\.md$/.test(lowerPath) &&
+                !lowerPath.endsWith('/readme.md')
+              );
+            }
+
+            if (!humanReviewed) {
+              fail('You must confirm: "A human has reviewed these plans and agrees with them".');
+            }
+
+            if (!exactlyOneProvided([branch, commitSha])) {
+              fail('Provide exactly one ref input: branch OR commit_sha.');
+            }
+
+            if (!exactlyOneProvided([filePath, folderPath])) {
+              fail('Provide exactly one location input: file_path OR folder_path.');
+            }
+
+            const ref = branch || commitSha;
+            validateRef(ref, branch ? 'branch' : 'commit_sha');
+
+            if (filePath) {
+              validatePath(filePath, 'file_path');
+            }
+            if (folderPath) {
+              validatePath(folderPath, 'folder_path');
+            }
+            let filesToProcess = [];
+
+            if (filePath) {
+              filesToProcess = [filePath];
+            } else {
+              const rawList = runGit(['ls-tree', '-r', '--name-only', ref, folderPath]);
+              filesToProcess = rawList
+                .split('\n')
+                .map((line) => line.trim())
+                .filter(Boolean)
+                // Skip executive summary files (e.g., 00-executive-summary.md) and process ticket-style plan files.
+                .filter(isPlanFile);
+            }
+
+            filesToProcess = [...new Set(filesToProcess)].sort();
+
+            if (filesToProcess.length === 0) {
+              fail('No markdown plan files found to process.');
+            }
+
+            core.info(`Processing ${filesToProcess.length} file(s) from ref '${ref}'...`);
+            const createdIssues = [];
+
+            for (const path of filesToProcess) {
+              validatePath(path, 'resolved file path');
+              let markdown = '';
+              try {
+                markdown = runGit(['show', `${ref}:${path}`]);
+              } catch (error) {
+                fail(`Could not read '${path}' from ref '${ref}'.`);
+              }
+
+              const parsed = parsePlanMarkdown(markdown, path);
+              const issueBody = [
+                '### What do you want to build?',
+                '',
+                parsed.what,
+                '',
+                '### Acceptance Criteria',
+                '',
+                parsed.acceptance,
+                '',
+                '### Implementation Notes (Optional)',
+                '',
+                parsed.notes || '_No additional implementation notes provided._',
+              ].join('\n');
+
+              const issue = await github.rest.issues.create({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                title: parsed.title,
+                body: issueBody,
+              });
+
+              createdIssues.push(issue.data.html_url);
+              core.info(`Created issue: ${issue.data.html_url}`);
+            }
+
+            core.summary
+              .addHeading('Planned issues created')
+              .addList(createdIssues)
+              .write();

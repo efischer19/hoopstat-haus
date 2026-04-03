@@ -22,7 +22,10 @@ on:
       human_reviewed:
         description: "A human has reviewed these plans and agrees with them"
         required: true
-        type: boolean
+        type: choice
+        options:
+          - "no"
+          - "yes"
 
 permissions:
   contents: read
@@ -51,7 +54,7 @@ jobs:
             const commitSha = `${{ inputs.commit_sha }}`.trim();
             const filePath = `${{ inputs.file_path }}`.trim();
             const folderPath = `${{ inputs.folder_path }}`.trim();
-            const humanReviewed = ${{ toJSON(inputs.human_reviewed) }};
+            const humanReviewed = `${{ inputs.human_reviewed }}`.trim().toLowerCase() === 'yes';
 
             function fail(message) {
               core.setFailed(message);
@@ -159,8 +162,8 @@ jobs:
               if (!acceptance) {
                 fail(`Expected plan format not met in '${sourcePath}': missing "Acceptance Criteria" section.`);
               }
-              if (!/^\s*-\s*\[[ xX]\]\s+\S+/m.test(acceptance)) {
-                fail(`Expected plan format not met in '${sourcePath}': Acceptance Criteria must include at least one non-empty checkbox item.`);
+              if (!/^\s*-\s*\[\s\]\s+\S+/m.test(acceptance)) {
+                fail(`Expected plan format not met in '${sourcePath}': Acceptance Criteria must include at least one checkbox item with text.`);
               }
 
               return { title, what, acceptance, notes };
@@ -202,7 +205,7 @@ jobs:
                   const lowerPath = path.toLowerCase();
                   return (
                     lowerPath.endsWith('.md') &&
-                    !/\/00-.*\.md$/i.test(path) &&
+                    !/\/00-.*\.md$/.test(lowerPath) &&
                     !lowerPath.endsWith('/readme.md')
                   );
                 });

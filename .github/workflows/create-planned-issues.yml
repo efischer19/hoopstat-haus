@@ -46,7 +46,7 @@ jobs:
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
-            const { execSync } = require('node:child_process');
+            const { execFileSync } = require('node:child_process');
 
             const branch = `${{ inputs.branch }}`.trim();
             const commitSha = `${{ inputs.commit_sha }}`.trim();
@@ -63,8 +63,31 @@ jobs:
               return values.filter((v) => Boolean(v)).length === 1;
             }
 
-            function runGit(command) {
-              return execSync(command, { encoding: 'utf8' }).trim();
+            function runGit(args) {
+              try {
+                return execFileSync('git', args, { encoding: 'utf8' }).trim();
+              } catch (error) {
+                const detail = error?.stderr?.toString()?.trim() || error?.message || 'unknown git error';
+                fail(`Git command failed: git ${args.join(' ')}\n${detail}`);
+              }
+            }
+
+            function validateRef(value, fieldName) {
+              if (!/^[A-Za-z0-9._\/-]+$/.test(value)) {
+                fail(`Invalid ${fieldName} value. Only letters, numbers, dot, slash, underscore, and dash are allowed.`);
+              }
+              if (value.includes('..') || value.startsWith('-')) {
+                fail(`Invalid ${fieldName} value.`);
+              }
+            }
+
+            function validatePath(value, fieldName) {
+              if (!/^[A-Za-z0-9._\/-]+$/.test(value)) {
+                fail(`Invalid ${fieldName} value. Only letters, numbers, dot, slash, underscore, and dash are allowed.`);
+              }
+              if (value.includes('..') || value.startsWith('/') || value.startsWith('-')) {
+                fail(`Invalid ${fieldName} value.`);
+              }
             }
 
             function normalizeHeading(line) {
@@ -153,12 +176,20 @@ jobs:
             }
 
             const ref = branch || commitSha;
+            validateRef(ref, branch ? 'branch' : 'commit_sha');
+
+            if (filePath) {
+              validatePath(filePath, 'file_path');
+            }
+            if (folderPath) {
+              validatePath(folderPath, 'folder_path');
+            }
             let filesToProcess = [];
 
             if (filePath) {
               filesToProcess = [filePath];
             } else {
-              const rawList = runGit(`git ls-tree -r --name-only ${JSON.stringify(ref)} ${JSON.stringify(folderPath)}`);
+              const rawList = runGit(['ls-tree', '-r', '--name-only', ref, folderPath]);
               filesToProcess = rawList
                 .split('\n')
                 .map((line) => line.trim())
@@ -179,9 +210,10 @@ jobs:
             const createdIssues = [];
 
             for (const path of filesToProcess) {
+              validatePath(path, `resolved file path (${path})`);
               let markdown = '';
               try {
-                markdown = runGit(`git show ${JSON.stringify(ref)}:${JSON.stringify(path)}`);
+                markdown = runGit(['show', `${ref}:${path}`]);
               } catch (error) {
                 fail(`Could not read '${path}' from ref '${ref}'.`);
               }

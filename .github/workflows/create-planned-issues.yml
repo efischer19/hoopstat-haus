@@ -23,7 +23,6 @@ on:
         description: "A human has reviewed these plans and agrees with them"
         required: true
         type: boolean
-        default: false
 
 permissions:
   contents: read
@@ -73,7 +72,7 @@ jobs:
             }
 
             function validateRef(value, fieldName) {
-              if (!/^[A-Za-z0-9._\/-]+$/.test(value)) {
+              if (!/^[A-Za-z0-9._/-]+$/.test(value)) {
                 fail(`Invalid ${fieldName} value. Only letters, numbers, dot, slash, underscore, and dash are allowed.`);
               }
               if (value.includes('..') || value.startsWith('-')) {
@@ -82,7 +81,7 @@ jobs:
             }
 
             function validatePath(value, fieldName) {
-              if (!/^[A-Za-z0-9._\/-]+$/.test(value)) {
+              if (!/^[A-Za-z0-9._/-]+$/.test(value)) {
                 fail(`Invalid ${fieldName} value. Only letters, numbers, dot, slash, underscore, and dash are allowed.`);
               }
               if (value.includes('..') || value.startsWith('/') || value.startsWith('-')) {
@@ -199,6 +198,7 @@ jobs:
                 .map((line) => line.trim())
                 .filter(Boolean)
                 .filter((path) => path.toLowerCase().endsWith('.md'))
+                // Skip executive summary files (e.g., 00-executive-summary.md) and process ticket-style plan files.
                 .filter((path) => !/\/00-.*\.md$/i.test(path))
                 .filter((path) => !path.toLowerCase().endsWith('/readme.md'));
             }

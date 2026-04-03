@@ -88,6 +88,10 @@ jobs:
               if (value.includes('..') || value.startsWith('/') || value.startsWith('-')) {
                 fail(`Invalid ${fieldName} value.`);
               }
+              const segments = value.split('/');
+              if (segments.some((segment) => segment === '.' || segment === '..' || segment.length === 0)) {
+                fail(`Invalid ${fieldName} value.`);
+              }
             }
 
             function normalizeHeading(line) {
@@ -156,7 +160,7 @@ jobs:
               if (!acceptance) {
                 fail(`Expected plan format not met in '${sourcePath}': missing "Acceptance Criteria" section.`);
               }
-              if (!/^\s*-\s*\[[ xX]\]\s+/m.test(acceptance)) {
+              if (!/^\s*-\s*\[[ xX]\]\s+\S+/m.test(acceptance)) {
                 fail(`Expected plan format not met in '${sourcePath}': Acceptance Criteria must include checkbox items.`);
               }
 
@@ -195,7 +199,6 @@ jobs:
                 .map((line) => line.trim())
                 .filter(Boolean)
                 .filter((path) => path.toLowerCase().endsWith('.md'))
-                .filter((path) => !path.toLowerCase().endsWith('/00-executive-summary.md'))
                 .filter((path) => !/\/00-.*\.md$/i.test(path))
                 .filter((path) => !path.toLowerCase().endsWith('/readme.md'));
             }

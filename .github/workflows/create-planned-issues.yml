@@ -24,6 +24,7 @@ on:
         required: true
         type: choice
         options:
+          - "select"
           - "no"
           - "yes"
 
@@ -78,7 +79,7 @@ jobs:
               if (!/^[A-Za-z0-9._/-]+$/.test(value)) {
                 fail(`Invalid ${fieldName} value. Only letters, numbers, dot, slash, underscore, and dash are allowed.`);
               }
-              if (value.includes('..') || value.startsWith('-')) {
+              if (value.includes('..') || value.includes('//') || value.startsWith('-') || value.endsWith('/')) {
                 fail(`Invalid ${fieldName} value.`);
               }
             }
@@ -87,7 +88,7 @@ jobs:
               if (!/^[A-Za-z0-9._/-]+$/.test(value)) {
                 fail(`Invalid ${fieldName} value. Only letters, numbers, dot, slash, underscore, and dash are allowed.`);
               }
-              if (value.includes('..') || value.startsWith('/') || value.startsWith('-')) {
+              if (value.includes('..') || value.includes('//') || value.startsWith('/') || value.startsWith('-') || value.endsWith('/')) {
                 fail(`Invalid ${fieldName} value.`);
               }
               const segments = value.split('/');
@@ -162,11 +163,20 @@ jobs:
               if (!acceptance) {
                 fail(`Expected plan format not met in '${sourcePath}': missing "Acceptance Criteria" section.`);
               }
-              if (!/^\s*-\s*\[\s\]\s+\S+/m.test(acceptance)) {
+              if (!/^\s*-\s*\[\s\]\s+\S.*\S/m.test(acceptance)) {
                 fail(`Expected plan format not met in '${sourcePath}': Acceptance Criteria must include at least one checkbox item with text.`);
               }
 
               return { title, what, acceptance, notes };
+            }
+
+            function isPlanFile(path) {
+              const lowerPath = path.toLowerCase();
+              return (
+                lowerPath.endsWith('.md') &&
+                !/\/00-.*\.md$/.test(lowerPath) &&
+                !lowerPath.endsWith('/readme.md')
+              );
             }
 
             if (!humanReviewed) {
@@ -201,14 +211,7 @@ jobs:
                 .map((line) => line.trim())
                 .filter(Boolean)
                 // Skip executive summary files (e.g., 00-executive-summary.md) and process ticket-style plan files.
-                .filter((path) => {
-                  const lowerPath = path.toLowerCase();
-                  return (
-                    lowerPath.endsWith('.md') &&
-                    !/\/00-.*\.md$/.test(lowerPath) &&
-                    !lowerPath.endsWith('/readme.md')
-                  );
-                });
+                .filter(isPlanFile);
             }
 
             filesToProcess = [...new Set(filesToProcess)].sort();

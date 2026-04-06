@@ -8,8 +8,8 @@ packages = [{include = "app"}]
 
 [tool.poetry.dependencies]
 python = "^3.12"
-click = "^8.3.1"
-boto3 = "^1.42.79"
+click = "^8.3.2"
+boto3 = "^1.42.83"
 pyarrow = "^17.0.0"
 pandas = "^2.3.3"
 hoopstat-observability = {path = "../../libs/hoopstat-observability", develop = false}
@@ -20,7 +20,7 @@ tenacity = "^9.1.4"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^9.0.2"
-ruff = "^0.15.8"
+ruff = "^0.15.9"
 black = "^26.3.1"
 pytest-cov = "^7.1.0"
 moto = "^5.1.22"

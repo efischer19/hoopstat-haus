@@ -19,7 +19,7 @@ hoopstat-data = {path = "../../libs/hoopstat-data", develop = true}
 tenacity = "^9.1.4"
 
 [tool.poetry.group.dev.dependencies]
-pytest = "^9.0.2"
+pytest = "^9.0.3"
 ruff = "^0.15.9"
 black = "^26.3.1"
 pytest-cov = "^7.1.0"

@@ -9,7 +9,7 @@ packages = [{include = "hoopstat_s3"}]
 [tool.poetry.dependencies]
 python = "^3.12"
 boto3 = "^1.35.0"
-pyarrow = ">=17,<24"
+pyarrow = ">=17,<25"
 pandas = "^2.0.0"
 
 [tool.poetry.group.dev.dependencies]

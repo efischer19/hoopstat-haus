@@ -10,7 +10,7 @@ packages = [{include = "app"}]
 python = "^3.12"
 click = "^8.3.2"
 boto3 = "^1.42.89"
-pyarrow = "^17.0.0"
+pyarrow = ">=17,<24"
 pandas = "^2.3.3"
 hoopstat-observability = {path = "../../libs/hoopstat-observability", develop = false}
 hoopstat-config = {path = "../../libs/hoopstat-config", develop = false}

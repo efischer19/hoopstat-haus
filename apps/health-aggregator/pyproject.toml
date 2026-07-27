@@ -14,7 +14,7 @@ hoopstat-data = {path = "../../libs/hoopstat-data", develop = true}
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^9.0.3"
-ruff = "^0.15.10"
+ruff = ">=0.15.10,<0.17.0"
 black = "^26.3.1"
 pytest-cov = "^7.1.0"
 moto = "^5.1.22"

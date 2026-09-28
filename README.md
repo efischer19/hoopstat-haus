@@ -4,11 +4,26 @@
 
 A GenAI-powered data lakehouse for NBA/WNBA stats. Your go-to for advanced hoops data!
 
+## Project status
+
+Pre-release hobby project. The pipeline code exists and is tested, but no public data is being published today. Last checked 2026-09-28. Last active development was early April 2026; since then the only changes have been automated dependency updates.
+
+| Area | Status |
+| :--- | :----- |
+| Bronze ingestion (NBA API to S3) | Works when run manually on a local machine with Docker. It no longer runs in AWS because the NBA API blocks AWS IPs, and the scheduled workflow is disabled. |
+| Silver processing, Gold analytics, DB compiler | Code and unit tests exist. Silver was last run manually in January 2026. Gold has no scheduled run. |
+| Daily "Build Database" job | Runs green every day but does nothing: it finds no Gold index in S3, so it skips compiling and uploading. No database has been published. |
+| Public data (`data.hoopstat.haus`, JSON artifacts, DuckDB/SQLite files) | Not available. The domain does not resolve. |
+| Frontend ([`hoopstat.haus`](https://hoopstat.haus)) | The page is up but loads no stats: its data URL is still a placeholder. The pipeline health page returns no data. |
+| MCP local proxy | Code and tests exist. Not published to PyPI. |
+| WNBA data, S3 Tables, semantic search / GenAI features | Planned in ADRs and docs. No code yet. |
+
 ---
 
-> **Note:** This project is currently under active development and is not yet functional. The infrastructure and core components are being built. Please check back for updates!
-
 ## 🚀 Quick Start: Access Basketball Analytics
+
+> [!WARNING]
+> None of the endpoints below are live yet. See [Project status](#project-status). This section describes the intended access pattern.
 
 ### 🗄️ Static SQL Databases (NEW)
 
@@ -74,9 +89,7 @@ This project is being built with a focus on robust, modern backend infrastructur
 
 ## Current Status
 
-The repository has been seeded with foundational documents and architectural principles. The next phase of development will focus on building the core data ingestion pipelines.
-
-The project is **not operational** at this time.
+See [Project status](#project-status) above.
 
 ## Repository Structure
 
@@ -138,6 +151,6 @@ The documentation site will be available at `http://localhost:8000` for local pr
 **Documentation Structure:**
 - Library API documentation is automatically generated from docstrings
 - Development guides and ADRs are manually authored in `docs-src/`
-- Documentation is published to: https://efischer19.github.io/hoopstat-haus/
+- Documentation is intended to publish to https://efischer19.github.io/hoopstat-haus/ (currently returns 404; build locally as above)
 
 ---

@@ -26,6 +26,10 @@ updates:
     directory: "/apps/bronze-ingestion"
     registries:
       - piwheels
+    # Configuring a registry makes Dependabot reject "external code" by
+    # default, which includes Poetry path dependencies on our own libs/.
+    # Without this, every bronze update fails with unexpected_external_code.
+    insecure-external-code-execution: allow
     schedule:
       interval: "weekly"
     open-pull-requests-limit: 10
@@ -89,7 +93,21 @@ updates:
         patterns:
           - "*"
 
-  # NOTE: When adding new Python applications to /apps/, 
+  # Monitor pip dependencies in all shared libraries (one grouped PR).
+  # Deliberately no `registries:` here, so piwheels isn't attached and
+  # path dependencies between libs are allowed.
+  - package-ecosystem: "pip"
+    directories:
+      - "/libs/*"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 10
+    groups:
+      pip:
+        patterns:
+          - "*"
+
+  # NOTE: When adding new Python applications to /apps/,
   # add a new entry following this pattern:
   #
   # - package-ecosystem: "pip"

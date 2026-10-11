@@ -24,3 +24,4 @@ Add a step that runs gold season aggregation for the current season before compi
 - `_load_season_*_games` reads every silver date in the season window, so runtime grows through the season. Log the duration so growth is visible.
 - Job permissions: the OIDC role used by `build-database.yml` needs silver read and gold write for `served/season_*`; check the IAM policy in `infrastructure/main.tf` and extend it if needed (infrastructure change → `infrastructure.yml`).
 - Depends on ticket 01 proving the gold → served path works.
+- Observed: GitHub has been starting this `0 6 * * *` job ~6h late (Oct 8–10 runs began 12:06–13:02 UTC). That delay currently hides the ordering bug, but don't rely on it; set the cron explicitly after the pipeline, and consider triggering on gold's `latest.json` write instead of a fixed time.

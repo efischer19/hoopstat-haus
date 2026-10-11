@@ -1,4 +1,14 @@
 version: 2
+
+# Dependabot's network proxy blocks any package index not declared here.
+# bronze-ingestion uses piwheels as a supplemental source (ADR-029), so it
+# must be listed or every bronze update fails with
+# private_source_authentication_failure.
+registries:
+  piwheels:
+    type: python-index
+    url: https://www.piwheels.org/simple/
+
 updates:
   # Monitor pip dependencies in the Python app template
   - package-ecosystem: "pip"
@@ -14,6 +24,8 @@ updates:
   # Monitor pip dependencies in bronze-ingestion
   - package-ecosystem: "pip"
     directory: "/apps/bronze-ingestion"
+    registries:
+      - piwheels
     schedule:
       interval: "weekly"
     open-pull-requests-limit: 10

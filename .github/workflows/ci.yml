@@ -1,13 +1,11 @@
 name: CI
 
 on:
+  # No paths filter on PRs: the "CI OK" job below is a required status check,
+  # so CI must report on every PR. detect-changes already limits the real work
+  # to the apps/libs a PR touches.
   pull_request:
     branches: [main]
-    paths:
-      - 'apps/**'
-      - 'libs/**'
-      - 'meta/adr/**'
-      - '.github/workflows/ci.yml'
   push:
     branches: [main]
     paths:
@@ -387,3 +385,30 @@ jobs:
           echo ""
           echo "🐳 For full integration testing with Localstack (local development):"
           echo "   docker compose -f docker-compose.test.yml up --build"
+
+  # Single required status check for the main branch ruleset. Path-dependent
+  # jobs above are often skipped, so they can't be required directly; this job
+  # always runs and fails if any of them failed or was cancelled.
+  ci-ok:
+    name: CI OK
+    if: always()
+    needs:
+      - check-adr-status
+      - detect-changes
+      - test-libraries
+      - test-applications
+      - build-push-images
+      - test-integration
+      - test-e2e-pipeline
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check results of required jobs
+        env:
+          RESULTS: ${{ toJSON(needs.*.result) }}
+        run: |
+          echo "Job results: $RESULTS"
+          if echo "$RESULTS" | grep -qE '"(failure|cancelled)"'; then
+            echo "❌ One or more CI jobs failed or were cancelled"
+            exit 1
+          fi
+          echo "✅ All CI jobs passed or were skipped"

@@ -69,6 +69,7 @@ The application is designed to run as an AWS Lambda function:
 # Lambda entry point
 from app.handlers import lambda_handler
 
+
 # S3 event processing
 def lambda_handler(event, context):
     # Processes S3 events automatically

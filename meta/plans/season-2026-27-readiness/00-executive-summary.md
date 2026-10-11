@@ -36,12 +36,13 @@ The first real game data arrives on the morning of **Wed Oct 21** (Pi bronze run
 |---|---|---|---|
 | 01 | Gold publishing smoke test (replay 2026-03-10) | Gold's publishing path has never run; find breakage now, not on opening night | Oct 11–12 |
 | 02 | `latest.json` never moves backwards | Replays or retries of older dates would repoint the public index at stale data | Oct 12 |
+| 02b | Player/team lists in `latest.json` | The frontend (and `hoopstat-app`) builds its selectors from `players`/`teams` in the index, which gold never writes; without them no client can find a player's artifact | Oct 12 |
 | 03 | Bronze: one box-score fetch per game | `LeagueGameFinder` returns a row per team, so every box score is fetched twice: double the API load on an endpoint that already blocks clients | Oct 13 |
 | 04 | Daily build: season summaries + schedule after the pipeline | Season-to-date stats are never generated; DB builds ~22h stale | Oct 14–15 |
 | 05 | Pipeline freshness alert | Bronze failed silently for 7 months; a stale pipeline must notify | Oct 16 |
 | 06 | Correct the public data URL everywhere | MCP proxy and docs point at a domain that doesn't exist | Oct 17 |
 
-Order: **01 first**. It may surface bugs that reshape 02–04. 02 and 03 are independent and small. 04 depends on 01 (needs working `served/` output). 05 and 06 can be done anytime.
+Order: **01 first**. It may surface bugs that reshape 02–04. 02 and 02b touch the same writer; do them together. 03 is independent and small. 04 depends on 01 (needs working `served/` output). 05 and 06 can be done anytime.
 
 ### Manual checklist (not issues)
 
@@ -64,7 +65,7 @@ Separate folder so its issues can be created later:
 
 ## Out of scope
 
-- **Frontend** (`frontend-app/`, `hoopstat-app`): its `GOLD_BASE_URL` is still `CLOUDFRONT_DOMAIN_PLACEHOLDER`, a one-line fix whenever frontend work resumes.
+- **Frontend** (`frontend-app/`, `hoopstat-app`): its `GOLD_BASE_URL` is still `CLOUDFRONT_DOMAIN_PLACEHOLDER`, a one-line fix whenever frontend work resumes. `hoopstat-app` does not need `hoopstat-data` to go live: it can deploy against this backend (migration tickets 27–28 only need the existing gold bucket and CloudFront distribution IDs) once 02b lands.
 - **Multi-repo migration (#693)** and the **uv migration**: "the big refactor". Nothing here should block or be blocked by it.
 - **WNBA**, semantic search / GenAI features.
 

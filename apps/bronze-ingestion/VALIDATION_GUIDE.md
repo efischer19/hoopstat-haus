@@ -77,14 +77,12 @@ validator = DataValidator()
 result = validator.validate_api_response(
     response_data=raw_api_data,
     response_type="schedule",
-    context={"target_date": date(2024, 1, 15)}
+    context={"target_date": date(2024, 1, 15)},
 )
 
 # Check completeness
 completeness = validator.validate_completeness(
-    data=games_list,
-    expected_count=10,
-    context="daily_games"
+    data=games_list, expected_count=10, context="daily_games"
 )
 ```
 
@@ -102,13 +100,12 @@ quarantine_key = quarantine.quarantine_data(
     data=invalid_data,
     validation_result=validation_result,
     data_type="schedule",
-    target_date=date(2024, 1, 15)
+    target_date=date(2024, 1, 15),
 )
 
 # List quarantined items
 items = quarantine.list_quarantined_data(
-    target_date=date(2024, 1, 15),
-    data_type="schedule"
+    target_date=date(2024, 1, 15), data_type="schedule"
 )
 ```
 

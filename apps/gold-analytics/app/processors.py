@@ -23,6 +23,22 @@ from .validation import (
 
 logger = get_logger(__name__)
 
+# NBA game IDs start with a 3-digit game type; "002" is the regular season.
+# Season aggregates are labeled "regular", so playoff/play-in/Cup-final games
+# (and any preseason data that slipped through) must not be counted in them.
+REGULAR_SEASON_GAME_PREFIX = "002"
+
+
+def is_regular_season_game(game_id: Any) -> bool:
+    """Return True if a game ID belongs to a regular-season game."""
+    if game_id is None or pd.isna(game_id):
+        return False
+    gid = str(game_id).strip()
+    if gid.isdigit():
+        # Restore leading zeros if the ID was stored as an integer
+        gid = gid.zfill(10)
+    return gid.startswith(REGULAR_SEASON_GAME_PREFIX)
+
 
 class GoldProcessor:
     """
@@ -278,6 +294,8 @@ class GoldProcessor:
 
                     # Group by team_id and add to season data
                     for _, row in daily_data.iterrows():
+                        if not is_regular_season_game(row.get("game_id")):
+                            continue
                         tid = row.get("team_id")
                         if tid and (team_id is None or tid == team_id):
                             if tid not in all_team_games:
@@ -443,6 +461,8 @@ class GoldProcessor:
 
                     # Group by player_id and add to season data
                     for _, row in daily_data.iterrows():
+                        if not is_regular_season_game(row.get("game_id")):
+                            continue
                         pid = row.get("player_id")
                         if pid and (player_id is None or pid == player_id):
                             if pid not in all_player_games:

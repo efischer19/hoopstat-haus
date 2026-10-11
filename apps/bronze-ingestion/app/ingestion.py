@@ -17,6 +17,28 @@ from .validation import DataValidator
 
 logger = get_logger(__name__)
 
+# NBA game IDs encode the game type in their first three digits
+# (001 preseason, 002 regular season, 003 All-Star, 004 playoffs, 005 play-in,
+# 006 NBA Cup final). Preseason and All-Star games are exhibitions, so they are
+# never ingested and can't leak into season stats downstream.
+EXCLUDED_GAME_TYPE_PREFIXES = {"001": "preseason", "003": "All-Star"}
+
+
+def filter_excluded_game_types(games: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """Drop schedule rows for preseason and All-Star games."""
+    kept = []
+    excluded: dict[str, int] = {}
+    for game in games:
+        prefix = str(game.get("GAME_ID", ""))[:3]
+        if prefix in EXCLUDED_GAME_TYPE_PREFIXES:
+            label = EXCLUDED_GAME_TYPE_PREFIXES[prefix]
+            excluded[label] = excluded.get(label, 0) + 1
+        else:
+            kept.append(game)
+    if excluded:
+        logger.info(f"Skipping exhibition schedule rows: {excluded}")
+    return kept
+
 
 class DateScopedIngestion:
     """Date-scoped NBA data ingestion for bronze layer."""
@@ -49,6 +71,7 @@ class DateScopedIngestion:
 
             # Step 1: Fetch and validate schedule for the date
             games = self._fetch_and_validate_schedule(target_date)
+            games = filter_excluded_game_types(games)
 
             # Step 2: Early exit if no games for this date
             if not games:

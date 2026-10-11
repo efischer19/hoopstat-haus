@@ -4,7 +4,7 @@ from datetime import date
 from unittest.mock import Mock, patch
 
 from app.config import BronzeIngestionConfig
-from app.ingestion import DateScopedIngestion
+from app.ingestion import DateScopedIngestion, filter_excluded_game_types
 
 
 class TestDateScopedIngestion:
@@ -383,3 +383,73 @@ class TestDateScopedIngestion:
         assert parsed_data[0]["TEAM_ABBREVIATION"] == "LAL"
         assert parsed_data[1]["GAME_ID"] == "1234567891"
         assert parsed_data[1]["TEAM_ABBREVIATION"] == "GSW"
+
+
+class TestExcludedGameTypes:
+    """Preseason and All-Star games must never reach the bronze layer."""
+
+    def test_filter_drops_preseason_and_all_star_only(self):
+        games = [
+            {"GAME_ID": "0012600001"},  # preseason
+            {"GAME_ID": "0022600001"},  # regular season
+            {"GAME_ID": "0032600001"},  # All-Star
+            {"GAME_ID": "0042600001"},  # playoffs
+            {"GAME_ID": "0052600001"},  # play-in
+            {"GAME_ID": "0062600001"},  # NBA Cup final
+        ]
+
+        kept = filter_excluded_game_types(games)
+
+        assert [g["GAME_ID"] for g in kept] == [
+            "0022600001",
+            "0042600001",
+            "0052600001",
+            "0062600001",
+        ]
+
+    @patch("app.ingestion.DataValidator")
+    @patch("app.ingestion.DataQuarantine")
+    @patch("app.ingestion.NBAClient")
+    @patch("app.ingestion.BronzeS3Manager")
+    def test_preseason_only_date_ingests_nothing(
+        self, mock_s3_manager, mock_nba_client, mock_quarantine, mock_validator
+    ):
+        config = BronzeIngestionConfig(
+            bronze_bucket="test-bucket", aws_region="us-east-1"
+        )
+
+        # LeagueGameFinder returns one row per team per game
+        mock_client_instance = Mock()
+        mock_client_instance.get_games_for_date.return_value = [
+            {"GAME_ID": "0012600010", "TEAM_ID": 1610612747},
+            {"GAME_ID": "0012600010", "TEAM_ID": 1610612738},
+        ]
+        mock_nba_client.return_value = mock_client_instance
+
+        mock_s3_instance = Mock()
+        mock_s3_manager.return_value = mock_s3_instance
+
+        mock_validator_instance = Mock()
+        mock_validator_instance.validate_api_response.return_value = {
+            "valid": True,
+            "issues": [],
+            "metrics": {"schema_valid": True},
+        }
+        mock_validator.return_value = mock_validator_instance
+
+        mock_quarantine_instance = Mock()
+        mock_quarantine_instance.should_quarantine.return_value = False
+        mock_quarantine.return_value = mock_quarantine_instance
+
+        ingestion = DateScopedIngestion(config)
+        ingestion.summary_manager = Mock()
+
+        target_date = date(2026, 10, 10)
+        result = ingestion.run(target_date, dry_run=False)
+
+        assert result is True
+        mock_client_instance.get_box_score.assert_not_called()
+        mock_s3_instance.store_json.assert_not_called()
+        ingestion.summary_manager.update_bronze_summary.assert_called_once_with(
+            target_date, 0, 0
+        )

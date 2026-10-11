@@ -6,7 +6,7 @@ from unittest.mock import MagicMock, patch
 import pandas as pd
 from botocore.exceptions import BotoCoreError, ClientError
 
-from app.processors import GoldProcessor
+from app.processors import GoldProcessor, is_regular_season_game
 
 
 class TestGoldProcessor:
@@ -344,9 +344,10 @@ class TestGoldProcessor:
         mock_s3_discovery.discover_dates_to_process.return_value = [date(2024, 1, 15)]
         mock_s3_discovery.load_all_silver_data.return_value = pd.DataFrame(
             {
-                "team_id": ["team_1", "team_2"],
-                "points": [110, 105],
-                "game_date": ["2024-01-15", "2024-01-15"],
+                "team_id": ["team_1", "team_2", "team_3"],
+                "game_id": ["0022300601", "0022300601", "0042300101"],
+                "points": [110, 105, 99],
+                "game_date": ["2024-01-15", "2024-01-15", "2024-01-15"],
             }
         )
         mock_s3_discovery_class.return_value = mock_s3_discovery
@@ -357,9 +358,46 @@ class TestGoldProcessor:
 
         result = processor._load_season_team_games("2023-24", dry_run=False)
         assert isinstance(result, dict)
-        assert (
-            "team_1" in result or "team_2" in result
-        )  # At least one team should be present
+        assert set(result) == {"team_1", "team_2"}  # playoff row excluded
+
+    @patch("app.processors.S3DataDiscovery")
+    def test_load_season_player_games_counts_only_regular_season(
+        self, mock_s3_discovery_class
+    ):
+        """Preseason, playoff, play-in and Cup-final games stay out of season stats."""
+        mock_s3_discovery = MagicMock()
+        mock_s3_discovery.discover_dates_to_process.return_value = [date(2024, 4, 20)]
+        mock_s3_discovery.load_all_silver_data.return_value = pd.DataFrame(
+            {
+                "player_id": ["p1", "p1", "p1", "p1", "p1", "p1"],
+                "game_id": [
+                    "0022301200",  # regular season
+                    "0012300001",  # preseason
+                    "0042300101",  # playoffs
+                    "0052300101",  # play-in
+                    "0062300001",  # NBA Cup final
+                    None,
+                ],
+                "points": [30, 10, 40, 20, 25, 5],
+            }
+        )
+        mock_s3_discovery_class.return_value = mock_s3_discovery
+
+        processor = GoldProcessor(
+            silver_bucket="test-silver-bucket", gold_bucket="test-gold-bucket"
+        )
+
+        result = processor._load_season_player_games("2023-24", dry_run=False)
+        assert [g["points"] for g in result["p1"]] == [30]
+
+    def test_is_regular_season_game(self):
+        """Game type comes from the ID prefix, tolerating lost leading zeros."""
+        assert is_regular_season_game("0022600001")
+        assert is_regular_season_game(22600001)  # stored as an integer
+        assert not is_regular_season_game("0012600001")
+        assert not is_regular_season_game("0042600001")
+        assert not is_regular_season_game(None)
+        assert not is_regular_season_game(float("nan"))
 
     @patch("app.processors.S3DataDiscovery")
     def test_process_team_season_aggregation_normal_mode_fails(

@@ -10,16 +10,16 @@ packages = [{include = "hoopstat_data"}]
 python = "^3.12"
 pandas = "^2.0.0"
 pydantic = "^2.0.0"
-numpy = "^1.24.0"
+numpy = ">=1.24,<3.0"
 pyyaml = "^6.0.0"
 fuzzywuzzy = "^0.18.0"
 python-dateutil = "^2.8.0"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^9.0.3"
-ruff = "^0.12.3"
+ruff = ">=0.12.3,<0.17.0"
 black = "^26.3.1"
-pytest-cov = "^6.2.1"
+pytest-cov = ">=6.2.1,<8.0.0"
 
 [build-system]
 requires = ["poetry-core"]
